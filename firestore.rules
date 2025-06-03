@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /ranking/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /races/{raceId} {
+      allow read: if true;
+      allow write: if false;
+
+      // Permetti lettura e scrittura delle formazioni
+      match /submissions/{userId} {
+        allow read: if true;
+        allow write: if true;
+      }
+    }
+  }
+}
