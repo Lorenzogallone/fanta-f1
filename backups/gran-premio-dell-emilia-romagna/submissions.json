@@ -1,0 +1,107 @@
+{
+  "albi": {
+    "mainP1": "",
+    "mainP2": "",
+    "mainJolly": "",
+    "mainP3": "",
+    "pointsEarned": -3
+  },
+  "ale": {
+    "mainP1": "Lando Norris",
+    "pointsEarned": 5,
+    "mainP2": "Oscar Piastri",
+    "mainJolly": "Max Verstappen",
+    "mainP3": "Andrea Kimi Antonelli"
+  },
+  "baba": {
+    "mainP1": "Lando Norris",
+    "pointsEarned": 0,
+    "mainP2": "Oscar Piastri",
+    "mainJolly": "Charles Leclerc",
+    "mainP3": "Andrea Kimi Antonelli"
+  },
+  "casetz": {
+    "mainP1": "Lando Norris",
+    "pointsEarned": 0,
+    "mainP2": "Oscar Piastri",
+    "mainJolly": "Andrea Kimi Antonelli",
+    "mainP3": "Max Verstappen"
+  },
+  "chiaretta": {
+    "mainP1": "Lando Norris",
+    "pointsEarned": 0,
+    "mainP2": "Oscar Piastri",
+    "mainJolly": "Andrea Kimi Antonelli",
+    "mainP3": "George Russell"
+  },
+  "dave": {
+    "mainP1": "Lando Norris",
+    "pointsEarned": 0,
+    "mainP2": "Oscar Piastri",
+    "mainJolly": "Charles Leclerc",
+    "mainP3": "Max Verstappen"
+  },
+  "fede": {
+    "mainP1": "",
+    "mainP2": "",
+    "mainJolly": "",
+    "mainP3": "",
+    "pointsEarned": -3
+  },
+  "gallo": {
+    "mainP1": "Lando Norris",
+    "pointsEarned": 0,
+    "mainP2": "Oscar Piastri",
+    "mainJolly": "Andrea Kimi Antonelli",
+    "mainP3": "Max Verstappen"
+  },
+  "helmut": {
+    "mainP1": "Lando Norris",
+    "pointsEarned": 0,
+    "mainP2": "Oscar Piastri",
+    "mainJolly": "Andrea Kimi Antonelli",
+    "mainP3": "Max Verstappen"
+  },
+  "matte": {
+    "mainP1": "Max Verstappen",
+    "pointsEarned": 22,
+    "mainP2": "Lando Norris",
+    "mainJolly": "Charles Leclerc",
+    "mainP3": "Lewis Hamilton"
+  },
+  "raffaele": {
+    "mainP1": "Oscar Piastri",
+    "pointsEarned": 15,
+    "mainP2": "Lando Norris",
+    "mainJolly": "Max Verstappen",
+    "mainP3": "George Russell"
+  },
+  "riki-m": {
+    "mainP1": "Oscar Piastri",
+    "pointsEarned": 15,
+    "mainP2": "Lando Norris",
+    "mainJolly": "Max Verstappen",
+    "mainP3": "George Russell"
+  },
+  "sbin": {
+    "mainP1": "Lando Norris",
+    "pointsEarned": 0,
+    "mainP2": "Oscar Piastri",
+    "mainJolly": "Andrea Kimi Antonelli",
+    "mainP3": "Max Verstappen"
+  },
+  "steu-p": {
+    "mainP1": "Lando Norris",
+    "pointsEarned": 5,
+    "mainP2": "Oscar Piastri",
+    "mainJolly": "Max Verstappen",
+    "mainP3": "George Russell"
+  },
+  "vitto": {
+    "mainP1": "Oscar Piastri",
+    "pointsEarned": 0,
+    "mainP2": "George Russell",
+    "mainJolly": "",
+    "mainP3": "Max Verstappen"
+  }
+}
