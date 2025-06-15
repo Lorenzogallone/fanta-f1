@@ -141,6 +141,9 @@ export default function ChampionshipForm() {
   /* usato per far “ricaricare” ChampionshipSubmissions */
   const [refreshKey, setRefreshKey] = useState(0);
 
+  /* per rilevare se esiste già una formazione */
+  const [isEdit, setIsEdit] = useState(false);
+
   /* deadline: 7 settembre 2025, 23:59 */
   const deadlineMs = new Date("2025-09-07T23:59:00").getTime();
   const pastDeadline = Date.now() > deadlineMs;
@@ -170,7 +173,10 @@ export default function ChampionshipForm() {
   /* ------------- se cambia userId, precompila con valori esistenti -- */
   useEffect(() => {
     const { userId } = form;
-    if (!userId) return;
+    if (!userId) {
+      setIsEdit(false);
+      return;
+    }
 
     (async () => {
       try {
@@ -183,30 +189,45 @@ export default function ChampionshipForm() {
           const driverOpts = asDriverOptions(drivers);
           const constructorOpts = asConstructorOptions(constructors);
 
-          setForm((f) => ({
-            ...f,
-            D1: championshipPiloti?.[0]
-              ? driverOpts.find((o) => o.value === championshipPiloti[0])
-              : null,
-            D2: championshipPiloti?.[1]
-              ? driverOpts.find((o) => o.value === championshipPiloti[1])
-              : null,
-            D3: championshipPiloti?.[2]
-              ? driverOpts.find((o) => o.value === championshipPiloti[2])
-              : null,
-            C1: championshipCostruttori?.[0]
-              ? constructorOpts.find((o) => o.value === championshipCostruttori[0])
-              : null,
-            C2: championshipCostruttori?.[1]
-              ? constructorOpts.find((o) => o.value === championshipCostruttori[1])
-              : null,
-            C3: championshipCostruttori?.[2]
-              ? constructorOpts.find((o) => o.value === championshipCostruttori[2])
-              : null,
-          }));
+          if (
+            Array.isArray(championshipPiloti) &&
+            championshipPiloti.length === 3 &&
+            Array.isArray(championshipCostruttori) &&
+            championshipCostruttori.length === 3
+          ) {
+            setForm((f) => ({
+              ...f,
+              D1: driverOpts.find((o) => o.value === championshipPiloti[0]) || null,
+              D2: driverOpts.find((o) => o.value === championshipPiloti[1]) || null,
+              D3: driverOpts.find((o) => o.value === championshipPiloti[2]) || null,
+              C1:
+                constructorOpts.find((o) => o.value === championshipCostruttori[0]) ||
+                null,
+              C2:
+                constructorOpts.find((o) => o.value === championshipCostruttori[1]) ||
+                null,
+              C3:
+                constructorOpts.find((o) => o.value === championshipCostruttori[2]) ||
+                null,
+            }));
+            setIsEdit(true);
+          } else {
+            // Nessuna formazione trovata per l'utente
+            setForm((f) => ({
+              ...f,
+              D1: null,
+              D2: null,
+              D3: null,
+              C1: null,
+              C2: null,
+              C3: null,
+            }));
+            setIsEdit(false);
+          }
         }
       } catch (err) {
         console.error("Errore recupero formazione esistente:", err);
+        setIsEdit(false);
       }
     })();
   }, [form.userId]);
@@ -244,7 +265,9 @@ export default function ChampionshipForm() {
       });
       setMessage({
         variant: "success",
-        text: "Formazioni campionato salvate!",
+        text: isEdit
+          ? "Formazione campionato aggiornata!"
+          : "Formazione campionato salvata!",
       });
       // forza il refresh della card di destra
       setRefreshKey((prev) => prev + 1);
@@ -269,7 +292,7 @@ export default function ChampionshipForm() {
   return (
     <Container className="py-5">
       <Row className="justify-content-center g-4 align-items-start">
-        {/* FORMULÁRIO */}
+        {/* FORM ------------------------------------------------------- */}
         <Col xs={12} lg={6}>
           <Card className="shadow border-danger">
             <Card.Body>
@@ -349,14 +372,18 @@ export default function ChampionshipForm() {
                   className="w-100 mt-3"
                   disabled={!allPicked || saving || pastDeadline}
                 >
-                  {saving ? "Salvataggio…" : "Salva Formazione Campionato"}
+                  {saving
+                    ? "Salvataggio…"
+                    : isEdit
+                    ? "Modifica Formazione Campionato"
+                    : "Salva Formazione Campionato"}
                 </Button>
               </Form>
             </Card.Body>
           </Card>
         </Col>
 
-        {/* LISTA */}
+        {/* LISTA ------------------------------------------------------ */}
         <Col xs={12} lg={6}>
           <ChampionshipSubmissions refresh={refreshKey} />
         </Col>
