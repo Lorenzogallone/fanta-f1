@@ -200,6 +200,7 @@ function RaceCard({ race }) {
   const official = race.officialResults ?? null;
   const hasSprint = Boolean(official?.SP1);
   const doublePts = Boolean(official?.doublePoints);
+  const BONUS_MAIN = 5
 
   const DoubleBadge = () =>
     doublePts ? (
@@ -335,283 +336,128 @@ function RaceCard({ race }) {
           <Alert variant="info">Nessuna formazione inviata.</Alert>
         ) : (
           <>
-            <h6 className="fw-bold mb-2 text-danger">
-              Formazioni e Punteggi
-            </h6>
+            <h6 className="fw-bold mb-2 text-danger">Formazioni e Punteggi</h6>
             <div className="table-responsive">
-              <Table
-                striped
-                bordered
-                hover
-                size="sm"
-                className="align-middle"
-              >
+              <Table striped bordered hover size="sm" className="align-middle">
                 <thead className="table-light">
                   <tr>
-                    <th style={{ width: 40 }} className="text-danger">
-                      #
-                    </th>
+                    <th style={{ width: 40 }} className="text-danger">#</th>
                     <th className="text-danger">Utente</th>
-                    <th className="text-center text-danger">
-                      P1 
-                      <small className="text-muted"> (Pts)</small>
-                    </th>
-                    <th className="text-center text-danger">
-                      P2
-                      <small className="text-muted"> (Pts)</small>
-                    </th>
-                    <th className="text-center text-danger">
-                      P3
-                      <small className="text-muted"> (Pts)</small>
-                    </th>
-                    <th className="text-center text-danger">
-                      Jolly
-                      <small className="text-muted"> (Pts)</small>
-                    </th>
+                    <th className="text-center text-danger">P1 <small>(Pts)</small></th>
+                    <th className="text-center text-danger">P2 <small>(Pts)</small></th>
+                    <th className="text-center text-danger">P3 <small>(Pts)</small></th>
+                    <th className="text-center text-danger">Jolly 1 <small>(Pts)</small></th>
+                    <th className="text-center text-danger">Jolly 2 <small>(Pts)</small></th>
                     {hasSprint && (
                       <>
-                        <th className="text-center text-danger">
-                          SP1
-                          <br />
-                          <small className="text-muted">(Pts)</small>
-                        </th>
-                        <th className="text-center text-danger">
-                          SP2
-                          <br />
-                          <small className="text-muted">(Pts)</small>
-                        </th>
-                        <th className="text-center text-danger">
-                          SP3
-                          <br />
-                          <small className="text-muted">(Pts)</small>
-                        </th>
-                        <th className="text-center text-danger">
-                          Jolly SP
-                          <br />
-                          <small className="text-muted">(Pts)</small>
-                        </th>
+                        <th className="text-center text-danger">SP1 <small>(Pts)</small></th>
+                        <th className="text-center text-danger">SP2 <small>(Pts)</small></th>
+                        <th className="text-center text-danger">SP3 <small>(Pts)</small></th>
+                        <th className="text-center text-danger">Jolly SP <small>(Pts)</small></th>
                       </>
                     )}
                     <th className="text-center text-danger">Tot Main</th>
-                    {hasSprint && (
-                      <th className="text-center text-danger">Tot Sprint</th>
-                    )}
+                    {hasSprint && <th className="text-center text-danger">Tot Sprint</th>}
                   </tr>
                 </thead>
 
                 <tbody>
                   {subs.map((s, idx) => {
-                    // PUNTI “SINGOLI” GARA PRINCIPALE
+                    /* -------- punti main (singoli) -------- */
                     const p1Pts = s.mainP1 === official?.P1 ? 12 : 0;
                     const p2Pts = s.mainP2 === official?.P2 ? 10 : 0;
-                    const p3Pts = s.mainP3 === official?.P3 ? 8 : 0;
-                    // Jolly principale vale 5 se è in TOP 3 (P1, P2 o P3)
-                    const jmp =
+                    const p3Pts = s.mainP3 === official?.P3 ? 8  : 0;
+
+                    const j1Pts =
                       s.mainJolly &&
-                      [official?.P1, official?.P2, official?.P3].includes(
-                        s.mainJolly
-                      )
-                        ? 5
+                      [official?.P1, official?.P2, official?.P3].includes(s.mainJolly)
+                        ? BONUS_MAIN
                         : 0;
-                    // Totale main: usa pointsEarned se salvato, altrimenti somma singoli
-                    const totalMainPts =
+
+                    const j2Pts =
+                      s.mainJolly2 &&
+                      [official?.P1, official?.P2, official?.P3].includes(s.mainJolly2)
+                        ? BONUS_MAIN
+                        : 0;
+
+                    const totalMain =
                       s.pointsEarned !== undefined
                         ? s.pointsEarned
                         : official
-                        ? p1Pts + p2Pts + p3Pts + jmp
+                        ? p1Pts + p2Pts + p3Pts + j1Pts + j2Pts
                         : "-";
 
-                    // PUNTI “SINGOLI” SPRINT
+                    /* -------- punti sprint -------- */
                     let sp1Pts = 0,
                       sp2Pts = 0,
                       sp3Pts = 0,
-                      jsp = 0,
-                      totalSprintPts = null;
+                      jspPts = 0,
+                      totalSprint = null;
+
                     if (hasSprint) {
                       sp1Pts = s.sprintP1 === official?.SP1 ? 8 : 0;
                       sp2Pts = s.sprintP2 === official?.SP2 ? 6 : 0;
                       sp3Pts = s.sprintP3 === official?.SP3 ? 4 : 0;
-                      // Jolly sprint vale 2 se è in TOP 3 Sprint
-                      jsp =
+                      jspPts =
                         s.sprintJolly &&
-                        [official?.SP1, official?.SP2, official?.SP3].includes(
-                          s.sprintJolly
-                        )
+                        [official?.SP1, official?.SP2, official?.SP3].includes(s.sprintJolly)
                           ? 2
                           : 0;
-                      totalSprintPts =
+                      totalSprint =
                         s.pointsEarnedSprint !== undefined
                           ? s.pointsEarnedSprint
                           : official
-                          ? sp1Pts + sp2Pts + sp3Pts + jsp
+                          ? sp1Pts + sp2Pts + sp3Pts + jspPts
                           : "-";
                     }
 
-                    // Nome utente
                     const userName = s.user || rankingMap[s.id] || s.id;
+
+                    /* cella helper con badge */
+                    const Cell = ({ pick, pts }) => (
+                      <td className="text-center">
+                        {pick ? (
+                          <>
+                            {pick}{" "}
+                            <Badge bg={pts > 0 ? "success" : "danger"} pill>
+                              {pts}
+                            </Badge>
+                          </>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                    );
 
                     return (
                       <tr key={s.id}>
                         <td className="text-center">{idx + 1}</td>
                         <td>{userName}</td>
 
-                        {/* MAIN PICKS */}
-                        <td className="text-center">
-                          {s.mainP1 ? (
-                            <>
-                              {s.mainP1}{" "}
-                              <Badge
-                                bg={p1Pts > 0 ? "success" : "danger"}
-                                pill
-                              >
-                                {p1Pts}
-                              </Badge>
-                            </>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td className="text-center">
-                          {s.mainP2 ? (
-                            <>
-                              {s.mainP2}{" "}
-                              <Badge
-                                bg={p2Pts > 0 ? "success" : "danger"}
-                                pill
-                              >
-                                {p2Pts}
-                              </Badge>
-                            </>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td className="text-center">
-                          {s.mainP3 ? (
-                            <>
-                              {s.mainP3}{" "}
-                              <Badge
-                                bg={p3Pts > 0 ? "success" : "danger"}
-                                pill
-                              >
-                                {p3Pts}
-                              </Badge>
-                            </>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td className="text-center">
-                          {s.mainJolly ? (
-                            <>
-                              {s.mainJolly}{" "}
-                              <Badge
-                                bg={jmp > 0 ? "success" : "danger"}
-                                pill
-                              >
-                                {jmp}
-                              </Badge>
-                            </>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
+                        {/* columna main */}
+                        <Cell pick={s.mainP1} pts={p1Pts} />
+                        <Cell pick={s.mainP2} pts={p2Pts} />
+                        <Cell pick={s.mainP3} pts={p3Pts} />
+                        <Cell pick={s.mainJolly}  pts={j1Pts} />
+                        <Cell pick={s.mainJolly2} pts={j2Pts} />
 
-                        {/* SPRINT PICKS */}
+                        {/* colonne sprint */}
                         {hasSprint && (
                           <>
-                            <td className="text-center">
-                              {s.sprintP1 ? (
-                                <>
-                                  {s.sprintP1}{" "}
-                                  <Badge
-                                    bg={sp1Pts > 0 ? "success" : "danger"}
-                                    pill
-                                  >
-                                    {sp1Pts}
-                                  </Badge>
-                                </>
-                              ) : (
-                                "—"
-                              )}
-                            </td>
-                            <td className="text-center">
-                              {s.sprintP2 ? (
-                                <>
-                                  {s.sprintP2}{" "}
-                                  <Badge
-                                    bg={sp2Pts > 0 ? "success" : "danger"}
-                                    pill
-                                  >
-                                    {sp2Pts}
-                                  </Badge>
-                                </>
-                              ) : (
-                                "—"
-                              )}
-                            </td>
-                            <td className="text-center">
-                              {s.sprintP3 ? (
-                                <>
-                                  {s.sprintP3}{" "}
-                                  <Badge
-                                    bg={sp3Pts > 0 ? "success" : "danger"}
-                                    pill
-                                  >
-                                    {sp3Pts}
-                                  </Badge>
-                                </>
-                              ) : (
-                                "—"
-                              )}
-                            </td>
-                            <td className="text-center">
-                              {s.sprintJolly ? (
-                                <>
-                                  {s.sprintJolly}{" "}
-                                  <Badge
-                                    bg={jsp > 0 ? "success" : "danger"}
-                                    pill
-                                  >
-                                    {jsp}
-                                  </Badge>
-                                </>
-                              ) : (
-                                "—"
-                              )}
-                            </td>
+                            <Cell pick={s.sprintP1} pts={sp1Pts} />
+                            <Cell pick={s.sprintP2} pts={sp2Pts} />
+                            <Cell pick={s.sprintP3} pts={sp3Pts} />
+                            <Cell pick={s.sprintJolly} pts={jspPts} />
                           </>
                         )}
 
-                        {/* TOTALI MAIN / SPRINT */}
-                        <td className="text-center">
-                          {typeof totalMainPts === "number" ? (
-                            <span
-                              style={{
-                                color: totalMainPts > 0 ? "green" : "red",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              {totalMainPts}
-                            </span>
-                          ) : (
-                            totalMainPts
-                          )}
+                        {/* totali */}
+                        <td className="text-center fw-bold" style={{ color: totalMain > 0 ? "green" : "red" }}>
+                          {totalMain}
                         </td>
                         {hasSprint && (
-                          <td className="text-center">
-                            {typeof totalSprintPts === "number" ? (
-                              <span
-                                style={{
-                                  color: totalSprintPts > 0 ? "green" : "red",
-                                  fontWeight: "bold",
-                                }}
-                              >
-                                {totalSprintPts}
-                              </span>
-                            ) : (
-                              totalSprintPts
-                            )}
+                          <td className="text-center fw-bold" style={{ color: totalSprint > 0 ? "green" : "red" }}>
+                            {totalSprint}
                           </td>
                         )}
                       </tr>
