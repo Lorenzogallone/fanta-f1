@@ -22,7 +22,6 @@ import {
   updateDoc,
   onSnapshot,
   getDoc,
-  serverTimestamp,
   increment,
   Timestamp,
 } from "firebase/firestore";
@@ -254,7 +253,6 @@ export default function FormationApp() {
     const me = ranking.find(u=>u.id===form.userId);
     const payload = {
       userId:form.userId, user:me?.name??"",
-      submittedAt:serverTimestamp(), status:"ok",
     };
 
     if(mode==="main"){
