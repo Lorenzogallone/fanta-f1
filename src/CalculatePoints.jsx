@@ -225,9 +225,11 @@ useEffect(() => {
           (b.user||rankingMap[b.id]||b.id),"it")
         ));
         setSubs(arr);
+      // eslint-disable-next-line no-unused-vars
       }catch(e){ setErrSubs("Impossibile caricare submissions."); }
       finally   { setLoadingSubs(false); }
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[race]);
 
   /* ---------------- HANDLERS GARA ------------------- */
