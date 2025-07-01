@@ -11,7 +11,7 @@ export default function Leaderboard() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  /* live ranking */
+  {/* live ranking */}
   useEffect(() => {
     const q = query(collection(db, "ranking"), orderBy("puntiTotali", "desc"));
     const unsub = onSnapshot(q, (snap) => {
@@ -58,8 +58,8 @@ export default function Leaderboard() {
                     #
                   </th>
                   <th>Giocatore</th>
-                  <th className="text-end">Punti</th>
-                  <th className="text-end">Gap</th>
+                  <th className="text-center">Punti</th>
+                  <th className="text-center">Gap</th>
                   <th className="text-center">Jolly</th>
                 </tr>
               </thead>
@@ -74,8 +74,8 @@ export default function Leaderboard() {
                     <tr key={r.name} className={isTop3 ? "fw-bold" : ""}>
                       <td className="text-center">{medal}</td>
                       <td>{r.name}</td>
-                      <td className="text-end">{r.pts}</td>
-                      <td className="text-end">{gap}</td>
+                      <td className="text-center">{r.pts}</td>
+                      <td className="text-center">{gap}</td>
                       <td className="text-center">
                         <Badge bg={r.jolly ? "success" : "secondary"}>
                           {r.jolly}
