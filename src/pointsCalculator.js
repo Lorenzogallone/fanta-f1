@@ -103,10 +103,8 @@ export async function calculatePointsForRace(raceId, official) {
     }
 
     /* ------ regola speciale 29 → 30 + jolly extra -------------- */
-    let totalDay = mainPts + sprintPts;
-    if (totalDay === 29) {
+    if (mainPts === 29) {
       mainPts += 1;
-      totalDay = 30;
       batchWrites.push(
         updateDoc(doc(db, "ranking", userId), { jolly: increment(1) })
       );
@@ -116,7 +114,6 @@ export async function calculatePointsForRace(raceId, official) {
     if (doublePoints) {
       mainPts   *= 2;
       sprintPts *= 2;
-      totalDay  *= 2;
     }
 
     /* ------ salva nella singola SUBMISSION -------------------- */
