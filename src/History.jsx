@@ -197,6 +197,7 @@ function RaceCard({ race }) {
     })();
   }, [race.id, rankingMap]);
 
+  const hasJolly2 = subs.some(s => s.mainJolly2);
   const official = race.officialResults ?? null;
   const hasSprint = Boolean(official?.SP1);
   const doublePts = Boolean(official?.doublePoints);
@@ -341,13 +342,15 @@ function RaceCard({ race }) {
               <Table striped bordered hover size="sm" className="align-middle">
                 <thead className="table-light">
                   <tr>
-                    <th style={{ width: 40 }} className="text-danger">#</th>
-                    <th className="text-danger">Utente</th>
+                    <th style={{ width: 40 }} className="text-center text-danger">#</th>
+                    <th className="text-center text-danger">Utente</th>
                     <th className="text-center text-danger">P1 <small>(Pts)</small></th>
                     <th className="text-center text-danger">P2 <small>(Pts)</small></th>
                     <th className="text-center text-danger">P3 <small>(Pts)</small></th>
                     <th className="text-center text-danger">Jolly 1 <small>(Pts)</small></th>
-                    <th className="text-center text-danger">Jolly 2 <small>(Pts)</small></th>
+                    {hasJolly2 && (
+                      <th className="text-center text-danger">Jolly 2 <small>(Pts)</small></th>
+                    )}
                     {hasSprint && (
                       <>
                         <th className="text-center text-danger">SP1 <small>(Pts)</small></th>
@@ -419,7 +422,7 @@ function RaceCard({ race }) {
                         {pick ? (
                           <>
                             {pick}{" "}
-                            <Badge bg={pts > 0 ? "success" : "danger"} pill>
+                            <Badge bg={pts > 0 ? "success" : "secondary"} pill>
                               {pts}
                             </Badge>
                           </>
@@ -431,15 +434,15 @@ function RaceCard({ race }) {
 
                     return (
                       <tr key={s.id}>
-                        <td className="text-center">{idx + 1}</td>
-                        <td>{userName}</td>
+                        <td className="text-center text-center">{idx + 1}</td>
+                        <td className="text-center text-center">{userName}</td>
 
                         {/* columna main */}
                         <Cell pick={s.mainP1} pts={p1Pts} />
                         <Cell pick={s.mainP2} pts={p2Pts} />
                         <Cell pick={s.mainP3} pts={p3Pts} />
                         <Cell pick={s.mainJolly}  pts={j1Pts} />
-                        <Cell pick={s.mainJolly2} pts={j2Pts} />
+                        {hasJolly2 && <Cell pick={s.mainJolly2} pts={j2Pts} />}
 
                         {/* colonne sprint */}
                         {hasSprint && (

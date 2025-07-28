@@ -230,6 +230,7 @@ export default function ChampionshipForm() {
         setIsEdit(false);
       }
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.userId]);
 
   const onSel = (selected, field) =>

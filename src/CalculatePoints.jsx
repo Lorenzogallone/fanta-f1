@@ -349,6 +349,7 @@ useEffect(() => {
   const calcMainPts = s=>{
     if(!official) return null;
     let pts=0;
+    if (!s.mainP1 && !s.mainP2 && !s.mainP3) return -3;
     if(s.mainP1===official.P1) pts+=PTS_MAIN[1];
     if(s.mainP2===official.P2) pts+=PTS_MAIN[2];
     if(s.mainP3===official.P3) pts+=PTS_MAIN[3];
@@ -360,6 +361,7 @@ useEffect(() => {
   };
   const calcSprintPts = s=>{
     if(!official?.SP1) return null;
+    if (!s.sprintP1 && !s.sprintP2 && !s.sprintP3) return -3;
     let pts=0;
     if(s.sprintP1===official.SP1) pts+=PTS_SPRINT[1];
     if(s.sprintP2===official.SP2) pts+=PTS_SPRINT[2];
@@ -506,7 +508,8 @@ useEffect(() => {
                           <Table size="sm" striped bordered hover className="align-middle">
                             <thead className="table-light">
                               <tr>
-                                <th>#</th><th>Utente</th>
+                                <th className="text-center">#</th>
+                                <th className="text-center">Utente</th>
                                 <th className="text-center">P1</th>
                                 <th className="text-center">P2</th>
                                 <th className="text-center">P3</th>
@@ -536,7 +539,8 @@ useEffect(() => {
 
                                 return (
                                   <tr key={s.id}>
-                                    <td>{idx+1}</td><td>{uname}</td>
+                                    <td className="text-center">{idx+1}</td>
+                                    <td className="text-center">{uname}</td>
                                     {cell(s.mainP1, s.mainP1===official?.P1 ? PTS_MAIN[1] : 0)}
                                     {cell(s.mainP2, s.mainP2===official?.P2 ? PTS_MAIN[2] : 0)}
                                     {cell(s.mainP3, s.mainP3===official?.P3 ? PTS_MAIN[3] : 0)}
