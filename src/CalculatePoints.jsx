@@ -265,10 +265,8 @@ useEffect(() => {
         savedAt:Timestamp.now()
       },{merge:true});
       setMsgChamp({variant:"info",msg:"Risultati salvati. Calcolo in corso…"});
-      const res = await calculateChampionshipPoints(
-        [formChamp.CP1.value,formChamp.CP2.value,formChamp.CP3.value],
-        [formChamp.CC1.value,formChamp.CC2.value,formChamp.CC3.value]
-      );
+      // La funzione legge i risultati da Firestore (appena salvati sopra)
+      const res = await calculateChampionshipPoints();
       setMsgChamp({variant:"success",msg:res});
     }catch(err){
       console.error(err);
