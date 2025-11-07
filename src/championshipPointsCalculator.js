@@ -59,6 +59,19 @@ export async function calculateChampionshipPoints() {
     if (costruttoriPicks[1] === C2) costruttoriPoints += PTS_MAIN[2]; // 10 punti
     if (costruttoriPicks[2] === C3) costruttoriPoints += PTS_MAIN[3]; //  7 punti
 
+    // 4️⃣bis  🌟 REGOLA SPECIALE: 29 → 30 + jolly extra per PILOTI
+    let jollyBonus = 0;
+    if (pilotiPoints === 29) {
+      pilotiPoints += 1;      // 29 → 30
+      jollyBonus += 1;        // +1 jolly accumulato
+    }
+
+    // 4️⃣ter  🌟 REGOLA SPECIALE: 29 → 30 + jolly extra per COSTRUTTORI
+    if (costruttoriPoints === 29) {
+      costruttoriPoints += 1;  // 29 → 30
+      jollyBonus += 1;         // +1 jolly accumulato
+    }
+
     // 5️⃣  Totale punti campionato (piloti + costruttori)
     const totalChampionshipPoints = pilotiPoints + costruttoriPoints;
 
@@ -66,12 +79,19 @@ export async function calculateChampionshipPoints() {
     const prevPts = data.championshipPts ?? 0;
     const delta = totalChampionshipPoints - prevPts;
 
-    // 7️⃣  Aggiornamento ranking
+    // 7️⃣  Aggiornamento ranking (include jolly se necessario)
+    const updateData = {
+      championshipPts: totalChampionshipPoints,
+      puntiTotali: increment(delta),
+    };
+
+    // Aggiungi jolly bonus se applicabile
+    if (jollyBonus > 0) {
+      updateData.jolly = increment(jollyBonus);
+    }
+
     writes.push(
-      updateDoc(doc(db, "ranking", userId), {
-        championshipPts: totalChampionshipPoints,
-        puntiTotali: increment(delta),
-      })
+      updateDoc(doc(db, "ranking", userId), updateData)
     );
   }
 
