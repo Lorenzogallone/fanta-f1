@@ -5,94 +5,25 @@ import {
   Row, Col, Badge, Tab, Nav, Table
 } from "react-bootstrap";
 import {
-  collection, query, orderBy, getDocs, 
+  collection, query, orderBy, getDocs,
   doc, setDoc, getDoc, Timestamp
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { isLastRace, calculatePointsForRace } from "./pointsCalculator";
 import { calculateChampionshipPoints } from "./championshipPointsCalculator";
+import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS, POINTS } from "./constants/racing";
 import Select from "react-select";
 import "./customSelect.css";
 
-/* ---------- liste base (copia uguali) ---------- */
-/* — liste piloti e costruttori — */
-const drivers = [
-  "Max Verstappen",
-  "Yuki Tsunoda",
-  "Charles Leclerc",
-  "Lewis Hamilton",
-  "George Russell",
-  "Andrea Kimi Antonelli",
-  "Lando Norris",
-  "Oscar Piastri",
-  "Fernando Alonso",
-  "Lance Stroll",
-  "Pierre Gasly",
-  "Franco Colapinto",
-  "Oliver Bearman",
-  "Esteban Ocon",
-  "Nico Hülkenberg",
-  "Gabriel Bortoleto",
-  "Liam Lawson",
-  "Isack Hadjar",
-  "Alexander Albon",
-  "Carlos Sainz Jr.",
-];
-
-const constructors = [
-  "Red Bull",
-  "Ferrari",
-  "Mercedes",
-  "McLaren",
-  "Aston Martin",
-  "Alpine",
-  "Haas",
-  "Sauber",
-  "Vcarb",
-  "Williams",
-];
-
-const driverTeam = {
-  "Max Verstappen": "Red Bull",
-  "Yuki Tsunoda": "Red Bull",
-  "Charles Leclerc": "Ferrari",
-  "Lewis Hamilton": "Ferrari",
-  "George Russell": "Mercedes",
-  "Andrea Kimi Antonelli": "Mercedes",
-  "Lando Norris": "McLaren",
-  "Oscar Piastri": "McLaren",
-  "Fernando Alonso": "Aston Martin",
-  "Lance Stroll": "Aston Martin",
-  "Pierre Gasly": "Alpine",
-  "Franco Colapinto": "Alpine",
-  "Oliver Bearman": "Haas",
-  "Esteban Ocon": "Haas",
-  "Nico Hülkenberg": "Sauber",
-  "Gabriel Bortoleto": "Sauber",
-  "Liam Lawson": "Vcarb",
-  "Isack Hadjar": "Vcarb",
-  "Alexander Albon": "Williams",
-  "Carlos Sainz Jr.": "Williams",
-};
-
-const teamLogos = {
-  Ferrari: "/ferrari.png",
-  Mercedes: "/mercedes.png",
-  "Red Bull": "/redbull.png",
-  McLaren: "/mclaren.png",
-  "Aston Martin": "/aston.png",
-  Alpine: "/alpine.png",
-  Haas: "/haas.png",
-  Williams: "/williams.png",
-  Sauber: "/sauber.png",
-  Vcarb: "/vcarb.png",
-};
-
-/* ---------- costanti punteggio ---------- */
-const PTS_MAIN   = { 1: 12, 2: 10, 3: 7 };
-const PTS_SPRINT = { 1:  8, 2:  6, 3: 4 };
-const BONUS_JOLLY_MAIN   = 5;
-const BONUS_JOLLY_SPRINT = 2;
+/* ---------- costanti importate da file centralizzato ---------- */
+const drivers = DRIVERS;
+const constructors = CONSTRUCTORS;
+const driverTeam = DRIVER_TEAM;
+const teamLogos = TEAM_LOGOS;
+const PTS_MAIN = POINTS.MAIN;
+const PTS_SPRINT = POINTS.SPRINT;
+const BONUS_JOLLY_MAIN = POINTS.BONUS_JOLLY_MAIN;
+const BONUS_JOLLY_SPRINT = POINTS.BONUS_JOLLY_SPRINT;
 
 /* ---------- badge util ---------- */
 const DeadlineBadge = ({ open }) => (

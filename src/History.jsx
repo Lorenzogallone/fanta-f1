@@ -3,7 +3,7 @@
    -----------------------------------------------------------------------
    • Mostra tutte le gare concluse con risultati, formazioni e punteggi
    • Tema bianco e rosso
-   • Badge “punti singoli” in verde (se > 0) o rosso (se = 0)
+   • Badge "punti singoli" in verde (se > 0) o rosso (se = 0)
    • Totali (Main/Sprint) in semplice testo colorato, senza sfondo nero
    • Aggiunti loghi delle scuderie nella classifica ufficiale
 ---------------------------------------------------------------------------*/
@@ -27,43 +27,12 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { DRIVER_TEAM, TEAM_LOGOS, POINTS } from "./constants/racing";
+import { calculateDetailedMainPoints, calculateDetailedSprintPoints } from "./utils/pointsCalculation";
 
-/* — mapping pilota → scuderia — */
-const driverTeam = {
-  "Lando Norris":             "McLaren",
-  "Oscar Piastri":            "McLaren",
-  "Charles Leclerc":          "Ferrari",
-  "Lewis Hamilton":           "Ferrari",
-  "Max Verstappen":           "Red Bull",
-  "George Russell":           "Mercedes",
-  "Andrea Kimi Antonelli":    "Mercedes",
-  "Fernando Alonso":          "Aston Martin",
-  "Lance Stroll":             "Aston Martin",
-  "Pierre Gasly":             "Alpine",
-  "Franco Colapinto":         "Alpine",
-  "Oliver Bearman":           "Haas",
-  "Esteban Ocon":             "Haas",
-  "Nico Hülkenberg":          "Sauber",
-  "Gabriel Bortoleto":        "Sauber",
-  "Liam Lawson":              "Vcarb",
-  "Isack Hadjar":             "Vcarb",
-  "Alexander Albon":          "Williams",
-  "Carlos Sainz Jr.":         "Williams",
-};
-
-/* — mapping scuderia → percorso logo in /public — */
-const teamLogos = {
-  Ferrari:        "/ferrari.png",
-  Mercedes:       "/mercedes.png",
-  "Red Bull":     "/redbull.png",
-  McLaren:        "/mclaren.png",
-  "Aston Martin": "/aston.png",
-  Alpine:         "/alpine.png",
-  Haas:           "/haas.png",
-  Williams:       "/williams.png",
-  Sauber:         "/sauber.png",
-  Vcarb:          "/vcarb.png",
-};
+/* — costanti importate da file centralizzato — */
+const driverTeam = DRIVER_TEAM;
+const teamLogos = TEAM_LOGOS;
 
 /**
  * Visualizza nome del pilota con logo della scuderia, se disponibile.
@@ -201,7 +170,7 @@ function RaceCard({ race }) {
   const official = race.officialResults ?? null;
   const hasSprint = Boolean(official?.SP1);
   const doublePts = Boolean(official?.doublePoints);
-  const BONUS_MAIN = 5
+  const BONUS_MAIN = POINTS.BONUS_JOLLY_MAIN;
 
   const DoubleBadge = () =>
     doublePts ? (
@@ -252,21 +221,21 @@ function RaceCard({ race }) {
                   <td>
                     <DriverWithLogo name={official.P1} />
                   </td>
-                  <td className="text-end text-success">12</td>
+                  <td className="text-end text-success">{POINTS.MAIN[1]}</td>
                 </tr>
                 <tr>
                   <td>2°</td>
                   <td>
                     <DriverWithLogo name={official.P2} />
                   </td>
-                  <td className="text-end text-success">10</td>
+                  <td className="text-end text-success">{POINTS.MAIN[2]}</td>
                 </tr>
                 <tr>
                   <td>3°</td>
                   <td>
                     <DriverWithLogo name={official.P3} />
                   </td>
-                  <td className="text-end text-success">8</td>
+                  <td className="text-end text-success">{POINTS.MAIN[3]}</td>
                 </tr>
               </tbody>
             </Table>
@@ -299,21 +268,21 @@ function RaceCard({ race }) {
                       <td>
                         <DriverWithLogo name={official.SP1} />
                       </td>
-                      <td className="text-end text-success">8</td>
+                      <td className="text-end text-success">{POINTS.SPRINT[1]}</td>
                     </tr>
                     <tr>
                       <td>SP2°</td>
                       <td>
                         <DriverWithLogo name={official.SP2} />
                       </td>
-                      <td className="text-end text-success">6</td>
+                      <td className="text-end text-success">{POINTS.SPRINT[2]}</td>
                     </tr>
                     <tr>
                       <td>SP3°</td>
                       <td>
                         <DriverWithLogo name={official.SP3} />
                       </td>
-                      <td className="text-end text-success">4</td>
+                      <td className="text-end text-success">{POINTS.SPRINT[3]}</td>
                     </tr>
                   </tbody>
                 </Table>

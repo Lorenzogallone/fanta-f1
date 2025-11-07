@@ -1,4 +1,4 @@
-// src/FormationApp.jsx – look & feel “light paddock” with logos in dropdown
+// src/FormationApp.jsx – look & feel "light paddock" with logos in dropdown
 import React, { useState, useEffect } from "react";
 import {
   Container,
@@ -28,69 +28,13 @@ import {
 import Select from "react-select";
 import { db } from "./firebase";
 import SubmissionsList from "./SubmissionsList";
+import { DRIVERS, DRIVER_TEAM, TEAM_LOGOS } from "./constants/racing";
 import "./customSelect.css";
 
-/* --- piloti --------------------------------------------------------- */
-const drivers = [
-  "Lando Norris",
-  "Oscar Piastri",
-  "Max Verstappen",
-  "Charles Leclerc",
-  "Lewis Hamilton",
-  "George Russell",
-  "Andrea Kimi Antonelli",
-  "Yuki Tsunoda",
-  "Fernando Alonso",
-  "Lance Stroll",
-  "Pierre Gasly",
-  "Franco Colapinto",
-  "Oliver Bearman",
-  "Esteban Ocon",
-  "Nico Hülkenberg",
-  "Gabriel Bortoleto",
-  "Liam Lawson",
-  "Isack Hadjar",
-  "Alexander Albon",
-  "Carlos Sainz Jr.",
-];
-
-/* --- mapping driver → scuderia ------------------------------------- */
-const driverTeam = {
-  "Max Verstappen": "Red Bull",
-  "Yuki Tsunoda": "Red Bull",
-  "Charles Leclerc": "Ferrari",
-  "Lewis Hamilton": "Ferrari",
-  "George Russell": "Mercedes",
-  "Andrea Kimi Antonelli": "Mercedes",
-  "Lando Norris": "McLaren",
-  "Oscar Piastri": "McLaren",
-  "Fernando Alonso": "Aston Martin",
-  "Lance Stroll": "Aston Martin",
-  "Pierre Gasly": "Alpine",
-  "Franco Colapinto": "Alpine",
-  "Oliver Bearman": "Haas",
-  "Esteban Ocon": "Haas",
-  "Nico Hülkenberg": "Sauber",
-  "Gabriel Bortoleto": "Sauber",
-  "Liam Lawson": "Vcarb",
-  "Isack Hadjar": "Vcarb",
-  "Alexander Albon": "Williams",
-  "Carlos Sainz Jr.": "Williams",
-};
-
-/* --- mapping scuderia → percorso logo in /public ------------------- */
-const teamLogos = {
-  Ferrari: "/ferrari.png",
-  Mercedes: "/mercedes.png",
-  "Red Bull": "/redbull.png",
-  McLaren: "/mclaren.png",
-  "Aston Martin": "/aston.png",
-  Alpine: "/alpine.png",
-  Haas: "/haas.png",
-  Williams: "/williams.png",
-  Sauber: "/sauber.png",
-  Vcarb: "/vcarb.png",
-};
+/* --- costanti importate da file centralizzato ---------------------- */
+const drivers = DRIVERS;
+const driverTeam = DRIVER_TEAM;
+const teamLogos = TEAM_LOGOS;
 
 const driverOpts = drivers.map((d) => ({
   value: d,
