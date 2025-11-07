@@ -439,6 +439,7 @@ function FormationsManager() {
   const [selectedUser, setSelectedUser] = useState("");
   const [selectedRace, setSelectedRace] = useState(null);
   const [existingFormation, setExistingFormation] = useState(null);
+  const [racesWithFormations, setRacesWithFormations] = useState(new Set());
 
   const [formData, setFormData] = useState({
     mainP1: null,
@@ -477,6 +478,37 @@ function FormationsManager() {
       setLoading(false);
     }
   };
+
+  // Carica lo stato delle formazioni e seleziona automaticamente la prima gara senza formazione
+  useEffect(() => {
+    if (!selectedUser || races.length === 0) return;
+
+    (async () => {
+      const racesWithForms = new Set();
+      let firstRaceWithoutForm = null;
+
+      // Controlla tutte le gare per vedere quali hanno formazioni
+      for (const race of races) {
+        const formDoc = await getDoc(
+          doc(db, "races", race.id, "submissions", selectedUser)
+        );
+        if (formDoc.exists()) {
+          racesWithForms.add(race.id);
+        } else if (!firstRaceWithoutForm) {
+          firstRaceWithoutForm = race;
+        }
+      }
+
+      setRacesWithFormations(racesWithForms);
+
+      // Seleziona automaticamente la prima gara senza formazione, o la prima se tutte hanno formazioni
+      if (firstRaceWithoutForm) {
+        setSelectedRace(firstRaceWithoutForm);
+      } else if (races.length > 0 && !selectedRace) {
+        setSelectedRace(races[0]);
+      }
+    })();
+  }, [selectedUser, races]);
 
   // Carica formazione esistente quando seleziono utente + gara
   useEffect(() => {
@@ -678,6 +710,9 @@ function FormationsManager() {
       });
       setTouched(false);
 
+      // Aggiorna il set delle gare con formazioni
+      setRacesWithFormations(prev => new Set([...prev, selectedRace.id]));
+
       // Ricarica la formazione
       await loadFormation();
 
@@ -751,13 +786,28 @@ function FormationsManager() {
                   required
                 >
                   <option value="">Seleziona gara</option>
-                  {races.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.round}. {r.name}
-                      {r.qualiSprintUTC ? " (Sprint)" : ""}
-                    </option>
-                  ))}
+                  {races.map((r) => {
+                    const hasFormation = racesWithFormations.has(r.id);
+                    const isCalculated = r.pointsCalculated;
+                    const isSprint = r.qualiSprintUTC;
+
+                    let indicators = [];
+                    if (isSprint) indicators.push("🏃");
+                    if (hasFormation) indicators.push("✓");
+                    if (isCalculated) indicators.push("📊");
+
+                    const label = `${r.round}. ${r.name}${indicators.length > 0 ? ` ${indicators.join(" ")}` : ""}`;
+
+                    return (
+                      <option key={r.id} value={r.id}>
+                        {label}
+                      </option>
+                    );
+                  })}
                 </Form.Select>
+                <Form.Text className="text-muted">
+                  🏃 = Sprint | ✓ = Formazione inserita | 📊 = Punti calcolati
+                </Form.Text>
               </Form.Group>
 
               {selectedUser && selectedRace && (
@@ -1109,6 +1159,78 @@ function DatabaseReset() {
   const [resetting, setResetting] = useState(false);
   const [message, setMessage] = useState(null);
   const [confirmText, setConfirmText] = useState("");
+  const [backingUp, setBackingUp] = useState(false);
+
+  const handleBackup = async () => {
+    setBackingUp(true);
+    setMessage(null);
+
+    try {
+      const backup = {
+        timestamp: new Date().toISOString(),
+        version: "1.0",
+        data: {}
+      };
+
+      // Backup ranking
+      const rankingSnap = await getDocs(collection(db, "ranking"));
+      backup.data.ranking = {};
+      rankingSnap.docs.forEach(doc => {
+        backup.data.ranking[doc.id] = doc.data();
+      });
+
+      // Backup races con submissions
+      const racesSnap = await getDocs(collection(db, "races"));
+      backup.data.races = {};
+
+      for (const raceDoc of racesSnap.docs) {
+        const raceData = raceDoc.data();
+        backup.data.races[raceDoc.id] = {
+          ...raceData,
+          submissions: {}
+        };
+
+        // Backup submissions per questa gara
+        const subsSnap = await getDocs(collection(db, "races", raceDoc.id, "submissions"));
+        subsSnap.docs.forEach(subDoc => {
+          backup.data.races[raceDoc.id].submissions[subDoc.id] = subDoc.data();
+        });
+      }
+
+      // Backup championship
+      try {
+        const champDoc = await getDoc(doc(db, "championship", "results"));
+        if (champDoc.exists()) {
+          backup.data.championship = champDoc.data();
+        }
+      } catch (e) {
+        // Championship potrebbe non esistere ancora
+        backup.data.championship = null;
+      }
+
+      // Crea il file JSON e scaricalo
+      const jsonString = JSON.stringify(backup, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `fanta-f1-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setMessage({
+        type: "success",
+        text: `✔️ Backup completato! File scaricato con ${Object.keys(backup.data.ranking).length} partecipanti e ${Object.keys(backup.data.races).length} gare.`
+      });
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: "danger", text: "❌ Errore durante la creazione del backup: " + err.message });
+    } finally {
+      setBackingUp(false);
+    }
+  };
 
   const handleReset = async () => {
     if (confirmText !== "RESET") {
@@ -1188,13 +1310,36 @@ function DatabaseReset() {
     <>
       <Row className="g-4">
         <Col xs={12}>
+          <Card className="shadow border-success mb-4">
+            <Card.Header className="bg-success text-white">
+              <h5 className="mb-0">💾 Backup Database</h5>
+            </Card.Header>
+            <Card.Body>
+              <p>Scarica una copia completa del database in formato JSON. Include tutti i partecipanti, gare, formazioni e risultati.</p>
+              <Button
+                variant="success"
+                onClick={handleBackup}
+                disabled={backingUp}
+                className="w-100"
+              >
+                {backingUp ? (
+                  <>
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    Creazione backup...
+                  </>
+                ) : (
+                  "📥 Scarica Backup JSON"
+                )}
+              </Button>
+            </Card.Body>
+          </Card>
+
           <Alert variant="danger">
             <Alert.Heading>⚠️ ATTENZIONE - OPERAZIONI IRREVERSIBILI</Alert.Heading>
-            <p>Queste operazioni eliminano definitivamente i dati. Non è possibile annullare!</p>
+            <p>Le operazioni sottostanti eliminano definitivamente i dati. Non è possibile annullare!</p>
             <hr />
             <p className="mb-0">
-              <strong>Consiglio:</strong> Fai un backup prima di procedere usando{" "}
-              <code>node scripts_calendar/backup.js</code>
+              <strong>Consiglio:</strong> Crea sempre un backup prima di procedere con reset o eliminazioni.
             </p>
           </Alert>
 
