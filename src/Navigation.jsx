@@ -59,6 +59,9 @@ export default function Navigation() {
             <Nav.Link as={Link} to="/championship" onClick={handleNavClick}>
               Campionato Piloti &amp; Costruttori
             </Nav.Link>
+            <Nav.Link as={Link} to="/admin" onClick={handleNavClick} className="text-danger fw-bold">
+              ⚙️ Admin
+            </Nav.Link>
           </Nav>
         </Navbar.Collapse>
 
