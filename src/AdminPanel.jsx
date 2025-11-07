@@ -434,6 +434,7 @@ function FormationsManager() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
+  const [touched, setTouched] = useState(false); // Per mostrare errori solo dopo il primo tentativo
 
   const [selectedUser, setSelectedUser] = useState("");
   const [selectedRace, setSelectedRace] = useState(null);
@@ -538,16 +539,111 @@ function FormationsManager() {
     return driverOptions.find((opt) => opt.value === name) || null;
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault();
+  // Ottiene i piloti già selezionati nella gara principale
+  const getSelectedMainDrivers = () => {
+    const selected = [];
+    if (formData.mainP1) selected.push(formData.mainP1.value);
+    if (formData.mainP2) selected.push(formData.mainP2.value);
+    if (formData.mainP3) selected.push(formData.mainP3.value);
+    if (formData.mainJolly) selected.push(formData.mainJolly.value);
+    if (formData.mainJolly2) selected.push(formData.mainJolly2.value);
+    return selected;
+  };
 
-    if (!selectedUser || !selectedRace) {
-      setMessage({ type: "warning", text: "Seleziona utente e gara" });
-      return;
+  // Ottiene i piloti già selezionati nella sprint
+  const getSelectedSprintDrivers = () => {
+    const selected = [];
+    if (formData.sprintP1) selected.push(formData.sprintP1.value);
+    if (formData.sprintP2) selected.push(formData.sprintP2.value);
+    if (formData.sprintP3) selected.push(formData.sprintP3.value);
+    if (formData.sprintJolly) selected.push(formData.sprintJolly.value);
+    return selected;
+  };
+
+  // Filtra le opzioni disponibili per un campo main (esclude piloti già selezionati)
+  const getAvailableMainOptions = (currentField) => {
+    const selectedDrivers = getSelectedMainDrivers();
+    const currentValue = formData[currentField]?.value;
+
+    return driverOptions.filter(opt =>
+      !selectedDrivers.includes(opt.value) || opt.value === currentValue
+    );
+  };
+
+  // Filtra le opzioni disponibili per un campo sprint (esclude piloti già selezionati)
+  const getAvailableSprintOptions = (currentField) => {
+    const selectedDrivers = getSelectedSprintDrivers();
+    const currentValue = formData[currentField]?.value;
+
+    return driverOptions.filter(opt =>
+      !selectedDrivers.includes(opt.value) || opt.value === currentValue
+    );
+  };
+
+  // Validazione completa del form
+  const validateForm = () => {
+    const errors = [];
+
+    // Controlli di base
+    if (!selectedUser) errors.push("Seleziona un utente");
+    if (!selectedRace) errors.push("Seleziona una gara");
+
+    // Campi obbligatori gara principale
+    if (!formData.mainP1) errors.push("P1 è obbligatorio");
+    if (!formData.mainP2) errors.push("P2 è obbligatorio");
+    if (!formData.mainP3) errors.push("P3 è obbligatorio");
+    if (!formData.mainJolly) errors.push("Jolly è obbligatorio");
+
+    // Verifica duplicati nella gara principale
+    const mainDrivers = [
+      formData.mainP1?.value,
+      formData.mainP2?.value,
+      formData.mainP3?.value,
+      formData.mainJolly?.value,
+      formData.mainJolly2?.value
+    ].filter(Boolean);
+
+    if (new Set(mainDrivers).size !== mainDrivers.length) {
+      errors.push("Non puoi selezionare lo stesso pilota più volte nella gara principale");
     }
 
-    if (!formData.mainP1 || !formData.mainP2 || !formData.mainP3 || !formData.mainJolly) {
-      setMessage({ type: "warning", text: "Completa almeno la formazione principale" });
+    // Verifica duplicati nella sprint (se presenti selezioni)
+    if (hasSprint) {
+      const sprintDrivers = [
+        formData.sprintP1?.value,
+        formData.sprintP2?.value,
+        formData.sprintP3?.value,
+        formData.sprintJolly?.value
+      ].filter(Boolean);
+
+      if (sprintDrivers.length > 0 && new Set(sprintDrivers).size !== sprintDrivers.length) {
+        errors.push("Non puoi selezionare lo stesso pilota più volte nella sprint");
+      }
+    }
+
+    return errors;
+  };
+
+  // Controlla se un campo obbligatorio è vuoto (per feedback visivo)
+  const isFieldInvalid = (fieldName) => {
+    if (!touched || !selectedUser || !selectedRace) return false;
+
+    const requiredFields = ['mainP1', 'mainP2', 'mainP3', 'mainJolly'];
+    if (requiredFields.includes(fieldName)) {
+      return !formData[fieldName];
+    }
+    return false;
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setTouched(true);
+
+    const errors = validateForm();
+    if (errors.length > 0) {
+      setMessage({ type: "danger", text: errors.join(". ") + "." });
+      // Scroll verso l'alto per vedere il messaggio
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -578,14 +674,18 @@ function FormationsManager() {
 
       setMessage({
         type: "success",
-        text: existingFormation ? "Formazione aggiornata!" : "Formazione aggiunta!",
+        text: `✓ ${existingFormation ? "Formazione aggiornata" : "Formazione aggiunta"} con successo!`,
       });
+      setTouched(false);
 
       // Ricarica la formazione
       await loadFormation();
+
+      // Scroll verso l'alto per vedere il messaggio di successo
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error(err);
-      setMessage({ type: "danger", text: "Errore durante il salvataggio" });
+      setMessage({ type: "danger", text: "❌ Errore durante il salvataggio: " + err.message });
     } finally {
       setSaving(false);
     }
@@ -666,102 +766,126 @@ function FormationsManager() {
                   <h6 className="fw-bold">Gara Principale</h6>
 
                   <Form.Group className="mb-2">
-                    <Form.Label>P1 *</Form.Label>
+                    <Form.Label>P1 * {isFieldInvalid('mainP1') && <span className="text-danger">(obbligatorio)</span>}</Form.Label>
                     <Select
-                      options={driverOptions}
+                      options={getAvailableMainOptions('mainP1')}
                       value={formData.mainP1}
                       onChange={(sel) => setFormData({ ...formData, mainP1: sel })}
                       placeholder="Seleziona pilota"
+                      styles={isFieldInvalid('mainP1') ? {
+                        control: (base) => ({ ...base, borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)' })
+                      } : {}}
+                      noOptionsMessage={() => "Tutti i piloti sono stati selezionati"}
                     />
                   </Form.Group>
 
                   <Form.Group className="mb-2">
-                    <Form.Label>P2 *</Form.Label>
+                    <Form.Label>P2 * {isFieldInvalid('mainP2') && <span className="text-danger">(obbligatorio)</span>}</Form.Label>
                     <Select
-                      options={driverOptions}
+                      options={getAvailableMainOptions('mainP2')}
                       value={formData.mainP2}
                       onChange={(sel) => setFormData({ ...formData, mainP2: sel })}
                       placeholder="Seleziona pilota"
+                      styles={isFieldInvalid('mainP2') ? {
+                        control: (base) => ({ ...base, borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)' })
+                      } : {}}
+                      noOptionsMessage={() => "Tutti i piloti sono stati selezionati"}
                     />
                   </Form.Group>
 
                   <Form.Group className="mb-2">
-                    <Form.Label>P3 *</Form.Label>
+                    <Form.Label>P3 * {isFieldInvalid('mainP3') && <span className="text-danger">(obbligatorio)</span>}</Form.Label>
                     <Select
-                      options={driverOptions}
+                      options={getAvailableMainOptions('mainP3')}
                       value={formData.mainP3}
                       onChange={(sel) => setFormData({ ...formData, mainP3: sel })}
                       placeholder="Seleziona pilota"
+                      styles={isFieldInvalid('mainP3') ? {
+                        control: (base) => ({ ...base, borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)' })
+                      } : {}}
+                      noOptionsMessage={() => "Tutti i piloti sono stati selezionati"}
                     />
                   </Form.Group>
 
                   <Form.Group className="mb-2">
-                    <Form.Label>Jolly *</Form.Label>
+                    <Form.Label>Jolly * {isFieldInvalid('mainJolly') && <span className="text-danger">(obbligatorio)</span>}</Form.Label>
                     <Select
-                      options={driverOptions}
+                      options={getAvailableMainOptions('mainJolly')}
                       value={formData.mainJolly}
                       onChange={(sel) => setFormData({ ...formData, mainJolly: sel })}
                       placeholder="Seleziona pilota"
+                      styles={isFieldInvalid('mainJolly') ? {
+                        control: (base) => ({ ...base, borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)' })
+                      } : {}}
+                      noOptionsMessage={() => "Tutti i piloti sono stati selezionati"}
                     />
                   </Form.Group>
 
                   <Form.Group className="mb-3">
                     <Form.Label>Jolly 2 (opzionale)</Form.Label>
                     <Select
-                      options={driverOptions}
+                      options={getAvailableMainOptions('mainJolly2')}
                       value={formData.mainJolly2}
                       onChange={(sel) => setFormData({ ...formData, mainJolly2: sel })}
                       placeholder="Seleziona pilota"
                       isClearable
+                      noOptionsMessage={() => "Tutti i piloti sono stati selezionati"}
                     />
                   </Form.Group>
 
                   {hasSprint && (
                     <>
                       <hr />
-                      <h6 className="fw-bold">Sprint</h6>
+                      <h6 className="fw-bold">Sprint (opzionale)</h6>
+                      <Alert variant="info" className="py-2 small">
+                        <strong>ℹ️ Nota:</strong> Puoi usare gli stessi piloti della gara principale
+                      </Alert>
 
                       <Form.Group className="mb-2">
                         <Form.Label>SP1</Form.Label>
                         <Select
-                          options={driverOptions}
+                          options={getAvailableSprintOptions('sprintP1')}
                           value={formData.sprintP1}
                           onChange={(sel) => setFormData({ ...formData, sprintP1: sel })}
                           placeholder="Seleziona pilota"
                           isClearable
+                          noOptionsMessage={() => "Tutti i piloti sono stati selezionati nella sprint"}
                         />
                       </Form.Group>
 
                       <Form.Group className="mb-2">
                         <Form.Label>SP2</Form.Label>
                         <Select
-                          options={driverOptions}
+                          options={getAvailableSprintOptions('sprintP2')}
                           value={formData.sprintP2}
                           onChange={(sel) => setFormData({ ...formData, sprintP2: sel })}
                           placeholder="Seleziona pilota"
                           isClearable
+                          noOptionsMessage={() => "Tutti i piloti sono stati selezionati nella sprint"}
                         />
                       </Form.Group>
 
                       <Form.Group className="mb-2">
                         <Form.Label>SP3</Form.Label>
                         <Select
-                          options={driverOptions}
+                          options={getAvailableSprintOptions('sprintP3')}
                           value={formData.sprintP3}
                           onChange={(sel) => setFormData({ ...formData, sprintP3: sel })}
                           placeholder="Seleziona pilota"
                           isClearable
+                          noOptionsMessage={() => "Tutti i piloti sono stati selezionati nella sprint"}
                         />
                       </Form.Group>
 
                       <Form.Group className="mb-3">
                         <Form.Label>Jolly Sprint</Form.Label>
                         <Select
-                          options={driverOptions}
+                          options={getAvailableSprintOptions('sprintJolly')}
                           value={formData.sprintJolly}
                           onChange={(sel) => setFormData({ ...formData, sprintJolly: sel })}
                           placeholder="Seleziona pilota"
                           isClearable
+                          noOptionsMessage={() => "Tutti i piloti sono stati selezionati nella sprint"}
                         />
                       </Form.Group>
                     </>
