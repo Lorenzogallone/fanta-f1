@@ -13,6 +13,7 @@ import FormationApp     from "./FormationApp";
 import CalculatePoints  from "./CalculatePoints";
 import History          from "./History";
 import ChampionshipForm from "./ChampionshipForm";
+import AdminPanel       from "./AdminPanel";
 
 export default function App() {
   return (
@@ -27,8 +28,9 @@ export default function App() {
           <Route path="/classifica" element={<Leaderboard />} />
           <Route path="/schiera"    element={<FormationApp />} />
           <Route path="/calcola"    element={<CalculatePoints />} />
-          <Route path="/storico"    element={<History />} /> 
+          <Route path="/storico"    element={<History />} />
           <Route path="/championship" element={<ChampionshipForm />} />
+          <Route path="/admin"      element={<AdminPanel />} />
         </Routes>
       </BContainer>
     </Router>
