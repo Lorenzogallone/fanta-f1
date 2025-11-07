@@ -9,11 +9,12 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { POINTS } from "./constants/racing";
 
 /* ------------------------------------------------------------------ */
-/* Punti definiti (stessi della gara principale)                       */
+/* Punti definiti (importati da costanti centralizzate)                */
 /* ------------------------------------------------------------------ */
-const PTS_MAIN = { 1: 12, 2: 10, 3: 7 };
+const PTS_MAIN = POINTS.MAIN;
 
 /* ------------------------------------------------------------------ */
 /* Calcolo completo per la “Championship” (senza jolly, solo top 3)   */

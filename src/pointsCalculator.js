@@ -9,9 +9,10 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { POINTS } from "./constants/racing";
 
 /* ------------------------------------------------------------ *
- *  È l’ultima gara del calendario?                             *
+ *  È l'ultima gara del calendario?                             *
  * ------------------------------------------------------------ */
 export function isLastRace(racesArr, raceId) {
   if (!racesArr?.length || !raceId) return false;
@@ -20,14 +21,13 @@ export function isLastRace(racesArr, raceId) {
 }
 
 /* ------------------------------------------------------------ *
- *  Punteggi base e bonus                                       *
+ *  Costanti punteggi importate da file centralizzato           *
  * ------------------------------------------------------------ */
-const PTS_MAIN   = { 1: 12, 2: 10, 3: 7 };
-const PTS_SPRINT = { 1:  8, 2:  6, 3: 4 };
-
-const BONUS_JOLLY_MAIN   = 5;
-const BONUS_JOLLY_SPRINT = 2;
-const PENALTY_EMPTY_LIST = -3;
+const PTS_MAIN = POINTS.MAIN;
+const PTS_SPRINT = POINTS.SPRINT;
+const BONUS_JOLLY_MAIN = POINTS.BONUS_JOLLY_MAIN;
+const BONUS_JOLLY_SPRINT = POINTS.BONUS_JOLLY_SPRINT;
+const PENALTY_EMPTY_LIST = POINTS.PENALTY_EMPTY_LIST;
 
 /* ------------------------------------------------------------ *
  *  Calcolo e persistenza                                       *
