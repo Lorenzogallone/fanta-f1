@@ -23,19 +23,101 @@ import {
   deleteDoc,
   updateDoc,
   writeBatch,
+  Timestamp,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { DRIVERS } from "./constants/racing";
+import Select from "react-select";
+
+const ADMIN_PASSWORD = "SUCASOLERA";
+
+/* ==================== COMPONENTE LOGIN ==================== */
+function AdminLogin({ onSuccess }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (password === ADMIN_PASSWORD) {
+      localStorage.setItem("adminAuth", "true");
+      onSuccess();
+    } else {
+      setError(true);
+      setPassword("");
+    }
+  };
+
+  return (
+    <Container className="py-5">
+      <Row className="justify-content-center">
+        <Col xs={12} md={6} lg={4}>
+          <Card className="shadow border-danger">
+            <Card.Header className="bg-danger text-white text-center">
+              <h5 className="mb-0">🔒 Accesso Admin</h5>
+            </Card.Header>
+            <Card.Body>
+              {error && (
+                <Alert variant="danger" onClose={() => setError(false)} dismissible>
+                  Password errata!
+                </Alert>
+              )}
+              <Form onSubmit={handleSubmit}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Password</Form.Label>
+                  <Form.Control
+                    type="password"
+                    placeholder="Inserisci password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoFocus
+                  />
+                </Form.Group>
+                <Button variant="danger" type="submit" className="w-100">
+                  Accedi
+                </Button>
+              </Form>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
+  );
+}
 
 /* ==================== COMPONENTE PRINCIPALE ==================== */
 export default function AdminPanel() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState("participants");
+
+  useEffect(() => {
+    // Controlla se già autenticato
+    const auth = localStorage.getItem("adminAuth");
+    if (auth === "true") {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("adminAuth");
+    setIsAuthenticated(false);
+  };
+
+  if (!isAuthenticated) {
+    return <AdminLogin onSuccess={() => setIsAuthenticated(true)} />;
+  }
 
   return (
     <Container className="py-4">
       <Card className="shadow border-danger mb-4">
-        <Card.Header className="bg-danger text-white">
-          <h4 className="mb-0">⚙️ Pannello Amministrazione</h4>
-          <small>⚠️ Attenzione: queste operazioni sono irreversibili!</small>
+        <Card.Header className="bg-danger text-white d-flex justify-content-between align-items-center">
+          <div>
+            <h4 className="mb-0">⚙️ Pannello Amministrazione</h4>
+            <small>⚠️ Attenzione: queste operazioni sono irreversibili!</small>
+          </div>
+          <Button size="sm" variant="light" onClick={handleLogout}>
+            🔓 Esci
+          </Button>
         </Card.Header>
       </Card>
 
@@ -43,6 +125,9 @@ export default function AdminPanel() {
         <Nav variant="tabs" className="mb-4">
           <Nav.Item>
             <Nav.Link eventKey="participants">👥 Partecipanti</Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link eventKey="formations">📝 Formazioni</Nav.Link>
           </Nav.Item>
           <Nav.Item>
             <Nav.Link eventKey="calendar">📅 Calendario Gare</Nav.Link>
@@ -55,6 +140,10 @@ export default function AdminPanel() {
         <Tab.Content>
           <Tab.Pane eventKey="participants">
             <ParticipantsManager />
+          </Tab.Pane>
+
+          <Tab.Pane eventKey="formations">
+            <FormationsManager />
           </Tab.Pane>
 
           <Tab.Pane eventKey="calendar">
@@ -330,6 +419,401 @@ function ParticipantsManager() {
                   </tbody>
                 </Table>
               </div>
+            )}
+          </Card.Body>
+        </Card>
+      </Col>
+    </Row>
+  );
+}
+
+/* ==================== GESTIONE FORMAZIONI ==================== */
+function FormationsManager() {
+  const [participants, setParticipants] = useState([]);
+  const [races, setRaces] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  const [selectedUser, setSelectedUser] = useState("");
+  const [selectedRace, setSelectedRace] = useState(null);
+  const [existingFormation, setExistingFormation] = useState(null);
+
+  const [formData, setFormData] = useState({
+    mainP1: null,
+    mainP2: null,
+    mainP3: null,
+    mainJolly: null,
+    mainJolly2: null,
+    sprintP1: null,
+    sprintP2: null,
+    sprintP3: null,
+    sprintJolly: null,
+  });
+
+  // Carica partecipanti e gare
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const [partSnap, racesSnap] = await Promise.all([
+        getDocs(collection(db, "ranking")),
+        getDocs(collection(db, "races")),
+      ]);
+
+      const partList = partSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setParticipants(partList.sort((a, b) => a.name.localeCompare(b.name)));
+
+      const racesList = racesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      racesList.sort((a, b) => a.round - b.round);
+      setRaces(racesList);
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: "danger", text: "Errore caricamento dati" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Carica formazione esistente quando seleziono utente + gara
+  useEffect(() => {
+    if (!selectedUser || !selectedRace) {
+      setExistingFormation(null);
+      resetForm();
+      return;
+    }
+
+    loadFormation();
+  }, [selectedUser, selectedRace]);
+
+  const loadFormation = async () => {
+    try {
+      const formDoc = await getDoc(
+        doc(db, "races", selectedRace.id, "submissions", selectedUser)
+      );
+
+      if (formDoc.exists()) {
+        const data = formDoc.data();
+        setExistingFormation(data);
+
+        // Pre-compila il form
+        setFormData({
+          mainP1: findDriverOption(data.mainP1),
+          mainP2: findDriverOption(data.mainP2),
+          mainP3: findDriverOption(data.mainP3),
+          mainJolly: findDriverOption(data.mainJolly),
+          mainJolly2: findDriverOption(data.mainJolly2),
+          sprintP1: findDriverOption(data.sprintP1),
+          sprintP2: findDriverOption(data.sprintP2),
+          sprintP3: findDriverOption(data.sprintP3),
+          sprintJolly: findDriverOption(data.sprintJolly),
+        });
+      } else {
+        setExistingFormation(null);
+        resetForm();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      mainP1: null,
+      mainP2: null,
+      mainP3: null,
+      mainJolly: null,
+      mainJolly2: null,
+      sprintP1: null,
+      sprintP2: null,
+      sprintP3: null,
+      sprintJolly: null,
+    });
+  };
+
+  const findDriverOption = (name) => {
+    if (!name) return null;
+    return driverOptions.find((opt) => opt.value === name) || null;
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+
+    if (!selectedUser || !selectedRace) {
+      setMessage({ type: "warning", text: "Seleziona utente e gara" });
+      return;
+    }
+
+    if (!formData.mainP1 || !formData.mainP2 || !formData.mainP3 || !formData.mainJolly) {
+      setMessage({ type: "warning", text: "Completa almeno la formazione principale" });
+      return;
+    }
+
+    setSaving(true);
+    setMessage(null);
+
+    try {
+      const user = participants.find((p) => p.id === selectedUser);
+
+      const payload = {
+        user: user?.name || selectedUser,
+        userId: selectedUser,
+        mainP1: formData.mainP1.value,
+        mainP2: formData.mainP2.value,
+        mainP3: formData.mainP3.value,
+        mainJolly: formData.mainJolly.value,
+        mainJolly2: formData.mainJolly2?.value || null,
+        sprintP1: formData.sprintP1?.value || null,
+        sprintP2: formData.sprintP2?.value || null,
+        sprintP3: formData.sprintP3?.value || null,
+        sprintJolly: formData.sprintJolly?.value || null,
+        submittedAt: Timestamp.now(),
+      };
+
+      await setDoc(doc(db, "races", selectedRace.id, "submissions", selectedUser), payload, {
+        merge: true,
+      });
+
+      setMessage({
+        type: "success",
+        text: existingFormation ? "Formazione aggiornata!" : "Formazione aggiunta!",
+      });
+
+      // Ricarica la formazione
+      await loadFormation();
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: "danger", text: "Errore durante il salvataggio" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const driverOptions = DRIVERS.map((d) => ({ value: d, label: d }));
+
+  const hasSprint = Boolean(selectedRace?.qualiSprintUTC);
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <Spinner animation="border" />
+      </div>
+    );
+  }
+
+  return (
+    <Row className="g-4">
+      <Col xs={12}>
+        {message && (
+          <Alert variant={message.type} dismissible onClose={() => setMessage(null)}>
+            {message.text}
+          </Alert>
+        )}
+      </Col>
+
+      <Col xs={12} lg={6}>
+        <Card className="shadow">
+          <Card.Header className="bg-white">
+            <h5 className="mb-0">
+              {existingFormation ? "✏️ Modifica Formazione" : "➕ Aggiungi Formazione"}
+            </h5>
+          </Card.Header>
+          <Card.Body>
+            <Form onSubmit={handleSave}>
+              {/* Selezione Utente */}
+              <Form.Group className="mb-3">
+                <Form.Label>Utente *</Form.Label>
+                <Form.Select
+                  value={selectedUser}
+                  onChange={(e) => setSelectedUser(e.target.value)}
+                  required
+                >
+                  <option value="">Seleziona utente</option>
+                  {participants.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+
+              {/* Selezione Gara */}
+              <Form.Group className="mb-3">
+                <Form.Label>Gara *</Form.Label>
+                <Form.Select
+                  value={selectedRace?.id || ""}
+                  onChange={(e) => {
+                    const race = races.find((r) => r.id === e.target.value);
+                    setSelectedRace(race || null);
+                  }}
+                  required
+                >
+                  <option value="">Seleziona gara</option>
+                  {races.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.round}. {r.name}
+                      {r.qualiSprintUTC ? " (Sprint)" : ""}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+
+              {selectedUser && selectedRace && (
+                <>
+                  <hr />
+                  <h6 className="fw-bold">Gara Principale</h6>
+
+                  <Form.Group className="mb-2">
+                    <Form.Label>P1 *</Form.Label>
+                    <Select
+                      options={driverOptions}
+                      value={formData.mainP1}
+                      onChange={(sel) => setFormData({ ...formData, mainP1: sel })}
+                      placeholder="Seleziona pilota"
+                    />
+                  </Form.Group>
+
+                  <Form.Group className="mb-2">
+                    <Form.Label>P2 *</Form.Label>
+                    <Select
+                      options={driverOptions}
+                      value={formData.mainP2}
+                      onChange={(sel) => setFormData({ ...formData, mainP2: sel })}
+                      placeholder="Seleziona pilota"
+                    />
+                  </Form.Group>
+
+                  <Form.Group className="mb-2">
+                    <Form.Label>P3 *</Form.Label>
+                    <Select
+                      options={driverOptions}
+                      value={formData.mainP3}
+                      onChange={(sel) => setFormData({ ...formData, mainP3: sel })}
+                      placeholder="Seleziona pilota"
+                    />
+                  </Form.Group>
+
+                  <Form.Group className="mb-2">
+                    <Form.Label>Jolly *</Form.Label>
+                    <Select
+                      options={driverOptions}
+                      value={formData.mainJolly}
+                      onChange={(sel) => setFormData({ ...formData, mainJolly: sel })}
+                      placeholder="Seleziona pilota"
+                    />
+                  </Form.Group>
+
+                  <Form.Group className="mb-3">
+                    <Form.Label>Jolly 2 (opzionale)</Form.Label>
+                    <Select
+                      options={driverOptions}
+                      value={formData.mainJolly2}
+                      onChange={(sel) => setFormData({ ...formData, mainJolly2: sel })}
+                      placeholder="Seleziona pilota"
+                      isClearable
+                    />
+                  </Form.Group>
+
+                  {hasSprint && (
+                    <>
+                      <hr />
+                      <h6 className="fw-bold">Sprint</h6>
+
+                      <Form.Group className="mb-2">
+                        <Form.Label>SP1</Form.Label>
+                        <Select
+                          options={driverOptions}
+                          value={formData.sprintP1}
+                          onChange={(sel) => setFormData({ ...formData, sprintP1: sel })}
+                          placeholder="Seleziona pilota"
+                          isClearable
+                        />
+                      </Form.Group>
+
+                      <Form.Group className="mb-2">
+                        <Form.Label>SP2</Form.Label>
+                        <Select
+                          options={driverOptions}
+                          value={formData.sprintP2}
+                          onChange={(sel) => setFormData({ ...formData, sprintP2: sel })}
+                          placeholder="Seleziona pilota"
+                          isClearable
+                        />
+                      </Form.Group>
+
+                      <Form.Group className="mb-2">
+                        <Form.Label>SP3</Form.Label>
+                        <Select
+                          options={driverOptions}
+                          value={formData.sprintP3}
+                          onChange={(sel) => setFormData({ ...formData, sprintP3: sel })}
+                          placeholder="Seleziona pilota"
+                          isClearable
+                        />
+                      </Form.Group>
+
+                      <Form.Group className="mb-3">
+                        <Form.Label>Jolly Sprint</Form.Label>
+                        <Select
+                          options={driverOptions}
+                          value={formData.sprintJolly}
+                          onChange={(sel) => setFormData({ ...formData, sprintJolly: sel })}
+                          placeholder="Seleziona pilota"
+                          isClearable
+                        />
+                      </Form.Group>
+                    </>
+                  )}
+
+                  <Button variant="danger" type="submit" disabled={saving} className="w-100">
+                    {saving ? "Salvataggio..." : existingFormation ? "Aggiorna" : "Salva"}
+                  </Button>
+                </>
+              )}
+            </Form>
+          </Card.Body>
+        </Card>
+      </Col>
+
+      <Col xs={12} lg={6}>
+        <Card className="shadow">
+          <Card.Header className="bg-white">
+            <h5 className="mb-0">ℹ️ Info</h5>
+          </Card.Header>
+          <Card.Body>
+            <Alert variant="info">
+              <strong>Come usare:</strong>
+              <ol className="mb-0 mt-2">
+                <li>Seleziona un utente</li>
+                <li>Seleziona una gara</li>
+                <li>Compila la formazione (o modifica quella esistente)</li>
+                <li>Salva</li>
+              </ol>
+            </Alert>
+
+            {existingFormation && (
+              <Alert variant="success">
+                <strong>✓ Formazione esistente trovata</strong>
+                <br />
+                <small>
+                  Inviata il:{" "}
+                  {existingFormation.submittedAt
+                    ? new Date(existingFormation.submittedAt.seconds * 1000).toLocaleString(
+                        "it-IT"
+                      )
+                    : "—"}
+                </small>
+              </Alert>
+            )}
+
+            {selectedUser && selectedRace && !existingFormation && (
+              <Alert variant="warning">
+                <strong>⚠️ Nessuna formazione esistente</strong>
+                <br />
+                <small>Stai creando una nuova formazione per questo utente</small>
+              </Alert>
             )}
           </Card.Body>
         </Card>
