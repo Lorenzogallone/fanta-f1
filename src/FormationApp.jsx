@@ -27,7 +27,7 @@ import {
 } from "firebase/firestore";
 import Select from "react-select";
 import { db } from "./firebase";
-import SubmissionsList from "./SubmissionsList";
+import RaceHistoryCard from "./components/RaceHistoryCard";
 import { DRIVERS, DRIVER_TEAM, TEAM_LOGOS } from "./constants/racing";
 import "./customSelect.css";
 
@@ -351,13 +351,16 @@ export default function FormationApp() {
           </Card>
         </Col>
 
-        {/* ---------- LISTA ---------- */}
+        {/* ---------- LISTA FORMAZIONI ---------- */}
         <Col xs={12} lg={6}>
-          <SubmissionsList
-            raceId={race?.id}
-            hasSprint={isSprintRace}
-            refresh={refreshKey}
-          />
+          {race && (
+            <RaceHistoryCard
+              race={race}
+              showOfficialResults={false}
+              showPoints={false}
+              compact={true}
+            />
+          )}
         </Col>
       </Row>
     </Container>
