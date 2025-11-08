@@ -3,44 +3,11 @@ import React, { useState, useEffect } from "react";
 import { Card, Table, Spinner, Alert, Image } from "react-bootstrap";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
+import { DRIVER_TEAM, TEAM_LOGOS } from "./constants/racing";
 
-/* mapping driver → scuderia */
-const driverTeam = {
-  "Max Verstappen":        "Red Bull",
-  "Yuki Tsunoda":          "Red Bull",
-  "Charles Leclerc":       "Ferrari",
-  "Lewis Hamilton":        "Ferrari",
-  "George Russell":        "Mercedes",
-  "Andrea Kimi Antonelli": "Mercedes",
-  "Lando Norris":          "McLaren",
-  "Oscar Piastri":         "McLaren",
-  "Fernando Alonso":       "Aston Martin",
-  "Lance Stroll":          "Aston Martin",
-  "Pierre Gasly":          "Alpine",
-  "Franco Colapinto":      "Alpine",
-  "Oliver Bearman":        "Haas",
-  "Esteban Ocon":          "Haas",
-  "Nico Hülkenberg":       "Sauber",
-  "Gabriel Bortoleto":     "Sauber",
-  "Liam Lawson":           "Vcarb",
-  "Isack Hadjar":          "Vcarb",
-  "Alexander Albon":       "Williams",
-  "Carlos Sainz Jr.":      "Williams",
-};
-
-/* mapping scuderia → logo path in /public */
-const teamLogos = {
-  Ferrari:        "/ferrari.png",
-  Mercedes:       "/mercedes.png",
-  "Red Bull":     "/redbull.png",
-  McLaren:        "/mclaren.png",
-  "Aston Martin": "/aston.png",
-  Alpine:         "/alpine.png",
-  Haas:           "/haas.png",
-  Sauber:         "/sauber.png",
-  Vcarb:          "/vcarb.png",
-  Williams:       "/williams.png",
-};
+/* Usa costanti centralizzate */
+const driverTeam = DRIVER_TEAM;
+const teamLogos = TEAM_LOGOS;
 
 export default function ChampionshipSubmissions({ refresh }) {
   const [subs, setSubs] = useState([]);

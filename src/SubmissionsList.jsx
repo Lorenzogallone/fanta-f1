@@ -7,44 +7,11 @@ import {
   collection, query, orderBy, getDocs,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { DRIVER_TEAM, TEAM_LOGOS } from "./constants/racing";
 
-/* --- mapping driver → scuderia ------------------------------------- */
-const driverTeam = {
-  "Max Verstappen":       "Red Bull",
-  "Yuki Tsunoda":         "Red Bull",
-  "Charles Leclerc":      "Ferrari",
-  "Lewis Hamilton":       "Ferrari",
-  "George Russell":       "Mercedes",
-  "Andrea Kimi Antonelli":"Mercedes",
-  "Lando Norris":         "McLaren",
-  "Oscar Piastri":        "McLaren",
-  "Fernando Alonso":      "Aston Martin",
-  "Lance Stroll":         "Aston Martin",
-  "Pierre Gasly":         "Alpine",
-  "Franco Colapinto":     "Alpine",
-  "Oliver Bearman":       "Haas",
-  "Esteban Ocon":         "Haas",
-  "Nico Hülkenberg":      "Sauber",
-  "Gabriel Bortoleto":    "Sauber",
-  "Liam Lawson":          "Vcarb",
-  "Isack Hadjar":         "Vcarb",
-  "Alexander Albon":      "Williams",
-  "Carlos Sainz Jr.":     "Williams",
-};
-
-/* --- mapping scuderia → percorso logo in /public ------------------- */
-const teamLogos = {
-  Ferrari:       "/ferrari.png",
-  Mercedes:      "/mercedes.png",
-  "Red Bull":    "/redbull.png",
-  McLaren:       "/mclaren.png",
-  "Aston Martin":"/aston.png",
-  Alpine:        "/alpine.png",
-  Haas:          "/haas.png",
-  Williams:      "/williams.png",
-  Sauber:        "/sauber.png",
-  Vcarb:         "/vcarb.png",
-};
+/* Usa costanti centralizzate */
+const driverTeam = DRIVER_TEAM;
+const teamLogos = TEAM_LOGOS;
 
 /**
  * Restituisce JSX con logo + nome del pilota, oppure "—" se assente.

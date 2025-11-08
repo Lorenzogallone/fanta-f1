@@ -3,15 +3,16 @@ import React, { useState, useEffect } from "react";
 import { Card, Table, Spinner, Badge } from "react-bootstrap";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase";
+import { useTheme } from "./ThemeContext";
 
 const medals = ["🥇", "🥈", "🥉"];
-const accent = "#dc3545"; // Rosso Ferrari
 
 export default function Leaderboard() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { isDark } = useTheme();
 
-  {/* live ranking */}
+  /* live ranking */
   useEffect(() => {
     const q = query(collection(db, "ranking"), orderBy("puntiTotali", "desc"));
     const unsub = onSnapshot(q, (snap) => {
@@ -28,13 +29,25 @@ export default function Leaderboard() {
   }, []);
 
   const leaderPts = rows[0]?.pts ?? 0;
+  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
+  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
+  const bgHeader = isDark ? "var(--bg-tertiary)" : "#ffffff";
 
   return (
-    <Card className="shadow h-100" style={{ borderColor: accent }}>
+    <Card
+      className="shadow h-100"
+      style={{
+        borderColor: accentColor,
+        backgroundColor: bgCard,
+      }}
+    >
       <Card.Header
         as="h5"
         className="text-center fw-semibold"
-        style={{ background: "#fff", borderBottom: `2px solid ${accent}` }}
+        style={{
+          backgroundColor: bgHeader,
+          borderBottom: `2px solid ${accentColor}`,
+        }}
       >
         Classifica attuale
       </Card.Header>
@@ -50,9 +63,9 @@ export default function Leaderboard() {
               hover
               striped
               className="mb-0 align-middle"
-              style={{ borderTop: `1px solid ${accent}` }}
+              style={{ borderTop: `1px solid ${accentColor}` }}
             >
-              <thead style={{ background: "#fafafa" }}>
+              <thead>
                 <tr>
                   <th style={{ width: 60 }} className="text-center">
                     #
