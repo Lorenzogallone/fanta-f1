@@ -12,6 +12,7 @@ import { db } from "./firebase";
 import { isLastRace, calculatePointsForRace } from "./pointsCalculator";
 import { calculateChampionshipPoints } from "./championshipPointsCalculator";
 import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS, POINTS } from "./constants/racing";
+import RaceHistoryCard from "./components/RaceHistoryCard";
 import Select from "react-select";
 import "./customSelect.css";
 
@@ -397,115 +398,7 @@ useEffect(() => {
               </Col>
               {/* ---------- PREVIEW ---------- */}
               <Col xs={12} lg={10}>
-                <Card className="shadow border-danger">
-                  <Card.Body>
-                    {/* risultati ufficiali */}
-                    {official ? (
-                      <>
-                        <h6 className="fw-bold text-danger">Risultati ufficiali</h6>
-                        <Table size="sm" className="mb-3">
-                          <tbody>
-                            <tr><td>1°</td><td><DriverWithLogo name={official.P1}/></td></tr>
-                            <tr><td>2°</td><td><DriverWithLogo name={official.P2}/></td></tr>
-                            <tr><td>3°</td><td><DriverWithLogo name={official.P3}/></td></tr>
-                            {official.SP1 && (
-                              <>
-                                <tr className="table-light"><td colSpan={2} className="fw-bold">Sprint</td></tr>
-                                <tr><td>SP1°</td><td><DriverWithLogo name={official.SP1}/></td></tr>
-                                <tr><td>SP2°</td><td><DriverWithLogo name={official.SP2}/></td></tr>
-                                <tr><td>SP3°</td><td><DriverWithLogo name={official.SP3}/></td></tr>
-                              </>
-                            )}
-                          </tbody>
-                        </Table>
-                      </>
-                    ):(
-                      <Alert variant="warning">Risultati ufficiali non ancora salvati.</Alert>
-                    )}
-
-                    {/* submissions */}
-                    {loadingSubs ? (
-                      <div className="text-center"><Spinner animation="border"/></div>
-                    ) : errSubs ? (
-                      <Alert variant="danger">{errSubs}</Alert>
-                    ) : subs.length===0 ? (
-                      <Alert variant="info">Nessuna formazione inviata.</Alert>
-                    ) : (
-                      <>
-                        <h6 className="fw-bold text-danger">Submissions ({subs.length})</h6>
-                        <div className="table-responsive">
-                          <Table size="sm" striped bordered hover className="align-middle">
-                            <thead className="table-light">
-                              <tr>
-                                <th className="text-center">#</th>
-                                <th className="text-center">Utente</th>
-                                <th className="text-center">P1</th>
-                                <th className="text-center">P2</th>
-                                <th className="text-center">P3</th>
-                                <th className="text-center">Jolly</th>
-                                {official?.SP1 && (
-                                  <>
-                                    <th className="text-center">SP1</th>
-                                    <th className="text-center">SP2</th>
-                                    <th className="text-center">SP3</th>
-                                    <th className="text-center">Jolly SP</th>
-                                  </>
-                                )}
-                                <th className="text-center">Tot Main</th>
-                                {official?.SP1 && <th className="text-center">Tot Sprint</th>}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {subs.map((s,idx)=>{
-                                const uname = s.user||rankingMap[s.id]||s.id;
-                                const cell=(pick,pts)=>(
-                                  <td className="text-center">
-                                    {pick ? <>{pick} {badge(pts)}</> : "—"}
-                                  </td>
-                                );
-                                const mPts = official ? calcMainPts(s) : null;
-                                const spPts= official?.SP1 ? calcSprintPts(s) : null;
-
-                                return (
-                                  <tr key={s.id}>
-                                    <td className="text-center">{idx+1}</td>
-                                    <td className="text-center">{uname}</td>
-                                    {cell(s.mainP1, s.mainP1===official?.P1 ? PTS_MAIN[1] : 0)}
-                                    {cell(s.mainP2, s.mainP2===official?.P2 ? PTS_MAIN[2] : 0)}
-                                    {cell(s.mainP3, s.mainP3===official?.P3 ? PTS_MAIN[3] : 0)}
-                                    {cell(s.mainJolly,
-                                      s.mainJolly && [official?.P1,official?.P2,official?.P3]
-                                      .includes(s.mainJolly) ? BONUS_JOLLY_MAIN : 0)}
-                                    {official?.SP1 && (
-                                      <>
-                                        {cell(s.sprintP1, s.sprintP1===official?.SP1 ? PTS_SPRINT[1] : 0)}
-                                        {cell(s.sprintP2, s.sprintP2===official?.SP2 ? PTS_SPRINT[2] : 0)}
-                                        {cell(s.sprintP3, s.sprintP3===official?.SP3 ? PTS_SPRINT[3] : 0)}
-                                        {cell(s.sprintJolly,
-                                          s.sprintJolly && [official?.SP1,official?.SP2,official?.SP3]
-                                          .includes(s.sprintJolly) ? BONUS_JOLLY_SPRINT : 0)}
-                                      </>
-                                    )}
-                                    <td className="text-center fw-bold"
-                                        style={{color:mPts>0?"green":"red"}}>
-                                      {mPts ?? "—"}
-                                    </td>
-                                    {official?.SP1 && (
-                                      <td className="text-center fw-bold"
-                                          style={{color:spPts>0?"green":"red"}}>
-                                        {spPts ?? "—"}
-                                      </td>
-                                    )}
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </Table>
-                        </div>
-                      </>
-                    )}
-                  </Card.Body>
-                </Card>
+                {race && <RaceHistoryCard race={race} showPoints={true} />}
               </Col>
             </Row>
           </Tab.Pane>
