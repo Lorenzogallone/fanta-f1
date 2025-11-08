@@ -2,15 +2,15 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Navbar, Container, Nav, Button } from "react-bootstrap";
-
-const accent = "#dc3545";
+import { useTheme } from "./ThemeContext";
 
 export default function Navigation() {
   const location = useLocation();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
+  const { theme, toggleTheme, isDark } = useTheme();
 
-  // Mostra il pulsante “Indietro” se non siamo sulla home
+  // Mostra il pulsante "Indietro" se non siamo sulla home
   const showBack = location.pathname !== "/";
 
   // Chiude il menu quando si clicca su una voce (utile su mobile)
@@ -20,66 +20,115 @@ export default function Navigation() {
 
   return (
     <Navbar
-      bg="white"
-      variant="light"
-      expand="sm"
+      expand="lg"
       expanded={expanded}
       onToggle={(isOpen) => setExpanded(isOpen)}
       collapseOnSelect
-      style={{ borderBottom: `3px solid ${accent}` }}
+      className="navbar-modern shadow-sm"
+      style={{
+        backgroundColor: isDark ? "#1a1a1a" : "#ffffff",
+        borderBottom: `3px solid ${isDark ? "#ff4d5a" : "#dc3545"}`,
+      }}
     >
-      <Container className="align-items-center">
-        {showBack && (
-          <Button
-            variant="outline-secondary"
-            size="sm"
-            onClick={() => navigate(-1)}
-            className="me-2 d-flex align-items-center"
-          >
-            ← Indietro
-          </Button>
-        )}
+      <Container fluid className="px-3 px-lg-4">
+        <div className="d-flex align-items-center gap-2">
+          {/* Back Button */}
+          {showBack && (
+            <button
+              onClick={() => navigate(-1)}
+              className="back-button"
+              style={{ fontSize: "0.9rem" }}
+            >
+              <span>←</span>
+              <span className="d-none d-sm-inline">Indietro</span>
+            </button>
+          )}
 
-        <Navbar.Toggle aria-controls="main-navbar-nav" />
+          {/* Logo */}
+          <Link
+            to="/"
+            onClick={() => setExpanded(false)}
+            className="logo-wrapper d-flex align-items-center"
+            style={{ textDecoration: "none" }}
+          >
+            <img
+              src="/FantaF1_Logo.png"
+              alt="Fanta F1"
+              height="45"
+              style={{ objectFit: "contain" }}
+            />
+          </Link>
+        </div>
+
+        {/* Toggle Button per mobile */}
+        <Navbar.Toggle aria-controls="main-navbar-nav" className="border-0" />
 
         <Navbar.Collapse id="main-navbar-nav">
-          <Nav className="me-auto">
-            <Nav.Link as={Link} to="/classifica" onClick={handleNavClick}>
-              Classifica
+          <Nav className="mx-auto">
+            <Nav.Link
+              as={Link}
+              to="/classifica"
+              onClick={handleNavClick}
+              className={location.pathname === "/classifica" ? "active" : ""}
+            >
+              📊 Classifica
             </Nav.Link>
-            <Nav.Link as={Link} to="/schiera" onClick={handleNavClick}>
-              Schiera Formazione
+            <Nav.Link
+              as={Link}
+              to="/schiera"
+              onClick={handleNavClick}
+              className={location.pathname === "/schiera" ? "active" : ""}
+            >
+              🏎️ Schiera
             </Nav.Link>
-            <Nav.Link as={Link} to="/calcola" onClick={handleNavClick}>
-              Calcola Punteggi
+            <Nav.Link
+              as={Link}
+              to="/calcola"
+              onClick={handleNavClick}
+              className={location.pathname === "/calcola" ? "active" : ""}
+            >
+              🧮 Calcola
             </Nav.Link>
-            <Nav.Link as={Link} to="/storico" onClick={handleNavClick}>
-              Storico Gare
+            <Nav.Link
+              as={Link}
+              to="/storico"
+              onClick={handleNavClick}
+              className={location.pathname === "/storico" ? "active" : ""}
+            >
+              📜 Storico
             </Nav.Link>
-            <Nav.Link as={Link} to="/championship" onClick={handleNavClick}>
-              Campionato Piloti &amp; Costruttori
+            <Nav.Link
+              as={Link}
+              to="/championship"
+              onClick={handleNavClick}
+              className={location.pathname === "/championship" ? "active" : ""}
+            >
+              🏆 Campionato
             </Nav.Link>
-            <Nav.Link as={Link} to="/admin" onClick={handleNavClick} className="text-danger fw-bold">
+            <Nav.Link
+              as={Link}
+              to="/admin"
+              onClick={handleNavClick}
+              className={`admin-link ${location.pathname === "/admin" ? "active" : ""}`}
+            >
               ⚙️ Admin
             </Nav.Link>
           </Nav>
-        </Navbar.Collapse>
 
-        <Button
-          as={Link}
-          to="/"
-          variant="outline-danger"
-          className="ms-auto d-flex align-items-center p-1"
-          style={{ borderColor: accent }}
-          onClick={() => setExpanded(false)}
-        >
-          <img
-            src="/FantaF1_Logo.png"
-            alt="Fanta F1 Logo"
-            height="40"
-            style={{ objectFit: "contain" }}
-          />
-        </Button>
+          {/* Theme Toggle */}
+          <div className="d-flex align-items-center gap-2 ms-lg-3">
+            <button
+              onClick={toggleTheme}
+              className="theme-toggle"
+              aria-label="Toggle theme"
+              title={`Passa a tema ${isDark ? "chiaro" : "scuro"}`}
+            >
+              <div className="theme-toggle-slider">
+                {isDark ? "🌙" : "☀️"}
+              </div>
+            </button>
+          </div>
+        </Navbar.Collapse>
       </Container>
     </Navbar>
   );
