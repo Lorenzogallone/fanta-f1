@@ -3,10 +3,12 @@ import React from "react";
 import { Container, Row, Col, Card, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import Leaderboard from "./Leaderboard";
-
-const accent = "#dc3545";
+import { useTheme } from "./ThemeContext";
 
 export default function Home() {
+  const { isDark } = useTheme();
+  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
+
   return (
     <Container className="py-5">
       {/* Opzioni */}
@@ -14,7 +16,7 @@ export default function Home() {
         <Col xs={12} md={10} lg={8}>
           <Card className="shadow">
             <Card.Body className="text-center">
-              <Card.Title style={{ color: accent }} className="mb-4">
+              <Card.Title style={{ color: accentColor }} className="mb-4">
                 Benvenuto in Fanta F1
               </Card.Title>
               <Row className="g-3">
@@ -64,7 +66,7 @@ export default function Home() {
         </Col>
       </Row>
 
-      {/* Anteprima dell’attuale Classifica */}
+      {/* Anteprima dell'attuale Classifica */}
       <Row className="justify-content-center">
         <Col xs={12} md={10} lg={8}>
           <Card className="shadow">
