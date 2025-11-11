@@ -203,6 +203,66 @@ body {
   color: #ffffff;
 }
 
+[data-theme="dark"] .btn-light {
+  background-color: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .btn-light:hover {
+  background-color: var(--bg-primary) !important;
+  border-color: var(--accent-red) !important;
+  color: var(--accent-red) !important;
+}
+
+[data-theme="dark"] .btn-secondary {
+  background-color: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+  background-color: var(--bg-primary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .btn-success {
+  background-color: #198754 !important;
+  border-color: #198754 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .btn-success:hover {
+  background-color: #157347 !important;
+  border-color: #157347 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .btn-warning {
+  background-color: #ffc107 !important;
+  border-color: #ffc107 !important;
+  color: #000000 !important;
+}
+
+[data-theme="dark"] .btn-warning:hover {
+  background-color: #ffca2c !important;
+  border-color: #ffca2c !important;
+  color: #000000 !important;
+}
+
+[data-theme="dark"] .btn-danger {
+  background-color: var(--accent-red) !important;
+  border-color: var(--accent-red) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .btn-danger:hover {
+  background-color: var(--accent-red-hover) !important;
+  border-color: var(--accent-red-hover) !important;
+  color: #ffffff !important;
+}
+
 /* Modals */
 [data-theme="dark"] .modal-content {
   background-color: var(--bg-secondary);
