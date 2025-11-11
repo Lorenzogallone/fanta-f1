@@ -1002,6 +1002,16 @@ function CalendarManager() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState(null);
+  const [editingRace, setEditingRace] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    raceDate: "",
+    raceTime: "",
+    qualiDate: "",
+    qualiTime: "",
+    sprintDate: "",
+    sprintTime: "",
+  });
 
   useEffect(() => {
     loadRaces();
@@ -1041,6 +1051,80 @@ function CalendarManager() {
     } catch (err) {
       console.error(err);
       setMessage({ type: "danger", text: "Errore lettura file" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleEditRace = (race) => {
+    setEditingRace(race);
+
+    // Converti timestamp Firestore in datetime-local format
+    const formatDateTime = (firestoreTimestamp) => {
+      if (!firestoreTimestamp) return { date: "", time: "" };
+      const date = new Date(firestoreTimestamp.seconds * 1000);
+      return {
+        date: date.toISOString().split('T')[0],
+        time: date.toTimeString().slice(0, 5), // HH:MM
+      };
+    };
+
+    const raceDateTime = formatDateTime(race.raceUTC);
+    const qualiDateTime = formatDateTime(race.qualiUTC);
+    const sprintDateTime = race.qualiSprintUTC ? formatDateTime(race.qualiSprintUTC) : { date: "", time: "" };
+
+    setEditFormData({
+      raceDate: raceDateTime.date,
+      raceTime: raceDateTime.time,
+      qualiDate: qualiDateTime.date,
+      qualiTime: qualiDateTime.time,
+      sprintDate: sprintDateTime.date,
+      sprintTime: sprintDateTime.time,
+    });
+
+    setShowEditModal(true);
+  };
+
+  const handleSaveRaceDates = async () => {
+    if (!editingRace) return;
+
+    setUploading(true);
+    setMessage(null);
+
+    try {
+      // Converti date+time in Timestamp Firestore
+      const createTimestamp = (dateStr, timeStr) => {
+        if (!dateStr || !timeStr) return null;
+        const dateTime = new Date(`${dateStr}T${timeStr}:00`);
+        return Timestamp.fromDate(dateTime);
+      };
+
+      const updates = {
+        raceUTC: createTimestamp(editFormData.raceDate, editFormData.raceTime),
+        qualiUTC: createTimestamp(editFormData.qualiDate, editFormData.qualiTime),
+      };
+
+      // Sprint è opzionale
+      if (editFormData.sprintDate && editFormData.sprintTime) {
+        updates.qualiSprintUTC = createTimestamp(editFormData.sprintDate, editFormData.sprintTime);
+      } else {
+        // Se svuotato, rimuovi
+        updates.qualiSprintUTC = null;
+      }
+
+      await updateDoc(doc(db, "races", editingRace.id), updates);
+
+      setMessage({
+        type: "success",
+        text: `✓ Date aggiornate per ${editingRace.name}!`,
+      });
+
+      setShowEditModal(false);
+      setEditingRace(null);
+      await loadRaces();
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: "danger", text: "❌ Errore durante l'aggiornamento: " + err.message });
     } finally {
       setUploading(false);
     }
@@ -1109,8 +1193,10 @@ function CalendarManager() {
                       <th style={{ width: "50px" }}>#</th>
                       <th>Nome Gara</th>
                       <th>Data Gara</th>
+                      <th>Data Qualifiche</th>
                       <th className="text-center">Sprint</th>
                       <th className="text-center">Risultati</th>
+                      <th style={{ width: "80px" }} className="text-center">Azioni</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1120,7 +1206,18 @@ function CalendarManager() {
                         <td>{r.name}</td>
                         <td>
                           {r.raceUTC
-                            ? new Date(r.raceUTC.seconds * 1000).toLocaleDateString("it-IT")
+                            ? new Date(r.raceUTC.seconds * 1000).toLocaleString("it-IT", {
+                                dateStyle: "short",
+                                timeStyle: "short",
+                              })
+                            : "—"}
+                        </td>
+                        <td>
+                          {r.qualiUTC
+                            ? new Date(r.qualiUTC.seconds * 1000).toLocaleString("it-IT", {
+                                dateStyle: "short",
+                                timeStyle: "short",
+                              })
                             : "—"}
                         </td>
                         <td className="text-center">
@@ -1139,6 +1236,15 @@ function CalendarManager() {
                             <Badge bg="secondary">Pending</Badge>
                           )}
                         </td>
+                        <td className="text-center">
+                          <Button
+                            size="sm"
+                            variant="outline-primary"
+                            onClick={() => handleEditRace(r)}
+                          >
+                            ✏️
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1148,6 +1254,108 @@ function CalendarManager() {
           </Card.Body>
         </Card>
       </Col>
+
+      {/* Modal per modificare date gara */}
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>✏️ Modifica Date - {editingRace?.name}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Alert variant="info" className="small">
+            <strong>ℹ️ Nota:</strong> Le deadline per l'inserimento formazioni sono basate su queste date.
+            Modificandole, gli utenti avranno più o meno tempo per inserire le formazioni.
+          </Alert>
+
+          <Form>
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Data Gara *</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={editFormData.raceDate}
+                    onChange={(e) => setEditFormData({ ...editFormData, raceDate: e.target.value })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Ora Gara *</Form.Label>
+                  <Form.Control
+                    type="time"
+                    value={editFormData.raceTime}
+                    onChange={(e) => setEditFormData({ ...editFormData, raceTime: e.target.value })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Data Qualifiche (Deadline Formazione) *</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={editFormData.qualiDate}
+                    onChange={(e) => setEditFormData({ ...editFormData, qualiDate: e.target.value })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Ora Qualifiche *</Form.Label>
+                  <Form.Control
+                    type="time"
+                    value={editFormData.qualiTime}
+                    onChange={(e) => setEditFormData({ ...editFormData, qualiTime: e.target.value })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <hr />
+            <h6>Sprint (opzionale)</h6>
+            <Alert variant="warning" className="small py-2">
+              Lascia vuoto per rimuovere la sprint da questa gara
+            </Alert>
+
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Data Sprint</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={editFormData.sprintDate}
+                    onChange={(e) => setEditFormData({ ...editFormData, sprintDate: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Ora Sprint</Form.Label>
+                  <Form.Control
+                    type="time"
+                    value={editFormData.sprintTime}
+                    onChange={(e) => setEditFormData({ ...editFormData, sprintTime: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+            Annulla
+          </Button>
+          <Button variant="danger" onClick={handleSaveRaceDates} disabled={uploading}>
+            {uploading ? <Spinner animation="border" size="sm" /> : "💾 Salva Modifiche"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Row>
   );
 }
