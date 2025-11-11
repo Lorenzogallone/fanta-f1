@@ -9,46 +9,54 @@ Fanta F1 è un gioco fantasy basato sul campionato mondiale di Formula 1. Ogni p
 ## 📋 Come Funziona
 
 ### Formazione Gara
-Per ogni Gran Premio, ogni giocatore seleziona:
-- **3 Piloti (P1, P2, P3)**: I piloti che si pensa finiranno nelle prime posizioni
-- **1 Jolly**: Un pilota bonus che raddoppia i punti ottenuti
-- **1 Jolly 2 (opzionale)**: Un secondo jolly disponibile dopo 29 punti totali
+Per ogni Gran Premio, ogni giocatore **schiera la formazione prima dell'inizio della gara**:
+- **3 Piloti (P1, P2, P3)**: Pronostico dei primi 3 classificati in ordine
+- **1 Jolly**: Un pilota bonus che garantisce 5 punti extra se finisce sul podio
+- **1 Jolly 2 (opzionale)**: Secondo jolly sbloccabile con la regola 29→30
 
 ### Sprint Race
-Per i weekend con Sprint Race, si può schierare una formazione separata con:
-- 3 Piloti Sprint (SP1, SP2, SP3)
-- 1 Jolly Sprint
+Per i weekend con Sprint Race, si può schierare una formazione separata:
+- **3 Piloti Sprint (SP1, SP2, SP3)**: Pronostico podio sprint
+- **1 Jolly Sprint**: Bonus di 5 punti se finisce sul podio sprint
+- Puoi usare gli stessi piloti della gara principale
 
 ### Formazione Campionato
-Prima dell'inizio della stagione, ogni giocatore pronostica:
-- **Top 3 Piloti** del campionato mondiale
-- **Top 3 Costruttori** del campionato mondiale
+**A metà stagione**, ogni giocatore pronostica:
+- **Top 3 Piloti** del campionato mondiale piloti
+- **Top 3 Costruttori** del campionato mondiale costruttori
 
-I punti vengono assegnati a fine stagione in base alla correttezza delle previsioni.
+I punti vengono assegnati a fine stagione con lo stesso sistema delle gare.
 
 ## 🏆 Sistema di Punteggio
 
-### Punti per Posizione (Gara Principale)
-- **1° posto**: 25 punti
-- **2° posto**: 18 punti
-- **3° posto**: 15 punti
-- **4° posto**: 12 punti
-- **5° posto**: 10 punti
-- **6°-10° posto**: 8, 6, 4, 2, 1 punti
+### Punti Gara Principale
+**Solo i primi 3 classificati assegnano punti:**
+- **Indovini il 1° classificato (P1)**: 12 punti
+- **Indovini il 2° classificato (P2)**: 10 punti
+- **Indovini il 3° classificato (P3)**: 8 punti
 
 ### Punti Sprint
-- **1° posto**: 8 punti
-- **2° posto**: 7 punti
-- **3° posto**: 6 punti
-- E così via...
+**Solo i primi 3 classificati assegnano punti:**
+- **Indovini il 1° classificato (SP1)**: 8 punti
+- **Indovini il 2° classificato (SP2)**: 6 punti
+- **Indovini il 3° classificato (SP3)**: 4 punti
 
 ### Bonus Jolly
-- Il pilota scelto come **Jolly** raddoppia i punti ottenuti
-- Il **Jolly 2** si sblocca quando un giocatore raggiunge 30 punti totali
-- I jolly sono indipendenti tra gara principale e sprint
+- Il **Jolly** dà **5 punti fissi** se il pilota scelto finisce sul podio (top 3), **indipendentemente dalla posizione**
+- Il **Jolly 2** funziona allo stesso modo (5 punti se sul podio)
+- Jolly gara principale e sprint sono indipendenti
+
+### Regola Speciale: 29→30
+- Se indovini tutto il podio in ordine (12+10+8 = 30 punti totali), guadagni **1 jolly extra** da usare in una gara futura
+- Vale sia per gara principale che per sprint
+- Vale anche per la formazione campionato
 
 ### Punteggio Campionato
-Punti bonus assegnati a fine stagione per previsioni corrette su piloti e costruttori.
+A fine stagione, si assegnano gli stessi punti delle gare:
+- Indovini il 1° pilota/costruttore: 12 punti
+- Indovini il 2° pilota/costruttore: 10 punti
+- Indovini il 3° pilota/costruttore: 8 punti
+- Anche qui vale la regola 29→30!
 
 ## 🖥️ Funzionalità dell'App
 
@@ -72,7 +80,7 @@ Inserisci la tua formazione per la prossima gara:
 - Supporto per sprint race
 
 ### 📅 Formazioni Campionato
-Pronostica i top 3 piloti e costruttori prima dell'inizio della stagione.
+Pronostica i top 3 piloti e costruttori a metà stagione per guadagnare punti bonus a fine anno.
 
 ### ⚙️ Pannello Admin
 Gli amministratori possono:
@@ -98,57 +106,6 @@ Gli amministratori possono:
 - **UI Components**: Material-UI, React-Select
 - **Build**: Vite 6.3.5
 - **Deploy**: Firebase Hosting
-
-## 🚀 Setup e Installazione
-
-### Prerequisiti
-- Node.js 18+
-- npm o yarn
-- Account Firebase
-
-### Installazione
-
-```bash
-# Clona il repository
-git clone <repository-url>
-cd fanta-f1
-
-# Installa le dipendenze
-npm install
-
-# Configura Firebase
-# Crea un progetto Firebase e aggiungi le credenziali in src/firebase.js
-
-# Avvia in modalità sviluppo
-npm run dev
-
-# Build per produzione
-npm run build
-
-# Deploy su Firebase
-firebase deploy
-```
-
-### Configurazione Firebase
-
-Crea un file `src/firebase.js` con le tue credenziali:
-
-```javascript
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
-```
 
 ## 📁 Struttura del Progetto
 
@@ -206,11 +163,12 @@ Per ogni gara, contiene le formazioni dei giocatori:
 
 ## 🎯 Regole del Gioco
 
-1. **Deadline**: Le formazioni devono essere inviate prima dell'inizio delle qualifiche
+1. **Deadline**: Le formazioni devono essere inviate prima dell'inizio della gara
 2. **No Modifiche**: Una volta inviata, la formazione non può essere modificata
 3. **Piloti Unici**: Non si possono selezionare piloti duplicati nella stessa gara
 4. **Jolly Multipli**: Si possono usare gli stessi piloti tra gara principale e sprint
-5. **Regola 29→30**: Il Jolly 2 si sblocca al raggiungimento di 30 punti totali
+5. **Regola 29→30**: Indovinando tutto il podio (30 punti), si sblocca 1 jolly extra
+6. **Jolly = 5 punti**: Il jolly non raddoppia i punti, ma aggiunge sempre 5 punti fissi se il pilota finisce sul podio
 
 ## 🔐 Accesso Admin
 
