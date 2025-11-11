@@ -365,15 +365,43 @@ body {
 
 .navbar-modern .nav-link {
   position: relative;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   transition: all 0.2s ease;
   font-weight: 500;
   color: var(--text-primary) !important;
+  font-size: 1rem;
+}
+
+/* Mobile: link più grandi e touch-friendly */
+@media (max-width: 991px) {
+  .navbar-modern .nav-link {
+    padding: 1rem 1.25rem;
+    font-size: 1.1rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .navbar-modern .nav-link:last-child {
+    border-bottom: none;
+  }
+
+  /* Back link speciale su mobile */
+  .back-nav-link {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--accent-red) !important;
+    margin: -0.5rem -1rem 0.5rem -1rem !important;
+    padding: 1rem 1.25rem !important;
+    font-size: 1.2rem !important;
+  }
+
+  .back-nav-link:hover {
+    background-color: var(--bg-primary) !important;
+  }
 }
 
 .navbar-modern .nav-link:hover {
   color: var(--accent-red) !important;
   transform: translateY(-1px);
+  background-color: var(--bg-tertiary);
 }
 
 .navbar-modern .nav-link::after {
@@ -388,9 +416,44 @@ body {
   transition: width 0.3s ease;
 }
 
-.navbar-modern .nav-link:hover::after,
-.navbar-modern .nav-link.active::after {
-  width: 80%;
+/* Desktop: underline animation */
+@media (min-width: 992px) {
+  .navbar-modern .nav-link:hover::after,
+  .navbar-modern .nav-link.active::after {
+    width: 80%;
+  }
+}
+
+/* Mobile: highlight attivo */
+@media (max-width: 991px) {
+  .navbar-modern .nav-link.active {
+    background-color: var(--bg-tertiary);
+    color: var(--accent-red) !important;
+    font-weight: 700;
+  }
+
+  .navbar-modern .nav-link::after {
+    display: none;
+  }
+}
+
+/* Navbar Toggle (Hamburger) */
+.navbar-toggler {
+  padding: 0.5rem;
+  font-size: 1.5rem;
+}
+
+[data-theme="dark"] .navbar-toggler-icon {
+  filter: invert(1);
+}
+
+/* Collapse animation su mobile */
+@media (max-width: 991px) {
+  .navbar-collapse {
+    margin-top: 1rem;
+    border-top: 2px solid var(--accent-red);
+    padding-top: 0.5rem;
+  }
 }
 
 /* Theme Toggle Button */
