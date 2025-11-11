@@ -77,9 +77,6 @@ export default function AdminPanel() {
             <Nav.Link eventKey="calendar">📅 Calendario Gare</Nav.Link>
           </Nav.Item>
           <Nav.Item>
-            <Nav.Link eventKey="import-ics">📅 Import ICS</Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
             <Nav.Link eventKey="reset">🗑️ Reset Database</Nav.Link>
           </Nav.Item>
         </Nav>
@@ -95,10 +92,6 @@ export default function AdminPanel() {
 
           <Tab.Pane eventKey="calendar">
             <CalendarManager />
-          </Tab.Pane>
-
-          <Tab.Pane eventKey="import-ics">
-            <ICSImporter />
           </Tab.Pane>
 
           <Tab.Pane eventKey="reset">
@@ -955,14 +948,18 @@ function CalendarManager() {
   const [message, setMessage] = useState(null);
   const [editingRace, setEditingRace] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelType, setCancelType] = useState(""); // "main" or "sprint"
   const [editFormData, setEditFormData] = useState({
-    qualiDate: "",
     qualiTime: "",
-    sprintDate: "",
     sprintTime: "",
-    cancelledMain: false,
-    cancelledSprint: false,
   });
+
+  // ICS Import state
+  const [icsFile, setIcsFile] = useState(null);
+  const [parsedRaces, setParsedRaces] = useState([]);
+  const [loadingIcs, setLoadingIcs] = useState(false);
+  const [importing, setImporting] = useState(false);
 
 
 
@@ -992,57 +989,135 @@ function CalendarManager() {
     }
   };
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  // ICS Import handlers
+  const handleIcsFileSelect = async (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
 
-    setUploading(true);
+    setIcsFile(selectedFile);
+    setMessage(null);
+    setLoadingIcs(true);
+
+    try {
+      const text = await selectedFile.text();
+      const { parseF1Calendar } = await import("../utils/icsParser");
+      const parsed = parseF1Calendar(text);
+      setParsedRaces(parsed);
+      setMessage({
+        type: "success",
+        text: `✓ File parsato con successo! Trovate ${parsed.length} gare.`,
+      });
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: "danger", text: "❌ Errore nel parsing del file ICS: " + err.message });
+      setParsedRaces([]);
+    } finally {
+      setLoadingIcs(false);
+    }
+  };
+
+  const handleIcsImport = async () => {
+    if (!parsedRaces.length) {
+      setMessage({ type: "warning", text: "Nessuna gara da importare" });
+      return;
+    }
+
+    const confirmMsg = `Vuoi importare ${parsedRaces.length} gare? Questa operazione sovrascriverà i dati esistenti.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setImporting(true);
     setMessage(null);
 
     try {
-      const text = await file.text();
+      for (const race of parsedRaces) {
+        await setDoc(
+          doc(db, "races", race.id),
+          {
+            name: race.name,
+            round: race.round,
+            qualiUTC: Timestamp.fromDate(race.qualiUTC),
+            raceUTC: Timestamp.fromDate(race.raceUTC),
+            qualiSprintUTC: race.qualiSprintUTC ? Timestamp.fromDate(race.qualiSprintUTC) : null,
+            sprintUTC: race.sprintUTC ? Timestamp.fromDate(race.sprintUTC) : null,
+          },
+          { merge: true }
+        );
+      }
 
       setMessage({
-        type: "info",
-        text: `File caricato: ${file.name}. Implementa parsing ICS nel backend (scripts_calendar/seedRacesFromICS.js)`,
+        type: "success",
+        text: `✅ Import completato! ${parsedRaces.length} gare importate con successo.`,
       });
-
-      // Nota: il parsing ICS complesso dovrebbe essere fatto backend-side
-      // usando lo script esistente scripts_calendar/seedRacesFromICS.js
+      setParsedRaces([]);
+      setIcsFile(null);
+      await loadRaces();
     } catch (err) {
       console.error(err);
-      setMessage({ type: "danger", text: "Errore lettura file" });
+      setMessage({ type: "danger", text: "❌ Errore durante l'import: " + err.message });
     } finally {
-      setUploading(false);
+      setImporting(false);
     }
   };
 
   const handleEditRace = (race) => {
     setEditingRace(race);
 
-    // Converti timestamp Firestore in datetime-local format
-    const formatDateTime = (firestoreTimestamp) => {
-      if (!firestoreTimestamp) return { date: "", time: "" };
+    // Estrai solo l'ora dal timestamp
+    const formatTime = (firestoreTimestamp) => {
+      if (!firestoreTimestamp) return "";
       const date = new Date(firestoreTimestamp.seconds * 1000);
-      return {
-        date: date.toISOString().split('T')[0],
-        time: date.toTimeString().slice(0, 5), // HH:MM
-      };
+      return date.toTimeString().slice(0, 5); // HH:MM
     };
 
-    const qualiDateTime = formatDateTime(race.qualiUTC);
-    const sprintDateTime = race.qualiSprintUTC ? formatDateTime(race.qualiSprintUTC) : { date: "", time: "" };
-
     setEditFormData({
-      qualiDate: qualiDateTime.date,
-      qualiTime: qualiDateTime.time,
-      sprintDate: sprintDateTime.date,
-      sprintTime: sprintDateTime.time,
-      cancelledMain: race.cancelledMain || false,
-      cancelledSprint: race.cancelledSprint || false,
+      qualiTime: formatTime(race.qualiUTC),
+      sprintTime: race.qualiSprintUTC ? formatTime(race.qualiSprintUTC) : "",
     });
 
     setShowEditModal(true);
+  };
+
+  const handleCancelRace = (type) => {
+    setCancelType(type);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelRace = async () => {
+    if (!editingRace || !cancelType) return;
+
+    setUploading(true);
+    setMessage(null);
+
+    try {
+      const updates = {};
+      if (cancelType === "main") {
+        updates.cancelledMain = true;
+      } else if (cancelType === "sprint") {
+        updates.cancelledSprint = true;
+      }
+
+      await updateDoc(doc(db, "races", editingRace.id), updates);
+
+      setMessage({
+        type: "success",
+        text: `✓ ${cancelType === "main" ? "Gara principale" : "Sprint"} segnata come cancellata!`,
+      });
+
+      setShowCancelModal(false);
+      setCancelType("");
+      await loadRaces();
+
+      // Aggiorna anche i dati nel modal di edit
+      setEditingRace(prev => ({
+        ...prev,
+        ...(cancelType === "main" ? { cancelledMain: true } : { cancelledSprint: true })
+      }));
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: "danger", text: "❌ Errore: " + err.message });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSaveRaceDates = async () => {
@@ -1052,32 +1127,29 @@ function CalendarManager() {
     setMessage(null);
 
     try {
-      // Converti date+time in Timestamp Firestore
-      const createTimestamp = (dateStr, timeStr) => {
-        if (!dateStr || !timeStr) return null;
-        const dateTime = new Date(`${dateStr}T${timeStr}:00`);
-        return Timestamp.fromDate(dateTime);
+      // Aggiorna solo l'ora mantenendo la data originale
+      const updateTime = (originalTimestamp, newTime) => {
+        if (!originalTimestamp || !newTime) return null;
+        const originalDate = new Date(originalTimestamp.seconds * 1000);
+        const [hours, minutes] = newTime.split(':');
+        originalDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        return Timestamp.fromDate(originalDate);
       };
 
       const updates = {
-        qualiUTC: createTimestamp(editFormData.qualiDate, editFormData.qualiTime),
-        cancelledMain: editFormData.cancelledMain,
-        cancelledSprint: editFormData.cancelledSprint,
+        qualiUTC: updateTime(editingRace.qualiUTC, editFormData.qualiTime),
       };
 
-      // Sprint deadline è opzionale
-      if (editFormData.sprintDate && editFormData.sprintTime) {
-        updates.qualiSprintUTC = createTimestamp(editFormData.sprintDate, editFormData.sprintTime);
-      } else {
-        // Se svuotato, rimuovi
-        updates.qualiSprintUTC = null;
+      // Aggiorna sprint solo se la gara ha sprint
+      if (editingRace.qualiSprintUTC && editFormData.sprintTime) {
+        updates.qualiSprintUTC = updateTime(editingRace.qualiSprintUTC, editFormData.sprintTime);
       }
 
       await updateDoc(doc(db, "races", editingRace.id), updates);
 
       setMessage({
         type: "success",
-        text: `✓ Deadline e stati aggiornati per ${editingRace.name}!`,
+        text: `✓ Orari aggiornati per ${editingRace.name}!`,
       });
 
       setShowEditModal(false);
@@ -1101,20 +1173,17 @@ function CalendarManager() {
 
   return (
     <Row className="g-4">
+      {/* ICS Import Section */}
       <Col xs={12}>
-        <Card className="shadow">
-          <Card.Header className="bg-white">
-            <h5 className="mb-0">📅 Carica Nuovo Calendario (.ics)</h5>
+        <Card className="shadow border-primary">
+          <Card.Header className="bg-primary text-white">
+            <h5 className="mb-0">📅 Importa Calendario da File ICS</h5>
           </Card.Header>
           <Card.Body>
-            <Alert variant="warning">
-              <strong>⚠️ Nota:</strong> Per aggiornare il calendario, usa lo script backend:
-              <br />
-              <code>node scripts_calendar/seedRacesFromICS.js</code>
-              <br />
-              <br />
-              Il file .ics deve essere inserito in <code>scripts_calendar/f1_2025.ics</code>
-            </Alert>
+            <p>
+              Carica un file ICS (formato iCalendar) contenente il calendario F1 per importare
+              automaticamente tutte le gare nel database.
+            </p>
 
             {message && (
               <Alert variant={message.type} dismissible onClose={() => setMessage(null)}>
@@ -1122,13 +1191,81 @@ function CalendarManager() {
               </Alert>
             )}
 
-            <Form.Group>
-              <Form.Label>Carica file .ics (anteprima)</Form.Label>
-              <Form.Control type="file" accept=".ics" onChange={handleFileUpload} disabled={uploading} />
-              <Form.Text>
-                Seleziona un file calendario ICS (Google Calendar, Apple Calendar, ecc.)
+            <Form.Group className="mb-3">
+              <Form.Label>Seleziona file .ics</Form.Label>
+              <Form.Control
+                type="file"
+                accept=".ics"
+                onChange={handleIcsFileSelect}
+                disabled={loadingIcs || importing}
+              />
+              <Form.Text className="text-muted">
+                Formato supportato: file .ics del calendario ufficiale F1
               </Form.Text>
             </Form.Group>
+
+            {loadingIcs && (
+              <div className="text-center py-3">
+                <Spinner animation="border" size="sm" className="me-2" />
+                Parsing file...
+              </div>
+            )}
+
+            {parsedRaces.length > 0 && !loadingIcs && (
+              <>
+                <Alert variant="info">
+                  <strong>Anteprima:</strong> {parsedRaces.length} gare trovate nel file ICS
+                </Alert>
+
+                <div className="table-responsive" style={{ maxHeight: "300px", overflowY: "auto" }}>
+                  <Table striped bordered hover size="sm">
+                    <thead style={{ position: "sticky", top: 0, backgroundColor: "#fff", zIndex: 1 }}>
+                      <tr>
+                        <th>#</th>
+                        <th>Nome Gara</th>
+                        <th>Qualifiche</th>
+                        <th>Gara</th>
+                        <th>Sprint</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {parsedRaces.map((race) => (
+                        <tr key={race.id}>
+                          <td>{race.round}</td>
+                          <td>{race.name}</td>
+                          <td>{race.qualiUTC.toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" })}</td>
+                          <td>{race.raceUTC.toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" })}</td>
+                          <td>
+                            {race.sprintUTC ? (
+                              <span className="text-success">✓</span>
+                            ) : (
+                              <span className="text-muted">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="w-100 mt-3"
+                  onClick={handleIcsImport}
+                  disabled={importing}
+                >
+                  {importing ? (
+                    <>
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      Importazione in corso...
+                    </>
+                  ) : (
+                    `📥 Importa ${parsedRaces.length} Gare su Firestore`
+                  )}
+                </Button>
+              </>
+            )}
           </Card.Body>
         </Card>
       </Col>
@@ -1232,115 +1369,125 @@ function CalendarManager() {
           <Modal.Title>✏️ Gestisci Gara - {editingRace?.name}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Alert variant="info" className="small">
-            <strong>ℹ️ Nota:</strong> Le deadline controllano quando gli utenti possono inserire le formazioni.
-            Le gare cancellate non vengono conteggiate nei punteggi.
-          </Alert>
-
           <Form>
-            {/* Cancellazione Gara Principale */}
-            <Card className="mb-3 border-danger">
-              <Card.Body>
-                <Form.Check
-                  type="checkbox"
-                  id="cancelledMain"
-                  label="⛔ Segna gara come CANCELLATA"
-                  checked={editFormData.cancelledMain}
-                  onChange={(e) => setEditFormData({ ...editFormData, cancelledMain: e.target.checked })}
-                />
-                <Form.Text className="text-muted d-block mt-2">
-                  Le gare cancellate non verranno calcolate nei punteggi e appariranno come "CANCELLATA" nello storico
-                </Form.Text>
-              </Card.Body>
-            </Card>
-
-            <h6>Deadline Formazione Gara Principale</h6>
-            <Row className="mb-3">
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label>Data Deadline *</Form.Label>
-                  <Form.Control
-                    type="date"
-                    value={editFormData.qualiDate}
-                    onChange={(e) => setEditFormData({ ...editFormData, qualiDate: e.target.value })}
-                    required
-                    disabled={editFormData.cancelledMain}
-                  />
-                  <Form.Text className="text-muted">
-                    Gli utenti non potranno inserire formazioni dopo questa data
-                  </Form.Text>
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label>Ora Deadline *</Form.Label>
-                  <Form.Control
-                    type="time"
-                    value={editFormData.qualiTime}
-                    onChange={(e) => setEditFormData({ ...editFormData, qualiTime: e.target.value })}
-                    required
-                    disabled={editFormData.cancelledMain}
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <hr />
-
-            {/* Cancellazione Sprint */}
-            <Card className="mb-3 border-warning">
-              <Card.Body>
-                <Form.Check
-                  type="checkbox"
-                  id="cancelledSprint"
-                  label="⛔ Segna sprint come CANCELLATA"
-                  checked={editFormData.cancelledSprint}
-                  onChange={(e) => setEditFormData({ ...editFormData, cancelledSprint: e.target.checked })}
-                  disabled={!editingRace?.qualiSprintUTC && !editFormData.sprintDate}
-                />
-                <Form.Text className="text-muted d-block mt-2">
-                  Le sprint cancellate non verranno calcolate nei punteggi
-                </Form.Text>
-              </Card.Body>
-            </Card>
-
-            <h6>Deadline Formazione Sprint (opzionale)</h6>
-            <Alert variant="warning" className="small py-2">
-              Lascia vuoto per rimuovere la sprint da questa gara
+            {/* Data Gara (solo visualizzazione) */}
+            <Alert variant="light" className="mb-4">
+              <strong>Data Gara:</strong>{" "}
+              {editingRace?.raceUTC && new Date(editingRace.raceUTC.seconds * 1000).toLocaleDateString("it-IT", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+              })}
             </Alert>
 
-            <Row className="mb-3">
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label>Data Deadline Sprint</Form.Label>
-                  <Form.Control
-                    type="date"
-                    value={editFormData.sprintDate}
-                    onChange={(e) => setEditFormData({ ...editFormData, sprintDate: e.target.value })}
-                    disabled={editFormData.cancelledSprint}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group>
+            {/* Orario Deadline Gara Principale */}
+            <h6>⏰ Orario Deadline Formazione Gara Principale</h6>
+            <Form.Group className="mb-3">
+              <Form.Label>Ora Deadline</Form.Label>
+              <Form.Control
+                type="time"
+                value={editFormData.qualiTime}
+                onChange={(e) => setEditFormData({ ...editFormData, qualiTime: e.target.value })}
+                required
+                disabled={editingRace?.cancelledMain}
+              />
+              <Form.Text className="text-muted">
+                Gli utenti non potranno inserire formazioni dopo quest'ora
+              </Form.Text>
+            </Form.Group>
+
+            {/* Bottone Cancella Gara */}
+            {!editingRace?.cancelledMain ? (
+              <Button
+                variant="danger"
+                size="sm"
+                className="mb-4"
+                onClick={() => handleCancelRace("main")}
+              >
+                ⛔ Segna Gara come CANCELLATA
+              </Button>
+            ) : (
+              <Alert variant="danger" className="mb-4">
+                <strong>⚠️ Questa gara è stata cancellata</strong>
+              </Alert>
+            )}
+
+            {/* Sezione Sprint - mostrata solo se la gara ha sprint */}
+            {editingRace?.qualiSprintUTC && (
+              <>
+                <hr />
+                <h6>🏁 Sprint</h6>
+
+                <Form.Group className="mb-3">
                   <Form.Label>Ora Deadline Sprint</Form.Label>
                   <Form.Control
                     type="time"
                     value={editFormData.sprintTime}
                     onChange={(e) => setEditFormData({ ...editFormData, sprintTime: e.target.value })}
-                    disabled={editFormData.cancelledSprint}
+                    disabled={editingRace?.cancelledSprint}
                   />
                 </Form.Group>
-              </Col>
-            </Row>
+
+                {/* Bottone Cancella Sprint */}
+                {!editingRace?.cancelledSprint ? (
+                  <Button
+                    variant="warning"
+                    size="sm"
+                    onClick={() => handleCancelRace("sprint")}
+                  >
+                    ⛔ Segna Sprint come CANCELLATA
+                  </Button>
+                ) : (
+                  <Alert variant="warning">
+                    <strong>⚠️ Questa sprint è stata cancellata</strong>
+                  </Alert>
+                )}
+              </>
+            )}
           </Form>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowEditModal(false)}>
             Annulla
           </Button>
-          <Button variant="danger" onClick={handleSaveRaceDates} disabled={uploading}>
-            {uploading ? <Spinner animation="border" size="sm" /> : "💾 Salva Modifiche"}
+          <Button variant="primary" onClick={handleSaveRaceDates} disabled={uploading}>
+            {uploading ? <Spinner animation="border" size="sm" /> : "💾 Salva Orari"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal conferma cancellazione */}
+      <Modal show={showCancelModal} onHide={() => setShowCancelModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>⚠️ Conferma Cancellazione</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Alert variant={cancelType === "main" ? "danger" : "warning"}>
+            <strong>Attenzione!</strong>
+            <br />
+            Stai per segnare {cancelType === "main" ? "la gara principale" : "la sprint"} come CANCELLATA.
+            <br />
+            <br />
+            Questa operazione:
+            <ul className="mb-0 mt-2">
+              <li>Non eliminerà i dati della gara</li>
+              <li>La gara non verrà conteggiata nei punteggi</li>
+              <li>Apparirà come "CANCELLATA" nello storico</li>
+            </ul>
+          </Alert>
+          <p className="mb-0">Vuoi continuare?</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowCancelModal(false)}>
+            Annulla
+          </Button>
+          <Button
+            variant={cancelType === "main" ? "danger" : "warning"}
+            onClick={confirmCancelRace}
+            disabled={uploading}
+          >
+            {uploading ? <Spinner animation="border" size="sm" /> : "Sì, Cancella"}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -1593,179 +1740,3 @@ function DatabaseReset() {
   );
 }
 
-/* ==================== IMPORT ICS CALENDAR ==================== */
-function ICSImporter() {
-  const [file, setFile] = useState(null);
-  const [races, setRaces] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [message, setMessage] = useState(null);
-
-  const handleFileSelect = async (e) => {
-    const selectedFile = e.target.files[0];
-    if (!selectedFile) return;
-
-    setFile(selectedFile);
-    setMessage(null);
-    setLoading(true);
-
-    try {
-      const text = await selectedFile.text();
-      const { parseF1Calendar } = await import("../utils/icsParser");
-      const parsedRaces = parseF1Calendar(text);
-      setRaces(parsedRaces);
-      setMessage({
-        type: "success",
-        text: `✓ File parsato con successo! Trovate ${parsedRaces.length} gare.`,
-      });
-    } catch (err) {
-      console.error(err);
-      setMessage({ type: "danger", text: "❌ Errore nel parsing del file ICS: " + err.message });
-      setRaces([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleImport = async () => {
-    if (!races.length) {
-      setMessage({ type: "warning", text: "Nessuna gara da importare" });
-      return;
-    }
-
-    const confirmMsg = `Vuoi importare ${races.length} gare? Questa operazione sovrascriverà i dati esistenti.`;
-    if (!window.confirm(confirmMsg)) return;
-
-    setImporting(true);
-    setMessage(null);
-
-    try {
-      for (const race of races) {
-        await setDoc(
-          doc(db, "races", race.id),
-          {
-            name: race.name,
-            round: race.round,
-            qualiUTC: Timestamp.fromDate(race.qualiUTC),
-            raceUTC: Timestamp.fromDate(race.raceUTC),
-            qualiSprintUTC: race.qualiSprintUTC ? Timestamp.fromDate(race.qualiSprintUTC) : null,
-            sprintUTC: race.sprintUTC ? Timestamp.fromDate(race.sprintUTC) : null,
-          },
-          { merge: true }
-        );
-      }
-
-      setMessage({
-        type: "success",
-        text: `✅ Import completato! ${races.length} gare importate con successo.`,
-      });
-      setRaces([]);
-      setFile(null);
-    } catch (err) {
-      console.error(err);
-      setMessage({ type: "danger", text: "❌ Errore durante l'import: " + err.message });
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  return (
-    <Row className="g-4">
-      <Col xs={12}>
-        <Card className="shadow border-primary">
-          <Card.Header className="bg-primary text-white">
-            <h5 className="mb-0">📅 Importa Calendario da File ICS</h5>
-          </Card.Header>
-          <Card.Body>
-            <p>
-              Carica un file ICS (formato iCalendar) contenente il calendario F1 per importare
-              automaticamente tutte le gare nel database.
-            </p>
-
-            {message && (
-              <Alert variant={message.type} dismissible onClose={() => setMessage(null)}>
-                {message.text}
-              </Alert>
-            )}
-
-            <Form.Group className="mb-3">
-              <Form.Label>Seleziona file .ics</Form.Label>
-              <Form.Control
-                type="file"
-                accept=".ics"
-                onChange={handleFileSelect}
-                disabled={loading || importing}
-              />
-              <Form.Text className="text-muted">
-                Formato supportato: file .ics del calendario ufficiale F1
-              </Form.Text>
-            </Form.Group>
-
-            {loading && (
-              <div className="text-center py-3">
-                <Spinner animation="border" size="sm" className="me-2" />
-                Parsing file...
-              </div>
-            )}
-
-            {races.length > 0 && !loading && (
-              <>
-                <Alert variant="info">
-                  <strong>Anteprima:</strong> {races.length} gare trovate nel file ICS
-                </Alert>
-
-                <div className="table-responsive" style={{ maxHeight: "400px", overflowY: "auto" }}>
-                  <Table striped bordered hover size="sm">
-                    <thead style={{ position: "sticky", top: 0, backgroundColor: "#fff", zIndex: 1 }}>
-                      <tr>
-                        <th>#</th>
-                        <th>Nome Gara</th>
-                        <th>Qualifiche</th>
-                        <th>Gara</th>
-                        <th>Sprint</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {races.map((race) => (
-                        <tr key={race.id}>
-                          <td>{race.round}</td>
-                          <td>{race.name}</td>
-                          <td>{race.qualiUTC.toLocaleString("it-IT")}</td>
-                          <td>{race.raceUTC.toLocaleString("it-IT")}</td>
-                          <td>
-                            {race.sprintUTC ? (
-                              <span className="text-success">✓</span>
-                            ) : (
-                              <span className="text-muted">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </div>
-
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="w-100 mt-3"
-                  onClick={handleImport}
-                  disabled={importing}
-                >
-                  {importing ? (
-                    <>
-                      <Spinner animation="border" size="sm" className="me-2" />
-                      Importazione in corso...
-                    </>
-                  ) : (
-                    `📥 Importa ${races.length} Gare su Firestore`
-                  )}
-                </Button>
-              </>
-            )}
-          </Card.Body>
-        </Card>
-      </Col>
-    </Row>
-  );
-}
