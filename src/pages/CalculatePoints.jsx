@@ -11,6 +11,7 @@ import {
 import { db } from "../services/firebase";
 import { isLastRace, calculatePointsForRace } from "../services/pointsCalculator";
 import { calculateChampionshipPoints } from "../services/championshipPointsCalculator";
+import { saveRankingSnapshot } from "../services/rankingSnapshot";
 import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
 import RaceHistoryCard from "../components/RaceHistoryCard";
 import AdminLogin from "../components/AdminLogin";
@@ -238,6 +239,8 @@ useEffect(() => {
         { pointsCalculated: true },
         { merge: true }
       );
+      // Salva snapshot della classifica dopo il calcolo
+      await saveRankingSnapshot("race", race.id);
       setMsgRace({variant:"success",msg:res});
       setFormRace({P1:null,P2:null,P3:null,SP1:null,SP2:null,SP3:null});
       /* refresh preview */
@@ -269,6 +272,8 @@ useEffect(() => {
       setMsgChamp({variant:"info",msg:"Risultati salvati. Calcolo in corso…"});
       // La funzione legge i risultati da Firestore (appena salvati sopra)
       const res = await calculateChampionshipPoints();
+      // Salva snapshot della classifica dopo il calcolo del campionato
+      await saveRankingSnapshot("championship", null);
       setMsgChamp({variant:"success",msg:res});
     }catch(err){
       console.error(err);
