@@ -43,13 +43,10 @@ export default function Navigation() {
           style={{ textDecoration: "none" }}
         >
           <img
-            src="/FantaF1_Logo.png"
+            src={isDark ? "/FantaF1_Logo_dark.png" : "/FantaF1_Logo.png"}
             alt="Fanta F1"
             height="45"
-            style={{
-              objectFit: "contain",
-              filter: isDark ? "brightness(0) invert(1)" : "none"
-            }}
+            style={{ objectFit: "contain" }}
           />
         </Link>
 
