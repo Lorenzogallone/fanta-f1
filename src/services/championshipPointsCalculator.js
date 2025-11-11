@@ -8,8 +8,8 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
-import { db } from "./firebase";
-import { POINTS } from "./constants/racing";
+import { db } from "../services/firebase";
+import { POINTS } from "../constants/racing";
 
 /* ------------------------------------------------------------------ */
 /* Punti definiti (importati da costanti centralizzate)                */

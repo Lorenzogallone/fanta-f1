@@ -27,11 +27,11 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import Select from "react-select";
-import { db } from "./firebase";
-import RaceHistoryCard from "./components/RaceHistoryCard";
-import { DRIVERS, DRIVER_TEAM, TEAM_LOGOS } from "./constants/racing";
-import { useTheme } from "./ThemeContext";
-import "./customSelect.css";
+import { db } from "../services/firebase";
+import RaceHistoryCard from "../components/RaceHistoryCard";
+import { DRIVERS, DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
+import { useTheme } from "../contexts/ThemeContext";
+import "../styles/customSelect.css";
 
 /* --- costanti importate da file centralizzato ---------------------- */
 const drivers = DRIVERS;

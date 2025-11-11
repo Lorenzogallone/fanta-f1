@@ -8,13 +8,13 @@ import {
   collection, query, orderBy, getDocs,
   doc, setDoc, getDoc, Timestamp
 } from "firebase/firestore";
-import { db } from "./firebase";
-import { isLastRace, calculatePointsForRace } from "./pointsCalculator";
-import { calculateChampionshipPoints } from "./championshipPointsCalculator";
-import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS, POINTS } from "./constants/racing";
-import RaceHistoryCard from "./components/RaceHistoryCard";
+import { db } from "../services/firebase";
+import { isLastRace, calculatePointsForRace } from "../services/pointsCalculator";
+import { calculateChampionshipPoints } from "../services/championshipPointsCalculator";
+import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
+import RaceHistoryCard from "../components/RaceHistoryCard";
 import Select from "react-select";
-import "./customSelect.css";
+import "../styles/customSelect.css";
 
 /* ---------- costanti importate da file centralizzato ---------- */
 const drivers = DRIVERS;

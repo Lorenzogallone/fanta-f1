@@ -3,7 +3,7 @@ import React from "react";
 import { Container, Row, Col, Card, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import Leaderboard from "./Leaderboard";
-import { useTheme } from "./ThemeContext";
+import { useTheme } from "../contexts/ThemeContext";
 
 export default function Home() {
   const { isDark } = useTheme();

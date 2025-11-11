@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { Card, Table, Spinner, Alert, Image } from "react-bootstrap";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "./firebase";
-import { DRIVER_TEAM, TEAM_LOGOS } from "./constants/racing";
+import { db } from "../services/firebase";
+import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 
 /* Usa costanti centralizzate */
 const driverTeam = DRIVER_TEAM;

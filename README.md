@@ -17,7 +17,7 @@ Per ogni Gran Premio, ogni giocatore **schiera la formazione prima dell'inizio d
 ### Sprint Race
 Per i weekend con Sprint Race, si può schierare una formazione separata:
 - **3 Piloti Sprint (SP1, SP2, SP3)**: Pronostico podio sprint
-- **1 Jolly Sprint**: Bonus di 5 punti se finisce sul podio sprint
+- **1 Jolly Sprint**: Bonus di 2 punti se finisce sul podio sprint
 - Puoi usare gli stessi piloti della gara principale
 
 ### Formazione Campionato
@@ -42,8 +42,9 @@ I punti vengono assegnati a fine stagione con lo stesso sistema delle gare.
 - **Indovini il 3° classificato (SP3)**: 4 punti
 
 ### Bonus Jolly
-- Il **Jolly** dà **5 punti fissi** se il pilota scelto finisce sul podio (top 3), **indipendentemente dalla posizione**
-- Il **Jolly 2** funziona allo stesso modo (5 punti se sul podio)
+- Il **Jolly gara** dà **5 punti fissi** se il pilota scelto finisce sul podio (top 3), **indipendentemente dalla posizione**
+- Il **Jolly 2** funziona allo stesso modo del jolly gara (5 punti se sul podio)
+- Il **Jolly sprint** dà **2 punti fissi** se il pilota finisce sul podio sprint
 - Jolly gara principale e sprint sono indipendenti
 
 ### Regola Speciale: 29→30
@@ -57,6 +58,14 @@ A fine stagione, si assegnano gli stessi punti delle gare:
 - Indovini il 2° pilota/costruttore: 10 punti
 - Indovini il 3° pilota/costruttore: 8 punti
 - Anche qui vale la regola 29→30!
+
+### 🏁 Ultima Gara - Punti Doppi
+Per l'ultima gara della stagione, **tutti i punti vengono raddoppiati**:
+- Gara principale: 24, 20, 16 punti (anziché 12, 10, 8)
+- Sprint (se presente): 16, 12, 8 punti (anziché 8, 6, 4)
+- Jolly gara: 10 punti (anziché 5)
+- Jolly sprint: 4 punti (anziché 2)
+- Anche i punti della regola 29→30 vengono raddoppiati!
 
 ## 🖥️ Funzionalità dell'App
 
@@ -111,24 +120,39 @@ Gli amministratori possono:
 
 ```
 fanta-f1/
-├── public/               # Loghi team e asset statici
+├── public/                   # Loghi team e asset statici
 ├── src/
-│   ├── components/       # Componenti riutilizzabili
-│   ├── constants/        # Costanti centralizzate (piloti, team)
-│   ├── utils/           # Utility per calcolo punteggi
-│   ├── App.jsx          # Componente principale
-│   ├── Navigation.jsx   # Navbar con dark mode toggle
-│   ├── Home.jsx         # Homepage
-│   ├── Leaderboard.jsx  # Classifica
-│   ├── History.jsx      # Storico gare
-│   ├── FormationApp.jsx # Schiera formazione
-│   ├── ChampionshipForm.jsx  # Formazioni campionato
-│   ├── CalculatePoints.jsx   # Calcolo punteggi (admin)
-│   ├── AdminPanel.jsx   # Pannello amministrazione
-│   ├── ThemeContext.jsx # Gestione dark/light mode
-│   ├── theme.css        # Variabili CSS per temi
-│   └── firebase.js      # Configurazione Firebase
-├── scripts_calendar/    # Script per importare calendario gare
+│   ├── pages/                # Componenti pagina (routes)
+│   │   ├── Home.jsx          # Homepage
+│   │   ├── History.jsx       # Storico gare
+│   │   ├── Leaderboard.jsx   # Classifica
+│   │   ├── FormationApp.jsx  # Schiera formazione
+│   │   ├── ChampionshipForm.jsx # Formazioni campionato
+│   │   ├── CalculatePoints.jsx  # Calcolo punteggi (admin)
+│   │   └── AdminPanel.jsx    # Pannello amministrazione
+│   ├── components/           # Componenti riutilizzabili
+│   │   ├── Navigation.jsx    # Navbar con dark mode toggle
+│   │   ├── RaceHistoryCard.jsx # Card gara unificata
+│   │   ├── ChampionshipSubmissions.jsx
+│   │   └── SubmissionsList.jsx
+│   ├── contexts/             # React Context providers
+│   │   └── ThemeContext.jsx  # Gestione dark/light mode
+│   ├── services/             # Servizi backend e calcoli
+│   │   ├── firebase.js       # Configurazione Firebase
+│   │   ├── pointsCalculator.js # Calcolo punteggi gare
+│   │   └── championshipPointsCalculator.js
+│   ├── utils/                # Utility functions
+│   │   └── pointsCalculation.js
+│   ├── constants/            # Costanti centralizzate
+│   │   └── racing.js         # Piloti, team, punteggi
+│   ├── styles/               # File CSS
+│   │   ├── theme.css         # Variabili CSS dark/light
+│   │   ├── App.css           # Stili globali
+│   │   ├── index.css         # Reset e base
+│   │   └── customSelect.css  # Stili react-select
+│   ├── App.jsx               # Componente principale + routing
+│   └── main.jsx              # Entry point applicazione
+├── scripts_calendar/         # Script per importare calendario gare
 └── README.md
 ```
 
@@ -168,7 +192,9 @@ Per ogni gara, contiene le formazioni dei giocatori:
 3. **Piloti Unici**: Non si possono selezionare piloti duplicati nella stessa gara
 4. **Jolly Multipli**: Si possono usare gli stessi piloti tra gara principale e sprint
 5. **Regola 29→30**: Indovinando tutto il podio (30 punti), si sblocca 1 jolly extra
-6. **Jolly = 5 punti**: Il jolly non raddoppia i punti, ma aggiunge sempre 5 punti fissi se il pilota finisce sul podio
+6. **Jolly gara = 5 punti**: Il jolly gara non raddoppia i punti, ma aggiunge 5 punti fissi se sul podio
+7. **Jolly sprint = 2 punti**: Il jolly sprint aggiunge 2 punti fissi se il pilota finisce sul podio sprint
+8. **Ultima gara x2**: Nell'ultima gara della stagione, tutti i punti vengono raddoppiati
 
 ## 🔐 Accesso Admin
 
