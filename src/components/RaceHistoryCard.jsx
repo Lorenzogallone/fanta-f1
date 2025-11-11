@@ -112,9 +112,12 @@ export default function RaceHistoryCard({
   const hasSprint = Boolean(official?.SP1);
   const doublePts = Boolean(official?.doublePoints);
   const BONUS_MAIN = POINTS.BONUS_JOLLY_MAIN;
+  const cancelledMain = race.cancelledMain || false;
+  const cancelledSprint = race.cancelledSprint || false;
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
+  const borderColor = cancelledMain ? "#6c757d" : accentColor;
 
   const DoubleBadge = () =>
     doublePts ? (
@@ -128,7 +131,7 @@ export default function RaceHistoryCard({
       className="shadow border-0"
       style={{
         backgroundColor: bgCard,
-        borderLeft: `4px solid ${accentColor}`,
+        borderLeft: `4px solid ${borderColor}`,
       }}
     >
       {!compact && (
@@ -139,17 +142,41 @@ export default function RaceHistoryCard({
             borderBottomColor: accentColor,
           }}
         >
-          <h5 className="mb-0" style={{ color: accentColor }}>
+          <h5 className="mb-0" style={{ color: cancelledMain ? "#6c757d" : accentColor }}>
             {race.round}. {race.name} —{" "}
             {new Date(race.raceUTC.seconds * 1000).toLocaleDateString("it-IT")}
+            {cancelledMain && (
+              <Badge bg="danger" className="ms-2">
+                ⛔ CANCELLATA
+              </Badge>
+            )}
+            {cancelledSprint && hasSprint && (
+              <Badge bg="warning" text="dark" className="ms-2">
+                SPRINT CANCELLATA
+              </Badge>
+            )}
             {doublePts && <DoubleBadge />}
           </h5>
         </Card.Header>
       )}
 
       <Card.Body>
+        {/* Alert for cancelled races */}
+        {cancelledMain && (
+          <Alert variant="danger" className="mb-3">
+            <strong>⛔ Gara Cancellata</strong><br />
+            Questa gara è stata cancellata e non viene conteggiata nei punteggi.
+          </Alert>
+        )}
+        {cancelledSprint && hasSprint && !cancelledMain && (
+          <Alert variant="warning" className="mb-3">
+            <strong>⛔ Sprint Cancellata</strong><br />
+            La sprint di questa gara è stata cancellata e non viene conteggiata nei punteggi.
+          </Alert>
+        )}
+
         {/* ======= RISULTATI UFFICIALI ======= */}
-        {showOfficialResults && official ? (
+        {showOfficialResults && official && !cancelledMain ? (
           <>
             <h6 className="fw-bold border-bottom pb-1" style={{ color: accentColor }}>
               Gara principale
@@ -183,7 +210,7 @@ export default function RaceHistoryCard({
               </tbody>
             </Table>
 
-            {hasSprint && (
+            {hasSprint && !cancelledSprint && (
               <>
                 <h6 className="fw-bold border-bottom pb-1 mt-4" style={{ color: accentColor }}>
                   Sprint

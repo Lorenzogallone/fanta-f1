@@ -49,16 +49,25 @@ export async function calculatePointsForRace(raceId, official) {
   const raceSnap = await getDoc(raceRef);
   if (!raceSnap.exists()) throw new Error("Gara non trovata");
 
+  const raceData = raceSnap.data();
   const {
     P1, P2, P3,
     SP1 = null, SP2 = null, SP3 = null,
     doublePoints = false,
-  } = raceSnap.data().officialResults ?? {};
+  } = raceData.officialResults ?? {};
+
+  // Skip gare cancellate
+  const cancelledMain = raceData.cancelledMain || false;
+  const cancelledSprint = raceData.cancelledSprint || false;
+
+  if (cancelledMain) {
+    throw new Error("⛔ Gara cancellata: il calcolo punti è disabilitato.");
+  }
 
   if (!P1 || !P2 || !P3)
     throw new Error("Risultati ufficiali incompleti (manca il podio).");
 
-  const sprintPresent = !!SP1;
+  const sprintPresent = !!SP1 && !cancelledSprint;
 
   /* 3️⃣  Itera sulle submissions --------------------------------- */
   const subsSnap = await getDocs(
@@ -88,7 +97,7 @@ export async function calculatePointsForRace(raceId, official) {
 
     /* ------ calcolo punteggi SPRINT --------------------------- */
     let sprintPts = 0;
-    if (sprintPresent) {
+    if (sprintPresent && !cancelledSprint) {
       if (!s.sprintP1) {
         sprintPts = PENALTY_EMPTY_LIST;
       } else {
