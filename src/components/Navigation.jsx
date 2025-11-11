@@ -46,7 +46,10 @@ export default function Navigation() {
             src="/FantaF1_Logo.png"
             alt="Fanta F1"
             height="45"
-            style={{ objectFit: "contain" }}
+            style={{
+              objectFit: "contain",
+              filter: isDark ? "invert(1) hue-rotate(180deg) brightness(1.1)" : "none"
+            }}
           />
         </Link>
 
