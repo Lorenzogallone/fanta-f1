@@ -1,7 +1,7 @@
 // src/SubmissionsList.jsx  –  light-F1 styling with team logos
 import React, { useState, useEffect } from "react";
 import {
-  Card, Table, Button, Spinner, Alert,
+  Card, Table, Spinner, Alert,
 } from "react-bootstrap";
 import {
   collection, query, orderBy, getDocs,
@@ -114,7 +114,53 @@ export default function SubmissionsList({ raceId, hasSprint, refresh }) {
           Formazioni ricevute&nbsp;
         </Card.Title>
 
-        <div className="table-responsive">
+        {/* Layout MOBILE - Cards */}
+        <div className="d-lg-none">
+          {subs.map((s, i) => {
+            const PickLine = ({ label, driver }) => (
+              <div className="d-flex justify-content-between align-items-center py-1 border-bottom" style={{ fontSize: "0.9rem" }}>
+                <span className="text-muted">{label}</span>
+                <div className="d-flex align-items-center">
+                  {driver ? <DriverCell driverName={driver} /> : <span className="text-muted">—</span>}
+                </div>
+              </div>
+            );
+
+            return (
+              <Card key={s.id} className="mb-3" style={{ borderLeft: `3px solid ${accentColor}` }}>
+                <Card.Body>
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <h6 className="mb-0" style={{ color: accentColor }}>
+                      {i + 1}. {s.user}
+                    </h6>
+                  </div>
+
+                  <div className="mb-2">
+                    <strong className="text-muted" style={{ fontSize: "0.85rem" }}>GARA PRINCIPALE</strong>
+                    <PickLine label="P1" driver={s.mainP1} />
+                    <PickLine label="P2" driver={s.mainP2} />
+                    <PickLine label="P3" driver={s.mainP3} />
+                    <PickLine label="Jolly 1" driver={s.mainJolly} />
+                    {s.mainJolly2 && <PickLine label="Jolly 2" driver={s.mainJolly2} />}
+                  </div>
+
+                  {hasSprint && (
+                    <div>
+                      <strong className="text-muted" style={{ fontSize: "0.85rem" }}>SPRINT</strong>
+                      <PickLine label="SP1" driver={s.sprintP1} />
+                      <PickLine label="SP2" driver={s.sprintP2} />
+                      <PickLine label="SP3" driver={s.sprintP3} />
+                      <PickLine label="Jolly SP" driver={s.sprintJolly} />
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Layout DESKTOP - Table */}
+        <div className="d-none d-lg-block table-responsive">
           <Table striped bordered hover size="sm" className="mb-0">
             <thead>
               <tr>
