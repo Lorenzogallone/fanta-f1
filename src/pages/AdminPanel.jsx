@@ -30,7 +30,6 @@ import { db } from "../services/firebase";
 import { DRIVERS } from "../constants/racing";
 import Select from "react-select";
 import { useTheme } from "../contexts/ThemeContext";
-import CalculatePoints from "./CalculatePoints";
 
 const ADMIN_PASSWORD = "SUCASOLERA";
 
@@ -132,9 +131,6 @@ export default function AdminPanel() {
             <Nav.Link eventKey="calendar">📅 Calendario Gare</Nav.Link>
           </Nav.Item>
           <Nav.Item>
-            <Nav.Link eventKey="calculate">🧮 Calcola Punteggi</Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
             <Nav.Link eventKey="import-ics">📅 Import ICS</Nav.Link>
           </Nav.Item>
           <Nav.Item>
@@ -153,10 +149,6 @@ export default function AdminPanel() {
 
           <Tab.Pane eventKey="calendar">
             <CalendarManager />
-          </Tab.Pane>
-
-          <Tab.Pane eventKey="calculate">
-            <CalculatePoints />
           </Tab.Pane>
 
           <Tab.Pane eventKey="import-ics">
