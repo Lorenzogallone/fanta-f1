@@ -30,61 +30,7 @@ import { db } from "../services/firebase";
 import { DRIVERS } from "../constants/racing";
 import Select from "react-select";
 import { useTheme } from "../contexts/ThemeContext";
-
-const ADMIN_PASSWORD = "SUCASOLERA";
-
-/* ==================== COMPONENTE LOGIN ==================== */
-function AdminLogin({ onSuccess }) {
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState(false);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      localStorage.setItem("adminAuth", "true");
-      onSuccess();
-    } else {
-      setError(true);
-      setPassword("");
-    }
-  };
-
-  return (
-    <Container className="py-5">
-      <Row className="justify-content-center">
-        <Col xs={12} md={6} lg={4}>
-          <Card className="shadow border-danger">
-            <Card.Header className="bg-danger text-white text-center">
-              <h5 className="mb-0">🔒 Accesso Admin</h5>
-            </Card.Header>
-            <Card.Body>
-              {error && (
-                <Alert variant="danger" onClose={() => setError(false)} dismissible>
-                  Password errata!
-                </Alert>
-              )}
-              <Form onSubmit={handleSubmit}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Password</Form.Label>
-                  <Form.Control
-                    type="password"
-                    placeholder="Inserisci password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoFocus
-                  />
-                </Form.Group>
-                <Button variant="danger" type="submit" className="w-100">
-                  Accedi
-                </Button>
-              </Form>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
-  );
-}
+import AdminLogin from "../components/AdminLogin";
 
 /* ==================== COMPONENTE PRINCIPALE ==================== */
 export default function AdminPanel() {
@@ -105,7 +51,7 @@ export default function AdminPanel() {
   };
 
   if (!isAuthenticated) {
-    return <AdminLogin onSuccess={() => setIsAuthenticated(true)} />;
+    return <AdminLogin onSuccess={() => setIsAuthenticated(true)} useLocalStorage={true} />;
   }
 
   return (
