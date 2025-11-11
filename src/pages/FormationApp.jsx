@@ -338,7 +338,12 @@ export default function FormationApp() {
 
   /* ─────────────── helpers UI ─────────────── */
   const DeadlineBadgeLocal = ({ open }) => (
-    <Badge bg={open ? "success" : "danger"}>{open ? "APERTO" : "CHIUSO"}</Badge>
+    <Badge
+      bg={open ? "success" : "danger"}
+      style={{ color: (open && isDark) ? "#ffffff" : undefined }}
+    >
+      {open ? "APERTO" : "CHIUSO"}
+    </Badge>
   );
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
