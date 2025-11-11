@@ -8,6 +8,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
+import { useTheme } from "../contexts/ThemeContext";
 
 /* Usa costanti centralizzate */
 const driverTeam = DRIVER_TEAM;
@@ -41,6 +42,7 @@ function DriverCell({ driverName }) {
  *  ─ refresh   : timestamp che forza il reload
  */
 export default function SubmissionsList({ raceId, hasSprint, refresh }) {
+  const { isDark } = useTheme();
   const [subs,    setSubs] = useState([]);
   const [loading, setLoad] = useState(true);
   const [error,   setErr ] = useState(null);
@@ -96,9 +98,17 @@ export default function SubmissionsList({ raceId, hasSprint, refresh }) {
   /* ---------- render ----------------------------------------------- */
   const headerBase = ["#", "Utente", "P1", "P2", "P3", "Jolly"];
   const headerSprint = ["SP1", "SP2", "SP3", "Jolly Sprint"];
+  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
+  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
 
   return (
-    <Card className="mt-4 shadow h-100 border-danger">
+    <Card
+      className="mt-4 shadow h-100"
+      style={{
+        borderLeft: `4px solid ${accentColor}`,
+        backgroundColor: bgCard
+      }}
+    >
       <Card.Body>
         <Card.Title className="text-center mb-3">
           Formazioni ricevute&nbsp;

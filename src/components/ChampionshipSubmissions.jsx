@@ -4,12 +4,14 @@ import { Card, Table, Spinner, Alert, Image } from "react-bootstrap";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
+import { useTheme } from "../contexts/ThemeContext";
 
 /* Usa costanti centralizzate */
 const driverTeam = DRIVER_TEAM;
 const teamLogos = TEAM_LOGOS;
 
 export default function ChampionshipSubmissions({ refresh }) {
+  const { isDark } = useTheme();
   const [subs, setSubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -73,8 +75,17 @@ export default function ChampionshipSubmissions({ refresh }) {
     );
   }
 
+  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
+  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
+
   return (
-    <Card className="mt-4 shadow h-100 border-danger">
+    <Card
+      className="mt-4 shadow h-100"
+      style={{
+        borderLeft: `4px solid ${accentColor}`,
+        backgroundColor: bgCard
+      }}
+    >
       <Card.Body>
         <Card.Title className="text-center mb-3">
           Formazioni Campionato Inviate ({subs.length})

@@ -18,7 +18,6 @@ Per ogni Gran Premio, ogni giocatore **schiera la formazione prima dell'inizio d
 Per i weekend con Sprint Race, si può schierare una formazione separata:
 - **3 Piloti Sprint (SP1, SP2, SP3)**: Pronostico podio sprint
 - **1 Jolly Sprint**: Bonus di 2 punti se finisce sul podio sprint
-- Puoi usare gli stessi piloti della gara principale
 
 ### Formazione Campionato
 **A metà stagione**, ogni giocatore pronostica:
