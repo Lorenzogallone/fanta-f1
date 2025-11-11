@@ -101,6 +101,14 @@ export default function Navigation() {
             </Nav.Link>
             <Nav.Link
               as={Link}
+              to="/calcola"
+              onClick={handleNavClick}
+              className={location.pathname === "/calcola" ? "active" : ""}
+            >
+              🧮 Calcola Punteggi
+            </Nav.Link>
+            <Nav.Link
+              as={Link}
               to="/admin"
               onClick={handleNavClick}
               className={`admin-link ${location.pathname === "/admin" ? "active" : ""}`}
