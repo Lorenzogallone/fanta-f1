@@ -182,6 +182,12 @@ body {
   color: #ffb3b3;
 }
 
+[data-theme="dark"] .alert-light {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
 /* Buttons */
 [data-theme="dark"] .btn-outline-secondary {
   color: var(--text-secondary);
