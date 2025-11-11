@@ -1005,13 +1005,23 @@ function CalendarManager() {
   const [editingRace, setEditingRace] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editFormData, setEditFormData] = useState({
-    raceDate: "",
-    raceTime: "",
     qualiDate: "",
     qualiTime: "",
     sprintDate: "",
     sprintTime: "",
+    cancelledMain: false,
+    cancelledSprint: false,
   });
+
+
+
+
+
+
+
+
+
+
 
   useEffect(() => {
     loadRaces();
@@ -1069,17 +1079,16 @@ function CalendarManager() {
       };
     };
 
-    const raceDateTime = formatDateTime(race.raceUTC);
     const qualiDateTime = formatDateTime(race.qualiUTC);
     const sprintDateTime = race.qualiSprintUTC ? formatDateTime(race.qualiSprintUTC) : { date: "", time: "" };
 
     setEditFormData({
-      raceDate: raceDateTime.date,
-      raceTime: raceDateTime.time,
       qualiDate: qualiDateTime.date,
       qualiTime: qualiDateTime.time,
       sprintDate: sprintDateTime.date,
       sprintTime: sprintDateTime.time,
+      cancelledMain: race.cancelledMain || false,
+      cancelledSprint: race.cancelledSprint || false,
     });
 
     setShowEditModal(true);
@@ -1100,11 +1109,12 @@ function CalendarManager() {
       };
 
       const updates = {
-        raceUTC: createTimestamp(editFormData.raceDate, editFormData.raceTime),
         qualiUTC: createTimestamp(editFormData.qualiDate, editFormData.qualiTime),
+        cancelledMain: editFormData.cancelledMain,
+        cancelledSprint: editFormData.cancelledSprint,
       };
 
-      // Sprint è opzionale
+      // Sprint deadline è opzionale
       if (editFormData.sprintDate && editFormData.sprintTime) {
         updates.qualiSprintUTC = createTimestamp(editFormData.sprintDate, editFormData.sprintTime);
       } else {
@@ -1116,7 +1126,7 @@ function CalendarManager() {
 
       setMessage({
         type: "success",
-        text: `✓ Date aggiornate per ${editingRace.name}!`,
+        text: `✓ Deadline e stati aggiornati per ${editingRace.name}!`,
       });
 
       setShowEditModal(false);
@@ -1203,7 +1213,15 @@ function CalendarManager() {
                     {races.map((r) => (
                       <tr key={r.id}>
                         <td>{r.round}</td>
-                        <td>{r.name}</td>
+                        <td>
+                          {r.name}
+                          {r.cancelledMain && (
+                            <Badge bg="danger" className="ms-2">CANCELLATA</Badge>
+                          )}
+                          {r.cancelledSprint && r.qualiSprintUTC && (
+                            <Badge bg="warning" text="dark" className="ms-2">SPRINT CANCELLATA</Badge>
+                          )}
+                        </td>
                         <td>
                           {r.raceUTC
                             ? new Date(r.raceUTC.seconds * 1000).toLocaleString("it-IT", {
@@ -1222,9 +1240,11 @@ function CalendarManager() {
                         </td>
                         <td className="text-center">
                           {r.qualiSprintUTC ? (
-                            <Badge bg="warning" text="dark">
-                              ✓
-                            </Badge>
+                            r.cancelledSprint ? (
+                              <Badge bg="secondary">✗</Badge>
+                            ) : (
+                              <Badge bg="warning" text="dark">✓</Badge>
+                            )
                           ) : (
                             "—"
                           )}
@@ -1258,67 +1278,82 @@ function CalendarManager() {
       {/* Modal per modificare date gara */}
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>✏️ Modifica Date - {editingRace?.name}</Modal.Title>
+          <Modal.Title>✏️ Gestisci Gara - {editingRace?.name}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Alert variant="info" className="small">
-            <strong>ℹ️ Nota:</strong> Le deadline per l'inserimento formazioni sono basate su queste date.
-            Modificandole, gli utenti avranno più o meno tempo per inserire le formazioni.
+            <strong>ℹ️ Nota:</strong> Le deadline controllano quando gli utenti possono inserire le formazioni.
+            Le gare cancellate non vengono conteggiate nei punteggi.
           </Alert>
 
           <Form>
-            <Row className="mb-3">
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label>Data Gara *</Form.Label>
-                  <Form.Control
-                    type="date"
-                    value={editFormData.raceDate}
-                    onChange={(e) => setEditFormData({ ...editFormData, raceDate: e.target.value })}
-                    required
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label>Ora Gara *</Form.Label>
-                  <Form.Control
-                    type="time"
-                    value={editFormData.raceTime}
-                    onChange={(e) => setEditFormData({ ...editFormData, raceTime: e.target.value })}
-                    required
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
+            {/* Cancellazione Gara Principale */}
+            <Card className="mb-3 border-danger">
+              <Card.Body>
+                <Form.Check
+                  type="checkbox"
+                  id="cancelledMain"
+                  label="⛔ Segna gara come CANCELLATA"
+                  checked={editFormData.cancelledMain}
+                  onChange={(e) => setEditFormData({ ...editFormData, cancelledMain: e.target.checked })}
+                />
+                <Form.Text className="text-muted d-block mt-2">
+                  Le gare cancellate non verranno calcolate nei punteggi e appariranno come "CANCELLATA" nello storico
+                </Form.Text>
+              </Card.Body>
+            </Card>
 
+            <h6>Deadline Formazione Gara Principale</h6>
             <Row className="mb-3">
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label>Data Qualifiche (Deadline Formazione) *</Form.Label>
+                  <Form.Label>Data Deadline *</Form.Label>
                   <Form.Control
                     type="date"
                     value={editFormData.qualiDate}
                     onChange={(e) => setEditFormData({ ...editFormData, qualiDate: e.target.value })}
                     required
+                    disabled={editFormData.cancelledMain}
                   />
+                  <Form.Text className="text-muted">
+                    Gli utenti non potranno inserire formazioni dopo questa data
+                  </Form.Text>
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label>Ora Qualifiche *</Form.Label>
+                  <Form.Label>Ora Deadline *</Form.Label>
                   <Form.Control
                     type="time"
                     value={editFormData.qualiTime}
                     onChange={(e) => setEditFormData({ ...editFormData, qualiTime: e.target.value })}
                     required
+                    disabled={editFormData.cancelledMain}
                   />
                 </Form.Group>
               </Col>
             </Row>
 
             <hr />
-            <h6>Sprint (opzionale)</h6>
+
+            {/* Cancellazione Sprint */}
+            <Card className="mb-3 border-warning">
+              <Card.Body>
+                <Form.Check
+                  type="checkbox"
+                  id="cancelledSprint"
+                  label="⛔ Segna sprint come CANCELLATA"
+                  checked={editFormData.cancelledSprint}
+                  onChange={(e) => setEditFormData({ ...editFormData, cancelledSprint: e.target.checked })}
+                  disabled={!editingRace?.qualiSprintUTC && !editFormData.sprintDate}
+                />
+                <Form.Text className="text-muted d-block mt-2">
+                  Le sprint cancellate non verranno calcolate nei punteggi
+                </Form.Text>
+              </Card.Body>
+            </Card>
+
+            <h6>Deadline Formazione Sprint (opzionale)</h6>
             <Alert variant="warning" className="small py-2">
               Lascia vuoto per rimuovere la sprint da questa gara
             </Alert>
@@ -1326,21 +1361,23 @@ function CalendarManager() {
             <Row className="mb-3">
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label>Data Sprint</Form.Label>
+                  <Form.Label>Data Deadline Sprint</Form.Label>
                   <Form.Control
                     type="date"
                     value={editFormData.sprintDate}
                     onChange={(e) => setEditFormData({ ...editFormData, sprintDate: e.target.value })}
+                    disabled={editFormData.cancelledSprint}
                   />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label>Ora Sprint</Form.Label>
+                  <Form.Label>Ora Deadline Sprint</Form.Label>
                   <Form.Control
                     type="time"
                     value={editFormData.sprintTime}
                     onChange={(e) => setEditFormData({ ...editFormData, sprintTime: e.target.value })}
+                    disabled={editFormData.cancelledSprint}
                   />
                 </Form.Group>
               </Col>
