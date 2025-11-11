@@ -72,68 +72,13 @@ export default function Leaderboard() {
             <Spinner animation="border" />
           </div>
         ) : (
-          <>
-            {/* Layout MOBILE - Cards compatte */}
-            <div className="d-lg-none p-3">
-              {rows.map((r, idx) => {
-                const medal = medals[idx] ?? idx + 1;
-                const gap = idx === 0 ? "—" : `-${leaderPts - r.pts}`;
-                const isTop3 = idx < 3;
-                const positionChange = previousSnapshot
-                  ? calculatePositionChange(r.userId, r.position, previousSnapshot)
-                  : 0;
-
-                return (
-                  <div
-                    key={r.name}
-                    className="d-flex align-items-center justify-content-between py-2 border-bottom"
-                    style={{ fontWeight: isTop3 ? "bold" : "normal" }}
-                  >
-                    <div className="d-flex align-items-center gap-2">
-                      <span style={{ fontSize: "1.1rem", minWidth: 30 }}>{medal}</span>
-                      <div>
-                        <div>{r.name}</div>
-                        <div className="text-muted" style={{ fontSize: "0.85rem" }}>
-                          {r.pts} pts {gap !== "—" && `• ${gap}`}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center gap-2">
-                      <Badge
-                        bg={r.jolly ? "success" : "secondary"}
-                        style={{ minWidth: 30 }}
-                      >
-                        {r.jolly}
-                      </Badge>
-                      {previousSnapshot && (
-                        <div style={{ minWidth: 40, textAlign: "center" }}>
-                          {positionChange === 0 ? (
-                            <span style={{ color: "#6c757d" }}>—</span>
-                          ) : positionChange > 0 ? (
-                            <span style={{ color: "#28a745", fontWeight: "bold", fontSize: "0.9rem" }}>
-                              ↑{positionChange}
-                            </span>
-                          ) : (
-                            <span style={{ color: "#dc3545", fontWeight: "bold", fontSize: "0.9rem" }}>
-                              ↓{Math.abs(positionChange)}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Layout DESKTOP - Table */}
-            <div className="d-none d-lg-block table-responsive">
-              <Table
-                hover
-                striped
-                className="mb-0 align-middle"
-                style={{ borderTop: `1px solid ${accentColor}` }}
-              >
+          <div className="table-responsive">
+            <Table
+              hover
+              striped
+              className="mb-0 align-middle"
+              style={{ borderTop: `1px solid ${accentColor}` }}
+            >
               <thead>
                 <tr>
                   <th style={{ width: 60 }} className="text-center">
@@ -201,9 +146,8 @@ export default function Leaderboard() {
                   );
                 })}
               </tbody>
-              </Table>
-            </div>
-          </>
+            </Table>
+          </div>
         )}
       </Card.Body>
     </Card>
