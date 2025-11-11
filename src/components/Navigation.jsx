@@ -1,25 +1,16 @@
 // src/Navigation.jsx
 import React, { useState } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { Navbar, Container, Nav } from "react-bootstrap";
 import { useTheme } from "../contexts/ThemeContext";
 
 export default function Navigation() {
   const location = useLocation();
-  const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const { toggleTheme, isDark } = useTheme();
 
-  // Mostra il pulsante "Indietro" se non siamo sulla home
-  const showBack = location.pathname !== "/";
-
   // Chiude il menu quando si clicca su una voce (utile su mobile)
   const handleNavClick = () => {
-    setExpanded(false);
-  };
-
-  const handleBack = () => {
-    navigate(-1);
     setExpanded(false);
   };
 
@@ -76,21 +67,6 @@ export default function Navigation() {
         {/* Menu Collassabile */}
         <Navbar.Collapse id="main-navbar-nav" className="order-3 order-lg-2">
           <Nav className="mx-auto">
-            {/* Pulsante Indietro - Solo mobile, prima voce del menu */}
-            {showBack && (
-              <Nav.Link
-                onClick={handleBack}
-                className="d-lg-none fw-bold back-nav-link"
-                style={{
-                  borderBottom: `1px solid ${isDark ? "#404040" : "#dee2e6"}`,
-                  marginBottom: "0.5rem",
-                  paddingBottom: "0.75rem"
-                }}
-              >
-                <span style={{ fontSize: "1.2rem" }}>←</span> Indietro
-              </Nav.Link>
-            )}
-
             <Nav.Link
               as={Link}
               to="/"

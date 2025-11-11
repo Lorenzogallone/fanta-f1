@@ -383,19 +383,6 @@ body {
   .navbar-modern .nav-link:last-child {
     border-bottom: none;
   }
-
-  /* Back link speciale su mobile */
-  .back-nav-link {
-    background-color: var(--bg-tertiary) !important;
-    color: var(--accent-red) !important;
-    margin: -0.5rem -1rem 0.5rem -1rem !important;
-    padding: 1rem 1.25rem !important;
-    font-size: 1.2rem !important;
-  }
-
-  .back-nav-link:hover {
-    background-color: var(--bg-primary) !important;
-  }
 }
 
 .navbar-modern .nav-link:hover {
@@ -499,28 +486,6 @@ body {
 
 .logo-wrapper:hover {
   transform: scale(1.05);
-}
-
-/* Back button migliorato */
-.back-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--border-color);
-  background-color: var(--bg-secondary);
-  color: var(--text-primary);
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.back-button:hover {
-  background-color: var(--bg-tertiary);
-  border-color: var(--accent-red);
-  color: var(--accent-red);
-  transform: translateX(-2px);
 }
 
 /* Admin link highlight */
