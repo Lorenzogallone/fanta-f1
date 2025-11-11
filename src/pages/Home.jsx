@@ -20,17 +20,7 @@ export default function Home() {
                 Benvenuto in Fanta F1
               </Card.Title>
               <Row className="g-3">
-                <Col xs={12} md={3}>
-                  <Button
-                    as={Link}
-                    to="/storico"
-                    variant="outline-danger"
-                    className="w-100 py-3"
-                  >
-                    Storico Gare
-                  </Button>
-                </Col>
-                <Col xs={12} md={3}>
+                <Col xs={12} md={4}>
                   <Button
                     as={Link}
                     to="/schiera"
@@ -40,24 +30,24 @@ export default function Home() {
                     Schiera Formazione
                   </Button>
                 </Col>
-                <Col xs={12} md={3}>
+                <Col xs={12} md={4}>
                   <Button
                     as={Link}
-                    to="/calcola"
+                    to="/storico"
                     variant="outline-danger"
                     className="w-100 py-3"
                   >
-                    Calcola Punteggi
+                    Storico Gare
                   </Button>
                 </Col>
-                <Col xs={12} md={3}>
+                <Col xs={12} md={4}>
                   <Button
                     as={Link}
                     to="/championship"
                     variant="outline-danger"
                     className="w-100 py-3"
                   >
-                    Formazioni Campionato
+                    Schiera Campionato
                   </Button>
                 </Col>
               </Row>

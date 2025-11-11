@@ -73,14 +73,6 @@ export default function Navigation() {
               onClick={handleNavClick}
               className={location.pathname === "/" ? "active" : ""}
             >
-              🏠 Home
-            </Nav.Link>
-            <Nav.Link
-              as={Link}
-              to="/classifica"
-              onClick={handleNavClick}
-              className={location.pathname === "/classifica" ? "active" : ""}
-            >
               📊 Classifica
             </Nav.Link>
             <Nav.Link
@@ -90,14 +82,6 @@ export default function Navigation() {
               className={location.pathname === "/schiera" ? "active" : ""}
             >
               🏎️ Schiera
-            </Nav.Link>
-            <Nav.Link
-              as={Link}
-              to="/calcola"
-              onClick={handleNavClick}
-              className={location.pathname === "/calcola" ? "active" : ""}
-            >
-              🧮 Calcola
             </Nav.Link>
             <Nav.Link
               as={Link}
@@ -113,7 +97,7 @@ export default function Navigation() {
               onClick={handleNavClick}
               className={location.pathname === "/championship" ? "active" : ""}
             >
-              🏆 Campionato
+              🏆 Schiera Campionato
             </Nav.Link>
             <Nav.Link
               as={Link}
