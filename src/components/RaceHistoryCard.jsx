@@ -16,9 +16,9 @@ import {
   Alert,
 } from "react-bootstrap";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../services/firebase";
 import { DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
-import { useTheme } from "../ThemeContext";
+import { useTheme } from "../contexts/ThemeContext";
 
 /**
  * Visualizza nome del pilota con logo della scuderia

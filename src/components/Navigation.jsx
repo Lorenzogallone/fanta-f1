@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Navbar, Container, Nav, Button } from "react-bootstrap";
-import { useTheme } from "./ThemeContext";
+import { useTheme } from "../contexts/ThemeContext";
 
 export default function Navigation() {
   const location = useLocation();

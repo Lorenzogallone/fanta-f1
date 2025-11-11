@@ -96,7 +96,7 @@ export const POINTS = {
 
   // Bonus jolly (indipendente dalla posizione, se finisce sul podio)
   BONUS_JOLLY_MAIN: 5,
-  BONUS_JOLLY_SPRINT: 5,
+  BONUS_JOLLY_SPRINT: 2,
 
   // Penalità formazione vuota
   PENALTY_EMPTY_LIST: -3,

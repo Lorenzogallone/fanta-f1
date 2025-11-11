@@ -20,8 +20,8 @@ import {
   orderBy,
   Timestamp,
 } from "firebase/firestore";
-import { db } from "./firebase";
-import RaceHistoryCard from "./components/RaceHistoryCard";
+import { db } from "../services/firebase";
+import RaceHistoryCard from "../components/RaceHistoryCard";
 
 /* ============================== HISTORY ============================== */
 export default function History() {

@@ -13,10 +13,10 @@ import {
 } from "react-bootstrap";
 import Select from "react-select";
 import { collection, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "./firebase";
-import ChampionshipSubmissions from "./ChampionshipSubmissions";
-import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS } from "./constants/racing";
-import "./customSelect.css";
+import { db } from "../services/firebase";
+import ChampionshipSubmissions from "../components/ChampionshipSubmissions";
+import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
+import "../styles/customSelect.css";
 
 /* ---------- costanti importate da file centralizzato --------- */
 const drivers = DRIVERS;

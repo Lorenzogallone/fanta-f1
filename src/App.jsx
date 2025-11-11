@@ -6,16 +6,16 @@ import {
 } from "react-router-dom";
 import { Container as BContainer } from "react-bootstrap";
 
-import { ThemeProvider } from "./ThemeContext";
-import Navigation       from "./Navigation";
-import Home             from "./Home";
-import Leaderboard      from "./Leaderboard";
-import FormationApp     from "./FormationApp";
-import CalculatePoints  from "./CalculatePoints";
-import History          from "./History";
-import ChampionshipForm from "./ChampionshipForm";
-import AdminPanel       from "./AdminPanel";
-import "./theme.css";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import Navigation       from "./components/Navigation";
+import Home             from "./pages/Home";
+import Leaderboard      from "./pages/Leaderboard";
+import FormationApp     from "./pages/FormationApp";
+import CalculatePoints  from "./pages/CalculatePoints";
+import History          from "./pages/History";
+import ChampionshipForm from "./pages/ChampionshipForm";
+import AdminPanel       from "./pages/AdminPanel";
+import "./styles/theme.css";
 
 export default function App() {
   return (

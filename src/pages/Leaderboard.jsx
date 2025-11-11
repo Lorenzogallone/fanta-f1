@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { Card, Table, Spinner, Badge } from "react-bootstrap";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
-import { db } from "./firebase";
-import { useTheme } from "./ThemeContext";
+import { db } from "../services/firebase";
+import { useTheme } from "../contexts/ThemeContext";
 
 const medals = ["🥇", "🥈", "🥉"];
 

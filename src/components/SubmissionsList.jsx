@@ -6,8 +6,8 @@ import {
 import {
   collection, query, orderBy, getDocs,
 } from "firebase/firestore";
-import { db } from "./firebase";
-import { DRIVER_TEAM, TEAM_LOGOS } from "./constants/racing";
+import { db } from "../services/firebase";
+import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 
 /* Usa costanti centralizzate */
 const driverTeam = DRIVER_TEAM;

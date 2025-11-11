@@ -26,8 +26,8 @@ import {
   Timestamp,
   getDoc,
 } from "firebase/firestore";
-import { db } from "./firebase";
-import { DRIVERS } from "./constants/racing";
+import { db } from "../services/firebase";
+import { DRIVERS } from "../constants/racing";
 import Select from "react-select";
 
 const ADMIN_PASSWORD = "SUCASOLERA";
