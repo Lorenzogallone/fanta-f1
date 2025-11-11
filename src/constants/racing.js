@@ -84,7 +84,7 @@ export const POINTS = {
   MAIN: {
     1: 12,
     2: 10,
-    3: 7,
+    3: 8,
   },
 
   // Punti per posizione in sprint
@@ -94,9 +94,9 @@ export const POINTS = {
     3: 4,
   },
 
-  // Bonus jolly
+  // Bonus jolly (indipendente dalla posizione, se finisce sul podio)
   BONUS_JOLLY_MAIN: 5,
-  BONUS_JOLLY_SPRINT: 2,
+  BONUS_JOLLY_SPRINT: 5,
 
   // Penalità formazione vuota
   PENALTY_EMPTY_LIST: -3,
