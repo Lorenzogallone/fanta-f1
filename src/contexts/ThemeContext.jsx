@@ -50,14 +50,16 @@ export function ThemeProvider({ children }) {
     }
   }, []);
 
-  // Applica il tema al body e salva nel localStorage
+  // Applica il tema al body (NON salvare automaticamente nel localStorage)
   useEffect(() => {
     document.body.setAttribute("data-theme", theme);
-    localStorage.setItem("fanta-f1-theme", theme);
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    // Salva solo quando l'utente sceglie manualmente
+    localStorage.setItem("fanta-f1-theme", newTheme);
   };
 
   const resetToSystem = () => {
