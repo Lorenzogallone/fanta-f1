@@ -15,7 +15,7 @@
     "@mui/icons-material": "^7.1.0",
     "@mui/material": "^7.1.0",
     "bootstrap": "^5.3.6",
-    "firebase": "^11.8.1",
+    "firebase": "^11.10.0",
     "firebase-admin": "^13.4.0",
     "mui": "^0.0.1",
     "node-fetch": "^3.3.2",
