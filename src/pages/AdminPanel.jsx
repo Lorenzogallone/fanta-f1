@@ -135,6 +135,9 @@ export default function AdminPanel() {
             <Nav.Link eventKey="calculate">🧮 Calcola Punteggi</Nav.Link>
           </Nav.Item>
           <Nav.Item>
+            <Nav.Link eventKey="import-ics">📅 Import ICS</Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
             <Nav.Link eventKey="reset">🗑️ Reset Database</Nav.Link>
           </Nav.Item>
         </Nav>
@@ -154,6 +157,10 @@ export default function AdminPanel() {
 
           <Tab.Pane eventKey="calculate">
             <CalculatePoints />
+          </Tab.Pane>
+
+          <Tab.Pane eventKey="import-ics">
+            <ICSImporter />
           </Tab.Pane>
 
           <Tab.Pane eventKey="reset">
@@ -1645,5 +1652,182 @@ function DatabaseReset() {
         </Modal.Footer>
       </Modal>
     </>
+  );
+}
+
+/* ==================== IMPORT ICS CALENDAR ==================== */
+function ICSImporter() {
+  const [file, setFile] = useState(null);
+  const [races, setRaces] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  const handleFileSelect = async (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
+
+    setFile(selectedFile);
+    setMessage(null);
+    setLoading(true);
+
+    try {
+      const text = await selectedFile.text();
+      const { parseF1Calendar } = await import("../utils/icsParser");
+      const parsedRaces = parseF1Calendar(text);
+      setRaces(parsedRaces);
+      setMessage({
+        type: "success",
+        text: `✓ File parsato con successo! Trovate ${parsedRaces.length} gare.`,
+      });
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: "danger", text: "❌ Errore nel parsing del file ICS: " + err.message });
+      setRaces([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!races.length) {
+      setMessage({ type: "warning", text: "Nessuna gara da importare" });
+      return;
+    }
+
+    const confirmMsg = `Vuoi importare ${races.length} gare? Questa operazione sovrascriverà i dati esistenti.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setImporting(true);
+    setMessage(null);
+
+    try {
+      for (const race of races) {
+        await setDoc(
+          doc(db, "races", race.id),
+          {
+            name: race.name,
+            round: race.round,
+            qualiUTC: Timestamp.fromDate(race.qualiUTC),
+            raceUTC: Timestamp.fromDate(race.raceUTC),
+            qualiSprintUTC: race.qualiSprintUTC ? Timestamp.fromDate(race.qualiSprintUTC) : null,
+            sprintUTC: race.sprintUTC ? Timestamp.fromDate(race.sprintUTC) : null,
+          },
+          { merge: true }
+        );
+      }
+
+      setMessage({
+        type: "success",
+        text: `✅ Import completato! ${races.length} gare importate con successo.`,
+      });
+      setRaces([]);
+      setFile(null);
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: "danger", text: "❌ Errore durante l'import: " + err.message });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  return (
+    <Row className="g-4">
+      <Col xs={12}>
+        <Card className="shadow border-primary">
+          <Card.Header className="bg-primary text-white">
+            <h5 className="mb-0">📅 Importa Calendario da File ICS</h5>
+          </Card.Header>
+          <Card.Body>
+            <p>
+              Carica un file ICS (formato iCalendar) contenente il calendario F1 per importare
+              automaticamente tutte le gare nel database.
+            </p>
+
+            {message && (
+              <Alert variant={message.type} dismissible onClose={() => setMessage(null)}>
+                {message.text}
+              </Alert>
+            )}
+
+            <Form.Group className="mb-3">
+              <Form.Label>Seleziona file .ics</Form.Label>
+              <Form.Control
+                type="file"
+                accept=".ics"
+                onChange={handleFileSelect}
+                disabled={loading || importing}
+              />
+              <Form.Text className="text-muted">
+                Formato supportato: file .ics del calendario ufficiale F1
+              </Form.Text>
+            </Form.Group>
+
+            {loading && (
+              <div className="text-center py-3">
+                <Spinner animation="border" size="sm" className="me-2" />
+                Parsing file...
+              </div>
+            )}
+
+            {races.length > 0 && !loading && (
+              <>
+                <Alert variant="info">
+                  <strong>Anteprima:</strong> {races.length} gare trovate nel file ICS
+                </Alert>
+
+                <div className="table-responsive" style={{ maxHeight: "400px", overflowY: "auto" }}>
+                  <Table striped bordered hover size="sm">
+                    <thead style={{ position: "sticky", top: 0, backgroundColor: "#fff", zIndex: 1 }}>
+                      <tr>
+                        <th>#</th>
+                        <th>Nome Gara</th>
+                        <th>Qualifiche</th>
+                        <th>Gara</th>
+                        <th>Sprint</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {races.map((race) => (
+                        <tr key={race.id}>
+                          <td>{race.round}</td>
+                          <td>{race.name}</td>
+                          <td>{race.qualiUTC.toLocaleString("it-IT")}</td>
+                          <td>{race.raceUTC.toLocaleString("it-IT")}</td>
+                          <td>
+                            {race.sprintUTC ? (
+                              <span className="text-success">✓</span>
+                            ) : (
+                              <span className="text-muted">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="w-100 mt-3"
+                  onClick={handleImport}
+                  disabled={importing}
+                >
+                  {importing ? (
+                    <>
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      Importazione in corso...
+                    </>
+                  ) : (
+                    `📥 Importa ${races.length} Gare su Firestore`
+                  )}
+                </Button>
+              </>
+            )}
+          </Card.Body>
+        </Card>
+      </Col>
+    </Row>
   );
 }
