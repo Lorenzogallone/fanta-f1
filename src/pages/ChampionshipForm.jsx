@@ -12,10 +12,11 @@ import {
   Spinner,
 } from "react-bootstrap";
 import Select from "react-select";
-import { collection, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, updateDoc, query, orderBy } from "firebase/firestore";
 import { db } from "../services/firebase";
 import ChampionshipSubmissions from "../components/ChampionshipSubmissions";
 import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
+import { useTheme } from "../contexts/ThemeContext";
 import "../styles/customSelect.css";
 
 /* ---------- costanti importate da file centralizzato --------- */
@@ -56,6 +57,7 @@ const asConstructorOptions = (constructorsList) =>
   });
 
 export default function ChampionshipForm() {
+  const { isDark } = useTheme();
   const [rankingOptions, setRankingOptions] = useState([]);
   const [loadingRanking, setLoadingRanking] = useState(true);
   const [form, setForm] = useState({
@@ -70,17 +72,19 @@ export default function ChampionshipForm() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
 
-  /* usato per far “ricaricare” ChampionshipSubmissions */
+  /* usato per far "ricaricare" ChampionshipSubmissions */
   const [refreshKey, setRefreshKey] = useState(0);
 
   /* per rilevare se esiste già una formazione */
   const [isEdit, setIsEdit] = useState(false);
 
-  /* deadline: 7 settembre 2025, 23:59 */
-  const deadlineMs = new Date("2025-09-07T23:59:00").getTime();
-  const pastDeadline = Date.now() > deadlineMs;
+  /* deadline calcolata dinamicamente */
+  const [deadlineMs, setDeadlineMs] = useState(null);
+  const [deadlineText, setDeadlineText] = useState("");
+  const [loadingDeadline, setLoadingDeadline] = useState(true);
+  const pastDeadline = deadlineMs ? Date.now() > deadlineMs : false;
 
-  /* ------------- carica lista utenti da “ranking” ---------------- */
+  /* ------------- carica lista utenti da "ranking" ---------------- */
   useEffect(() => {
     (async () => {
       try {
@@ -98,6 +102,59 @@ export default function ChampionshipForm() {
         });
       } finally {
         setLoadingRanking(false);
+      }
+    })();
+  }, []);
+
+  /* ------------- calcola deadline dinamica dalla gara di metà campionato ---- */
+  useEffect(() => {
+    (async () => {
+      try {
+        const racesQuery = query(collection(db, "races"), orderBy("round", "asc"));
+        const racesSnap = await getDocs(racesQuery);
+        const races = racesSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        if (races.length === 0) {
+          // Nessuna gara trovata, usa fallback
+          setDeadlineMs(new Date("2025-09-07T23:59:00").getTime());
+          setDeadlineText("07/09 ore 23:59");
+          setLoadingDeadline(false);
+          return;
+        }
+
+        // Trova la gara di metà campionato
+        const midRound = Math.ceil(races.length / 2);
+        const midRace = races.find(r => r.round === midRound);
+
+        if (midRace && midRace.raceUTC) {
+          // Deadline = subito dopo la gara di metà campionato
+          const raceDate = midRace.raceUTC.toDate();
+          setDeadlineMs(raceDate.getTime());
+
+          // Formatta la data per il badge
+          const formatted = raceDate.toLocaleDateString("it-IT", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          setDeadlineText(formatted);
+        } else {
+          // Fallback se non si trova la gara di metà
+          setDeadlineMs(new Date("2025-09-07T23:59:00").getTime());
+          setDeadlineText("07/09 ore 23:59");
+        }
+      } catch (e) {
+        console.error("Errore calcolo deadline:", e);
+        // Fallback in caso di errore
+        setDeadlineMs(new Date("2025-09-07T23:59:00").getTime());
+        setDeadlineText("07/09 ore 23:59");
+      } finally {
+        setLoadingDeadline(false);
       }
     })();
   }, []);
@@ -215,26 +272,43 @@ export default function ChampionshipForm() {
     }
   };
 
-  if (loadingRanking)
+  if (loadingRanking || loadingDeadline)
     return (
       <Container className="py-5 text-center">
-        <Spinner animation="border" />
+        <Spinner animation="border" variant="danger" />
+        <p className="mt-3">Caricamento...</p>
       </Container>
     );
+
+  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
 
   return (
     <Container className="py-5">
       <Row className="justify-content-center g-4 align-items-start">
         {/* FORM ------------------------------------------------------- */}
         <Col xs={12} lg={6}>
-          <Card className="shadow border-danger">
+          <Card className="shadow" style={{ borderLeft: `4px solid ${accentColor}` }}>
             <Card.Body>
-              <h4 className="text-center mb-4">
-                📋 Formazione Campionato&nbsp;
-                <Badge bg="warning" text="dark">
-                  Deadline 07/09 ore 23:59
-                </Badge>
+              <h4 className="text-center mb-3">
+                📋 Formazione Campionato
               </h4>
+
+              <div className="text-center mb-4">
+                <Badge
+                  bg={pastDeadline ? "danger" : "warning"}
+                  text={pastDeadline ? "light" : "dark"}
+                  className="fs-6 px-3 py-2"
+                >
+                  {pastDeadline ? "🔒 CHIUSO" : "⏰ Deadline: " + deadlineText}
+                </Badge>
+              </div>
+
+              {pastDeadline && (
+                <Alert variant="danger" className="text-center">
+                  <strong>⚠️ Attenzione!</strong><br />
+                  La deadline è scaduta. Non è più possibile inserire o modificare la formazione campionato.
+                </Alert>
+              )}
 
               {message && (
                 <Alert
