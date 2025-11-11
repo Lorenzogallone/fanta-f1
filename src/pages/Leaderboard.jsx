@@ -99,6 +99,12 @@ export default function Leaderboard() {
                       </div>
                     </div>
                     <div className="d-flex align-items-center gap-2">
+                      <Badge
+                        bg={r.jolly ? "success" : "secondary"}
+                        style={{ minWidth: 30 }}
+                      >
+                        {r.jolly}
+                      </Badge>
                       {previousSnapshot && (
                         <div style={{ minWidth: 40, textAlign: "center" }}>
                           {positionChange === 0 ? (
@@ -114,12 +120,6 @@ export default function Leaderboard() {
                           )}
                         </div>
                       )}
-                      <Badge
-                        bg={r.jolly ? "success" : "secondary"}
-                        style={{ minWidth: 30 }}
-                      >
-                        {r.jolly}
-                      </Badge>
                     </div>
                   </div>
                 );
@@ -140,14 +140,14 @@ export default function Leaderboard() {
                     #
                   </th>
                   <th>Giocatore</th>
+                  <th className="text-center">Punti</th>
+                  <th className="text-center">Gap</th>
+                  <th className="text-center">Jolly</th>
                   {previousSnapshot && (
                     <th style={{ width: 80 }} className="text-center">
                       Trend
                     </th>
                   )}
-                  <th className="text-center">Punti</th>
-                  <th className="text-center">Gap</th>
-                  <th className="text-center">Jolly</th>
                 </tr>
               </thead>
 
@@ -185,11 +185,6 @@ export default function Leaderboard() {
                     <tr key={r.name} className={isTop3 ? "fw-bold" : ""}>
                       <td className="text-center">{medal}</td>
                       <td>{r.name}</td>
-                      {previousSnapshot && (
-                        <td className="text-center">
-                          <TrendBadge />
-                        </td>
-                      )}
                       <td className="text-center">{r.pts}</td>
                       <td className="text-center">{gap}</td>
                       <td className="text-center">
@@ -197,6 +192,11 @@ export default function Leaderboard() {
                           {r.jolly}
                         </Badge>
                       </td>
+                      {previousSnapshot && (
+                        <td className="text-center">
+                          <TrendBadge />
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
