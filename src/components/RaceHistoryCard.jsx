@@ -263,10 +263,140 @@ export default function RaceHistoryCard({
           <Alert variant="info">Nessuna formazione inviata.</Alert>
         ) : (
           <>
-            <h6 className="fw-bold mb-2" style={{ color: accentColor }}>
+            <h6 className="fw-bold mb-3" style={{ color: accentColor }}>
               {showPoints && official ? "Formazioni e Punteggi" : "Formazioni"}
             </h6>
-            <div className="table-responsive">
+
+            {/* Layout MOBILE - Cards */}
+            <div className="d-lg-none">
+              {subs.map((s, idx) => {
+                /* -------- Calcolo punteggi -------- */
+                const p1Pts = showPoints && official && s.mainP1 === official.P1 ? POINTS.MAIN[1] : 0;
+                const p2Pts = showPoints && official && s.mainP2 === official.P2 ? POINTS.MAIN[2] : 0;
+                const p3Pts = showPoints && official && s.mainP3 === official.P3 ? POINTS.MAIN[3] : 0;
+
+                const j1Pts =
+                  showPoints && official && s.mainJolly &&
+                  [official.P1, official.P2, official.P3].includes(s.mainJolly)
+                    ? BONUS_MAIN
+                    : 0;
+
+                const j2Pts =
+                  showPoints && official && s.mainJolly2 &&
+                  [official.P1, official.P2, official.P3].includes(s.mainJolly2)
+                    ? BONUS_MAIN
+                    : 0;
+
+                const totalMain =
+                  showPoints && official
+                    ? s.pointsEarned !== undefined
+                      ? s.pointsEarned
+                      : p1Pts + p2Pts + p3Pts + j1Pts + j2Pts
+                    : null;
+
+                /* -------- Sprint -------- */
+                let sp1Pts = 0,
+                  sp2Pts = 0,
+                  sp3Pts = 0,
+                  jspPts = 0,
+                  totalSprint = null;
+
+                if (hasSprint) {
+                  if (showPoints && official) {
+                    sp1Pts = s.sprintP1 === official.SP1 ? POINTS.SPRINT[1] : 0;
+                    sp2Pts = s.sprintP2 === official.SP2 ? POINTS.SPRINT[2] : 0;
+                    sp3Pts = s.sprintP3 === official.SP3 ? POINTS.SPRINT[3] : 0;
+                    jspPts =
+                      s.sprintJolly &&
+                      [official.SP1, official.SP2, official.SP3].includes(s.sprintJolly)
+                        ? POINTS.BONUS_JOLLY_SPRINT
+                        : 0;
+                    totalSprint =
+                      s.pointsEarnedSprint !== undefined
+                        ? s.pointsEarnedSprint
+                        : sp1Pts + sp2Pts + sp3Pts + jspPts;
+                  }
+                }
+
+                const userName = s.user || rankingMap[s.id] || s.id;
+
+                const PickLine = ({ label, pick, pts }) => (
+                  <div className="d-flex justify-content-between align-items-center py-1 border-bottom" style={{ fontSize: "0.9rem" }}>
+                    <span className="text-muted">{label}</span>
+                    <div className="d-flex align-items-center gap-2">
+                      {pick ? (
+                        <>
+                          <DriverWithLogo name={pick} />
+                          {showPoints && official && (
+                            <Badge
+                              bg={pts > 0 ? "success" : pts < 0 ? "danger" : "secondary"}
+                              pill
+                              style={{ minWidth: 35 }}
+                            >
+                              {pts}
+                            </Badge>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </div>
+                  </div>
+                );
+
+                return (
+                  <Card key={s.id} className="mb-3" style={{ borderLeft: `3px solid ${accentColor}` }}>
+                    <Card.Body>
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <h6 className="mb-0" style={{ color: accentColor }}>
+                          {idx + 1}. {userName}
+                        </h6>
+                        {showPoints && official && (
+                          <Badge
+                            bg={totalMain > 0 ? "success" : totalMain < 0 ? "danger" : "secondary"}
+                            style={{ fontSize: "1rem" }}
+                          >
+                            {totalMain} pts
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="mb-2">
+                        <strong className="text-muted" style={{ fontSize: "0.85rem" }}>GARA PRINCIPALE</strong>
+                        <PickLine label="P1" pick={s.mainP1} pts={p1Pts} />
+                        <PickLine label="P2" pick={s.mainP2} pts={p2Pts} />
+                        <PickLine label="P3" pick={s.mainP3} pts={p3Pts} />
+                        <PickLine label="Jolly 1" pick={s.mainJolly} pts={j1Pts} />
+                        {s.mainJolly2 && <PickLine label="Jolly 2" pick={s.mainJolly2} pts={j2Pts} />}
+                      </div>
+
+                      {hasSprint && (
+                        <div>
+                          <div className="d-flex justify-content-between align-items-center">
+                            <strong className="text-muted" style={{ fontSize: "0.85rem" }}>SPRINT</strong>
+                            {showPoints && official && (
+                              <Badge
+                                bg={totalSprint > 0 ? "success" : totalSprint < 0 ? "danger" : "secondary"}
+                                style={{ fontSize: "0.9rem" }}
+                              >
+                                {totalSprint} pts
+                              </Badge>
+                            )}
+                          </div>
+                          <PickLine label="SP1" pick={s.sprintP1} pts={sp1Pts} />
+                          <PickLine label="SP2" pick={s.sprintP2} pts={sp2Pts} />
+                          <PickLine label="SP3" pick={s.sprintP3} pts={sp3Pts} />
+                          <PickLine label="Jolly SP" pick={s.sprintJolly} pts={jspPts} />
+                        </div>
+                      )}
+                    </Card.Body>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Layout DESKTOP - Table */}
+            <div className="d-none d-lg-block table-responsive">
               <Table striped bordered hover size="sm" className="align-middle">
                 <thead className="table-light">
                   <tr>
@@ -375,7 +505,7 @@ export default function RaceHistoryCard({
                             {showPoints && official && (
                               <>
                                 {" "}
-                                <Badge bg={pts > 0 ? "success" : "secondary"} pill>
+                                <Badge bg={pts > 0 ? "success" : pts < 0 ? "danger" : "secondary"} pill>
                                   {pts}
                                 </Badge>
                               </>
@@ -414,14 +544,14 @@ export default function RaceHistoryCard({
                           <>
                             <td
                               className="text-center fw-bold"
-                              style={{ color: totalMain > 0 ? "green" : "red" }}
+                              style={{ color: totalMain > 0 ? "green" : totalMain < 0 ? "red" : "#6c757d" }}
                             >
                               {totalMain}
                             </td>
                             {hasSprint && (
                               <td
                                 className="text-center fw-bold"
-                                style={{ color: totalSprint > 0 ? "green" : "red" }}
+                                style={{ color: totalSprint > 0 ? "green" : totalSprint < 0 ? "red" : "#6c757d" }}
                               >
                                 {totalSprint}
                               </td>
