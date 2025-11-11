@@ -48,7 +48,7 @@ export default function Navigation() {
             height="45"
             style={{
               objectFit: "contain",
-              filter: isDark ? "invert(1) hue-rotate(180deg) brightness(1.1)" : "none"
+              filter: isDark ? "brightness(0) invert(1)" : "none"
             }}
           />
         </Link>
