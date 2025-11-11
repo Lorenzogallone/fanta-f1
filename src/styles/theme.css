@@ -82,6 +82,17 @@ body {
 [data-theme="dark"] .table {
   color: var(--text-primary);
   border-color: var(--border-color);
+  background-color: var(--bg-secondary);
+}
+
+[data-theme="dark"] .table tbody,
+[data-theme="dark"] .table thead,
+[data-theme="dark"] .table tfoot {
+  background-color: transparent;
+}
+
+[data-theme="dark"] .table tbody tr {
+  background-color: transparent;
 }
 
 [data-theme="dark"] .table-light {
@@ -105,6 +116,7 @@ body {
 [data-theme="dark"] .table td,
 [data-theme="dark"] .table th {
   border-color: var(--border-color);
+  background-color: transparent;
 }
 
 /* Forms */
