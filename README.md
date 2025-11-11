@@ -92,12 +92,30 @@ Inserisci la tua formazione per la prossima gara:
 Pronostica i top 3 piloti e costruttori a metà stagione per guadagnare punti bonus a fine anno.
 
 ### ⚙️ Pannello Admin
-Gli amministratori possono:
-- Gestire i partecipanti
-- Inserire formazioni per altri giocatori
-- Calcolare i punteggi delle gare
-- Gestire il calendario
-- Backup e reset del database
+Gli amministratori hanno accesso completo a tutte le funzionalità:
+
+**👥 Gestione Partecipanti**
+- Aggiungere nuovi partecipanti
+- Modificare punti e jolly di ogni partecipante
+- Eliminare partecipanti
+
+**📝 Gestione Formazioni**
+- **Inserire formazioni in ritardo** per qualsiasi utente (bypass deadline)
+- **Modificare formazioni esistenti** anche dopo la scadenza
+- Visualizzare quali gare hanno già formazioni inserite
+- Funziona per gare principali, sprint e formazioni campionato
+
+**📅 Gestione Calendario**
+- **Modificare date e orari delle gare** (raceUTC, qualiUTC)
+- **Modificare deadline formazioni** (qualiUTC e qualiSprintUTC)
+- Aggiungere o rimuovere sprint da una gara
+- Visualizzare stato risultati per ogni gara
+
+**🗑️ Reset Database**
+- Backup completo del database (scarica JSON)
+- Reset formazioni (elimina tutte le submissions)
+- Reset punteggi (azzera punti mantenendo partecipanti)
+- Reset completo (punteggi + formazioni)
 
 ## 🎨 Caratteristiche
 
@@ -198,13 +216,38 @@ Per ogni gara, contiene le formazioni dei giocatori:
 
 ## 🔐 Accesso Admin
 
-Il pannello admin è protetto da password. La password predefinita è configurata in `src/AdminPanel.jsx`:
+Il pannello admin è protetto da password e offre privilegi speciali:
 
+### Password
+La password è configurata in `src/pages/AdminPanel.jsx`:
 ```javascript
 const ADMIN_PASSWORD = "SUCASOLERA";
 ```
-
 **⚠️ Importante**: Cambia questa password prima del deploy in produzione!
+
+### Privilegi Admin
+
+Gli admin hanno poteri speciali che gli utenti normali non hanno:
+
+1. **✅ Bypass Deadline Formazioni**
+   - Gli admin possono inserire formazioni **in qualsiasi momento**
+   - Non ci sono controlli sulle deadline (qualiUTC, qualiSprintUTC)
+   - Gli utenti normali invece sono bloccati dopo la scadenza
+
+2. **✅ Modifica Formazioni Esistenti**
+   - Gli admin possono modificare formazioni già inviate
+   - Quando selezioni utente+gara, il form si pre-compila se esiste già
+   - Il salvataggio sovrascrive la formazione precedente
+
+3. **✅ Modifica Date Gare**
+   - Gli admin possono cambiare le deadline delle formazioni
+   - Possono posticipare o anticipare qualifiche e gare
+   - Possono aggiungere/rimuovere sprint
+
+4. **✅ Gestione Completa Database**
+   - Backup completo prima di operazioni critiche
+   - Reset selettivo (solo formazioni o solo punteggi)
+   - Visualizzazione stato completo sistema
 
 ## 🤝 Contribuire
 
