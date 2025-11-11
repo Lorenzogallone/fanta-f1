@@ -29,6 +29,7 @@ import {
 import { db } from "../services/firebase";
 import { DRIVERS } from "../constants/racing";
 import Select from "react-select";
+import { useTheme } from "../contexts/ThemeContext";
 
 const ADMIN_PASSWORD = "SUCASOLERA";
 
@@ -111,10 +112,7 @@ export default function AdminPanel() {
     <Container className="py-4">
       <Card className="shadow border-danger mb-4">
         <Card.Header className="bg-danger text-white d-flex justify-content-between align-items-center">
-          <div>
-            <h4 className="mb-0">⚙️ Pannello Amministrazione</h4>
-            <small>⚠️ Attenzione: queste operazioni sono irreversibili!</small>
-          </div>
+          <h4 className="mb-0">⚙️ Pannello Amministrazione</h4>
           <Button size="sm" variant="light" onClick={handleLogout}>
             🔓 Esci
           </Button>
@@ -1579,15 +1577,6 @@ function DatabaseReset() {
             </Card.Body>
           </Card>
 
-          <Alert variant="danger">
-            <Alert.Heading>⚠️ ATTENZIONE - OPERAZIONI IRREVERSIBILI</Alert.Heading>
-            <p>Le operazioni sottostanti eliminano definitivamente i dati. Non è possibile annullare!</p>
-            <hr />
-            <p className="mb-0">
-              <strong>Consiglio:</strong> Crea sempre un backup prima di procedere con reset o eliminazioni.
-            </p>
-          </Alert>
-
           {message && (
             <Alert variant={message.type} dismissible onClose={() => setMessage(null)}>
               {message.text}
@@ -1595,47 +1584,11 @@ function DatabaseReset() {
           )}
         </Col>
 
-        <Col xs={12} md={4}>
-          <Card className="shadow border-warning h-100">
-            <Card.Body className="text-center">
-              <h5>🗑️ Reset Formazioni</h5>
-              <p className="text-muted">Elimina tutte le formazioni inviate (mantiene partecipanti e punteggi)</p>
-              <Button
-                variant="warning"
-                onClick={() => {
-                  setResetType("submissions");
-                  setShowModal(true);
-                }}
-              >
-                Reset Formazioni
-              </Button>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col xs={12} md={4}>
-          <Card className="shadow border-warning h-100">
-            <Card.Body className="text-center">
-              <h5>↩️ Reset Punteggi</h5>
-              <p className="text-muted">Azzera punteggi e jolly di tutti i partecipanti (mantiene anagrafica)</p>
-              <Button
-                variant="warning"
-                onClick={() => {
-                  setResetType("ranking");
-                  setShowModal(true);
-                }}
-              >
-                Reset Punteggi
-              </Button>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col xs={12} md={4}>
-          <Card className="shadow border-danger h-100">
+        <Col xs={12}>
+          <Card className="shadow border-danger">
             <Card.Body className="text-center">
               <h5>💥 Reset Completo</h5>
-              <p className="text-muted">Elimina formazioni e azzera tutti i punteggi</p>
+              <p className="text-muted">Elimina tutte le formazioni e azzera tutti i punteggi</p>
               <Button
                 variant="danger"
                 onClick={() => {
@@ -1656,20 +1609,10 @@ function DatabaseReset() {
           <Modal.Title>⚠️ Conferma Operazione</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Alert variant="danger" className="mb-3">
-            <strong>ATTENZIONE!</strong> Questa operazione è irreversibile.
-          </Alert>
-
           <p>
-            Stai per eseguire:{" "}
-            <strong>
-              {resetType === "submissions"
-                ? "Reset Formazioni"
-                : resetType === "ranking"
-                ? "Reset Punteggi"
-                : "Reset Completo"}
-            </strong>
+            Stai per eseguire: <strong>Reset Completo</strong>
           </p>
+          <p className="text-muted">Questa operazione eliminerà tutte le formazioni e azzererà tutti i punteggi.</p>
 
           <Form.Group>
             <Form.Label>

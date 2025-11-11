@@ -454,10 +454,6 @@ export default function FormationApp() {
                   <>
                     <SectionHeader title="Sprint (opzionale)" open={sprOpen} deadlineMs={sprMs} accentColor={accentColor} />
 
-                    <Alert variant="info" className="py-2 small">
-                      <strong>ℹ️ Nota:</strong> Puoi usare gli stessi piloti della gara principale
-                    </Alert>
-
                     {hasSprintDuplicates && touched && (
                       <Alert variant="warning" className="py-2 small">
                         ⚠️ Hai selezionato lo stesso pilota più volte nella sprint: <strong>{sprintDuplicates.join(", ")}</strong>
