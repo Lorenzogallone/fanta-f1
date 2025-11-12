@@ -692,7 +692,7 @@ function FormationsManager() {
         )}
       </Col>
 
-      <Col xs={12} lg={6}>
+      <Col xs={12}>
         <Card className="shadow">
           <Card.Header className="bg-white">
             <h5 className="mb-0">
@@ -895,47 +895,6 @@ function FormationsManager() {
         </Card>
       </Col>
 
-      <Col xs={12} lg={6}>
-        <Card className="shadow">
-          <Card.Header className="bg-white">
-            <h5 className="mb-0">ℹ️ Info</h5>
-          </Card.Header>
-          <Card.Body>
-            <Alert variant="info">
-              <strong>Come usare:</strong>
-              <ol className="mb-0 mt-2">
-                <li>Seleziona un utente</li>
-                <li>Seleziona una gara</li>
-                <li>Compila la formazione (o modifica quella esistente)</li>
-                <li>Salva</li>
-              </ol>
-            </Alert>
-
-            {existingFormation && (
-              <Alert variant="success">
-                <strong>✓ Formazione esistente trovata</strong>
-                <br />
-                <small>
-                  Inviata il:{" "}
-                  {existingFormation.submittedAt
-                    ? new Date(existingFormation.submittedAt.seconds * 1000).toLocaleString(
-                        "it-IT"
-                      )
-                    : "—"}
-                </small>
-              </Alert>
-            )}
-
-            {selectedUser && selectedRace && !existingFormation && (
-              <Alert variant="warning">
-                <strong>⚠️ Nessuna formazione esistente</strong>
-                <br />
-                <small>Stai creando una nuova formazione per questo utente</small>
-              </Alert>
-            )}
-          </Card.Body>
-        </Card>
-      </Col>
     </Row>
   );
 }
