@@ -482,8 +482,16 @@ useEffect(() => {
 export default function CalculatePoints() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  useEffect(() => {
+    // Controlla se già autenticato
+    const auth = localStorage.getItem("adminAuth");
+    if (auth === "true") {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
   if (!isAuthenticated) {
-    return <AdminLogin onSuccess={() => setIsAuthenticated(true)} />;
+    return <AdminLogin onSuccess={() => setIsAuthenticated(true)} useLocalStorage={true} />;
   }
 
   return <CalculatePointsContent />;
