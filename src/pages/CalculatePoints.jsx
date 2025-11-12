@@ -12,6 +12,7 @@ import { db } from "../services/firebase";
 import { isLastRace, calculatePointsForRace } from "../services/pointsCalculator";
 import { calculateChampionshipPoints } from "../services/championshipPointsCalculator";
 import { saveRankingSnapshot } from "../services/rankingSnapshot";
+import { fetchRaceResults } from "../services/f1ResultsFetcher";
 import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
 import RaceHistoryCard from "../components/RaceHistoryCard";
 import AdminLogin from "../components/AdminLogin";
@@ -90,6 +91,7 @@ function CalculatePointsContent() {
   const [loadingRace, setLoadingRace] = useState(true);
   const [savingRace,  setSavingRace]  = useState(false);
   const [msgRace,     setMsgRace]     = useState(null);
+  const [fetchingResults, setFetchingResults] = useState(false);
 
   const [formRace, setFormRace] = useState({
     P1:null,P2:null,P3:null, SP1:null,SP2:null,SP3:null
@@ -180,17 +182,21 @@ useEffect(() => {
   if (!race) return;
 
   (async () => {
-    /* 1️⃣ leggi il documento della gara */
+    setFetchingResults(true);
+    setMsgRace(null);
+
+    /* 1️⃣ leggi il documento della gara dal database */
     const snap = await getDoc(doc(db, "races", race.id));
     const off  = snap.exists() ? snap.data().officialResults ?? null : null;
     setOfficial(off);
 
-    /* 2️⃣ se ci sono risultati ufficiali, pre-compila il form */
+    /* Helper per convertire nome pilota in opzione select */
     const toOpt = name =>
       name
         ? driverOptions.find(o => o.value === name) || { value: name, label: name }
         : null;
 
+    /* 2️⃣ se ci sono risultati ufficiali nel DB, usa quelli */
     if (off) {
       setFormRace({
         P1 : toOpt(off.P1),
@@ -200,15 +206,60 @@ useEffect(() => {
         SP2: toOpt(off.SP2),
         SP3: toOpt(off.SP3),
       });
+      setFetchingResults(false);
     } else {
-      /* niente risultati → form vuoto */
-      setFormRace({
-        P1:null, P2:null, P3:null,
-        SP1:null, SP2:null, SP3:null
-      });
+      /* 3️⃣ nessun risultato nel DB → prova a fetchare dall'API */
+      try {
+        // Estrai season e round dalla data della gara
+        const raceDate = new Date(race.raceUTC.seconds * 1000);
+        const season = raceDate.getFullYear();
+        const round = race.round;
+
+        setMsgRace({variant:"info", msg:`🔄 Caricamento risultati da API per ${race.name}...`});
+
+        const apiResults = await fetchRaceResults(season, round);
+
+        if (apiResults) {
+          // Pre-compila con i risultati dall'API
+          setFormRace({
+            P1 : toOpt(apiResults.main.P1),
+            P2 : toOpt(apiResults.main.P2),
+            P3 : toOpt(apiResults.main.P3),
+            SP1: apiResults.sprint ? toOpt(apiResults.sprint.SP1) : null,
+            SP2: apiResults.sprint ? toOpt(apiResults.sprint.SP2) : null,
+            SP3: apiResults.sprint ? toOpt(apiResults.sprint.SP3) : null,
+          });
+          setMsgRace({
+            variant:"success",
+            msg:`✅ Risultati caricati automaticamente da API! Verifica e modifica se necessario.`
+          });
+        } else {
+          // Nessun risultato disponibile né nel DB né nell'API
+          setFormRace({
+            P1:null, P2:null, P3:null,
+            SP1:null, SP2:null, SP3:null
+          });
+          setMsgRace({
+            variant:"warning",
+            msg:`⚠️ Risultati non ancora disponibili per questa gara. Inserisci manualmente.`
+          });
+        }
+      } catch (error) {
+        console.error("Errore fetch API:", error);
+        setFormRace({
+          P1:null, P2:null, P3:null,
+          SP1:null, SP2:null, SP3:null
+        });
+        setMsgRace({
+          variant:"warning",
+          msg:`⚠️ Impossibile caricare risultati da API. Inserisci manualmente.`
+        });
+      } finally {
+        setFetchingResults(false);
+      }
     }
 
-    /* 3️⃣ carica submissions (come facevi già) */
+    /* 4️⃣ carica submissions */
     const subSnap = await getDocs(
       collection(db, "races", race.id, "submissions")
     );
@@ -219,6 +270,7 @@ useEffect(() => {
     console.error(err);
     setErrSubs("Impossibile caricare submissions.");
     setLoadingSubs(false);
+    setFetchingResults(false);
   });
 }, [race]);
 
