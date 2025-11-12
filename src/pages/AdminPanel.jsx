@@ -45,11 +45,6 @@ export default function AdminPanel() {
     }
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminAuth");
-    setIsAuthenticated(false);
-  };
-
   if (!isAuthenticated) {
     return <AdminLogin onSuccess={() => setIsAuthenticated(true)} useLocalStorage={true} />;
   }
@@ -57,11 +52,8 @@ export default function AdminPanel() {
   return (
     <Container className="py-4">
       <Card className="shadow border-danger mb-4">
-        <Card.Header className="bg-danger text-white d-flex justify-content-between align-items-center">
+        <Card.Header className="bg-danger text-white">
           <h4 className="mb-0">⚙️ Pannello Amministrazione</h4>
-          <Button size="sm" variant="light" onClick={handleLogout}>
-            🔓 Esci
-          </Button>
         </Card.Header>
       </Card>
 
