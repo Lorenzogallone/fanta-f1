@@ -95,6 +95,11 @@ export async function calculatePointsForRace(raceId, official) {
       if (s.mainJolly2 && podio.includes(s.mainJolly2)) mainPts += BONUS_JOLLY_MAIN;
     }
 
+    /* ------ applica penalità late submission ------------------ */
+    if (s.isLate && s.latePenalty) {
+      mainPts += s.latePenalty; // -3
+    }
+
     /* ------ calcolo punteggi SPRINT --------------------------- */
     let sprintPts = 0;
     if (sprintPresent && !cancelledSprint) {
