@@ -41,7 +41,7 @@ function DriverCell({ driverName }) {
  *  ─ hasSprint : true se la gara ha la Sprint
  *  ─ refresh   : timestamp che forza il reload
  */
-export default function SubmissionsList({ raceId, hasSprint, refresh }) {
+function SubmissionsList({ raceId, hasSprint, refresh }) {
   const { isDark } = useTheme();
   const [subs,    setSubs] = useState([]);
   const [loading, setLoad] = useState(true);
@@ -239,3 +239,5 @@ export default function SubmissionsList({ raceId, hasSprint, refresh }) {
     </Card>
   );
 }
+
+export default React.memo(SubmissionsList);
