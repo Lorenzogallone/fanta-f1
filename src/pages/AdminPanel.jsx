@@ -367,7 +367,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
         <Card className="shadow">
           <Card.Header className="bg-white d-flex justify-content-between align-items-center">
             <h5 className="mb-0">Lista Partecipanti ({participants.length})</h5>
-            <Button size="sm" variant="outline-primary" onClick={loadParticipants}>
+            <Button size="sm" variant="outline-primary" onClick={onDataChange}>
               🔄 Ricarica
             </Button>
           </Card.Header>
