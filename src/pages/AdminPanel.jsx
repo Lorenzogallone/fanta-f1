@@ -37,6 +37,11 @@ export default function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState("participants");
 
+  // Shared data per evitare fetch multipli
+  const [sharedParticipants, setSharedParticipants] = useState([]);
+  const [sharedRaces, setSharedRaces] = useState([]);
+  const [loadingShared, setLoadingShared] = useState(false);
+
   useEffect(() => {
     // Controlla se già autenticato
     const auth = localStorage.getItem("adminAuth");
@@ -44,6 +49,33 @@ export default function AdminPanel() {
       setIsAuthenticated(true);
     }
   }, []);
+
+  // Carica dati condivisi quando autenticato
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadSharedData();
+    }
+  }, [isAuthenticated]);
+
+  const loadSharedData = async () => {
+    setLoadingShared(true);
+    try {
+      const [partSnap, racesSnap] = await Promise.all([
+        getDocs(collection(db, "ranking")),
+        getDocs(collection(db, "races")),
+      ]);
+
+      const partList = partSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setSharedParticipants(partList.sort((a, b) => a.name.localeCompare(b.name)));
+
+      const racesList = racesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setSharedRaces(racesList.sort((a, b) => a.round - b.round));
+    } catch (err) {
+      console.error("Errore caricamento dati condivisi:", err);
+    } finally {
+      setLoadingShared(false);
+    }
+  };
 
   if (!isAuthenticated) {
     return <AdminLogin onSuccess={() => setIsAuthenticated(true)} useLocalStorage={true} />;
@@ -75,19 +107,36 @@ export default function AdminPanel() {
 
         <Tab.Content>
           <Tab.Pane eventKey="participants">
-            <ParticipantsManager />
+            <ParticipantsManager
+              participants={sharedParticipants}
+              loading={loadingShared}
+              onDataChange={loadSharedData}
+            />
           </Tab.Pane>
 
           <Tab.Pane eventKey="formations">
-            <FormationsManager />
+            <FormationsManager
+              participants={sharedParticipants}
+              races={sharedRaces}
+              loading={loadingShared}
+              onDataChange={loadSharedData}
+            />
           </Tab.Pane>
 
           <Tab.Pane eventKey="calendar">
-            <CalendarManager />
+            <CalendarManager
+              races={sharedRaces}
+              loading={loadingShared}
+              onDataChange={loadSharedData}
+            />
           </Tab.Pane>
 
           <Tab.Pane eventKey="reset">
-            <DatabaseReset />
+            <DatabaseReset
+              participants={sharedParticipants}
+              races={sharedRaces}
+              onDataChange={loadSharedData}
+            />
           </Tab.Pane>
         </Tab.Content>
       </Tab.Container>
@@ -96,31 +145,14 @@ export default function AdminPanel() {
 }
 
 /* ==================== GESTIONE PARTECIPANTI ==================== */
-function ParticipantsManager() {
-  const [participants, setParticipants] = useState([]);
-  const [loading, setLoading] = useState(true);
+function ParticipantsManager({ participants: propParticipants, loading: propLoading, onDataChange }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
 
-  // Carica partecipanti
-  useEffect(() => {
-    loadParticipants();
-  }, []);
-
-  const loadParticipants = async () => {
-    try {
-      const snap = await getDocs(collection(db, "ranking"));
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setParticipants(list.sort((a, b) => a.name.localeCompare(b.name)));
-    } catch (err) {
-      console.error(err);
-      setMessage({ type: "danger", text: "Errore caricamento partecipanti" });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Usa i partecipanti passati come props
+  const participants = propParticipants;
 
   // Aggiungi nuovo partecipante
   const handleAdd = async (e) => {
@@ -147,7 +179,7 @@ function ParticipantsManager() {
 
       setMessage({ type: "success", text: "Partecipante aggiunto!" });
       setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
-      loadParticipants();
+      onDataChange();
     } catch (err) {
       console.error(err);
       setMessage({ type: "danger", text: "Errore durante l'aggiunta" });
@@ -184,7 +216,7 @@ function ParticipantsManager() {
       setMessage({ type: "success", text: "Partecipante aggiornato!" });
       setEditingId(null);
       setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
-      loadParticipants();
+      onDataChange();
     } catch (err) {
       console.error(err);
       setMessage({ type: "danger", text: "Errore durante l'aggiornamento" });
@@ -201,7 +233,7 @@ function ParticipantsManager() {
     try {
       await deleteDoc(doc(db, "ranking", id));
       setMessage({ type: "success", text: "Partecipante eliminato!" });
-      loadParticipants();
+      onDataChange();
     } catch (err) {
       console.error(err);
       setMessage({ type: "danger", text: "Errore durante l'eliminazione" });
@@ -220,7 +252,7 @@ function ParticipantsManager() {
         usedLateSubmission: false
       });
       setMessage({ type: "success", text: `Late Submission resettata per ${name}!` });
-      loadParticipants();
+      onDataChange();
     } catch (err) {
       console.error(err);
       setMessage({ type: "danger", text: "Errore durante il reset" });
@@ -229,7 +261,7 @@ function ParticipantsManager() {
     }
   };
 
-  if (loading) {
+  if (propLoading) {
     return (
       <div className="text-center py-5">
         <Spinner animation="border" />
@@ -418,10 +450,11 @@ function ParticipantsManager() {
 }
 
 /* ==================== GESTIONE FORMAZIONI ==================== */
-function FormationsManager() {
-  const [participants, setParticipants] = useState([]);
-  const [races, setRaces] = useState([]);
-  const [loading, setLoading] = useState(true);
+function FormationsManager({ participants: propParticipants, races: propRaces, loading: propLoading, onDataChange }) {
+  // Usa i dati passati come props
+  const participants = propParticipants;
+  const races = propRaces;
+
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
   const [touched, setTouched] = useState(false); // Per mostrare errori solo dopo il primo tentativo
@@ -444,32 +477,6 @@ function FormationsManager() {
   });
 
   const [isLateSubmission, setIsLateSubmission] = useState(false);
-
-  // Carica partecipanti e gare
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [partSnap, racesSnap] = await Promise.all([
-        getDocs(collection(db, "ranking")),
-        getDocs(collection(db, "races")),
-      ]);
-
-      const partList = partSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setParticipants(partList.sort((a, b) => a.name.localeCompare(b.name)));
-
-      const racesList = racesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      racesList.sort((a, b) => a.round - b.round);
-      setRaces(racesList);
-    } catch (err) {
-      console.error(err);
-      setMessage({ type: "danger", text: "Errore caricamento dati" });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Carica lo stato delle formazioni e seleziona automaticamente la prima gara senza formazione
   useEffect(() => {
@@ -735,7 +742,7 @@ function FormationsManager() {
 
   const hasSprint = Boolean(selectedRace?.qualiSprintUTC);
 
-  if (loading) {
+  if (propLoading) {
     return (
       <div className="text-center py-5">
         <Spinner animation="border" />
@@ -973,9 +980,9 @@ function FormationsManager() {
 }
 
 /* ==================== GESTIONE CALENDARIO ==================== */
-function CalendarManager() {
-  const [races, setRaces] = useState([]);
-  const [loading, setLoading] = useState(true);
+function CalendarManager({ races: propRaces, loading: propLoading, onDataChange }) {
+  // Usa le gare passate come props
+  const races = propRaces;
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState(null);
   const [editingRace, setEditingRace] = useState(null);
@@ -1003,23 +1010,6 @@ function CalendarManager() {
 
 
 
-  useEffect(() => {
-    loadRaces();
-  }, []);
-
-  const loadRaces = async () => {
-    try {
-      const snap = await getDocs(collection(db, "races"));
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      list.sort((a, b) => a.round - b.round);
-      setRaces(list);
-    } catch (err) {
-      console.error(err);
-      setMessage({ type: "danger", text: "Errore caricamento gare" });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // ICS Import handlers
   const handleIcsFileSelect = async (e) => {
@@ -1082,7 +1072,7 @@ function CalendarManager() {
       });
       setParsedRaces([]);
       setIcsFile(null);
-      await loadRaces();
+      await onDataChange();
     } catch (err) {
       console.error(err);
       setMessage({ type: "danger", text: "❌ Errore durante l'import: " + err.message });
@@ -1137,7 +1127,7 @@ function CalendarManager() {
 
       setShowCancelModal(false);
       setCancelType("");
-      await loadRaces();
+      await onDataChange();
 
       // Aggiorna anche i dati nel modal di edit
       setEditingRace(prev => ({
@@ -1186,7 +1176,7 @@ function CalendarManager() {
 
       setShowEditModal(false);
       setEditingRace(null);
-      await loadRaces();
+      await onDataChange();
     } catch (err) {
       console.error(err);
       setMessage({ type: "danger", text: "❌ Errore durante l'aggiornamento: " + err.message });
@@ -1195,7 +1185,7 @@ function CalendarManager() {
     }
   };
 
-  if (loading) {
+  if (propLoading) {
     return (
       <div className="text-center py-5">
         <Spinner animation="border" />
@@ -1528,7 +1518,7 @@ function CalendarManager() {
 }
 
 /* ==================== RESET DATABASE ==================== */
-function DatabaseReset() {
+function DatabaseReset({ participants, races, onDataChange }) {
   const [showModal, setShowModal] = useState(false);
   const [resetType, setResetType] = useState("");
   const [resetting, setResetting] = useState(false);

@@ -53,7 +53,7 @@ function DriverWithLogo({ name }) {
  * - showPoints: (default true) mostra i punteggi individuali
  * - compact: (default false) versione compatta senza header esteso
  */
-export default function RaceHistoryCard({
+function RaceHistoryCard({
   race,
   showOfficialResults = true,
   showPoints = true,
@@ -582,3 +582,5 @@ export default function RaceHistoryCard({
     </Card>
   );
 }
+
+export default React.memo(RaceHistoryCard);
