@@ -102,8 +102,18 @@ export const POINTS = {
   PENALTY_EMPTY_LIST: -3,
 };
 
+/* ==================== OPZIONI SELECT PILOTI ==================== */
+// Pre-computate per evitare duplicazione in AdminPanel e FormationApp
+export const DRIVER_OPTIONS = DRIVERS.map((d) => ({ value: d, label: d }));
+
 /* ==================== COSTANTI TEMPORALI ==================== */
 export const TIME_CONSTANTS = {
   // Minuti di grace period dopo la gara per inserire risultati
   GRACE_PERIOD_MINUTES: 90,
+
+  // Finestra late submission (in minuti dopo deadline)
+  LATE_SUBMISSION_WINDOW_MINUTES: 10,
+
+  // Penalità late submission
+  LATE_SUBMISSION_PENALTY: -3,
 };

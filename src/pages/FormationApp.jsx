@@ -30,8 +30,9 @@ import {
 import Select from "react-select";
 import { db } from "../services/firebase";
 import RaceHistoryCard from "../components/RaceHistoryCard";
-import { DRIVERS, DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
-import { useTheme } from "../contexts/ThemeContext";
+import { DRIVERS, DRIVER_TEAM, TEAM_LOGOS, TIME_CONSTANTS } from "../constants/racing";
+import { useThemeColors } from "../hooks/useThemeColors";
+import { getLateWindowInfo } from "../utils/lateSubmissionHelper";
 import "../styles/customSelect.css";
 
 /* --- costanti importate da file centralizzato ---------------------- */
@@ -51,7 +52,7 @@ const driverOpts = drivers.map((d) => ({
 
 /* ─────────────────────────────────── COMPONENTE ──────────────────────────────────── */
 export default function FormationApp() {
-  const { isDark } = useTheme();
+  const colors = useThemeColors();
 
   /* ----- stato principale ----- */
   const [ranking, setRanking] = useState([]);
@@ -241,31 +242,25 @@ export default function FormationApp() {
   }, [form.userId, form.raceId]);
 
   /* ─────────────── validazione contestuale ─────────────── */
-  const validate = (mode) => {
+  const validate = (mode, timestamp) => {
     const err = [];
     if (!form.userId) err.push("Scegli l'utente.");
     if (!form.raceId) err.push("Scegli la gara.");
 
-    const now = Date.now();
-    const deadline = mode === "main"
-      ? race.qualiUTC?.seconds * 1000
-      : race.qualiSprintUTC?.seconds * 1000;
-    const tenMinutesAfterDeadline = deadline + (10 * 60 * 1000);
-    const isInLateWindow = now > deadline && now <= tenMinutesAfterDeadline;
+    // Usa helper per ottenere info late window con timestamp condiviso
+    const lateInfo = getLateWindowInfo(mode, race, timestamp);
 
     if (mode === "main") {
       // Controllo gara cancellata
       if (race.cancelledMain) {
         err.push("⛔ Gara cancellata: non è possibile inserire formazioni.");
-        return err; // Ritorna subito, non serve controllare altro
+        return err;
       }
 
-      // Permetti se:
-      // 1. Deadline aperta (mainOpen) OPPURE
-      // 2. In finestra late E non ha ancora usato late submission
-      if (!mainOpen && !isInLateWindow) {
+      // Permetti se: deadline aperta OPPURE in finestra late E non ha già usato
+      if (!lateInfo.isOpen && !lateInfo.isInLateWindow) {
         err.push("Deadline gara chiusa.");
-      } else if (isInLateWindow && userUsedLateSubmission) {
+      } else if (lateInfo.isInLateWindow && userUsedLateSubmission) {
         err.push("❌ Hai già usato la possibilità di inserimento in ritardo.");
       }
 
@@ -279,16 +274,12 @@ export default function FormationApp() {
       // Controllo sprint cancellata
       if (race.cancelledSprint) {
         err.push("⛔ Sprint cancellata: non è possibile inserire formazioni.");
-        return err; // Ritorna subito
+        return err;
       }
 
-      const sprintDeadline = race.qualiSprintUTC?.seconds * 1000;
-      const tenMinAfterSprint = sprintDeadline + (10 * 60 * 1000);
-      const isInLateSprint = now > sprintDeadline && now <= tenMinAfterSprint;
-
-      if (!sprOpen && !isInLateSprint) {
+      if (!lateInfo.isOpen && !lateInfo.isInLateWindow) {
         err.push("Deadline sprint chiusa.");
-      } else if (isInLateSprint && userUsedLateSubmission) {
+      } else if (lateInfo.isInLateWindow && userUsedLateSubmission) {
         err.push("❌ Hai già usato la possibilità di inserimento in ritardo.");
       }
 
@@ -325,29 +316,29 @@ export default function FormationApp() {
     const mode = savingMode;
     if (!mode || !race) return;
 
-    const errs = validate(mode);
+    // Cattura timestamp UNA VOLTA per evitare race conditions
+    const timestamp = Date.now();
+
+    // Valida con lo stesso timestamp
+    const errs = validate(mode, timestamp);
     if (errs.length) {
       setFlash({ type: "danger", msg: errs.join(" ") });
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
-    const now = Date.now();
-    const deadline = mode === "main"
-      ? race.qualiUTC?.seconds * 1000
-      : race.qualiSprintUTC?.seconds * 1000;
-    const tenMinutesAfterDeadline = deadline + (10 * 60 * 1000);
-    const isInLateWindow = now > deadline && now <= tenMinutesAfterDeadline;
+    // Ottieni info late window con lo stesso timestamp
+    const lateInfo = getLateWindowInfo(mode, race, timestamp);
 
     // Se in late window e non ha ancora usato → mostra modal
-    if (isInLateWindow && !userUsedLateSubmission && !isEditMode) {
+    if (lateInfo.isInLateWindow && !userUsedLateSubmission && !isEditMode) {
       setCurrentLateMode(mode);
       setShowLateModal(true);
-      return; // Interrompi qui, continua dopo conferma modal
+      return;
     }
 
-    // Procedi con salvataggio normale o dopo conferma modal
-    await performSave(mode, isInLateWindow);
+    // Procedi con salvataggio
+    await performSave(mode, lateInfo.isInLateWindow);
   };
 
   // Nuova funzione separata per il salvataggio effettivo
@@ -378,7 +369,7 @@ export default function FormationApp() {
     // Aggiungi flag late submission se necessario
     if (isLate) {
       payload.isLate = true;
-      payload.latePenalty = -3;
+      payload.latePenalty = TIME_CONSTANTS.LATE_SUBMISSION_PENALTY;
     }
 
     try {
@@ -436,13 +427,11 @@ export default function FormationApp() {
   const DeadlineBadgeLocal = ({ open }) => (
     <Badge
       bg={open ? "success" : "danger"}
-      style={{ color: (open && isDark) ? "#ffffff" : undefined }}
+      style={{ color: (open && colors.isDark) ? "#ffffff" : undefined }}
     >
       {open ? "APERTO" : "CHIUSO"}
     </Badge>
   );
-
-  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
 
   /* ─────────────────────────────── JSX ───────────────────────────── */
   return (
@@ -453,11 +442,11 @@ export default function FormationApp() {
           <Card
             className="shadow h-100"
             style={{
-              borderLeft: `4px solid ${accentColor}`,
+              borderLeft: `4px solid ${colors.accent}`,
             }}
           >
             <Card.Body>
-              <Card.Title className="text-center mb-3" style={{ color: accentColor }}>
+              <Card.Title className="text-center mb-3" style={{ color: colors.accent }}>
                 🏎️ Schiera la Formazione
               </Card.Title>
 
@@ -503,7 +492,7 @@ export default function FormationApp() {
                 {/* MAIN */}
                 {race && (
                   <>
-                    <SectionHeader title="Gara Principale" open={mainOpen} deadlineMs={qualiMs} accentColor={accentColor} />
+                    <SectionHeader title="Gara Principale" open={mainOpen} deadlineMs={qualiMs} accentColor={colors.accent} />
 
                     {hasMainDuplicates && touched && (
                       <Alert variant="warning" className="py-2 small">
@@ -553,7 +542,7 @@ export default function FormationApp() {
                 {/* SPRINT */}
                 {isSprintRace && (
                   <>
-                    <SectionHeader title="Sprint (opzionale)" open={sprOpen} deadlineMs={sprMs} accentColor={accentColor} />
+                    <SectionHeader title="Sprint (opzionale)" open={sprOpen} deadlineMs={sprMs} accentColor={colors.accent} />
 
                     {hasSprintDuplicates && touched && (
                       <Alert variant="warning" className="py-2 small">
@@ -583,7 +572,7 @@ export default function FormationApp() {
                     form={form}
                     hasMain={fullMain}
                     hasSprint={fullSpr && isSprintRace}
-                    accentColor={accentColor}
+                    accentColor={colors.accent}
                   />
                 )}
 
@@ -653,7 +642,8 @@ export default function FormationApp() {
             <ul className="mb-0 mt-2">
               <li>Riceverai una penalità di <strong>-3 punti</strong></li>
               <li>Questa è la tua <strong>unica possibilità</strong> per tutto il campionato</li>
-              <li>Non potrai più farlo in futuro per nessuna gara</li>
+              <li>Vale sia per <strong>gare principali che sprint</strong></li>
+              <li>Non potrai più farlo in futuro per nessuna altra gara/sprint</li>
             </ul>
           </Alert>
           <p className="mb-0">Vuoi procedere comunque?</p>
