@@ -389,6 +389,8 @@ function FormationsManager() {
     sprintJolly: null,
   });
 
+  const [isLateSubmission, setIsLateSubmission] = useState(false);
+
   // Carica partecipanti e gare
   useEffect(() => {
     loadData();
@@ -479,6 +481,7 @@ function FormationsManager() {
           sprintP3: findDriverOption(data.sprintP3),
           sprintJolly: findDriverOption(data.sprintJolly),
         });
+        setIsLateSubmission(data.isLate ?? false);
       } else {
         setExistingFormation(null);
         resetForm();
@@ -500,6 +503,7 @@ function FormationsManager() {
       sprintP3: null,
       sprintJolly: null,
     });
+    setIsLateSubmission(false);
   };
 
   const findDriverOption = (name) => {
@@ -635,6 +639,17 @@ function FormationsManager() {
         sprintJolly: formData.sprintJolly?.value || null,
         submittedAt: Timestamp.now(),
       };
+
+      // Aggiungi flag late se marcato
+      if (isLateSubmission) {
+        payload.isLate = true;
+        payload.latePenalty = -3;
+
+        // Marca utente come "ha usato late submission"
+        await updateDoc(doc(db, "ranking", selectedUser), {
+          usedLateSubmission: true
+        });
+      }
 
       await setDoc(doc(db, "races", selectedRace.id, "submissions", selectedUser), payload, {
         merge: true,
@@ -817,6 +832,18 @@ function FormationsManager() {
                       isClearable
                       noOptionsMessage={() => "Tutti i piloti sono stati selezionati"}
                     />
+                  </Form.Group>
+
+                  <Form.Group className="mb-3">
+                    <Form.Check
+                      type="checkbox"
+                      label="⏰ Inserimento in ritardo (-3 punti)"
+                      checked={isLateSubmission}
+                      onChange={(e) => setIsLateSubmission(e.target.checked)}
+                    />
+                    <Form.Text className="text-muted">
+                      Applica penalità di -3 punti per inserimento tardivo (vale una sola volta per utente)
+                    </Form.Text>
                   </Form.Group>
 
                   {hasSprint && (

@@ -350,6 +350,11 @@ export default function RaceHistoryCard({
                       <div className="d-flex justify-content-between align-items-center mb-2">
                         <h6 className="mb-0" style={{ color: accentColor }}>
                           {idx + 1}. {userName}
+                          {s.isLate && (
+                            <Badge bg="warning" text="dark" className="ms-2">
+                              ⏰ In Ritardo (-3)
+                            </Badge>
+                          )}
                         </h6>
                         {showPoints && official && (
                           <Badge
@@ -520,7 +525,14 @@ export default function RaceHistoryCard({
                     return (
                       <tr key={s.id}>
                         <td className="text-center">{idx + 1}</td>
-                        <td className="text-center">{userName}</td>
+                        <td className="text-center">
+                          {userName}
+                          {s.isLate && (
+                            <Badge bg="warning" text="dark" className="ms-1">
+                              ⏰ -3
+                            </Badge>
+                          )}
+                        </td>
 
                         {/* Main picks */}
                         <Cell pick={s.mainP1} pts={p1Pts} />

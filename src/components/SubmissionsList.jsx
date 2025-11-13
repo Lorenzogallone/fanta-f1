@@ -132,6 +132,11 @@ export default function SubmissionsList({ raceId, hasSprint, refresh }) {
                   <div className="d-flex justify-content-between align-items-center mb-2">
                     <h6 className="mb-0" style={{ color: accentColor }}>
                       {i + 1}. {s.user}
+                      {s.isLate && (
+                        <Badge bg="warning" text="dark" className="ms-2">
+                          ⏰ In Ritardo (-3)
+                        </Badge>
+                      )}
                     </h6>
                   </div>
 
@@ -177,7 +182,14 @@ export default function SubmissionsList({ raceId, hasSprint, refresh }) {
                 return (
                   <tr key={s.id}>
                     <td>{i + 1}</td>
-                    <td>{s.user}</td>
+                    <td>
+                      {s.user}
+                      {s.isLate && (
+                        <Badge bg="warning" text="dark" className="ms-1">
+                          ⏰ -3
+                        </Badge>
+                      )}
+                    </td>
 
                     {/* MAIN PICKS */}
                     <td>
