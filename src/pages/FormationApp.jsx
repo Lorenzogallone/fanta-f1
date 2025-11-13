@@ -248,12 +248,18 @@ export default function FormationApp() {
 
     const now = Date.now();
     const deadline = mode === "main"
-      ? race.qualiUTC?.toMillis()
-      : race.qualiSprintUTC?.toMillis();
+      ? race.qualiUTC?.seconds * 1000
+      : race.qualiSprintUTC?.seconds * 1000;
     const tenMinutesAfterDeadline = deadline + (10 * 60 * 1000);
     const isInLateWindow = now > deadline && now <= tenMinutesAfterDeadline;
 
     if (mode === "main") {
+      // Controllo gara cancellata
+      if (race.cancelledMain) {
+        err.push("⛔ Gara cancellata: non è possibile inserire formazioni.");
+        return err; // Ritorna subito, non serve controllare altro
+      }
+
       // Permetti se:
       // 1. Deadline aperta (mainOpen) OPPURE
       // 2. In finestra late E non ha ancora usato late submission
@@ -270,7 +276,13 @@ export default function FormationApp() {
       // SPRINT
       if (!isSprintRace) err.push("Questa gara non prevede Sprint.");
 
-      const sprintDeadline = race.qualiSprintUTC?.toMillis();
+      // Controllo sprint cancellata
+      if (race.cancelledSprint) {
+        err.push("⛔ Sprint cancellata: non è possibile inserire formazioni.");
+        return err; // Ritorna subito
+      }
+
+      const sprintDeadline = race.qualiSprintUTC?.seconds * 1000;
       const tenMinAfterSprint = sprintDeadline + (10 * 60 * 1000);
       const isInLateSprint = now > sprintDeadline && now <= tenMinAfterSprint;
 
@@ -322,8 +334,8 @@ export default function FormationApp() {
 
     const now = Date.now();
     const deadline = mode === "main"
-      ? race.qualiUTC?.toMillis()
-      : race.qualiSprintUTC?.toMillis();
+      ? race.qualiUTC?.seconds * 1000
+      : race.qualiSprintUTC?.seconds * 1000;
     const tenMinutesAfterDeadline = deadline + (10 * 60 * 1000);
     const isInLateWindow = now > deadline && now <= tenMinutesAfterDeadline;
 

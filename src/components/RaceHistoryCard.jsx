@@ -291,7 +291,7 @@ export default function RaceHistoryCard({
                   showPoints && official
                     ? s.pointsEarned !== undefined
                       ? s.pointsEarned
-                      : p1Pts + p2Pts + p3Pts + j1Pts + j2Pts
+                      : p1Pts + p2Pts + p3Pts + j1Pts + j2Pts + (s.isLate ? (s.latePenalty || -3) : 0)
                     : null;
 
                 /* -------- Sprint -------- */

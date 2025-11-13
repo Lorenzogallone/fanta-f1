@@ -102,7 +102,7 @@ function ParticipantsManager() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ id: "", name: "", puntiTotali: 0, jolly: 0 });
+  const [formData, setFormData] = useState({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
 
   // Carica partecipanti
   useEffect(() => {
@@ -138,6 +138,7 @@ function ParticipantsManager() {
         name: formData.name,
         puntiTotali: parseInt(formData.puntiTotali) || 0,
         jolly: parseInt(formData.jolly) || 0,
+        usedLateSubmission: false,
         pointsByRace: {},
         championshipPiloti: [],
         championshipCostruttori: [],
@@ -145,7 +146,7 @@ function ParticipantsManager() {
       });
 
       setMessage({ type: "success", text: "Partecipante aggiunto!" });
-      setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0 });
+      setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
       loadParticipants();
     } catch (err) {
       console.error(err);
@@ -163,6 +164,7 @@ function ParticipantsManager() {
       name: participant.name,
       puntiTotali: participant.puntiTotali || 0,
       jolly: participant.jolly || 0,
+      usedLateSubmission: participant.usedLateSubmission || false,
     });
   };
 
@@ -176,11 +178,12 @@ function ParticipantsManager() {
         name: formData.name,
         puntiTotali: parseInt(formData.puntiTotali) || 0,
         jolly: parseInt(formData.jolly) || 0,
+        usedLateSubmission: formData.usedLateSubmission,
       });
 
       setMessage({ type: "success", text: "Partecipante aggiornato!" });
       setEditingId(null);
-      setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0 });
+      setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
       loadParticipants();
     } catch (err) {
       console.error(err);
@@ -202,6 +205,25 @@ function ParticipantsManager() {
     } catch (err) {
       console.error(err);
       setMessage({ type: "danger", text: "Errore durante l'eliminazione" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Reset Late Submission
+  const handleResetLateSubmission = async (id, name) => {
+    if (!window.confirm(`Resettare il flag Late Submission per ${name}?\n\nQuesto permetterà all'utente di usare di nuovo l'inserimento in ritardo.`)) return;
+
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, "ranking", id), {
+        usedLateSubmission: false
+      });
+      setMessage({ type: "success", text: `Late Submission resettata per ${name}!` });
+      loadParticipants();
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: "danger", text: "Errore durante il reset" });
     } finally {
       setSaving(false);
     }
@@ -274,6 +296,20 @@ function ParticipantsManager() {
                 />
               </Form.Group>
 
+              {editingId && (
+                <Form.Group className="mb-3">
+                  <Form.Check
+                    type="checkbox"
+                    label="⏰ Ha già usato Late Submission"
+                    checked={formData.usedLateSubmission}
+                    onChange={(e) => setFormData({ ...formData, usedLateSubmission: e.target.checked })}
+                  />
+                  <Form.Text className="text-muted">
+                    Se disattivato, l'utente potrà usare di nuovo l'inserimento in ritardo
+                  </Form.Text>
+                </Form.Group>
+              )}
+
               <div className="d-flex gap-2">
                 <Button variant="danger" type="submit" disabled={saving} className="flex-grow-1">
                   {saving ? "Salvataggio..." : editingId ? "Aggiorna" : "Aggiungi"}
@@ -283,7 +319,7 @@ function ParticipantsManager() {
                     variant="secondary"
                     onClick={() => {
                       setEditingId(null);
-                      setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0 });
+                      setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
                     }}
                   >
                     Annulla
@@ -316,6 +352,7 @@ function ParticipantsManager() {
                       <th>Nome</th>
                       <th className="text-center">Punti</th>
                       <th className="text-center">Jolly</th>
+                      <th className="text-center">Late Used</th>
                       <th className="text-center">Azioni</th>
                     </tr>
                   </thead>
@@ -332,6 +369,23 @@ function ParticipantsManager() {
                         </td>
                         <td className="text-center">
                           <Badge bg="success">{p.jolly || 0}</Badge>
+                        </td>
+                        <td className="text-center">
+                          <div className="d-flex align-items-center justify-content-center gap-1">
+                            <Badge bg={p.usedLateSubmission ? "danger" : "secondary"}>
+                              {p.usedLateSubmission ? "✓" : "✗"}
+                            </Badge>
+                            {p.usedLateSubmission && (
+                              <Button
+                                size="sm"
+                                variant="outline-info"
+                                title="Reset Late Submission"
+                                onClick={() => handleResetLateSubmission(p.id, p.name)}
+                              >
+                                🔄
+                              </Button>
+                            )}
+                          </div>
                         </td>
                         <td className="text-center">
                           <Button
