@@ -55,7 +55,7 @@ export default function App() {
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/"           element={<Home />} />
-                <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/leaderboard" element={<Home />} />
                 <Route path="/participant/:userId" element={<ParticipantDetail />} />
                 <Route path="/lineup"     element={<Formations />} />
                 <Route path="/calculate"  element={<CalculatePoints />} />
@@ -67,7 +67,7 @@ export default function App() {
                 <Route path="/formations/races" element={<FormationApp />} />
                 <Route path="/formations/championship" element={<ChampionshipForm />} />
                 {/* Italian routes redirects for backward compatibility */}
-                <Route path="/classifica" element={<Leaderboard />} />
+                <Route path="/classifica" element={<Home />} />
                 <Route path="/partecipante/:userId" element={<ParticipantDetail />} />
                 <Route path="/schiera" element={<Formations />} />
                 <Route path="/calcola" element={<CalculatePoints />} />

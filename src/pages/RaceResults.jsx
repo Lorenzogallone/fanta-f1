@@ -372,23 +372,23 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        <div className="table-responsive" style={{ fontSize: "0.9rem" }}>
+                        <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
-                                <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
+                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
                                 <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
+                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
                               </tr>
                             </thead>
                             <tbody>
                               {sessions.fp1.map((result, idx) => (
                                 <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                  <td>{result.position}</td>
+                                  <td className="text-center">{result.position}</td>
                                   <td>
                                     <DriverWithLogo name={result.driver} />
                                   </td>
-                                  <td className="text-muted font-monospace">{result.gap}</td>
+                                  <td className="text-center text-muted font-monospace">{result.gap}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -407,23 +407,23 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        <div className="table-responsive" style={{ fontSize: "0.9rem" }}>
+                        <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
-                                <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
+                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
                                 <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
+                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
                               </tr>
                             </thead>
                             <tbody>
                               {sessions.fp2.map((result, idx) => (
                                 <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                  <td>{result.position}</td>
+                                  <td className="text-center">{result.position}</td>
                                   <td>
                                     <DriverWithLogo name={result.driver} />
                                   </td>
-                                  <td className="text-muted font-monospace">{result.gap}</td>
+                                  <td className="text-center text-muted font-monospace">{result.gap}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -442,23 +442,23 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        <div className="table-responsive" style={{ fontSize: "0.9rem" }}>
+                        <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
-                                <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
+                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
                                 <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
+                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
                               </tr>
                             </thead>
                             <tbody>
                               {sessions.fp3.map((result, idx) => (
                                 <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                  <td>{result.position}</td>
+                                  <td className="text-center">{result.position}</td>
                                   <td>
                                     <DriverWithLogo name={result.driver} />
                                   </td>
-                                  <td className="text-muted font-monospace">{result.gap}</td>
+                                  <td className="text-center text-muted font-monospace">{result.gap}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -477,23 +477,23 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        <div className="table-responsive" style={{ fontSize: "0.9rem" }}>
+                        <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
-                                <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
+                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
                                 <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
+                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
                               </tr>
                             </thead>
                             <tbody>
                               {sessions.sprintQualifying.map((result, idx) => (
                                 <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                  <td>{result.position}</td>
+                                  <td className="text-center">{result.position}</td>
                                   <td>
                                     <DriverWithLogo name={result.driver} />
                                   </td>
-                                  <td className="text-muted font-monospace">{result.gap}</td>
+                                  <td className="text-center text-muted font-monospace">{result.gap}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -512,7 +512,7 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        <div className="table-responsive" style={{ fontSize: "0.9rem" }}>
+                        <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
@@ -565,23 +565,23 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        <div className="table-responsive" style={{ fontSize: "0.9rem" }}>
+                        <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
-                                <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
+                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
                                 <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
+                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
                               </tr>
                             </thead>
                             <tbody>
                               {sessions.sprint.map((result, idx) => (
                                 <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                  <td>{result.position}</td>
+                                  <td className="text-center">{result.position}</td>
                                   <td>
                                     <DriverWithLogo name={result.driver} />
                                   </td>
-                                  <td className="text-muted font-monospace">{result.gap}</td>
+                                  <td className="text-center text-muted font-monospace">{result.gap}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -600,13 +600,13 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        <div className="table-responsive" style={{ fontSize: "0.9rem" }}>
+                        <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
-                                <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
+                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
                                 <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
+                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
                               </tr>
                             </thead>
                             <tbody>
