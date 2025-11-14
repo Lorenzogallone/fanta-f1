@@ -81,7 +81,7 @@ function calculateGap(leaderTimeMs, driverTimeMs) {
  * Fetches practice session results from OpenF1 API
  * @param {number} season - Season year
  * @param {number} round - Race round number (used to match with Ergast data)
- * @param {string} sessionName - Session name: "Practice 1", "Practice 2", or "Practice 3"
+ * @param {string} sessionName - Session name: "Practice 1", "Practice 2", "Practice 3", "Sprint Qualifying", "Sprint Shootout"
  * @returns {Promise<Array|null>} Array of practice results or null
  */
 export async function fetchPracticeSession(season, round, sessionName) {
@@ -94,16 +94,32 @@ export async function fetchPracticeSession(season, round, sessionName) {
 
     const sessions = await sessionsResponse.json();
 
-    // Find the session matching round and session name
-    // Note: OpenF1 doesn't have direct "round" mapping, we need to match by order
-    const practiceSessions = sessions.filter(
-      s => s.session_name === sessionName && s.year === season
+    // Group sessions by meeting_key and sort by date
+    const meetingMap = {};
+    sessions.forEach(session => {
+      if (!meetingMap[session.meeting_key]) {
+        meetingMap[session.meeting_key] = {
+          date: session.date_start,
+          sessions: []
+        };
+      }
+      meetingMap[session.meeting_key].sessions.push(session);
+    });
+
+    // Sort meetings by date to get proper round order
+    const sortedMeetings = Object.entries(meetingMap)
+      .sort(([, a], [, b]) => new Date(a.date) - new Date(b.date))
+      .map(([key, data]) => ({ meeting_key: key, ...data }));
+
+    // Get the meeting for this round (rounds start from 1, array from 0)
+    const targetMeeting = sortedMeetings[round - 1];
+    if (!targetMeeting) return null;
+
+    // Find the session with the matching name in this meeting
+    const targetSession = targetMeeting.sessions.find(
+      s => s.session_name === sessionName
     );
 
-    if (!practiceSessions || practiceSessions.length === 0) return null;
-
-    // Get the session at the round index (rounds start from 1, array from 0)
-    const targetSession = practiceSessions[round - 1];
     if (!targetSession) return null;
 
     const sessionKey = targetSession.session_key;
@@ -340,18 +356,28 @@ export async function fetchRace(season, round) {
  */
 export async function fetchAllSessions(season, round) {
   try {
-    // Determine sprint qualifying name based on season (Sprint Shootout in 2023, Sprint Qualifying from 2024)
-    const sprintQualifyingName = season >= 2024 ? "Sprint Qualifying" : "Sprint Shootout";
-
-    const [fp1, fp2, fp3, sprintQualifying, qualifying, sprint, race] = await Promise.all([
+    // Fetch basic sessions first
+    const [fp1, fp2, fp3, qualifying, sprint, race] = await Promise.all([
       fetchPracticeSession(season, round, "Practice 1"),
       fetchPracticeSession(season, round, "Practice 2"),
       fetchPracticeSession(season, round, "Practice 3"),
-      fetchPracticeSession(season, round, sprintQualifyingName),
       fetchQualifying(season, round),
       fetchSprint(season, round),
       fetchRace(season, round),
     ]);
+
+    // Try to fetch sprint qualifying with multiple possible names
+    let sprintQualifying = null;
+    const sprintQualifyingNames = season >= 2024
+      ? ["Sprint Qualifying", "Sprint Shootout", "Sprint"]
+      : ["Sprint Shootout", "Sprint Qualifying", "Sprint"];
+
+    for (const name of sprintQualifyingNames) {
+      sprintQualifying = await fetchPracticeSession(season, round, name);
+      if (sprintQualifying !== null) {
+        break; // Found it, stop trying other names
+      }
+    }
 
     return {
       fp1,
