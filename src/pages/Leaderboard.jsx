@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, Table, Spinner, Badge } from "react-bootstrap";
+import { Link } from "react-router-dom";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
@@ -146,7 +147,18 @@ export default function Leaderboard() {
                   return (
                     <tr key={r.name} className={isTop3 ? "fw-bold" : ""}>
                       <td className="text-center">{medal}</td>
-                      <td>{r.name}</td>
+                      <td>
+                        <Link
+                          to={`/partecipante/${r.userId}`}
+                          style={{
+                            color: "inherit",
+                            textDecoration: "none",
+                          }}
+                          className="hover-link"
+                        >
+                          {r.name}
+                        </Link>
+                      </td>
                       <td className="text-center">{r.pts}</td>
                       <td className="text-center">{gap}</td>
                       <td className="text-center">

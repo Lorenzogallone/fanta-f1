@@ -585,3 +585,18 @@ body {
 [data-theme="dark"] .card-text {
   color: var(--text-primary);
 }
+
+/* Hover effect for clickable names */
+.hover-link {
+  cursor: pointer;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.hover-link:hover {
+  color: var(--accent-red) !important;
+  text-decoration: underline !important;
+}
+
+[data-theme="dark"] .hover-link:hover {
+  color: var(--accent-red-hover) !important;
+}

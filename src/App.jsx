@@ -19,6 +19,7 @@ import "./styles/theme.css";
 // Lazy loading pages for code splitting
 const Home = lazy(() => import("./pages/Home"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
+const ParticipantDetail = lazy(() => import("./pages/ParticipantDetail"));
 const Formations = lazy(() => import("./pages/Formations"));
 const FormationApp = lazy(() => import("./pages/FormationApp"));
 const ChampionshipForm = lazy(() => import("./pages/ChampionshipForm"));
@@ -53,6 +54,7 @@ export default function App() {
               <Routes>
                 <Route path="/"           element={<Home />} />
                 <Route path="/classifica" element={<Leaderboard />} />
+                <Route path="/partecipante/:userId" element={<ParticipantDetail />} />
                 <Route path="/schiera"    element={<Formations />} />
                 <Route path="/calcola"    element={<CalculatePoints />} />
                 <Route path="/storico"    element={<History />} />
