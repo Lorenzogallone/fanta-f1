@@ -203,6 +203,7 @@ export default function ParticipantDetail() {
     return (
       <Container className="py-5 text-center">
         <Spinner animation="border" />
+        <p className="mt-3">{t("common.loading")}</p>
       </Container>
     );
   }
