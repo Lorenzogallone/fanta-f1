@@ -16,7 +16,7 @@ import {
   Card,
   Table,
   Badge,
-  Accordion,
+  Form,
 } from "react-bootstrap";
 import {
   collection,
@@ -97,12 +97,12 @@ function TeamWithLogo({ name }) {
  */
 export default function History() {
   const [pastRaces, setPastRaces] = useState([]);
+  const [selectedRaceId, setSelectedRaceId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [championshipResults, setChampionshipResults] = useState(null);
   const [championshipSubmissions, setChampionshipSubmissions] = useState([]);
   const [loadingChampionship, setLoadingChampionship] = useState(true);
-  const [activeKeys, setActiveKeys] = useState([]);
   const { isDark } = useTheme();
   const { t } = useLanguage();
 
@@ -123,9 +123,9 @@ export default function History() {
         const races = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         setPastRaces(races);
 
-        // Set first race (most recent) as expanded by default
+        // Set first race (most recent) as selected by default
         if (races.length > 0) {
-          setActiveKeys([races[0].id]);
+          setSelectedRaceId(races[0].id);
         }
       } catch (e) {
         console.error(e);
@@ -183,6 +183,9 @@ export default function History() {
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
   const bgHeader = isDark ? "var(--bg-tertiary)" : "#ffffff";
+
+  // Get selected race
+  const selectedRace = pastRaces.find((r) => r.id === selectedRaceId);
 
   if (loading)
     return (
@@ -526,31 +529,35 @@ export default function History() {
                   {t("history.raceCount", { count: pastRaces.length })}
                 </small>
               </Card.Header>
-              <Card.Body className="p-0">
-                <Accordion
-                  activeKey={activeKeys}
-                  onSelect={(keys) => setActiveKeys(Array.isArray(keys) ? keys : [keys])}
-                  alwaysOpen
-                  flush
-                >
-                  {pastRaces.map((race) => (
-                    <Accordion.Item eventKey={race.id} key={race.id}>
-                      <Accordion.Header>
-                        <strong style={{ color: accentColor }}>
-                          {race.round}. {race.name} — {new Date(race.raceUTC.seconds * 1000).toLocaleDateString("it-IT")}
-                        </strong>
-                        {race.officialResults && (
-                          <Badge bg="success" className="ms-2">
-                            ✓ {t("history.completed")}
-                          </Badge>
-                        )}
-                      </Accordion.Header>
-                      <Accordion.Body className="p-0">
-                        <RaceHistoryCard race={race} />
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  ))}
-                </Accordion>
+              <Card.Body>
+                {/* Race Selector */}
+                <Form.Group className="mb-4">
+                  <Form.Label className="fw-bold">{t("raceResults.selectRace")}</Form.Label>
+                  <Form.Select
+                    value={selectedRaceId || ""}
+                    onChange={(e) => setSelectedRaceId(e.target.value)}
+                    style={{
+                      borderColor: accentColor,
+                    }}
+                  >
+                    <option value="">{t("raceResults.chooseRace")}</option>
+                    {pastRaces.map((race) => (
+                      <option key={race.id} value={race.id}>
+                        {t("history.round")} {race.round} - {race.name}
+                        {race.officialResults ? ` ✓` : ""}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+
+                {/* Selected Race Details */}
+                {selectedRace && <RaceHistoryCard race={selectedRace} />}
+
+                {!selectedRace && (
+                  <Alert variant="info">
+                    {t("raceResults.chooseRace")}
+                  </Alert>
+                )}
               </Card.Body>
             </Card>
           </Col>
