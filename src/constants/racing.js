@@ -1,8 +1,10 @@
-// src/constants/racing.js
-// Centralizzazione di tutte le costanti relative a piloti, team e punteggi
-// per evitare duplicazione in più componenti
+/**
+ * @file racing.js
+ * @description Centralized constants for drivers, teams, and scoring
+ * Avoids duplication across multiple components
+ */
 
-/* ==================== PILOTI ==================== */
+/* ==================== DRIVERS ==================== */
 export const DRIVERS = [
   "Lando Norris",
   "Oscar Piastri",
@@ -26,7 +28,7 @@ export const DRIVERS = [
   "Carlos Sainz Jr.",
 ];
 
-/* ==================== COSTRUTTORI ==================== */
+/* ==================== CONSTRUCTORS ==================== */
 export const CONSTRUCTORS = [
   "Red Bull",
   "Ferrari",
@@ -40,7 +42,7 @@ export const CONSTRUCTORS = [
   "Williams",
 ];
 
-/* ==================== MAPPING PILOTA → TEAM ==================== */
+/* ==================== DRIVER → TEAM MAPPING ==================== */
 export const DRIVER_TEAM = {
   "Max Verstappen": "Red Bull",
   "Yuki Tsunoda": "Red Bull",
@@ -64,7 +66,7 @@ export const DRIVER_TEAM = {
   "Carlos Sainz Jr.": "Williams",
 };
 
-/* ==================== LOGHI TEAM (percorsi in /public) ==================== */
+/* ==================== TEAM LOGOS (paths in /public) ==================== */
 export const TEAM_LOGOS = {
   Ferrari: "/ferrari.png",
   Mercedes: "/mercedes.png",
@@ -78,42 +80,42 @@ export const TEAM_LOGOS = {
   Vcarb: "/vcarb.png",
 };
 
-/* ==================== SISTEMA PUNTEGGI ==================== */
+/* ==================== SCORING SYSTEM ==================== */
 export const POINTS = {
-  // Punti per posizione in gara principale
+  // Points per position in main race
   MAIN: {
     1: 12,
     2: 10,
     3: 8,
   },
 
-  // Punti per posizione in sprint
+  // Points per position in sprint
   SPRINT: {
     1: 8,
     2: 6,
     3: 4,
   },
 
-  // Bonus jolly (indipendente dalla posizione, se finisce sul podio)
+  // Joker bonus (independent of position, if finishes on podium)
   BONUS_JOLLY_MAIN: 5,
   BONUS_JOLLY_SPRINT: 2,
 
-  // Penalità formazione vuota
+  // Empty lineup penalty
   PENALTY_EMPTY_LIST: -3,
 };
 
-/* ==================== OPZIONI SELECT PILOTI ==================== */
-// Pre-computate per evitare duplicazione in AdminPanel e FormationApp
+/* ==================== DRIVER SELECT OPTIONS ==================== */
+// Pre-computed to avoid duplication in AdminPanel and FormationApp
 export const DRIVER_OPTIONS = DRIVERS.map((d) => ({ value: d, label: d }));
 
-/* ==================== COSTANTI TEMPORALI ==================== */
+/* ==================== TIME CONSTANTS ==================== */
 export const TIME_CONSTANTS = {
-  // Minuti di grace period dopo la gara per inserire risultati
+  // Minutes of grace period after race to submit results
   GRACE_PERIOD_MINUTES: 90,
 
-  // Finestra late submission (in minuti dopo deadline)
+  // Late submission window (in minutes after deadline)
   LATE_SUBMISSION_WINDOW_MINUTES: 10,
 
-  // Penalità late submission
+  // Late submission penalty
   LATE_SUBMISSION_PENALTY: -3,
 };

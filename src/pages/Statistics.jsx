@@ -1,4 +1,8 @@
-// src/pages/Statistics.jsx
+/**
+ * @file Statistics.jsx
+ * @description Championship statistics page with ranking trends and cumulative points charts
+ */
+
 import React, { useState, useEffect } from "react";
 import {
   Container,
@@ -25,15 +29,19 @@ import { useTheme } from "../contexts/ThemeContext";
 
 const medals = ["🥇", "🥈", "🥉"];
 
-// Colori distintivi per i top giocatori nei grafici (massimo 5)
+// Distinct colors for top players in charts (max 5)
 const CHART_COLORS = [
-  "#dc3545", // rosso - 1°
-  "#0d6efd", // blu - 2°
-  "#198754", // verde - 3°
-  "#ffc107", // giallo - 4°
-  "#6f42c1", // viola - 5°
+  "#dc3545", // red - 1st
+  "#0d6efd", // blue - 2nd
+  "#198754", // green - 3rd
+  "#ffc107", // yellow - 4th
+  "#6f42c1", // purple - 5th
 ];
 
+/**
+ * Statistics page displaying championship progression charts and current standings
+ * @returns {JSX.Element} Statistics page with charts and ranking table
+ */
 export default function Statistics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,7 +55,7 @@ export default function Statistics() {
         const data = await getChampionshipStatistics();
         setStatistics(data);
 
-        // Calcola la classifica attuale (ultima gara)
+        // Calculate current ranking (last race)
         const ranking = Object.keys(data.playerNames)
           .map(userId => {
             const history = data.playersData[userId] || [];
@@ -104,10 +112,10 @@ export default function Statistics() {
     );
   }
 
-  // Mostra solo i top 5 giocatori nei grafici per ridurre la confusione
+  // Show only top 5 players in charts to reduce visual clutter
   const topPlayers = currentRanking.slice(0, 5);
 
-  // Prepara i dati per il grafico dei punti cumulativi
+  // Prepare data for cumulative points chart
   const pointsChartData = statistics.races.map((race, raceIndex) => {
     const dataPoint = {
       name: `R${race.round}`,
@@ -123,7 +131,7 @@ export default function Statistics() {
     return dataPoint;
   });
 
-  // Prepara i dati per il grafico delle posizioni (invertito: 1° in alto)
+  // Prepare data for position chart (inverted: 1st at top)
   const positionChartData = statistics.races.map((race, raceIndex) => {
     const dataPoint = {
       name: `R${race.round}`,
@@ -139,7 +147,14 @@ export default function Statistics() {
     return dataPoint;
   });
 
-  // Custom tooltip per mostrare il nome completo della gara
+  /**
+   * Custom tooltip to display full race name
+   * @param {Object} props - Tooltip props
+   * @param {boolean} props.active - Whether tooltip is active
+   * @param {Array} props.payload - Data payload
+   * @param {string} props.label - Label text
+   * @returns {JSX.Element|null} Custom tooltip or null
+   */
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       const fullName = payload[0]?.payload?.fullName || label;

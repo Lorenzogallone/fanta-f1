@@ -1,4 +1,9 @@
-// src/FormationApp.jsx – Migliorato con UX avanzata e supporto tema
+/**
+ * @file FormationApp.jsx
+ * @description Race formation submission form with advanced UX and theme support
+ * Main formation management for races and sprints with late submission handling
+ */
+
 import React, { useState, useEffect } from "react";
 import {
   Container,
@@ -35,11 +40,12 @@ import { useThemeColors } from "../hooks/useThemeColors";
 import { getLateWindowInfo } from "../utils/lateSubmissionHelper";
 import "../styles/customSelect.css";
 
-/* --- costanti importate da file centralizzato ---------------------- */
+// Constants imported from centralized file
 const drivers = DRIVERS;
 const driverTeam = DRIVER_TEAM;
 const teamLogos = TEAM_LOGOS;
 
+// Pre-build driver options with team logos
 const driverOpts = drivers.map((d) => ({
   value: d,
   label: (
@@ -50,11 +56,14 @@ const driverOpts = drivers.map((d) => ({
   ),
 }));
 
-/* ─────────────────────────────────── COMPONENTE ──────────────────────────────────── */
+/**
+ * Formation management component for race and sprint submissions
+ * @returns {JSX.Element} Formation form with deadline tracking and late submission handling
+ */
 export default function FormationApp() {
   const colors = useThemeColors();
 
-  /* ----- stato principale ----- */
+  // Main state
   const [ranking, setRanking] = useState([]);
   const [races, setRaces] = useState([]);
   const [race, setRace] = useState(null);
@@ -62,7 +71,7 @@ export default function FormationApp() {
   const [busy, setBusy] = useState(true);
   const [permError, setPermError] = useState(false);
   const [flash, setFlash] = useState(null);
-  const [touched, setTouched] = useState(false); // Per feedback visivo
+  const [touched, setTouched] = useState(false); // For visual feedback
 
   const [savingMode, setSavingMode] = useState/** @type{"main"|"sprint"|null} */(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -87,7 +96,9 @@ export default function FormationApp() {
   });
   const [isEditMode, setIsEditMode] = useState(false);
 
-  /* ─────────────── live ranking + prossime gare ─────────────── */
+  /**
+   * Load live ranking and upcoming races from Firestore
+   */
   useEffect(() => {
     (async () => {
       try {
@@ -123,7 +134,9 @@ export default function FormationApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ─────────────── carica usedLateSubmission ─────────────── */
+  /**
+   * Load user's late submission status
+   */
   useEffect(() => {
     if (form.userId) {
       const user = ranking.find(u => u.id === form.userId);
@@ -131,7 +144,7 @@ export default function FormationApp() {
     }
   }, [form.userId, ranking]);
 
-  /* ─────────────── helpers di stato gara / sprint ─────────────── */
+  // Race and sprint deadline status helpers
   const now = Date.now();
   const qualiMs = race?.qualiUTC.seconds * 1000;
   const sprMs = race?.qualiSprintUTC?.seconds * 1000;
@@ -145,7 +158,10 @@ export default function FormationApp() {
   const disabledMain = !(form.userId && form.raceId && mainOpen && fullMain);
   const disabledSprint = !(form.userId && form.raceId && sprOpen && fullSpr && isSprintRace);
 
-  /* ─────────────── validazione duplicati ─────────────── */
+  /**
+   * Get duplicate drivers in main race selection
+   * @returns {string[]} Array of duplicate driver names
+   */
   const getMainDuplicates = () => {
     const selected = [form.P1?.value, form.P2?.value, form.P3?.value, form.jolly?.value, form.jolly2?.value].filter(
       Boolean
@@ -154,6 +170,10 @@ export default function FormationApp() {
     return [...new Set(duplicates)];
   };
 
+  /**
+   * Get duplicate drivers in sprint selection
+   * @returns {string[]} Array of duplicate driver names
+   */
   const getSprintDuplicates = () => {
     const selected = [
       form.sprintP1?.value,
@@ -170,7 +190,10 @@ export default function FormationApp() {
   const hasMainDuplicates = mainDuplicates.length > 0;
   const hasSprintDuplicates = sprintDuplicates.length > 0;
 
-  /* ─────────────── cambio semplici (user / race) ─────────────── */
+  /**
+   * Handle simple input changes (user / race selection)
+   * @param {Event} e - Change event
+   */
   const onChangeSimple = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
@@ -203,12 +226,19 @@ export default function FormationApp() {
     }
   };
 
+  /**
+   * Handle driver selection changes
+   * @param {Object} sel - Selected option
+   * @param {string} field - Form field name
+   */
   const onSelectChange = (sel, field) => {
     setForm((f) => ({ ...f, [field]: sel }));
-    if (touched && !sel) setTouched(true); // Mantieni feedback se era già touched
+    if (touched && !sel) setTouched(true); // Maintain feedback if already touched
   };
 
-  /* ─────────────── prefill se esiste submission ─────────────── */
+  /**
+   * Pre-fill form if existing submission found
+   */
   useEffect(() => {
     const { userId, raceId } = form;
     if (!userId || !raceId) {
@@ -241,23 +271,28 @@ export default function FormationApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.userId, form.raceId]);
 
-  /* ─────────────── validazione contestuale ─────────────── */
+  /**
+   * Validate formation before submission
+   * @param {string} mode - Submission mode ("main" or "sprint")
+   * @param {number} timestamp - Current timestamp
+   * @returns {string[]} Array of validation error messages
+   */
   const validate = (mode, timestamp) => {
     const err = [];
     if (!form.userId) err.push("Scegli l'utente.");
     if (!form.raceId) err.push("Scegli la gara.");
 
-    // Usa helper per ottenere info late window con timestamp condiviso
+    // Use helper to get late window info with shared timestamp
     const lateInfo = getLateWindowInfo(mode, race, timestamp);
 
     if (mode === "main") {
-      // Controllo gara cancellata
+      // Check if race is cancelled
       if (race.cancelledMain) {
         err.push("⛔ Gara cancellata: non è possibile inserire formazioni.");
         return err;
       }
 
-      // Permetti se: deadline aperta OPPURE in finestra late E non ha già usato
+      // Allow if: deadline open OR in late window AND hasn't used it yet
       if (!lateInfo.isOpen && !lateInfo.isInLateWindow) {
         err.push("Deadline gara chiusa.");
       } else if (lateInfo.isInLateWindow && userUsedLateSubmission) {
@@ -271,7 +306,7 @@ export default function FormationApp() {
       // SPRINT
       if (!isSprintRace) err.push("Questa gara non prevede Sprint.");
 
-      // Controllo sprint cancellata
+      // Check if sprint is cancelled
       if (race.cancelledSprint) {
         err.push("⛔ Sprint cancellata: non è possibile inserire formazioni.");
         return err;
@@ -290,7 +325,9 @@ export default function FormationApp() {
     return err;
   };
 
-  /* ─────────────── reset form ─────────────── */
+  /**
+   * Reset form to initial state
+   */
   const handleResetForm = () => {
     setForm((f) => ({
       ...f,
@@ -308,7 +345,10 @@ export default function FormationApp() {
     setFlash(null);
   };
 
-  /* ─────────────── salvataggio ─────────────── */
+  /**
+   * Handle form submission
+   * @param {Event} e - Form submit event
+   */
   const save = async (e) => {
     e.preventDefault();
     setFlash(null);
@@ -316,10 +356,10 @@ export default function FormationApp() {
     const mode = savingMode;
     if (!mode || !race) return;
 
-    // Cattura timestamp UNA VOLTA per evitare race conditions
+    // Capture timestamp ONCE to avoid race conditions
     const timestamp = Date.now();
 
-    // Valida con lo stesso timestamp
+    // Validate with the same timestamp
     const errs = validate(mode, timestamp);
     if (errs.length) {
       setFlash({ type: "danger", msg: errs.join(" ") });
@@ -327,21 +367,25 @@ export default function FormationApp() {
       return;
     }
 
-    // Ottieni info late window con lo stesso timestamp
+    // Get late window info with the same timestamp
     const lateInfo = getLateWindowInfo(mode, race, timestamp);
 
-    // Se in late window e non ha ancora usato → mostra modal
+    // If in late window and hasn't used it yet → show modal
     if (lateInfo.isInLateWindow && !userUsedLateSubmission && !isEditMode) {
       setCurrentLateMode(mode);
       setShowLateModal(true);
       return;
     }
 
-    // Procedi con salvataggio
+    // Proceed with save
     await performSave(mode, lateInfo.isInLateWindow);
   };
 
-  // Nuova funzione separata per il salvataggio effettivo
+  /**
+   * Perform the actual save operation
+   * @param {string} mode - Submission mode ("main" or "sprint")
+   * @param {boolean} isLate - Whether this is a late submission
+   */
   const performSave = async (mode, isLate = false) => {
     const me = ranking.find((u) => u.id === form.userId);
     const payload = {

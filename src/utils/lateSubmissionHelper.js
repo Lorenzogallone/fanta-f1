@@ -1,14 +1,16 @@
-// src/utils/lateSubmissionHelper.js
+/**
+ * Late Submission Helper
+ * Calculates late submission window status for races to prevent race conditions
+ */
+
 import { TIME_CONSTANTS } from "../constants/racing";
 
 /**
- * Calcola lo stato della finestra late submission per una gara.
- * Usa un timestamp unico per evitare race conditions.
- *
- * @param {string} mode - "main" o "sprint"
- * @param {Object} race - Oggetto gara con qualiUTC e qualiSprintUTC
- * @param {number} [currentTime] - Timestamp corrente (default: Date.now())
- * @returns {Object} Informazioni sulla finestra late
+ * Calculates late submission window status for a race using a single timestamp
+ * @param {string} mode - Submission mode: "main" or "sprint"
+ * @param {Object} race - Race object with qualiUTC and qualiSprintUTC
+ * @param {number} [currentTime] - Current timestamp (default: Date.now())
+ * @returns {Object} Late window information with deadline, isOpen, isInLateWindow, lateWindowEnd
  */
 export const getLateWindowInfo = (mode, race, currentTime = Date.now()) => {
   if (!race) {

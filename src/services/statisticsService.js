@@ -1,18 +1,19 @@
-// src/services/statisticsService.js
+/**
+ * Statistics Service
+ * Fetches and calculates historical championship statistics for all players
+ */
+
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "./firebase";
 import { POINTS } from "../constants/racing";
 
 /**
- * Recupera i dati storici delle gare con i punti di ogni giocatore
- * @returns {Promise<Object>} Oggetto con:
- *   - races: array delle gare con id, name, round, date
- *   - playersData: oggetto con userId -> array di {raceId, points, cumulativePoints, position}
- *   - playerNames: oggetto con userId -> nome giocatore
+ * Retrieves historical race data with cumulative points and positions for each player
+ * @returns {Promise<Object>} Object containing races array, playersData object, and playerNames object
  */
 export async function getChampionshipStatistics() {
   try {
-    // 1. Recupera tutte le gare ordinate per data
+    // Fetch all races ordered by date
     const racesSnap = await getDocs(
       query(collection(db, "races"), orderBy("raceUTC", "asc"))
     );
@@ -26,22 +27,21 @@ export async function getChampionshipStatistics() {
       cancelledSprint: doc.data().cancelledSprint || false,
     }));
 
-    // 2. Recupera i nomi dei giocatori dal ranking
+    // Fetch player names from ranking collection
     const rankingSnap = await getDocs(collection(db, "ranking"));
     const playerNames = {};
-    const playerPoints = {}; // Punti cumulativi per giocatore
+    const playerPoints = {};
 
     rankingSnap.docs.forEach(doc => {
       playerNames[doc.id] = doc.data().name;
-      playerPoints[doc.id] = 0; // Inizializza a 0
+      playerPoints[doc.id] = 0;
     });
 
-    // 3. Per ogni gara, recupera le submissions e calcola i punti
+    // Calculate points for each race submission
     const playersData = {};
-    const playersHistory = {}; // Storia completa per ogni giocatore
+    const playersHistory = {};
 
     for (const race of races) {
-      // Salta le gare cancellate
       if (race.cancelledMain) {
         continue;
       }
@@ -50,7 +50,7 @@ export async function getChampionshipStatistics() {
         collection(db, "races", race.id, "submissions")
       );
 
-      const racePoints = {}; // Punti ottenuti in questa gara per ogni giocatore
+      const racePoints = {};
 
       submissionsSnap.docs.forEach(doc => {
         const data = doc.data();
@@ -62,32 +62,32 @@ export async function getChampionshipStatistics() {
           return;
         }
 
-        // Calcola i punti per la gara principale
+        // Calculate main race points
         let mainPoints = 0;
         if (!data.mainP1 && !data.mainP2 && !data.mainP3) {
-          mainPoints = -3; // Penalità per non aver inviato la formazione
+          mainPoints = -3;
         } else {
           if (data.mainP1 === official.P1) mainPoints += POINTS.MAIN[1];
           if (data.mainP2 === official.P2) mainPoints += POINTS.MAIN[2];
           if (data.mainP3 === official.P3) mainPoints += POINTS.MAIN[3];
 
-          // Jolly 1
+          // Joker 1 bonus
           if (data.mainJolly && [official.P1, official.P2, official.P3].includes(data.mainJolly)) {
             mainPoints += POINTS.BONUS_JOLLY_MAIN;
           }
 
-          // Jolly 2
+          // Joker 2 bonus
           if (data.mainJolly2 && [official.P1, official.P2, official.P3].includes(data.mainJolly2)) {
             mainPoints += POINTS.BONUS_JOLLY_MAIN;
           }
 
-          // Penalità per ritardo
+          // Late submission penalty
           if (data.isLate) {
             mainPoints += (data.latePenalty || -3);
           }
         }
 
-        // Calcola i punti per la sprint (se presente e non cancellata)
+        // Calculate sprint points if present and not cancelled
         let sprintPoints = 0;
         if (official.SP1 && !race.cancelledSprint) {
           if (!data.sprintP1 && !data.sprintP2 && !data.sprintP3) {
@@ -97,14 +97,14 @@ export async function getChampionshipStatistics() {
             if (data.sprintP2 === official.SP2) sprintPoints += POINTS.SPRINT[2];
             if (data.sprintP3 === official.SP3) sprintPoints += POINTS.SPRINT[3];
 
-            // Jolly sprint
+            // Sprint joker bonus
             if (data.sprintJolly && [official.SP1, official.SP2, official.SP3].includes(data.sprintJolly)) {
               sprintPoints += POINTS.BONUS_JOLLY_SPRINT;
             }
           }
         }
 
-        // Punti doppi per l'ultima gara
+        // Double points for last race
         let totalPoints = mainPoints + sprintPoints;
         if (official.doublePoints) {
           totalPoints *= 2;
@@ -113,7 +113,7 @@ export async function getChampionshipStatistics() {
         racePoints[userId] = totalPoints;
       });
 
-      // Aggiorna i punti cumulativi e aggiungi alla storia
+      // Update cumulative points and add to history
       Object.keys(playerNames).forEach(userId => {
         if (!playersHistory[userId]) {
           playersHistory[userId] = [];
@@ -133,11 +133,10 @@ export async function getChampionshipStatistics() {
       });
     }
 
-    // 4. Calcola le posizioni per ogni gara
+    // Calculate positions for each race
     const racesWithPositions = races
       .filter(r => !r.cancelledMain && r.officialResults)
       .map(race => {
-        // Per ogni gara, crea un array di giocatori con i loro punti cumulativi fino a quella gara
         const playersAtThisRace = Object.keys(playerNames).map(userId => {
           const history = playersHistory[userId] || [];
           const raceIndex = history.findIndex(h => h.raceId === race.id);
@@ -148,10 +147,8 @@ export async function getChampionshipStatistics() {
           };
         });
 
-        // Ordina per punti decrescenti
         playersAtThisRace.sort((a, b) => b.cumulativePoints - a.cumulativePoints);
 
-        // Assegna le posizioni
         const positions = {};
         playersAtThisRace.forEach((player, index) => {
           positions[player.userId] = index + 1;
@@ -163,7 +160,7 @@ export async function getChampionshipStatistics() {
         };
       });
 
-    // 5. Aggiungi le posizioni alla storia dei giocatori
+    // Add positions to player history
     Object.keys(playersHistory).forEach(userId => {
       playersHistory[userId].forEach(entry => {
         const racePositions = racesWithPositions.find(r => r.raceId === entry.raceId);
@@ -173,7 +170,7 @@ export async function getChampionshipStatistics() {
       });
     });
 
-    // 6. Prepara i dati per il return
+    // Prepare data for return
     Object.keys(playersHistory).forEach(userId => {
       playersData[userId] = playersHistory[userId];
     });
@@ -184,7 +181,7 @@ export async function getChampionshipStatistics() {
       playerNames,
     };
   } catch (error) {
-    console.error("Errore nel recupero delle statistiche:", error);
+    console.error("Error fetching championship statistics:", error);
     throw error;
   }
 }

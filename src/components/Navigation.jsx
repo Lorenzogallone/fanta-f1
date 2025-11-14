@@ -1,15 +1,24 @@
-// src/Navigation.jsx
+/**
+ * @file Navigation.jsx
+ * Main navigation bar with theme toggle and mobile menu support.
+ */
 import React, { useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Navbar, Container, Nav } from "react-bootstrap";
 import { useTheme } from "../contexts/ThemeContext";
 
+/**
+ * Main navigation component with responsive mobile menu and theme switcher.
+ * @returns {JSX.Element} Navigation bar
+ */
 export default function Navigation() {
   const location = useLocation();
   const [expanded, setExpanded] = useState(false);
   const { toggleTheme, isDark } = useTheme();
 
-  // Chiude il menu quando si clicca su una voce (utile su mobile)
+  /**
+   * Closes mobile menu when a nav item is clicked.
+   */
   const handleNavClick = () => {
     setExpanded(false);
   };
@@ -29,13 +38,13 @@ export default function Navigation() {
       }}
     >
       <Container fluid className="px-3 px-lg-4">
-        {/* Hamburger Menu - Solo mobile, a sinistra */}
+        {/* Hamburger menu - mobile only, left side */}
         <Navbar.Toggle
           aria-controls="main-navbar-nav"
           className="border-0 me-2 order-0"
         />
 
-        {/* Logo - Centrato su mobile */}
+        {/* Logo - centered on mobile */}
         <Link
           to="/"
           onClick={() => setExpanded(false)}
@@ -50,13 +59,13 @@ export default function Navigation() {
           />
         </Link>
 
-        {/* Theme Toggle - Sempre visibile a destra */}
+        {/* Theme toggle - always visible on right */}
         <div className="d-flex align-items-center order-2 order-lg-3">
           <button
             onClick={toggleTheme}
             className="theme-toggle"
             aria-label="Toggle theme"
-            title={`Passa a tema ${isDark ? "chiaro" : "scuro"}`}
+            title={`Switch to ${isDark ? "light" : "dark"} theme`}
           >
             <div className="theme-toggle-slider">
               {isDark ? "🌙" : "☀️"}
@@ -64,7 +73,7 @@ export default function Navigation() {
           </button>
         </div>
 
-        {/* Menu Collassabile */}
+        {/* Collapsible menu */}
         <Navbar.Collapse id="main-navbar-nav" className="order-3 order-lg-2">
           <Nav className="mx-auto">
             <Nav.Link

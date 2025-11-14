@@ -1,34 +1,35 @@
-// src/hooks/useThemeColors.js
+/**
+ * @file useThemeColors.js
+ * Custom hook for centralized theme color management.
+ */
 import { useTheme } from "../contexts/ThemeContext";
 
 /**
- * Custom hook per gestire i colori del tema in modo centralizzato.
- * Evita duplicazione del pattern accentColor/bgCard in ogni componente.
- *
- * @returns {Object} Oggetto con i colori del tema corrente
+ * Provides theme-aware colors to avoid duplication across components.
+ * @returns {Object} Theme color values
  */
 export const useThemeColors = () => {
   const { isDark } = useTheme();
 
   return {
-    // Flag tema scuro (per condizioni speciali)
+    // Dark theme flag (for special conditions)
     isDark,
 
-    // Colore accent principale (rosso chiaro/scuro)
+    // Main accent color (light/dark red)
     accent: isDark ? "#ff4d5a" : "#dc3545",
 
-    // Sfondi card
+    // Card backgrounds
     bgCard: isDark ? "var(--bg-secondary)" : "#ffffff",
     bgHeader: isDark ? "var(--bg-tertiary)" : "#ffffff",
 
-    // Sfondo generico
+    // Generic background
     bg: isDark ? "#1a1a1a" : "#ffffff",
 
-    // Colori testo
+    // Text colors
     text: isDark ? "#e0e0e0" : "#212529",
     textMuted: isDark ? "#a0a0a0" : "#6c757d",
 
-    // Colori stato
+    // State colors
     success: isDark ? "#28a745" : "#198754",
     danger: isDark ? "#dc3545" : "#dc3545",
     warning: isDark ? "#ffc107" : "#ffc107",

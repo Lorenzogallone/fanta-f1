@@ -1,14 +1,15 @@
-// src/utils/pointsCalculation.js
-// Funzioni centralizzate per il calcolo dei punteggi
-// Usate in CalculatePoints.jsx, History.jsx e altri componenti
+/**
+ * @file Centralized points calculation utilities
+ * Used in CalculatePoints.jsx, History.jsx and other components
+ */
 
 import { POINTS } from "../constants/racing";
 
 /**
- * Calcola i punti della gara principale per una submission
- * @param {Object} submission - Formazione dell'utente {mainP1, mainP2, mainP3, mainJolly, mainJolly2}
- * @param {Object} official - Risultati ufficiali {P1, P2, P3}
- * @returns {number|null} Punti guadagnati o null se mancano i risultati ufficiali
+ * Calculates main race points for a submission
+ * @param {Object} submission - User lineup with mainP1, mainP2, mainP3, mainJolly, mainJolly2
+ * @param {Object} official - Official results with P1, P2, P3
+ * @returns {number|null} Points earned or null if official results missing
  */
 export function calculateMainPoints(submission, official) {
   if (!official) return null;
@@ -16,19 +17,19 @@ export function calculateMainPoints(submission, official) {
   const { mainP1, mainP2, mainP3, mainJolly, mainJolly2 } = submission;
   const { P1, P2, P3 } = official;
 
-  // Penalità se formazione vuota
+  // Penalty for empty lineup
   if (!mainP1 && !mainP2 && !mainP3) {
     return POINTS.PENALTY_EMPTY_LIST;
   }
 
   let points = 0;
 
-  // Punti per podio
+  // Points for podium positions
   if (mainP1 === P1) points += POINTS.MAIN[1];
   if (mainP2 === P2) points += POINTS.MAIN[2];
   if (mainP3 === P3) points += POINTS.MAIN[3];
 
-  // Bonus jolly
+  // Jolly bonus points
   const podio = [P1, P2, P3];
   if (mainJolly && podio.includes(mainJolly)) {
     points += POINTS.BONUS_JOLLY_MAIN;
@@ -41,10 +42,10 @@ export function calculateMainPoints(submission, official) {
 }
 
 /**
- * Calcola i punti della sprint per una submission
- * @param {Object} submission - Formazione sprint {sprintP1, sprintP2, sprintP3, sprintJolly}
- * @param {Object} official - Risultati ufficiali {SP1, SP2, SP3}
- * @returns {number|null} Punti guadagnati o null se non c'è sprint
+ * Calculates sprint race points for a submission
+ * @param {Object} submission - Sprint lineup with sprintP1, sprintP2, sprintP3, sprintJolly
+ * @param {Object} official - Official results with SP1, SP2, SP3
+ * @returns {number|null} Points earned or null if no sprint
  */
 export function calculateSprintPoints(submission, official) {
   if (!official?.SP1) return null;
@@ -52,19 +53,19 @@ export function calculateSprintPoints(submission, official) {
   const { sprintP1, sprintP2, sprintP3, sprintJolly } = submission;
   const { SP1, SP2, SP3 } = official;
 
-  // Penalità se formazione vuota
+  // Penalty for empty lineup
   if (!sprintP1 && !sprintP2 && !sprintP3) {
     return POINTS.PENALTY_EMPTY_LIST;
   }
 
   let points = 0;
 
-  // Punti per podio sprint
+  // Points for sprint podium positions
   if (sprintP1 === SP1) points += POINTS.SPRINT[1];
   if (sprintP2 === SP2) points += POINTS.SPRINT[2];
   if (sprintP3 === SP3) points += POINTS.SPRINT[3];
 
-  // Bonus jolly sprint
+  // Sprint jolly bonus points
   const sprintPodio = [SP1, SP2, SP3];
   if (sprintJolly && sprintPodio.includes(sprintJolly)) {
     points += POINTS.BONUS_JOLLY_SPRINT;
@@ -74,10 +75,10 @@ export function calculateSprintPoints(submission, official) {
 }
 
 /**
- * Calcola i punti singoli per ogni posizione (per tabelle dettagliate)
- * @param {Object} submission - Formazione dell'utente
- * @param {Object} official - Risultati ufficiali
- * @returns {Object} Oggetto con punti dettagliati per ogni posizione
+ * Calculates individual points for each position (for detailed tables)
+ * @param {Object} submission - User lineup
+ * @param {Object} official - Official results
+ * @returns {Object} Object with detailed points for each position
  */
 export function calculateDetailedMainPoints(submission, official) {
   if (!official) {
@@ -116,10 +117,10 @@ export function calculateDetailedMainPoints(submission, official) {
 }
 
 /**
- * Calcola i punti singoli per sprint (per tabelle dettagliate)
- * @param {Object} submission - Formazione sprint
- * @param {Object} official - Risultati ufficiali
- * @returns {Object} Oggetto con punti dettagliati per ogni posizione
+ * Calculates individual sprint points for each position (for detailed tables)
+ * @param {Object} submission - Sprint lineup
+ * @param {Object} official - Official results
+ * @returns {Object} Object with detailed points for each position
  */
 export function calculateDetailedSprintPoints(submission, official) {
   if (!official?.SP1) {
@@ -152,9 +153,9 @@ export function calculateDetailedSprintPoints(submission, official) {
 }
 
 /**
- * Determina se c'è uno sprint per questa gara
- * @param {Object} official - Risultati ufficiali
- * @returns {boolean} true se c'è sprint
+ * Determines if this race has a sprint
+ * @param {Object} official - Official results
+ * @returns {boolean} True if sprint exists
  */
 export function hasSprint(official) {
   return Boolean(official?.SP1);

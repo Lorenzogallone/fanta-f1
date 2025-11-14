@@ -1,13 +1,15 @@
-// src/utils/icsParser.js
-// Parser ICS minimale per browser (senza dipendenze esterne)
+/**
+ * @file Minimal ICS parser for browser (no external dependencies)
+ * Parses F1 calendar ICS files and extracts race events
+ */
 
 /**
- * Converte una stringa di data ICS (YYYYMMDDTHHMMSS o formato Timestamp) in Date
- * @param {string} str - Data nel formato ICS
- * @returns {Date} - Oggetto Date
+ * Converts ICS date string (YYYYMMDDTHHMMSS or timestamp format) to Date object
+ * @param {string} str - Date in ICS format
+ * @returns {Date} Date object
  */
 function parseICSDate(str) {
-  // Formato: 20250316T050000Z o 20250316T050000
+  // Format: 20250316T050000Z or 20250316T050000
   if (!str) return null;
 
   const clean = str.replace(/[TZ:-]/g, "");
@@ -22,9 +24,9 @@ function parseICSDate(str) {
 }
 
 /**
- * Estrae proprietà da un blocco VEVENT
- * @param {string} eventBlock - Testo del blocco VEVENT
- * @returns {Object} - Oggetto con summary e start
+ * Extracts properties from a VEVENT block
+ * @param {string} eventBlock - VEVENT block text
+ * @returns {Object} Object with summary and start properties
  */
 function parseVEvent(eventBlock) {
   const summaryMatch = eventBlock.match(/SUMMARY:(.+)/);
@@ -37,9 +39,9 @@ function parseVEvent(eventBlock) {
 }
 
 /**
- * Converte un nome di gara in uno slug
- * @param {string} str - Nome della gara
- * @returns {string} - Slug
+ * Converts a race name to a URL-friendly slug
+ * @param {string} str - Race name
+ * @returns {string} URL slug
  */
 export function makeSlug(str) {
   return str
@@ -51,22 +53,22 @@ export function makeSlug(str) {
 }
 
 /**
- * Parsa un file ICS e estrae le gare F1
- * @param {string} icsText - Contenuto del file ICS
- * @returns {Array} - Array di gare con tutti gli eventi
+ * Parses an ICS file and extracts F1 races
+ * @param {string} icsText - ICS file content
+ * @returns {Array} Array of races with all events
  */
 export function parseF1Calendar(icsText) {
-  // Estrai tutti i blocchi VEVENT
+  // Extract all VEVENT blocks
   const eventBlocks = icsText.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g) || [];
 
-  // Mappa temporanea: { slugRace: { name, quali, race, qualiSprint, sprint } }
+  // Temporary map: { slugRace: { name, quali, race, qualiSprint, sprint } }
   const racesMap = {};
 
   eventBlocks.forEach((block) => {
     const event = parseVEvent(block);
     const summary = event.summary;
 
-    // 1) Qualifiche "normali" - Pattern: "F1: Qualifiche (Nome Gara)"
+    // 1) Standard qualifying - Pattern: "F1: Qualifiche (Race Name)"
     let match = summary.match(/^F1:\s*Qualifiche\s*\((.+)\)$/);
     if (match) {
       const raceName = match[1].trim();
@@ -82,7 +84,7 @@ export function parseF1Calendar(icsText) {
       return;
     }
 
-    // 2) Gara (Gran Premio normale) - Pattern: "F1: Gran Premio (Nome Gara)"
+    // 2) Main race (Grand Prix) - Pattern: "F1: Gran Premio (Race Name)"
     match = summary.match(/^F1:\s*Gran Premio\s*\((.+)\)$/);
     if (match) {
       const raceName = match[1].trim();
@@ -98,7 +100,7 @@ export function parseF1Calendar(icsText) {
       return;
     }
 
-    // 3) Qualifiche Sprint - Pattern: "F1: Qualifiche Sprint (Nome Gara)"
+    // 3) Sprint qualifying - Pattern: "F1: Qualifiche Sprint (Race Name)"
     match = summary.match(/^F1:\s*Qualifiche Sprint\s*\((.+)\)$/);
     if (match) {
       const raceName = match[1].trim();
@@ -114,7 +116,7 @@ export function parseF1Calendar(icsText) {
       return;
     }
 
-    // 4) Gara Sprint - Pattern: "F1: Sprint (Nome Gara)"
+    // 4) Sprint race - Pattern: "F1: Sprint (Race Name)"
     match = summary.match(/^F1:\s*Sprint\s*\((.+)\)$/);
     if (match) {
       const raceName = match[1].trim();
@@ -130,11 +132,11 @@ export function parseF1Calendar(icsText) {
       return;
     }
 
-    // Altri eventi vengono ignorati (P1, P2, P3, etc.)
+    // Other events are ignored (P1, P2, P3, etc.)
   });
 
-  // Trasforma map → array, filtra solo gare con qualifiche e gara,
-  // ordina per data della gara principale e assegna il numero di round
+  // Transform map to array, filter races with quali and race,
+  // sort by main race date and assign round numbers
   const racesArray = Object.values(racesMap)
     .filter((r) => r.quali && r.race)
     .sort((a, b) => a.race - b.race)
