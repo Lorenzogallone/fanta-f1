@@ -135,6 +135,8 @@ export const en = {
     totalPoints: "Total Points",
     noRaces: "No completed races",
     noChampionship: "No championship lineups submitted yet",
+    raceCount: "{{count}} races completed",
+    completed: "Completed",
   },
 
   // Race Results

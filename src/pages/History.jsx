@@ -16,6 +16,7 @@ import {
   Card,
   Table,
   Badge,
+  Accordion,
 } from "react-bootstrap";
 import {
   collection,
@@ -101,6 +102,7 @@ export default function History() {
   const [championshipResults, setChampionshipResults] = useState(null);
   const [championshipSubmissions, setChampionshipSubmissions] = useState([]);
   const [loadingChampionship, setLoadingChampionship] = useState(true);
+  const [activeKeys, setActiveKeys] = useState([]);
   const { isDark } = useTheme();
   const { t } = useLanguage();
 
@@ -118,7 +120,13 @@ export default function History() {
             orderBy("raceUTC", "desc")
           )
         );
-        setPastRaces(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        const races = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setPastRaces(races);
+
+        // Set first race (most recent) as expanded by default
+        if (races.length > 0) {
+          setActiveKeys([races[0].id]);
+        }
       } catch (e) {
         console.error(e);
         setError(t("errors.generic"));
@@ -496,11 +504,57 @@ export default function History() {
         )}
 
         {/* ============ STORICO GARE ============ */}
-        {pastRaces.map((r) => (
-          <Col key={r.id} xs={12}>
-            <RaceHistoryCard race={r} />
+        {pastRaces.length > 0 && (
+          <Col xs={12}>
+            <Card
+              className="shadow"
+              style={{
+                borderColor: accentColor,
+                backgroundColor: bgCard,
+              }}
+            >
+              <Card.Header
+                style={{
+                  backgroundColor: bgHeader,
+                  borderBottom: `2px solid ${accentColor}`,
+                }}
+              >
+                <h4 className="mb-0" style={{ color: accentColor }}>
+                  🏁 {t("history.title")}
+                </h4>
+                <small className="text-muted">
+                  {t("history.raceCount", { count: pastRaces.length })}
+                </small>
+              </Card.Header>
+              <Card.Body className="p-0">
+                <Accordion
+                  activeKey={activeKeys}
+                  onSelect={(keys) => setActiveKeys(Array.isArray(keys) ? keys : [keys])}
+                  alwaysOpen
+                  flush
+                >
+                  {pastRaces.map((race) => (
+                    <Accordion.Item eventKey={race.id} key={race.id}>
+                      <Accordion.Header>
+                        <strong style={{ color: accentColor }}>
+                          {race.round}. {race.name} — {new Date(race.raceUTC.seconds * 1000).toLocaleDateString("it-IT")}
+                        </strong>
+                        {race.officialResults && (
+                          <Badge bg="success" className="ms-2">
+                            ✓ {t("history.completed")}
+                          </Badge>
+                        )}
+                      </Accordion.Header>
+                      <Accordion.Body className="p-0">
+                        <RaceHistoryCard race={race} />
+                      </Accordion.Body>
+                    </Accordion.Item>
+                  ))}
+                </Accordion>
+              </Card.Body>
+            </Card>
           </Col>
-        ))}
+        )}
       </Row>
     </Container>
   );
