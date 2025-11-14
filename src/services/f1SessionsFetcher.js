@@ -43,7 +43,7 @@ const DRIVER_NAME_MAPPING = {
   "Perez": "Sergio Perez",
   "Pérez": "Sergio Perez",
   "Leclerc": "Charles Leclerc",
-  "Sainz": "Carlos Sainz",
+  "Sainz": "Carlos Sainz Jr.",
   "Hamilton": "Lewis Hamilton",
   "Norris": "Lando Norris",
   "Piastri": "Oscar Piastri",
@@ -56,9 +56,9 @@ const DRIVER_NAME_MAPPING = {
   "Albon": "Alexander Albon",
   "Tsunoda": "Yuki Tsunoda",
   "Hadjar": "Isack Hadjar",
-  "Hulkenberg": "Nico Hulkenberg",
+  "Hulkenberg": "Nico Hülkenberg",
   "Bortoleto": "Gabriel Bortoleto",
-  "Hülkenberg": "Nico Hulkenberg",
+  "Hülkenberg": "Nico Hülkenberg",
   "Ocon": "Esteban Ocon",
   "Bearman": "Oliver Bearman",
 };
@@ -80,12 +80,12 @@ const DRIVER_NUMBER_MAPPING = {
   22: "Yuki Tsunoda",
   23: "Alexander Albon",
   24: "Zhou Guanyu",
-  27: "Nico Hulkenberg",
+  27: "Nico Hülkenberg",
   31: "Esteban Ocon",
   38: "Oliver Bearman",
   43: "Franco Colapinto",
   44: "Lewis Hamilton",
-  55: "Carlos Sainz",
+  55: "Carlos Sainz Jr.",
   63: "George Russell",
   77: "Valtteri Bottas",
   81: "Oscar Piastri",
@@ -346,20 +346,45 @@ export async function fetchSprint(season, round) {
 
     if (!sprintResults || sprintResults.length === 0) return null;
 
-    // Leader time for gap calculation
-    const leaderTime = sprintResults[0].Time?.time;
-    const leaderTimeMs = leaderTime ? timeToMs(leaderTime) : 0;
+    // Leader time for gap calculation - find first driver with valid time
+    let leaderTime = null;
+    let leaderTimeMs = 0;
+    for (const result of sprintResults) {
+      if (result.Time?.time) {
+        leaderTime = result.Time.time;
+        leaderTimeMs = timeToMs(leaderTime);
+        break;
+      }
+    }
 
-    return sprintResults.map((result) => {
+    return sprintResults.map((result, idx) => {
       const driverTime = result.Time?.time;
       const driverTimeMs = driverTime ? timeToMs(driverTime) : 0;
+
+      // Calculate gap with improved handling
+      let gap = "—";
+      if (idx === 0) {
+        gap = "—";
+      } else if (leaderTimeMs > 0 && driverTimeMs > 0) {
+        gap = calculateGap(leaderTimeMs, driverTimeMs);
+      } else if (result.status && result.status !== "Finished") {
+        // Show short status for DNF/retired drivers
+        const statusMap = {
+          "Retired": "RET",
+          "Accident": "ACC",
+          "Collision": "COL",
+          "Spun off": "OFF",
+          "Engine": "ENG",
+        };
+        gap = statusMap[result.status] || result.status.substring(0, 3).toUpperCase();
+      }
 
       return {
         position: result.position,
         driver: normalizeDriverName(result.Driver),
         constructor: result.Constructor?.name,
         time: result.Time?.time || "—",
-        gap: result.position === "1" ? "—" : calculateGap(leaderTimeMs, driverTimeMs),
+        gap,
         points: result.points || "0",
         status: result.status,
       };
