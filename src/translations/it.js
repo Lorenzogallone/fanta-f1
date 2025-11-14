@@ -148,11 +148,15 @@ export const it = {
     fp1: "Prove Libere 1",
     fp2: "Prove Libere 2",
     fp3: "Prove Libere 3",
+    sprintQualifying: "Qualifica Sprint",
     qualifying: "Qualifiche",
     sprint: "Sprint",
     race: "Gara",
     bestTime: "Miglior Tempo",
     time: "Tempo",
+    canStillSubmit: "Puoi ancora schierare la formazione!",
+    qualifyingNotStarted: "Le qualifiche non sono ancora iniziate",
+    goToFormation: "Vai allo Schieramento",
   },
 
   // Statistics
