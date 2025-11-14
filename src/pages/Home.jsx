@@ -21,23 +21,9 @@ export default function Home() {
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
 
   return (
-    <Container className="py-4 py-md-5">
-      {/* Hero Section */}
-      <Row className="justify-content-center mb-4">
-        <Col xs={12} md={10} lg={8}>
-          <div className="text-center mb-4">
-            <h1 style={{ color: accentColor }} className="mb-2">
-              🏎️ {t("home.title")}
-            </h1>
-            <p className="text-muted">
-              {t("home.subtitle") || "Scegli la tua formazione, sfida i tuoi amici e scala la classifica!"}
-            </p>
-          </div>
-        </Col>
-      </Row>
-
-      {/* Main Actions Grid - Improved for mobile */}
-      <Row className="justify-content-center mb-5 g-3">
+    <Container className="py-4">
+      {/* Main Actions Grid - Compact for mobile */}
+      <Row className="justify-content-center mb-4 g-3">
         <Col xs={12} md={10} lg={8}>
           <Row className="g-3">
             {/* Submit Formation - Highlighted */}
@@ -84,8 +70,8 @@ export default function Home() {
               </Button>
             </Col>
 
-            {/* History and Championship - Side by Side */}
-            <Col xs={12} sm={6}>
+            {/* History - Full Width */}
+            <Col xs={12}>
               <Button
                 as={Link}
                 to="/storico"
@@ -93,16 +79,6 @@ export default function Home() {
                 className="w-100 py-3"
               >
                 📜 {t("history.title")}
-              </Button>
-            </Col>
-            <Col xs={12} sm={6}>
-              <Button
-                as={Link}
-                to="/championship"
-                variant="outline-danger"
-                className="w-100 py-3"
-              >
-                🏆 {t("championshipForm.title")}
               </Button>
             </Col>
 

@@ -244,16 +244,10 @@ export default function RaceResults() {
               }}
             >
               <h3 className="mb-0" style={{ color: accentColor }}>
-                🏁 {t("raceResults.title")}{" "}
-                <Badge bg="warning" text="dark">
-                  BETA
-                </Badge>
+                🏁 {t("raceResults.title")}
               </h3>
             </Card.Header>
             <Card.Body>
-              <Alert variant="info" className="mb-3">
-                <strong>ℹ️ BETA:</strong> {t("raceResults.betaNotice")}
-              </Alert>
               <p className="text-muted mb-3">{t("raceResults.description")}</p>
 
               {/* Race Selector */}
