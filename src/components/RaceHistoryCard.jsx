@@ -425,32 +425,32 @@ function RaceHistoryCard({
                 <thead className="table-light">
                   <tr>
                     <th style={{ width: 40, color: accentColor }} className="text-center">#</th>
-                    <th style={{ color: accentColor }} className="text-center">User</th>
-                    <th style={{ color: accentColor }} className="text-center">P1</th>
-                    <th style={{ color: accentColor }} className="text-center">P2</th>
-                    <th style={{ color: accentColor }} className="text-center">P3</th>
-                    <th style={{ color: accentColor }} className="text-center">
+                    <th style={{ width: 120, color: accentColor }} className="text-center">User</th>
+                    <th style={{ width: 150, color: accentColor }} className="text-center">P1</th>
+                    <th style={{ width: 150, color: accentColor }} className="text-center">P2</th>
+                    <th style={{ width: 150, color: accentColor }} className="text-center">P3</th>
+                    <th style={{ width: 150, color: accentColor }} className="text-center">
                       {t("formations.joker")} 1
                     </th>
                     {hasJolly2 && (
-                      <th style={{ color: accentColor }} className="text-center">
+                      <th style={{ width: 150, color: accentColor }} className="text-center">
                         {t("formations.joker")} 2
                       </th>
                     )}
                     {hasSprint && (
                       <>
-                        <th style={{ color: accentColor }} className="text-center">SP1</th>
-                        <th style={{ color: accentColor }} className="text-center">SP2</th>
-                        <th style={{ color: accentColor }} className="text-center">SP3</th>
-                        <th style={{ color: accentColor }} className="text-center">
+                        <th style={{ width: 150, color: accentColor }} className="text-center">SP1</th>
+                        <th style={{ width: 150, color: accentColor }} className="text-center">SP2</th>
+                        <th style={{ width: 150, color: accentColor }} className="text-center">SP3</th>
+                        <th style={{ width: 150, color: accentColor }} className="text-center">
                           {t("formations.joker")} SP
                         </th>
                       </>
                     )}
                     {showPoints && official && (
                       <>
-                        <th style={{ color: accentColor }} className="text-center">Tot Main</th>
-                        {hasSprint && <th style={{ color: accentColor }} className="text-center">Tot Sprint</th>}
+                        <th style={{ width: 80, color: accentColor }} className="text-center">Tot Main</th>
+                        {hasSprint && <th style={{ width: 80, color: accentColor }} className="text-center">Tot Sprint</th>}
                       </>
                     )}
                   </tr>
