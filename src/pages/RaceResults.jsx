@@ -371,20 +371,19 @@ export default function RaceResults() {
                 >
                   {/* FP1 */}
                   {sessions.hasFP1 && (
-                    <Accordion.Item eventKey="fp1" style={{ backgroundColor: bgCard, borderColor: isDark ? "#444" : undefined }}>
+                    <Accordion.Item eventKey="fp1">
                       <Accordion.Header>
                         <strong style={{ color: accentColor }}>
                           🔧 {t("raceResults.fp1")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body style={{ backgroundColor: bgCard }}>
+                      <Accordion.Body>
                         <div className="table-responsive">
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
                                 <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
                                 <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th style={{ color: accentColor }}>{t("raceResults.bestTime")}</th>
                                 <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
                               </tr>
                             </thead>
@@ -395,8 +394,7 @@ export default function RaceResults() {
                                   <td>
                                     <DriverWithLogo name={result.driver} />
                                   </td>
-                                  <td className="font-monospace">{result.bestTimeFormatted}</td>
-                                  <td className="text-muted">{result.gap}</td>
+                                  <td className="text-muted font-monospace">{result.gap}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -408,20 +406,19 @@ export default function RaceResults() {
 
                   {/* FP2 */}
                   {sessions.hasFP2 && (
-                    <Accordion.Item eventKey="fp2" style={{ backgroundColor: bgCard, borderColor: isDark ? "#444" : undefined }}>
+                    <Accordion.Item eventKey="fp2">
                       <Accordion.Header>
                         <strong style={{ color: accentColor }}>
                           🔧 {t("raceResults.fp2")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body style={{ backgroundColor: bgCard }}>
+                      <Accordion.Body>
                         <div className="table-responsive">
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
                                 <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
                                 <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th style={{ color: accentColor }}>{t("raceResults.bestTime")}</th>
                                 <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
                               </tr>
                             </thead>
@@ -432,8 +429,7 @@ export default function RaceResults() {
                                   <td>
                                     <DriverWithLogo name={result.driver} />
                                   </td>
-                                  <td className="font-monospace">{result.bestTimeFormatted}</td>
-                                  <td className="text-muted">{result.gap}</td>
+                                  <td className="text-muted font-monospace">{result.gap}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -445,20 +441,19 @@ export default function RaceResults() {
 
                   {/* FP3 */}
                   {sessions.hasFP3 && (
-                    <Accordion.Item eventKey="fp3" style={{ backgroundColor: bgCard, borderColor: isDark ? "#444" : undefined }}>
+                    <Accordion.Item eventKey="fp3">
                       <Accordion.Header>
                         <strong style={{ color: accentColor }}>
                           🔧 {t("raceResults.fp3")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body style={{ backgroundColor: bgCard }}>
+                      <Accordion.Body>
                         <div className="table-responsive">
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
                                 <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
                                 <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th style={{ color: accentColor }}>{t("raceResults.bestTime")}</th>
                                 <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
                               </tr>
                             </thead>
@@ -469,8 +464,7 @@ export default function RaceResults() {
                                   <td>
                                     <DriverWithLogo name={result.driver} />
                                   </td>
-                                  <td className="font-monospace">{result.bestTimeFormatted}</td>
-                                  <td className="text-muted">{result.gap}</td>
+                                  <td className="text-muted font-monospace">{result.gap}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -482,20 +476,19 @@ export default function RaceResults() {
 
                   {/* Sprint Qualifying */}
                   {sessions.hasSprintQualifying && (
-                    <Accordion.Item eventKey="sprintQualifying" style={{ backgroundColor: bgCard, borderColor: isDark ? "#444" : undefined }}>
+                    <Accordion.Item eventKey="sprintQualifying">
                       <Accordion.Header>
                         <strong style={{ color: accentColor }}>
                           ⚡ {t("raceResults.sprintQualifying")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body style={{ backgroundColor: bgCard }}>
+                      <Accordion.Body>
                         <div className="table-responsive">
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
                                 <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
                                 <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th style={{ color: accentColor }}>{t("raceResults.bestTime")}</th>
                                 <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
                               </tr>
                             </thead>
@@ -506,8 +499,7 @@ export default function RaceResults() {
                                   <td>
                                     <DriverWithLogo name={result.driver} />
                                   </td>
-                                  <td className="font-monospace">{result.bestTimeFormatted}</td>
-                                  <td className="text-muted">{result.gap}</td>
+                                  <td className="text-muted font-monospace">{result.gap}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -519,40 +511,50 @@ export default function RaceResults() {
 
                   {/* Qualifying */}
                   {sessions.hasQualifying && (
-                    <Accordion.Item eventKey="qualifying" style={{ backgroundColor: bgCard, borderColor: isDark ? "#444" : undefined }}>
+                    <Accordion.Item eventKey="qualifying">
                       <Accordion.Header>
                         <strong style={{ color: accentColor }}>
                           🏎️ {t("raceResults.qualifying")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body style={{ backgroundColor: bgCard }}>
+                      <Accordion.Body>
                         <div className="table-responsive">
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
                                 <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
                                 <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th style={{ color: accentColor }} className="d-none d-md-table-cell">Q1</th>
-                                <th style={{ color: accentColor }} className="d-none d-md-table-cell">Q2</th>
-                                <th style={{ color: accentColor }} className="d-none d-md-table-cell">Q3</th>
-                                <th style={{ color: accentColor }}>{t("raceResults.bestTime")}</th>
                                 <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
+                                <th style={{ color: accentColor }} className="text-center">Q</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {sessions.qualifying.map((result, idx) => (
-                                <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                  <td>{result.position}</td>
-                                  <td>
-                                    <DriverWithLogo name={result.driver} />
-                                  </td>
-                                  <td className="d-none d-md-table-cell">{result.q1}</td>
-                                  <td className="d-none d-md-table-cell">{result.q2}</td>
-                                  <td className="d-none d-md-table-cell">{result.q3}</td>
-                                  <td className="font-monospace">{result.bestTime}</td>
-                                  <td className="text-muted">{result.gap}</td>
-                                </tr>
-                              ))}
+                              {sessions.qualifying.map((result, idx) => {
+                                const pos = parseInt(result.position);
+                                let qSession = "Q1";
+                                let qVariant = "danger";
+                                if (pos <= 10) {
+                                  qSession = "Q3";
+                                  qVariant = "success";
+                                } else if (pos <= 15) {
+                                  qSession = "Q2";
+                                  qVariant = "warning";
+                                }
+                                return (
+                                  <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
+                                    <td>{result.position}</td>
+                                    <td>
+                                      <DriverWithLogo name={result.driver} />
+                                    </td>
+                                    <td className="text-muted font-monospace">{result.gap}</td>
+                                    <td className="text-center">
+                                      <Badge bg={qVariant} text={qVariant === "warning" ? "dark" : "light"}>
+                                        {qSession}
+                                      </Badge>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </Table>
                         </div>
@@ -562,24 +564,20 @@ export default function RaceResults() {
 
                   {/* Sprint */}
                   {sessions.hasSprint && (
-                    <Accordion.Item eventKey="sprint" style={{ backgroundColor: bgCard, borderColor: isDark ? "#444" : undefined }}>
+                    <Accordion.Item eventKey="sprint">
                       <Accordion.Header>
                         <strong style={{ color: accentColor }}>
                           ⚡ {t("raceResults.sprint")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body style={{ backgroundColor: bgCard }}>
+                      <Accordion.Body>
                         <div className="table-responsive">
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
                                 <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
                                 <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th style={{ color: accentColor }}>{t("raceResults.time")}</th>
                                 <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
-                                <th style={{ color: accentColor }} className="text-center">
-                                  {t("common.points")}
-                                </th>
                               </tr>
                             </thead>
                             <tbody>
@@ -589,13 +587,7 @@ export default function RaceResults() {
                                   <td>
                                     <DriverWithLogo name={result.driver} />
                                   </td>
-                                  <td className="font-monospace">{result.time}</td>
-                                  <td className="text-muted">{result.gap}</td>
-                                  <td className="text-center">
-                                    {result.points > 0 && (
-                                      <Badge bg="success">{result.points}</Badge>
-                                    )}
-                                  </td>
+                                  <td className="text-muted font-monospace">{result.gap}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -607,24 +599,20 @@ export default function RaceResults() {
 
                   {/* Race */}
                   {sessions.hasRace && (
-                    <Accordion.Item eventKey="race" style={{ backgroundColor: bgCard, borderColor: isDark ? "#444" : undefined }}>
+                    <Accordion.Item eventKey="race">
                       <Accordion.Header>
                         <strong style={{ color: accentColor }}>
                           🏆 {t("raceResults.race")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body style={{ backgroundColor: bgCard }}>
+                      <Accordion.Body>
                         <div className="table-responsive">
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
                                 <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
                                 <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th style={{ color: accentColor }}>{t("raceResults.time")}</th>
                                 <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
-                                <th style={{ color: accentColor }} className="text-center">
-                                  {t("common.points")}
-                                </th>
                               </tr>
                             </thead>
                             <tbody>
@@ -636,13 +624,7 @@ export default function RaceResults() {
                                   <td>
                                     <DriverWithLogo name={result.driver} />
                                   </td>
-                                  <td className="font-monospace">{result.time}</td>
-                                  <td className="text-muted">{result.gap}</td>
-                                  <td className="text-center">
-                                    {result.points > 0 && (
-                                      <Badge bg="primary">{result.points}</Badge>
-                                    )}
-                                  </td>
+                                  <td className="text-muted font-monospace">{result.gap}</td>
                                 </tr>
                               ))}
                             </tbody>
