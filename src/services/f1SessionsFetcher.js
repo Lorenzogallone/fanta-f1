@@ -8,10 +8,11 @@ const ERGAST_API_BASE_URL = "https://api.jolpi.ca/ergast/f1";
 const OPENF1_API_BASE_URL = "https://api.openf1.org/v1";
 
 // Rate limiting for OpenF1 API (max 3 requests per second)
+// INCREASED to 600ms to avoid 429 errors - more conservative approach
 let lastOpenF1Request = 0;
-const OPENF1_MIN_INTERVAL = 400; // milliseconds between requests (more conservative to avoid 429)
-const MAX_RETRIES = 3;
-const RETRY_BASE_DELAY = 1000; // base delay for exponential backoff
+const OPENF1_MIN_INTERVAL = 600; // milliseconds between requests (very conservative to avoid 429)
+const MAX_RETRIES = 4; // increased retries
+const RETRY_BASE_DELAY = 2000; // increased base delay for exponential backoff
 
 /**
  * Sleeps for a given amount of time
@@ -178,7 +179,10 @@ export async function fetchPracticeSession(season, round, sessionName) {
     const sessionsUrl = `${OPENF1_API_BASE_URL}/sessions?year=${season}`;
     const sessionsResponse = await rateLimitedFetch(sessionsUrl);
 
-    if (!sessionsResponse.ok) return null;
+    if (!sessionsResponse.ok) {
+      console.warn(`Failed to fetch sessions list for ${season}: ${sessionsResponse.status}`);
+      return null;
+    }
 
     const sessions = await sessionsResponse.json();
 
@@ -201,7 +205,10 @@ export async function fetchPracticeSession(season, round, sessionName) {
 
     // Get the meeting for this round (rounds start from 1, array from 0)
     const targetMeeting = sortedMeetings[round - 1];
-    if (!targetMeeting) return null;
+    if (!targetMeeting) {
+      console.warn(`No meeting found for ${season} R${round}. Total meetings: ${sortedMeetings.length}`);
+      return null;
+    }
 
     // Find the session with the matching name in this meeting
     const targetSession = targetMeeting.sessions.find(
@@ -211,9 +218,12 @@ export async function fetchPracticeSession(season, round, sessionName) {
     if (!targetSession) {
       // Log available sessions for debugging when target session not found
       const availableSessions = targetMeeting.sessions.map(s => s.session_name).join(', ');
-      console.debug(`Session "${sessionName}" not found for ${season} R${round}. Available: ${availableSessions}`);
+      console.info(`[OpenF1] Session "${sessionName}" not found for ${season} R${round}.`);
+      console.info(`[OpenF1] Available sessions: ${availableSessions}`);
       return null;
     }
+
+    console.debug(`[OpenF1] Found session "${sessionName}" for ${season} R${round} with key ${targetSession.session_key}`);
 
     const sessionKey = targetSession.session_key;
 
@@ -503,25 +513,31 @@ export async function fetchAllSessions(season, round) {
     // Step 2: Based on weekend type, fetch additional sessions
     if (sprint !== null) {
       // Sprint weekend: has Sprint Qualifying/Shootout, NO FP2/FP3
+      console.info(`[Sprint Weekend] Detected sprint for ${season} R${round}. Searching for sprint qualifying...`);
+
       // Try all possible names for sprint qualifying (varies by season and API naming)
       const sprintQualifyingNames = [
         "Sprint Shootout",      // 2024+ name
         "Sprint Qualifying",    // 2023 and older
         "Sprint Quali",         // Alternative short name
         "Shootout",            // Alternative name
+        "Sprint",              // Just "Sprint" as fallback
       ];
 
       for (const name of sprintQualifyingNames) {
+        console.debug(`[Sprint Weekend] Trying sprint qualifying name: "${name}"`);
         sprintQualifying = await fetchPracticeSession(season, round, name);
         if (sprintQualifying !== null) {
-          console.log(`Found sprint qualifying as: ${name}`);
+          console.info(`✅ [Sprint Weekend] Found sprint qualifying as: "${name}" for ${season} R${round}`);
           break;
         }
       }
 
-      // If still not found, log for debugging
+      // If still not found, log detailed warning
       if (!sprintQualifying) {
-        console.warn(`Sprint qualifying not found for ${season} R${round}. Tried: ${sprintQualifyingNames.join(', ')}`);
+        console.warn(`❌ [Sprint Weekend] Sprint qualifying NOT FOUND for ${season} R${round}.`);
+        console.warn(`[Sprint Weekend] Tried all variants: ${sprintQualifyingNames.join(', ')}`);
+        console.warn(`[Sprint Weekend] Check console logs above for available session names from OpenF1 API`);
       }
     } else {
       // Normal weekend: has FP2 and FP3, NO Sprint Qualifying

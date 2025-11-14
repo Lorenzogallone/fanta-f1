@@ -37,18 +37,37 @@ export async function getChampionshipStatistics() {
       playerPoints[doc.id] = 0;
     });
 
-    // Calculate points for each race submission
+    // Calculate points for each race submission - OPTIMIZED with parallel fetching
     const playersData = {};
     const playersHistory = {};
+
+    // Fetch all submissions in parallel for better performance
+    const submissionsPromises = races
+      .filter(race => !race.cancelledMain)
+      .map(race =>
+        getDocs(collection(db, "races", race.id, "submissions"))
+          .then(snap => ({ raceId: race.id, snapshot: snap }))
+          .catch(err => {
+            console.error(`Error fetching submissions for ${race.id}:`, err);
+            return { raceId: race.id, snapshot: null };
+          })
+      );
+
+    const allSubmissions = await Promise.all(submissionsPromises);
+    const submissionsMap = {};
+    allSubmissions.forEach(({ raceId, snapshot }) => {
+      submissionsMap[raceId] = snapshot;
+    });
 
     for (const race of races) {
       if (race.cancelledMain) {
         continue;
       }
 
-      const submissionsSnap = await getDocs(
-        collection(db, "races", race.id, "submissions")
-      );
+      const submissionsSnap = submissionsMap[race.id];
+      if (!submissionsSnap) {
+        continue;
+      }
 
       const racePoints = {};
 
