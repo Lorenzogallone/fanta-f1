@@ -15,6 +15,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
+import { useLanguage } from "../contexts/LanguageContext";
 
 /**
  * Displays driver name with team logo.
@@ -61,6 +62,7 @@ function RaceHistoryCard({
   compact = false,
 }) {
   const { isDark } = useTheme();
+  const { t } = useLanguage();
   const [subs, setSubs] = useState([]);
   const [loadingSub, setLoadingSub] = useState(true);
   const [errorSub, setErrorSub] = useState(null);
@@ -123,7 +125,7 @@ function RaceHistoryCard({
   const DoubleBadge = () =>
     doublePts ? (
       <Badge bg="danger" text="white" className="ms-2">
-        🌟 Punti Doppi
+        {t("calculate.doublePoints")}
       </Badge>
     ) : null;
 
@@ -180,13 +182,13 @@ function RaceHistoryCard({
         {showOfficialResults && official && !cancelledMain ? (
           <>
             <h6 className="fw-bold border-bottom pb-1" style={{ color: accentColor }}>
-              Gara principale
+              {t("formations.mainRace")}
             </h6>
             <Table size="sm" className="mb-3">
               <thead>
                 <tr>
                   <th style={{ width: "20%", color: accentColor }}>Pos.</th>
-                  <th style={{ color: accentColor }}>Pilota</th>
+                  <th style={{ color: accentColor }}>{t("formations.driver")}</th>
                   <th style={{ width: "20%", color: accentColor }} className="text-end">
                     Pts
                   </th>
@@ -214,13 +216,13 @@ function RaceHistoryCard({
             {hasSprint && !cancelledSprint && (
               <>
                 <h6 className="fw-bold border-bottom pb-1 mt-4" style={{ color: accentColor }}>
-                  Sprint
+                  {t("formations.sprint")}
                 </h6>
                 <Table size="sm" className="mb-4">
                   <thead>
                     <tr>
                       <th style={{ width: "20%", color: accentColor }}>Pos.</th>
-                      <th style={{ color: accentColor }}>Pilota</th>
+                      <th style={{ color: accentColor }}>{t("formations.driver")}</th>
                       <th style={{ width: "20%", color: accentColor }} className="text-end">
                         Pts
                       </th>
@@ -353,7 +355,7 @@ function RaceHistoryCard({
                           {idx + 1}. {userName}
                           {s.isLate && (
                             <Badge bg="warning" text="dark" className="ms-2">
-                              ⏰ In Ritardo (-3)
+                              ⏰ {t("formations.lateSubmission")} (-3)
                             </Badge>
                           )}
                         </h6>
@@ -368,18 +370,18 @@ function RaceHistoryCard({
                       </div>
 
                       <div className="mb-2">
-                        <strong className="text-muted" style={{ fontSize: "0.85rem" }}>GARA PRINCIPALE</strong>
+                        <strong className="text-muted" style={{ fontSize: "0.85rem" }}>{t("formations.mainRace").toUpperCase()}</strong>
                         <PickLine label="P1" pick={s.mainP1} pts={p1Pts} />
                         <PickLine label="P2" pick={s.mainP2} pts={p2Pts} />
                         <PickLine label="P3" pick={s.mainP3} pts={p3Pts} />
-                        <PickLine label="Jolly 1" pick={s.mainJolly} pts={j1Pts} />
-                        {s.mainJolly2 && <PickLine label="Jolly 2" pick={s.mainJolly2} pts={j2Pts} />}
+                        <PickLine label={t("formations.joker")} pick={s.mainJolly} pts={j1Pts} />
+                        {s.mainJolly2 && <PickLine label={`${t("formations.joker")} 2`} pick={s.mainJolly2} pts={j2Pts} />}
                       </div>
 
                       {hasSprint && (
                         <div>
                           <div className="d-flex justify-content-between align-items-center">
-                            <strong className="text-muted" style={{ fontSize: "0.85rem" }}>SPRINT</strong>
+                            <strong className="text-muted" style={{ fontSize: "0.85rem" }}>{t("formations.sprint").toUpperCase()}</strong>
                             {showPoints && official && (
                               <Badge
                                 bg={totalSprint > 0 ? "success" : totalSprint < 0 ? "danger" : "secondary"}
@@ -392,7 +394,7 @@ function RaceHistoryCard({
                           <PickLine label="SP1" pick={s.sprintP1} pts={sp1Pts} />
                           <PickLine label="SP2" pick={s.sprintP2} pts={sp2Pts} />
                           <PickLine label="SP3" pick={s.sprintP3} pts={sp3Pts} />
-                          <PickLine label="Jolly SP" pick={s.sprintJolly} pts={jspPts} />
+                          <PickLine label={`${t("formations.joker")} SP`} pick={s.sprintJolly} pts={jspPts} />
                         </div>
                       )}
                     </Card.Body>
@@ -418,11 +420,11 @@ function RaceHistoryCard({
                       P3 {showPoints && official && <small>(Pts)</small>}
                     </th>
                     <th style={{ color: accentColor }} className="text-center">
-                      Jolly 1 {showPoints && official && <small>(Pts)</small>}
+                      {t("formations.joker")} 1 {showPoints && official && <small>(Pts)</small>}
                     </th>
                     {hasJolly2 && (
                       <th style={{ color: accentColor }} className="text-center">
-                        Jolly 2 {showPoints && official && <small>(Pts)</small>}
+                        {t("formations.joker")} 2 {showPoints && official && <small>(Pts)</small>}
                       </th>
                     )}
                     {hasSprint && (
@@ -437,7 +439,7 @@ function RaceHistoryCard({
                           SP3 {showPoints && official && <small>(Pts)</small>}
                         </th>
                         <th style={{ color: accentColor }} className="text-center">
-                          Jolly SP {showPoints && official && <small>(Pts)</small>}
+                          {t("formations.joker")} SP {showPoints && official && <small>(Pts)</small>}
                         </th>
                       </>
                     )}
@@ -530,7 +532,7 @@ function RaceHistoryCard({
                           {userName}
                           {s.isLate && (
                             <Badge bg="warning" text="dark" className="ms-1">
-                              ⏰ -3
+                              ⏰ {t("formations.latePenalty")}
                             </Badge>
                           )}
                         </td>

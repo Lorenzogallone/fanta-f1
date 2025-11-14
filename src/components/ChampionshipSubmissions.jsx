@@ -8,6 +8,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
+import { useLanguage } from "../contexts/LanguageContext";
 
 // Use centralized constants
 const driverTeam = DRIVER_TEAM;
@@ -21,6 +22,7 @@ const teamLogos = TEAM_LOGOS;
  */
 export default function ChampionshipSubmissions({ refresh }) {
   const { isDark } = useTheme();
+  const { t } = useLanguage();
   const [subs, setSubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -97,16 +99,16 @@ export default function ChampionshipSubmissions({ refresh }) {
     >
       <Card.Body>
         <Card.Title className="text-center mb-3">
-          Formazioni Campionato Inviate ({subs.length})
+          {t("history.formationsAndPoints")} ({subs.length})
         </Card.Title>
         <div className="table-responsive">
           <Table striped bordered hover size="sm" className="mb-0 align-middle">
             <thead>
               <tr>
                 <th>#</th>
-                <th>Utente</th>
-                <th>Piloti Top 3</th>
-                <th>Costruttori Top 3</th>
+                <th>{t("leaderboard.player")}</th>
+                <th>{t("history.topDrivers")}</th>
+                <th>{t("history.topConstructors")}</th>
               </tr>
             </thead>
             <tbody>

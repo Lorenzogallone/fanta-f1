@@ -4,6 +4,7 @@
  */
 import React, { useState } from "react";
 import { Container, Row, Col, Card, Form, Button } from "react-bootstrap";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export const ADMIN_PASSWORD = "SUCASOLERA";
 
@@ -15,6 +16,7 @@ export const ADMIN_PASSWORD = "SUCASOLERA";
  * @returns {JSX.Element} Admin login form
  */
 export default function AdminLogin({ onSuccess, useLocalStorage = false }) {
+  const { t } = useLanguage();
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
 
@@ -41,24 +43,24 @@ export default function AdminLogin({ onSuccess, useLocalStorage = false }) {
         <Col xs={12} md={6} lg={4}>
           <Card className="shadow border-danger">
             <Card.Body>
-              <h4 className="text-center mb-4">🔒 Accesso Protetto</h4>
+              <h4 className="text-center mb-4">🔒 {t("admin.login")}</h4>
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Password</Form.Label>
+                  <Form.Label>{t("admin.password")}</Form.Label>
                   <Form.Control
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Inserisci la password"
+                    placeholder={t("admin.password")}
                     autoFocus
                     isInvalid={error}
                   />
                   <Form.Control.Feedback type="invalid">
-                    Password non corretta
+                    {t("admin.wrongPassword")}
                   </Form.Control.Feedback>
                 </Form.Group>
                 <Button variant="danger" type="submit" className="w-100">
-                  Accedi
+                  {t("admin.loginButton")}
                 </Button>
               </Form>
             </Card.Body>

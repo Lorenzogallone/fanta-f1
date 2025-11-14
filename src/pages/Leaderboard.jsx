@@ -8,6 +8,7 @@ import { Card, Table, Spinner, Badge } from "react-bootstrap";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
+import { useLanguage } from "../contexts/LanguageContext";
 import { getLastRankingSnapshot, calculatePositionChange } from "../services/rankingSnapshot";
 
 const medals = ["🥇", "🥈", "🥉"];
@@ -21,6 +22,7 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true);
   const [previousSnapshot, setPreviousSnapshot] = useState(null);
   const { isDark } = useTheme();
+  const { t } = useLanguage();
 
   /**
    * Load the last ranking snapshot for position comparison
@@ -75,7 +77,7 @@ export default function Leaderboard() {
           borderBottom: `2px solid ${accentColor}`,
         }}
       >
-        Classifica attuale
+        {t("leaderboard.title")}
       </Card.Header>
 
       <Card.Body className="p-0">
@@ -96,13 +98,13 @@ export default function Leaderboard() {
                   <th style={{ width: 60 }} className="text-center">
                     #
                   </th>
-                  <th>Giocatore</th>
-                  <th className="text-center">Punti</th>
-                  <th className="text-center">Gap</th>
-                  <th className="text-center">Jolly</th>
+                  <th>{t("leaderboard.player")}</th>
+                  <th className="text-center">{t("common.points")}</th>
+                  <th className="text-center">{t("leaderboard.gap")}</th>
+                  <th className="text-center">{t("leaderboard.jokers")}</th>
                   {previousSnapshot && (
                     <th style={{ width: 80 }} className="text-center">
-                      Trend
+                      {t("leaderboard.trend")}
                     </th>
                   )}
                 </tr>

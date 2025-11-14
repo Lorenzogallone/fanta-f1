@@ -8,6 +8,7 @@ import { Container, Row, Col, Card, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import Leaderboard from "./Leaderboard";
 import { useTheme } from "../contexts/ThemeContext";
+import { useLanguage } from "../contexts/LanguageContext";
 
 /**
  * Home page component with quick navigation and leaderboard preview
@@ -15,6 +16,7 @@ import { useTheme } from "../contexts/ThemeContext";
  */
 export default function Home() {
   const { isDark } = useTheme();
+  const { t } = useLanguage();
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
 
   return (
@@ -25,7 +27,7 @@ export default function Home() {
           <Card className="shadow">
             <Card.Body className="text-center">
               <Card.Title style={{ color: accentColor }} className="mb-4">
-                Benvenuto in Fanta F1
+                {t("home.title")}
               </Card.Title>
               <Row className="g-3">
                 <Col xs={12} md={6} lg={3}>
@@ -35,7 +37,7 @@ export default function Home() {
                     variant="outline-danger"
                     className="w-100 py-3"
                   >
-                    Schiera Formazione
+                    {t("home.submitFormation")}
                   </Button>
                 </Col>
                 <Col xs={12} md={6} lg={3}>
@@ -45,7 +47,7 @@ export default function Home() {
                     variant="outline-danger"
                     className="w-100 py-3"
                   >
-                    Storico Gare
+                    {t("history.title")}
                   </Button>
                 </Col>
                 <Col xs={12} md={6} lg={3}>
@@ -55,7 +57,7 @@ export default function Home() {
                     variant="outline-danger"
                     className="w-100 py-3"
                   >
-                    Schiera Campionato
+                    {t("championshipForm.title")}
                   </Button>
                 </Col>
                 <Col xs={12} md={6} lg={3}>
@@ -65,7 +67,7 @@ export default function Home() {
                     variant="outline-danger"
                     className="w-100 py-3"
                   >
-                    Calcola Punteggi
+                    {t("nav.calculatePoints")}
                   </Button>
                 </Col>
               </Row>

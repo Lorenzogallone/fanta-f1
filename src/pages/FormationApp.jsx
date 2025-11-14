@@ -37,6 +37,7 @@ import { db } from "../services/firebase";
 import RaceHistoryCard from "../components/RaceHistoryCard";
 import { DRIVERS, DRIVER_TEAM, TEAM_LOGOS, TIME_CONSTANTS } from "../constants/racing";
 import { useThemeColors } from "../hooks/useThemeColors";
+import { useLanguage } from "../contexts/LanguageContext";
 import { getLateWindowInfo } from "../utils/lateSubmissionHelper";
 import "../styles/customSelect.css";
 
@@ -62,6 +63,7 @@ const driverOpts = drivers.map((d) => ({
  */
 export default function FormationApp() {
   const colors = useThemeColors();
+  const { t } = useLanguage();
 
   // Main state
   const [ranking, setRanking] = useState([]);
@@ -279,8 +281,8 @@ export default function FormationApp() {
    */
   const validate = (mode, timestamp) => {
     const err = [];
-    if (!form.userId) err.push("Scegli l'utente.");
-    if (!form.raceId) err.push("Scegli la gara.");
+    if (!form.userId) err.push(t("errors.incompleteForm"));
+    if (!form.raceId) err.push(t("errors.incompleteForm"));
 
     // Use helper to get late window info with shared timestamp
     const lateInfo = getLateWindowInfo(mode, race, timestamp);
@@ -288,39 +290,39 @@ export default function FormationApp() {
     if (mode === "main") {
       // Check if race is cancelled
       if (race.cancelledMain) {
-        err.push("⛔ Gara cancellata: non è possibile inserire formazioni.");
+        err.push(`⛔ ${t("errors.raceCancelled")}`);
         return err;
       }
 
       // Allow if: deadline open OR in late window AND hasn't used it yet
       if (!lateInfo.isOpen && !lateInfo.isInLateWindow) {
-        err.push("Deadline gara chiusa.");
+        err.push(t("errors.deadlineClosed"));
       } else if (lateInfo.isInLateWindow && userUsedLateSubmission) {
-        err.push("❌ Hai già usato la possibilità di inserimento in ritardo.");
+        err.push(`❌ ${t("errors.lateSubmissionUsed")}`);
       }
 
-      if (!fullMain) err.push("Completa tutti i campi obbligatori della gara principale.");
+      if (!fullMain) err.push(t("errors.incompleteForm"));
       if (hasMainDuplicates)
-        err.push(`Non puoi selezionare lo stesso pilota più volte nella gara: ${mainDuplicates.join(", ")}`);
+        err.push(`${t("formations.duplicateWarning")}: ${mainDuplicates.join(", ")}`);
     } else {
       // SPRINT
-      if (!isSprintRace) err.push("Questa gara non prevede Sprint.");
+      if (!isSprintRace) err.push(t("errors.incompleteForm"));
 
       // Check if sprint is cancelled
       if (race.cancelledSprint) {
-        err.push("⛔ Sprint cancellata: non è possibile inserire formazioni.");
+        err.push(`⛔ ${t("errors.raceCancelled")}`);
         return err;
       }
 
       if (!lateInfo.isOpen && !lateInfo.isInLateWindow) {
-        err.push("Deadline sprint chiusa.");
+        err.push(t("errors.deadlineClosed"));
       } else if (lateInfo.isInLateWindow && userUsedLateSubmission) {
-        err.push("❌ Hai già usato la possibilità di inserimento in ritardo.");
+        err.push(`❌ ${t("errors.lateSubmissionUsed")}`);
       }
 
-      if (!fullSpr) err.push("Completa tutti i campi obbligatori della sprint.");
+      if (!fullSpr) err.push(t("errors.incompleteForm"));
       if (hasSprintDuplicates)
-        err.push(`Non puoi selezionare lo stesso pilota più volte nella sprint: ${sprintDuplicates.join(", ")}`);
+        err.push(`${t("formations.duplicateWarning")}: ${sprintDuplicates.join(", ")}`);
     }
     return err;
   };
@@ -436,14 +438,14 @@ export default function FormationApp() {
       setFlash({
         type: "success",
         msg: isLate
-          ? "✓ Formazione salvata IN RITARDO! Penalità: -3 punti"
+          ? `✓ ${t("success.formationSaved")} ${t("formations.latePenalty")}`
           : mode === "main"
           ? isEditMode
-            ? "✓ Gara aggiornata con successo!"
-            : "✓ Formazione gara salvata con successo!"
+            ? `✓ ${t("success.formationUpdated")}`
+            : `✓ ${t("success.formationSaved")}`
           : isEditMode
-          ? "✓ Sprint aggiornata con successo!"
-          : "✓ Formazione sprint salvata con successo!",
+          ? `✓ ${t("success.formationUpdated")}`
+          : `✓ ${t("success.formationSaved")}`,
       });
       setRefreshKey(Date.now());
       setSavingMode(null);
@@ -453,7 +455,7 @@ export default function FormationApp() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       console.error(err);
-      setFlash({ type: "danger", msg: "❌ Errore nel salvataggio: " + err.message });
+      setFlash({ type: "danger", msg: `❌ ${t("common.error")}: ${err.message}` });
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
@@ -473,7 +475,7 @@ export default function FormationApp() {
       bg={open ? "success" : "danger"}
       style={{ color: (open && colors.isDark) ? "#ffffff" : undefined }}
     >
-      {open ? "APERTO" : "CHIUSO"}
+      {open ? t("formations.open") : t("formations.closed")}
     </Badge>
   );
 
@@ -491,7 +493,7 @@ export default function FormationApp() {
           >
             <Card.Body>
               <Card.Title className="text-center mb-3" style={{ color: colors.accent }}>
-                🏎️ Schiera la Formazione
+                🏎️ {t("formations.title")}
               </Card.Title>
 
               {flash && (
@@ -504,9 +506,9 @@ export default function FormationApp() {
               <Form onSubmit={save}>
                 {/* Utente */}
                 <Form.Group className="mb-3">
-                  <Form.Label>Utente *</Form.Label>
+                  <Form.Label>{t("formations.selectUser")} *</Form.Label>
                   <Form.Select name="userId" value={form.userId} onChange={onChangeSimple} required>
-                    <option value="">Seleziona utente</option>
+                    <option value="">{t("formations.selectUser")}</option>
                     {ranking.map((u) => (
                       <option key={u.id} value={u.id}>
                         {u.name}
@@ -515,16 +517,16 @@ export default function FormationApp() {
                   </Form.Select>
                   {form.userId && (
                     <Form.Text>
-                      Jolly disponibili: <Badge bg="warning" text="dark">{userJolly}</Badge>
+                      {t("formations.jokersAvailable")}: <Badge bg="warning" text="dark">{userJolly}</Badge>
                     </Form.Text>
                   )}
                 </Form.Group>
 
                 {/* Gara */}
                 <Form.Group className="mb-3">
-                  <Form.Label>Gara *</Form.Label>
+                  <Form.Label>{t("formations.selectRace")} *</Form.Label>
                   <Form.Select name="raceId" value={form.raceId} onChange={onChangeSimple} required>
-                    <option value="">Seleziona gara</option>
+                    <option value="">{t("formations.selectRace")}</option>
                     {races.map((r) => (
                       <option key={r.id} value={r.id}>
                         {r.round}. {r.name}
@@ -536,11 +538,11 @@ export default function FormationApp() {
                 {/* MAIN */}
                 {race && (
                   <>
-                    <SectionHeader title="Gara Principale" open={mainOpen} deadlineMs={qualiMs} accentColor={colors.accent} />
+                    <SectionHeader title={t("formations.mainRace")} open={mainOpen} deadlineMs={qualiMs} accentColor={colors.accent} />
 
                     {hasMainDuplicates && touched && (
                       <Alert variant="warning" className="py-2 small">
-                        ⚠️ Hai selezionato lo stesso pilota più volte: <strong>{mainDuplicates.join(", ")}</strong>
+                        ⚠️ {t("formations.duplicateWarning")}: <strong>{mainDuplicates.join(", ")}</strong>
                       </Alert>
                     )}
 
@@ -586,11 +588,11 @@ export default function FormationApp() {
                 {/* SPRINT */}
                 {isSprintRace && (
                   <>
-                    <SectionHeader title="Sprint (opzionale)" open={sprOpen} deadlineMs={sprMs} accentColor={colors.accent} />
+                    <SectionHeader title={t("formations.sprintOptional")} open={sprOpen} deadlineMs={sprMs} accentColor={colors.accent} />
 
                     {hasSprintDuplicates && touched && (
                       <Alert variant="warning" className="py-2 small">
-                        ⚠️ Hai selezionato lo stesso pilota più volte nella sprint: <strong>{sprintDuplicates.join(", ")}</strong>
+                        ⚠️ {t("formations.duplicateWarning")}: <strong>{sprintDuplicates.join(", ")}</strong>
                       </Alert>
                     )}
 
@@ -625,7 +627,7 @@ export default function FormationApp() {
                   {race && (
                     <Col xs={12}>
                       <Button variant="outline-secondary" size="sm" className="w-100" onClick={handleResetForm}>
-                        🔄 Reset Formazione
+                        🔄 {t("formations.resetFormation")}
                       </Button>
                     </Col>
                   )}
@@ -638,7 +640,7 @@ export default function FormationApp() {
                       disabled={disabledMain || hasMainDuplicates}
                       onClick={() => setSavingMode("main")}
                     >
-                      {isEditMode ? "✏️ Modifica Gara" : "💾 Salva Gara"}
+                      {isEditMode ? `✏️ ${t("formations.editFormation")}` : `💾 ${t("formations.save")}`}
                     </Button>
                   </Col>
                   {isSprintRace && (
@@ -651,7 +653,7 @@ export default function FormationApp() {
                         disabled={disabledSprint || hasSprintDuplicates}
                         onClick={() => setSavingMode("sprint")}
                       >
-                        {isEditMode ? "✏️ Modifica Sprint" : "💾 Salva Sprint"}
+                        {isEditMode ? `✏️ ${t("formations.editFormation")}` : `💾 ${t("formations.save")}`}
                       </Button>
                     </Col>
                   )}
@@ -674,23 +676,16 @@ export default function FormationApp() {
         setCurrentLateMode(null);
       }}>
         <Modal.Header closeButton>
-          <Modal.Title>⚠️ Inserimento in Ritardo</Modal.Title>
+          <Modal.Title>⚠️ {t("formations.lateSubmission")}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Alert variant="warning">
-            <strong>Attenzione!</strong>
+            <strong>{t("common.warning")}!</strong>
             <br />
-            Stai per inserire la formazione <strong>dopo la deadline</strong>.
+            {t("formations.lateWarning")}.
             <br /><br />
-            <strong>Conseguenze:</strong>
-            <ul className="mb-0 mt-2">
-              <li>Riceverai una penalità di <strong>-3 punti</strong></li>
-              <li>Questa è la tua <strong>unica possibilità</strong> per tutto il campionato</li>
-              <li>Vale sia per <strong>gare principali che sprint</strong></li>
-              <li>Non potrai più farlo in futuro per nessuna altra gara/sprint</li>
-            </ul>
+            <strong>{t("formations.latePenalty")}</strong>
           </Alert>
-          <p className="mb-0">Vuoi procedere comunque?</p>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => {
@@ -698,10 +693,10 @@ export default function FormationApp() {
             setSavingMode(null);
             setCurrentLateMode(null);
           }}>
-            Annulla
+            {t("common.cancel")}
           </Button>
           <Button variant="warning" onClick={handleConfirmLateSubmission}>
-            Sì, Accetto la Penalità (-3)
+            {t("formations.lateConfirm")}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -719,7 +714,7 @@ export default function FormationApp() {
   function PermError() {
     return (
       <Container className="py-5">
-        <Alert variant="danger">Permessi insufficienti.</Alert>
+        <Alert variant="danger">{t("errors.permissionDenied")}</Alert>
       </Container>
     );
   }
@@ -733,7 +728,7 @@ export default function FormationApp() {
           <DeadlineBadgeLocal open={open} />
         </h5>
         <p className="small text-muted mb-3">
-          Da schierare entro:{" "}
+          {t("formations.submitBy")}:{" "}
           {new Date(deadlineMs).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}
           {" – "}
           {new Date(deadlineMs).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
@@ -750,7 +745,7 @@ export default function FormationApp() {
       <Form.Group className="mb-2">
         <Form.Label>
           {label} {required && "*"}
-          {isEmpty && <span className="text-danger ms-1">(obbligatorio)</span>}
+          {isEmpty && <span className="text-danger ms-1">({t("formations.required")})</span>}
         </Form.Label>
         <div className="d-flex gap-2">
           <div className="flex-grow-1">
@@ -796,7 +791,7 @@ export default function FormationApp() {
       <Card className="mt-3" style={{ borderLeft: `3px solid ${accentColor}` }}>
         <Card.Body className="py-2">
           <h6 className="mb-2" style={{ color: accentColor }}>
-            📋 Riepilogo Formazione
+            📋 {t("formations.formationSummary")}
           </h6>
           <Table size="sm" className="mb-0">
             <tbody>
@@ -804,7 +799,7 @@ export default function FormationApp() {
                 <>
                   <tr>
                     <td className="fw-bold" colSpan={2}>
-                      Gara Principale
+                      {t("formations.mainRace")}
                     </td>
                   </tr>
                   <tr>
@@ -820,12 +815,12 @@ export default function FormationApp() {
                     <td>{form.P3?.value || "—"}</td>
                   </tr>
                   <tr>
-                    <td>Jolly</td>
+                    <td>{t("formations.joker")}</td>
                     <td>{form.jolly?.value || "—"}</td>
                   </tr>
                   {form.jolly2 && (
                     <tr>
-                      <td>Jolly 2</td>
+                      <td>{t("formations.joker2")}</td>
                       <td>{form.jolly2.value}</td>
                     </tr>
                   )}
@@ -835,7 +830,7 @@ export default function FormationApp() {
                 <>
                   <tr>
                     <td className="fw-bold" colSpan={2}>
-                      Sprint
+                      {t("formations.sprint")}
                     </td>
                   </tr>
                   <tr>
@@ -851,7 +846,7 @@ export default function FormationApp() {
                     <td>{form.sprintP3?.value || "—"}</td>
                   </tr>
                   <tr>
-                    <td>Jolly SP</td>
+                    <td>{t("formations.joker")} SP</td>
                     <td>{form.sprintJolly?.value || "—"}</td>
                   </tr>
                 </>
