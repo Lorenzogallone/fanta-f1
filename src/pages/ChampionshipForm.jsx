@@ -21,6 +21,7 @@ import { db } from "../services/firebase";
 import ChampionshipSubmissions from "../components/ChampionshipSubmissions";
 import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
+import { useLanguage } from "../contexts/LanguageContext";
 import "../styles/customSelect.css";
 
 // Constants imported from centralized file
@@ -74,6 +75,21 @@ const asConstructorOptions = (constructorsList) =>
  */
 export default function ChampionshipForm() {
   const { isDark } = useTheme();
+  const { t } = useLanguage();
+
+  // Translation key mappings for driver and constructor labels
+  const driverLabels = {
+    D1: "championshipForm.driver1",
+    D2: "championshipForm.driver2",
+    D3: "championshipForm.driver3",
+  };
+
+  const constructorLabels = {
+    C1: "championshipForm.constructor1",
+    C2: "championshipForm.constructor2",
+    C3: "championshipForm.constructor3",
+  };
+
   const [rankingOptions, setRankingOptions] = useState([]);
   const [loadingRanking, setLoadingRanking] = useState(true);
   const [form, setForm] = useState({
@@ -116,7 +132,7 @@ export default function ChampionshipForm() {
         console.error("Errore caricamento utenti:", e);
         setMessage({
           variant: "danger",
-          text: "Non è stato possibile caricare gli utenti.",
+          text: t("errors.generic"),
         });
       } finally {
         setLoadingRanking(false);
@@ -278,8 +294,8 @@ export default function ChampionshipForm() {
       setMessage({
         variant: "success",
         text: isEdit
-          ? "Formazione campionato aggiornata!"
-          : "Formazione campionato salvata!",
+          ? t("success.formationUpdated")
+          : t("championshipForm.formationSaved"),
       });
       // forza il refresh della card di destra
       setRefreshKey((prev) => prev + 1);
@@ -287,7 +303,7 @@ export default function ChampionshipForm() {
       console.error("Errore salvataggio:", err);
       setMessage({
         variant: "danger",
-        text: "Errore durante il salvataggio.",
+        text: t("errors.generic"),
       });
     } finally {
       setSaving(false);
@@ -298,7 +314,7 @@ export default function ChampionshipForm() {
     return (
       <Container className="py-5 text-center">
         <Spinner animation="border" variant="danger" />
-        <p className="mt-3">Caricamento...</p>
+        <p className="mt-3">{t("common.loading")}</p>
       </Container>
     );
 
@@ -312,7 +328,7 @@ export default function ChampionshipForm() {
           <Card className="shadow" style={{ borderLeft: `4px solid ${accentColor}` }}>
             <Card.Body>
               <h4 className="text-center mb-3">
-                📋 Formazione Campionato
+                📋 {t("championshipForm.title")}
               </h4>
 
               <div className="text-center mb-4">
@@ -321,14 +337,14 @@ export default function ChampionshipForm() {
                   text={pastDeadline ? "light" : "dark"}
                   className="fs-6 px-3 py-2"
                 >
-                  {pastDeadline ? "🔒 CHIUSO" : "⏰ Deadline: " + deadlineText}
+                  {pastDeadline ? `🔒 ${t("formations.closed")}` : `⏰ ${t("formations.deadline")}: ${deadlineText}`}
                 </Badge>
               </div>
 
               {pastDeadline && (
                 <Alert variant="danger" className="text-center">
-                  <strong>⚠️ Attenzione!</strong><br />
-                  La deadline è scaduta. Non è più possibile inserire o modificare la formazione campionato.
+                  <strong>⚠️ {t("common.warning")}!</strong><br />
+                  {t("championshipForm.deadlinePassed")}
                 </Alert>
               )}
 
@@ -345,7 +361,7 @@ export default function ChampionshipForm() {
               <Form onSubmit={handleSubmit}>
                 {/* selezione utente */}
                 <Form.Group className="mb-4">
-                  <Form.Label>Utente</Form.Label>
+                  <Form.Label>{t("championshipForm.selectUser")}</Form.Label>
                   <Form.Select
                     name="userId"
                     value={form.userId}
@@ -353,7 +369,7 @@ export default function ChampionshipForm() {
                     required
                     disabled={pastDeadline}
                   >
-                    <option value="">Seleziona utente</option>
+                    <option value="">{t("formations.selectUser")}</option>
                     {rankingOptions.map((u) => (
                       <option key={u.value} value={u.value}>
                         {u.label}
@@ -362,15 +378,15 @@ export default function ChampionshipForm() {
                   </Form.Select>
                 </Form.Group>
 
-                <h6 className="fw-bold">Piloti</h6>
+                <h6 className="fw-bold">{t("championshipForm.topDrivers")}</h6>
                 {["D1", "D2", "D3"].map((f) => (
                   <Form.Group key={f} className="mb-3">
-                    <Form.Label>{f}</Form.Label>
+                    <Form.Label>{t(driverLabels[f])}</Form.Label>
                     <Select
                       options={asDriverOptions(drivers)}
                       value={form[f]}
                       onChange={(sel) => onSel(sel, f)}
-                      placeholder={`Seleziona ${f}`}
+                      placeholder={t(driverLabels[f])}
                       classNamePrefix="react-select"
                       isSearchable
                       isDisabled={pastDeadline}
@@ -379,15 +395,15 @@ export default function ChampionshipForm() {
                   </Form.Group>
                 ))}
 
-                <h6 className="fw-bold mt-4">Costruttori (Top 3)</h6>
+                <h6 className="fw-bold mt-4">{t("championshipForm.topConstructors")}</h6>
                 {["C1", "C2", "C3"].map((f) => (
                   <Form.Group key={f} className="mb-3">
-                    <Form.Label>{f}</Form.Label>
+                    <Form.Label>{t(constructorLabels[f])}</Form.Label>
                     <Select
                       options={asConstructorOptions(constructors)}
                       value={form[f]}
                       onChange={(sel) => onSel(sel, f)}
-                      placeholder={`Seleziona ${f}`}
+                      placeholder={t(constructorLabels[f])}
                       classNamePrefix="react-select"
                       isDisabled={pastDeadline}
                       required
@@ -402,10 +418,10 @@ export default function ChampionshipForm() {
                   disabled={!allPicked || saving || pastDeadline}
                 >
                   {saving
-                    ? "Salvataggio…"
+                    ? t("common.loading")
                     : isEdit
-                    ? "Modifica Formazione Campionato"
-                    : "Salva Formazione Campionato"}
+                    ? `${t("common.edit")} ${t("championshipForm.title")}`
+                    : t("championshipForm.saveFormation")}
                 </Button>
               </Form>
             </Card.Body>

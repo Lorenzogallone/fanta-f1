@@ -35,6 +35,7 @@ import { db } from "../services/firebase";
 import { DRIVERS } from "../constants/racing";
 import Select from "react-select";
 import { useTheme } from "../contexts/ThemeContext";
+import { useLanguage } from "../contexts/LanguageContext";
 import AdminLogin from "../components/AdminLogin";
 
 /**
@@ -42,6 +43,7 @@ import AdminLogin from "../components/AdminLogin";
  * @returns {JSX.Element} Admin panel with authentication and management tabs
  */
 export default function AdminPanel() {
+  const { t } = useLanguage();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState("participants");
 
@@ -98,23 +100,23 @@ export default function AdminPanel() {
     <Container className="py-4">
       <Card className="shadow border-danger mb-4">
         <Card.Header className="bg-danger text-white">
-          <h4 className="mb-0">⚙️ Pannello Amministrazione</h4>
+          <h4 className="mb-0">⚙️ {t("admin.title")}</h4>
         </Card.Header>
       </Card>
 
       <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
         <Nav variant="tabs" className="mb-4">
           <Nav.Item>
-            <Nav.Link eventKey="participants">👥 Partecipanti</Nav.Link>
+            <Nav.Link eventKey="participants">👥 {t("admin.participants")}</Nav.Link>
           </Nav.Item>
           <Nav.Item>
-            <Nav.Link eventKey="formations">📝 Formazioni</Nav.Link>
+            <Nav.Link eventKey="formations">📝 {t("admin.formations")}</Nav.Link>
           </Nav.Item>
           <Nav.Item>
-            <Nav.Link eventKey="calendar">📅 Calendario Gare</Nav.Link>
+            <Nav.Link eventKey="calendar">📅 {t("admin.raceCalendar")}</Nav.Link>
           </Nav.Item>
           <Nav.Item>
-            <Nav.Link eventKey="reset">🗑️ Reset Database</Nav.Link>
+            <Nav.Link eventKey="reset">🗑️ {t("admin.database")}</Nav.Link>
           </Nav.Item>
         </Nav>
 
@@ -166,6 +168,7 @@ export default function AdminPanel() {
  * @returns {JSX.Element} Participants management interface
  */
 function ParticipantsManager({ participants: propParticipants, loading: propLoading, onDataChange }) {
+  const { t } = useLanguage();
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -212,7 +215,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!formData.id || !formData.name) {
-      setMessage({ type: "warning", text: "ID e Nome sono obbligatori" });
+      setMessage({ type: "warning", text: t("errors.incompleteForm") });
       return;
     }
 
@@ -231,13 +234,13 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
         championshipPts: 0,
       });
 
-      setMessage({ type: "success", text: "Partecipante aggiunto con successo!" });
+      setMessage({ type: "success", text: t("admin.participantAdded") });
       setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
       onDataChange();
       setTimeout(() => setShowAddDialog(false), 1500);
     } catch (err) {
       console.error(err);
-      setMessage({ type: "danger", text: "Errore durante l'aggiunta" });
+      setMessage({ type: "danger", text: t("common.error") });
     } finally {
       setSaving(false);
     }
@@ -257,12 +260,12 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
         usedLateSubmission: formData.usedLateSubmission,
       });
 
-      setMessage({ type: "success", text: "Partecipante aggiornato con successo!" });
+      setMessage({ type: "success", text: t("admin.participantUpdated") });
       onDataChange();
       setTimeout(() => setShowEditDialog(false), 1500);
     } catch (err) {
       console.error(err);
-      setMessage({ type: "danger", text: "Errore durante l'aggiornamento" });
+      setMessage({ type: "danger", text: t("common.error") });
     } finally {
       setSaving(false);
     }
@@ -270,19 +273,19 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
 
   // Elimina partecipante
   const handleDelete = async () => {
-    if (!window.confirm(`Sei sicuro di voler eliminare ${currentParticipant.name}?\n\nQuesta azione è irreversibile!`)) return;
+    if (!window.confirm(`${t("admin.deleteParticipant")} ${currentParticipant.name}?\n\n${t("admin.deleteWarning")}`)) return;
 
     setSaving(true);
     setMessage(null);
 
     try {
       await deleteDoc(doc(db, "ranking", currentParticipant.id));
-      setMessage({ type: "success", text: "Partecipante eliminato!" });
+      setMessage({ type: "success", text: t("admin.participantDeleted") });
       onDataChange();
       setTimeout(() => setShowEditDialog(false), 1500);
     } catch (err) {
       console.error(err);
-      setMessage({ type: "danger", text: "Errore durante l'eliminazione" });
+      setMessage({ type: "danger", text: t("common.error") });
     } finally {
       setSaving(false);
     }
@@ -301,9 +304,9 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
       <Row className="mb-3">
         <Col>
           <div className="d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">Lista Partecipanti ({participants.length})</h5>
+            <h5 className="mb-0">{t("admin.participants")} ({participants.length})</h5>
             <Button variant="danger" onClick={openAddDialog}>
-              ➕ Aggiungi Partecipante
+              ➕ {t("admin.addParticipant")}
             </Button>
           </div>
         </Col>
@@ -315,18 +318,18 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
             <Card.Body className="p-0">
               {participants.length === 0 ? (
                 <Alert variant="info" className="m-3">
-                  Nessun partecipante trovato. Clicca su "Aggiungi Partecipante" per iniziare.
+                  {t("leaderboard.noData")}
                 </Alert>
               ) : (
                 <div className="table-responsive">
                   <Table hover className="mb-0 align-middle">
                     <thead>
                       <tr>
-                        <th>Nome</th>
-                        <th className="text-center">Punti</th>
-                        <th className="text-center">Jolly</th>
-                        <th className="text-center">Late Used</th>
-                        <th className="text-center" style={{ width: 100 }}>Azioni</th>
+                        <th>{t("common.name")}</th>
+                        <th className="text-center">{t("common.points")}</th>
+                        <th className="text-center">{t("leaderboard.jokers")}</th>
+                        <th className="text-center">{t("admin.lateSubmissionUsed")}</th>
+                        <th className="text-center" style={{ width: 100 }}>{t("common.actions")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -347,7 +350,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
                           </td>
                           <td className="text-center">
                             <Badge bg={p.usedLateSubmission ? "warning" : "secondary"}>
-                              {p.usedLateSubmission ? "Sì" : "No"}
+                              {p.usedLateSubmission ? "Yes" : "No"}
                             </Badge>
                           </td>
                           <td className="text-center">
@@ -356,7 +359,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
                               variant="outline-primary"
                               onClick={() => openEditDialog(p)}
                             >
-                              ✏️ Modifica
+                              ✏️ {t("common.edit")}
                             </Button>
                           </td>
                         </tr>
@@ -373,7 +376,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
       {/* Dialog Aggiunta Partecipante */}
       <Modal show={showAddDialog} onHide={() => setShowAddDialog(false)} centered>
         <Modal.Header closeButton style={{ borderBottomColor: accentColor }}>
-          <Modal.Title>➕ Aggiungi Nuovo Partecipante</Modal.Title>
+          <Modal.Title>➕ {t("admin.addParticipant")}</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleAdd}>
           <Modal.Body>
@@ -384,23 +387,23 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
             )}
 
             <Form.Group className="mb-3">
-              <Form.Label>ID Utente *</Form.Label>
+              <Form.Label>ID *</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="es: mario"
+                placeholder="e.g. mario"
                 value={formData.id}
                 onChange={(e) => setFormData({ ...formData, id: e.target.value })}
                 required
                 autoFocus
               />
-              <Form.Text>Identificativo unico (non modificabile dopo la creazione)</Form.Text>
+              <Form.Text>{t("formations.required")}</Form.Text>
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Nome Completo *</Form.Label>
+              <Form.Label>{t("admin.participantName")} *</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="es: Mario Rossi"
+                placeholder="e.g. Mario Rossi"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
@@ -408,31 +411,29 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Punti Totali</Form.Label>
+              <Form.Label>{t("admin.totalPoints")}</Form.Label>
               <Form.Control
                 type="number"
                 value={formData.puntiTotali}
                 onChange={(e) => setFormData({ ...formData, puntiTotali: e.target.value })}
               />
-              <Form.Text>Lascia 0 per un nuovo partecipante</Form.Text>
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Jolly Disponibili</Form.Label>
+              <Form.Label>{t("admin.availableJokers")}</Form.Label>
               <Form.Control
                 type="number"
                 value={formData.jolly}
                 onChange={(e) => setFormData({ ...formData, jolly: e.target.value })}
               />
-              <Form.Text>Numero di jolly disponibili</Form.Text>
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowAddDialog(false)} disabled={saving}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button variant="danger" type="submit" disabled={saving}>
-              {saving ? "Aggiunta..." : "Aggiungi Partecipante"}
+              {saving ? t("common.loading") : t("admin.addParticipant")}
             </Button>
           </Modal.Footer>
         </Form>
@@ -441,7 +442,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
       {/* Dialog Modifica Partecipante */}
       <Modal show={showEditDialog} onHide={() => setShowEditDialog(false)} centered>
         <Modal.Header closeButton style={{ borderBottomColor: accentColor }}>
-          <Modal.Title>✏️ Modifica Partecipante</Modal.Title>
+          <Modal.Title>✏️ {t("admin.editParticipant")}</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleUpdate}>
           <Modal.Body>
@@ -458,7 +459,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
                 </Alert>
 
                 <Form.Group className="mb-3">
-                  <Form.Label>Nome Completo *</Form.Label>
+                  <Form.Label>{t("admin.participantName")} *</Form.Label>
                   <Form.Control
                     type="text"
                     value={formData.name}
@@ -469,7 +470,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                  <Form.Label>Punti Totali</Form.Label>
+                  <Form.Label>{t("admin.totalPoints")}</Form.Label>
                   <Form.Control
                     type="number"
                     value={formData.puntiTotali}
@@ -478,7 +479,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                  <Form.Label>Jolly Disponibili</Form.Label>
+                  <Form.Label>{t("admin.availableJokers")}</Form.Label>
                   <Form.Control
                     type="number"
                     value={formData.jolly}
@@ -489,23 +490,20 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
                 <Form.Group className="mb-3">
                   <Form.Check
                     type="checkbox"
-                    label="⏰ Ha già usato Late Submission"
+                    label={`⏰ ${t("admin.lateSubmissionUsed")}`}
                     checked={formData.usedLateSubmission}
                     onChange={(e) => setFormData({ ...formData, usedLateSubmission: e.target.checked })}
                   />
-                  <Form.Text className="text-muted">
-                    Se disattivato, l'utente potrà usare di nuovo l'inserimento in ritardo
-                  </Form.Text>
                 </Form.Group>
 
                 <hr />
 
                 <div className="d-grid">
                   <Button variant="outline-danger" onClick={handleDelete} disabled={saving}>
-                    🗑️ Elimina Partecipante
+                    🗑️ {t("admin.deleteParticipant")}
                   </Button>
                   <Form.Text className="text-muted text-center mt-2">
-                    Attenzione: questa azione è irreversibile
+                    {t("admin.deleteWarning")}
                   </Form.Text>
                 </div>
               </>
@@ -513,10 +511,10 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowEditDialog(false)} disabled={saving}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button variant="danger" type="submit" disabled={saving}>
-              {saving ? "Salvataggio..." : "Salva Modifiche"}
+              {saving ? t("common.loading") : t("common.update")}
             </Button>
           </Modal.Footer>
         </Form>
@@ -535,6 +533,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
  * @returns {JSX.Element} Formations management interface
  */
 function FormationsManager({ participants: propParticipants, races: propRaces, loading: propLoading, onDataChange }) {
+  const { t } = useLanguage();
   // Use data passed as props
   const participants = propParticipants;
   const races = propRaces;
@@ -709,14 +708,14 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
     const errors = [];
 
     // Controlli di base
-    if (!selectedUser) errors.push("Seleziona un utente");
-    if (!selectedRace) errors.push("Seleziona una gara");
+    if (!selectedUser) errors.push(t("admin.selectUser"));
+    if (!selectedRace) errors.push(t("admin.selectRace"));
 
     // Campi obbligatori gara principale
-    if (!formData.mainP1) errors.push("P1 è obbligatorio");
-    if (!formData.mainP2) errors.push("P2 è obbligatorio");
-    if (!formData.mainP3) errors.push("P3 è obbligatorio");
-    if (!formData.mainJolly) errors.push("Jolly è obbligatorio");
+    if (!formData.mainP1) errors.push(`P1 ${t("formations.required")}`);
+    if (!formData.mainP2) errors.push(`P2 ${t("formations.required")}`);
+    if (!formData.mainP3) errors.push(`P3 ${t("formations.required")}`);
+    if (!formData.mainJolly) errors.push(`${t("formations.joker")} ${t("formations.required")}`);
 
     // Verifica duplicati nella gara principale
     const mainDrivers = [
@@ -728,7 +727,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
     ].filter(Boolean);
 
     if (new Set(mainDrivers).size !== mainDrivers.length) {
-      errors.push("Non puoi selezionare lo stesso pilota più volte nella gara principale");
+      errors.push(t("errors.duplicateDriver"));
     }
 
     // Verifica duplicati nella sprint (se presenti selezioni)
@@ -741,7 +740,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
       ].filter(Boolean);
 
       if (sprintDrivers.length > 0 && new Set(sprintDrivers).size !== sprintDrivers.length) {
-        errors.push("Non puoi selezionare lo stesso pilota più volte nella sprint");
+        errors.push(t("errors.duplicateDriver"));
       }
     }
 
@@ -809,7 +808,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
 
       setMessage({
         type: "success",
-        text: `✓ ${existingFormation ? "Formazione aggiornata" : "Formazione aggiunta"} con successo!`,
+        text: existingFormation ? t("admin.formationUpdated") : t("admin.formationAdded"),
       });
       setTouched(false);
 
@@ -823,7 +822,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error(err);
-      setMessage({ type: "danger", text: "❌ Errore durante il salvataggio: " + err.message });
+      setMessage({ type: "danger", text: `${t("common.error")}: ${err.message}` });
     } finally {
       setSaving(false);
     }
@@ -855,20 +854,20 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
         <Card className="shadow">
           <Card.Header className="bg-white">
             <h5 className="mb-0">
-              {existingFormation ? "✏️ Modifica Formazione" : "➕ Aggiungi Formazione"}
+              {existingFormation ? `✏️ ${t("admin.editFormationTitle")}` : `➕ ${t("admin.addFormation")}`}
             </h5>
           </Card.Header>
           <Card.Body>
             <Form onSubmit={handleSave}>
               {/* Selezione Utente */}
               <Form.Group className="mb-3">
-                <Form.Label>Utente *</Form.Label>
+                <Form.Label>{t("formations.selectUser")} *</Form.Label>
                 <Form.Select
                   value={selectedUser}
                   onChange={(e) => setSelectedUser(e.target.value)}
                   required
                 >
-                  <option value="">Seleziona utente</option>
+                  <option value="">{t("formations.selectUser")}</option>
                   {participants.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
@@ -879,7 +878,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
 
               {/* Selezione Gara */}
               <Form.Group className="mb-3">
-                <Form.Label>Gara *</Form.Label>
+                <Form.Label>{t("formations.selectRace")} *</Form.Label>
                 <Form.Select
                   value={selectedRace?.id || ""}
                   onChange={(e) => {
@@ -888,7 +887,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                   }}
                   required
                 >
-                  <option value="">Seleziona gara</option>
+                  <option value="">{t("formations.selectRace")}</option>
                   {races.map((r) => {
                     const hasFormation = racesWithFormations.has(r.id);
                     const isCalculated = r.pointsCalculated;
@@ -909,101 +908,98 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                   })}
                 </Form.Select>
                 <Form.Text className="text-muted">
-                  🏃 = Sprint | ✓ = Formazione inserita | 📊 = Punti calcolati
+                  🏃 = {t("formations.sprint")} | ✓ = {t("formations.editFormation")} | 📊 = {t("common.points")}
                 </Form.Text>
               </Form.Group>
 
               {selectedUser && selectedRace && (
                 <>
                   <hr />
-                  <h6 className="fw-bold">Gara Principale</h6>
+                  <h6 className="fw-bold">{t("formations.mainRace")}</h6>
 
                   <Form.Group className="mb-2">
-                    <Form.Label>P1 * {isFieldInvalid('mainP1') && <span className="text-danger">(obbligatorio)</span>}</Form.Label>
+                    <Form.Label>P1 * {isFieldInvalid('mainP1') && <span className="text-danger">({t("formations.required")})</span>}</Form.Label>
                     <Select
                       options={getAvailableMainOptions('mainP1')}
                       value={formData.mainP1}
                       onChange={(sel) => setFormData({ ...formData, mainP1: sel })}
-                      placeholder="Seleziona pilota"
+                      placeholder={t("formations.selectUser")}
                       styles={isFieldInvalid('mainP1') ? {
                         control: (base) => ({ ...base, borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)' })
                       } : {}}
-                      noOptionsMessage={() => "Tutti i piloti sono stati selezionati"}
+                      noOptionsMessage={() => t("errors.duplicateDriver")}
                     />
                   </Form.Group>
 
                   <Form.Group className="mb-2">
-                    <Form.Label>P2 * {isFieldInvalid('mainP2') && <span className="text-danger">(obbligatorio)</span>}</Form.Label>
+                    <Form.Label>P2 * {isFieldInvalid('mainP2') && <span className="text-danger">({t("formations.required")})</span>}</Form.Label>
                     <Select
                       options={getAvailableMainOptions('mainP2')}
                       value={formData.mainP2}
                       onChange={(sel) => setFormData({ ...formData, mainP2: sel })}
-                      placeholder="Seleziona pilota"
+                      placeholder={t("formations.selectUser")}
                       styles={isFieldInvalid('mainP2') ? {
                         control: (base) => ({ ...base, borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)' })
                       } : {}}
-                      noOptionsMessage={() => "Tutti i piloti sono stati selezionati"}
+                      noOptionsMessage={() => t("errors.duplicateDriver")}
                     />
                   </Form.Group>
 
                   <Form.Group className="mb-2">
-                    <Form.Label>P3 * {isFieldInvalid('mainP3') && <span className="text-danger">(obbligatorio)</span>}</Form.Label>
+                    <Form.Label>P3 * {isFieldInvalid('mainP3') && <span className="text-danger">({t("formations.required")})</span>}</Form.Label>
                     <Select
                       options={getAvailableMainOptions('mainP3')}
                       value={formData.mainP3}
                       onChange={(sel) => setFormData({ ...formData, mainP3: sel })}
-                      placeholder="Seleziona pilota"
+                      placeholder={t("formations.selectUser")}
                       styles={isFieldInvalid('mainP3') ? {
                         control: (base) => ({ ...base, borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)' })
                       } : {}}
-                      noOptionsMessage={() => "Tutti i piloti sono stati selezionati"}
+                      noOptionsMessage={() => t("errors.duplicateDriver")}
                     />
                   </Form.Group>
 
                   <Form.Group className="mb-2">
-                    <Form.Label>Jolly * {isFieldInvalid('mainJolly') && <span className="text-danger">(obbligatorio)</span>}</Form.Label>
+                    <Form.Label>{t("formations.joker")} * {isFieldInvalid('mainJolly') && <span className="text-danger">({t("formations.required")})</span>}</Form.Label>
                     <Select
                       options={getAvailableMainOptions('mainJolly')}
                       value={formData.mainJolly}
                       onChange={(sel) => setFormData({ ...formData, mainJolly: sel })}
-                      placeholder="Seleziona pilota"
+                      placeholder={t("formations.selectUser")}
                       styles={isFieldInvalid('mainJolly') ? {
                         control: (base) => ({ ...base, borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)' })
                       } : {}}
-                      noOptionsMessage={() => "Tutti i piloti sono stati selezionati"}
+                      noOptionsMessage={() => t("errors.duplicateDriver")}
                     />
                   </Form.Group>
 
                   <Form.Group className="mb-3">
-                    <Form.Label>Jolly 2 (opzionale)</Form.Label>
+                    <Form.Label>{t("formations.joker2")}</Form.Label>
                     <Select
                       options={getAvailableMainOptions('mainJolly2')}
                       value={formData.mainJolly2}
                       onChange={(sel) => setFormData({ ...formData, mainJolly2: sel })}
-                      placeholder="Seleziona pilota"
+                      placeholder={t("formations.selectUser")}
                       isClearable
-                      noOptionsMessage={() => "Tutti i piloti sono stati selezionati"}
+                      noOptionsMessage={() => t("errors.duplicateDriver")}
                     />
                   </Form.Group>
 
                   <Form.Group className="mb-3">
                     <Form.Check
                       type="checkbox"
-                      label="⏰ Inserimento in ritardo (-3 punti)"
+                      label={`⏰ ${t("formations.lateSubmission")} (${t("formations.latePenalty")})`}
                       checked={isLateSubmission}
                       onChange={(e) => setIsLateSubmission(e.target.checked)}
                     />
-                    <Form.Text className="text-muted">
-                      Applica penalità di -3 punti per inserimento tardivo (vale una sola volta per utente)
-                    </Form.Text>
                   </Form.Group>
 
                   {hasSprint && (
                     <>
                       <hr />
-                      <h6 className="fw-bold">Sprint (opzionale)</h6>
+                      <h6 className="fw-bold">{t("formations.sprintOptional")}</h6>
                       <Alert variant="info" className="py-2 small">
-                        <strong>ℹ️ Nota:</strong> Puoi usare gli stessi piloti della gara principale
+                        <strong>ℹ️</strong> {t("formations.optional")}
                       </Alert>
 
                       <Form.Group className="mb-2">
@@ -1012,9 +1008,9 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                           options={getAvailableSprintOptions('sprintP1')}
                           value={formData.sprintP1}
                           onChange={(sel) => setFormData({ ...formData, sprintP1: sel })}
-                          placeholder="Seleziona pilota"
+                          placeholder={t("formations.selectUser")}
                           isClearable
-                          noOptionsMessage={() => "Tutti i piloti sono stati selezionati nella sprint"}
+                          noOptionsMessage={() => t("errors.duplicateDriver")}
                         />
                       </Form.Group>
 
@@ -1024,9 +1020,9 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                           options={getAvailableSprintOptions('sprintP2')}
                           value={formData.sprintP2}
                           onChange={(sel) => setFormData({ ...formData, sprintP2: sel })}
-                          placeholder="Seleziona pilota"
+                          placeholder={t("formations.selectUser")}
                           isClearable
-                          noOptionsMessage={() => "Tutti i piloti sono stati selezionati nella sprint"}
+                          noOptionsMessage={() => t("errors.duplicateDriver")}
                         />
                       </Form.Group>
 
@@ -1036,28 +1032,28 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                           options={getAvailableSprintOptions('sprintP3')}
                           value={formData.sprintP3}
                           onChange={(sel) => setFormData({ ...formData, sprintP3: sel })}
-                          placeholder="Seleziona pilota"
+                          placeholder={t("formations.selectUser")}
                           isClearable
-                          noOptionsMessage={() => "Tutti i piloti sono stati selezionati nella sprint"}
+                          noOptionsMessage={() => t("errors.duplicateDriver")}
                         />
                       </Form.Group>
 
                       <Form.Group className="mb-3">
-                        <Form.Label>Jolly Sprint</Form.Label>
+                        <Form.Label>{t("formations.joker")} {t("formations.sprint")}</Form.Label>
                         <Select
                           options={getAvailableSprintOptions('sprintJolly')}
                           value={formData.sprintJolly}
                           onChange={(sel) => setFormData({ ...formData, sprintJolly: sel })}
-                          placeholder="Seleziona pilota"
+                          placeholder={t("formations.selectUser")}
                           isClearable
-                          noOptionsMessage={() => "Tutti i piloti sono stati selezionati nella sprint"}
+                          noOptionsMessage={() => t("errors.duplicateDriver")}
                         />
                       </Form.Group>
                     </>
                   )}
 
                   <Button variant="danger" type="submit" disabled={saving} className="w-100">
-                    {saving ? "Salvataggio..." : existingFormation ? "Aggiorna" : "Salva"}
+                    {saving ? t("common.loading") : existingFormation ? t("common.update") : t("common.save")}
                   </Button>
                 </>
               )}
@@ -1079,6 +1075,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
  * @returns {JSX.Element} Calendar management interface
  */
 function CalendarManager({ races: propRaces, loading: propLoading, onDataChange }) {
+  const { t } = useLanguage();
   // Use races passed as props
   const races = propRaces;
   const [uploading, setUploading] = useState(false);
@@ -1128,11 +1125,11 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
       setParsedRaces(parsed);
       setMessage({
         type: "success",
-        text: `✓ File parsato con successo! Trovate ${parsed.length} gare.`,
+        text: `${t("common.success")}: ${parsed.length} ${t("history.pastRaces")}`,
       });
     } catch (err) {
       console.error(err);
-      setMessage({ type: "danger", text: "❌ Errore nel parsing del file ICS: " + err.message });
+      setMessage({ type: "danger", text: `${t("common.error")}: ${err.message}` });
       setParsedRaces([]);
     } finally {
       setLoadingIcs(false);
@@ -1144,11 +1141,11 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
    */
   const handleIcsImport = async () => {
     if (!parsedRaces.length) {
-      setMessage({ type: "warning", text: "Nessuna gara da importare" });
+      setMessage({ type: "warning", text: t("leaderboard.noData") });
       return;
     }
 
-    const confirmMsg = `Vuoi importare ${parsedRaces.length} gare? Questa operazione sovrascriverà i dati esistenti.`;
+    const confirmMsg = `${t("admin.confirmReset")}`;
     if (!window.confirm(confirmMsg)) return;
 
     setImporting(true);
@@ -1172,14 +1169,14 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
 
       setMessage({
         type: "success",
-        text: `✅ Import completato! ${parsedRaces.length} gare importate con successo.`,
+        text: `${t("common.success")}: ${parsedRaces.length} ${t("history.pastRaces")}`,
       });
       setParsedRaces([]);
       setIcsFile(null);
       await onDataChange();
     } catch (err) {
       console.error(err);
-      setMessage({ type: "danger", text: "❌ Errore durante l'import: " + err.message });
+      setMessage({ type: "danger", text: `${t("common.error")}: ${err.message}` });
     } finally {
       setImporting(false);
     }
@@ -1226,7 +1223,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
 
       setMessage({
         type: "success",
-        text: `✓ ${cancelType === "main" ? "Gara principale" : "Sprint"} segnata come cancellata!`,
+        text: t("admin.raceUpdated"),
       });
 
       setShowCancelModal(false);
@@ -1240,7 +1237,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
       }));
     } catch (err) {
       console.error(err);
-      setMessage({ type: "danger", text: "❌ Errore: " + err.message });
+      setMessage({ type: "danger", text: `${t("common.error")}: ${err.message}` });
     } finally {
       setUploading(false);
     }
@@ -1275,7 +1272,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
 
       setMessage({
         type: "success",
-        text: `✓ Orari aggiornati per ${editingRace.name}!`,
+        text: t("admin.raceUpdated"),
       });
 
       setShowEditModal(false);
@@ -1283,7 +1280,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
       await onDataChange();
     } catch (err) {
       console.error(err);
-      setMessage({ type: "danger", text: "❌ Errore durante l'aggiornamento: " + err.message });
+      setMessage({ type: "danger", text: `${t("common.error")}: ${err.message}` });
     } finally {
       setUploading(false);
     }
@@ -1303,12 +1300,11 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
       <Col xs={12}>
         <Card className="shadow border-primary">
           <Card.Header className="bg-primary text-white">
-            <h5 className="mb-0">📅 Importa Calendario da File ICS</h5>
+            <h5 className="mb-0">📅 {t("admin.importICS")}</h5>
           </Card.Header>
           <Card.Body>
             <p>
-              Carica un file ICS (formato iCalendar) contenente il calendario F1 per importare
-              automaticamente tutte le gare nel database.
+              {t("admin.raceCalendar")}
             </p>
 
             {message && (
@@ -1318,29 +1314,26 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
             )}
 
             <Form.Group className="mb-3">
-              <Form.Label>Seleziona file .ics</Form.Label>
+              <Form.Label>{t("admin.importICS")}</Form.Label>
               <Form.Control
                 type="file"
                 accept=".ics"
                 onChange={handleIcsFileSelect}
                 disabled={loadingIcs || importing}
               />
-              <Form.Text className="text-muted">
-                Formato supportato: file .ics del calendario ufficiale F1
-              </Form.Text>
             </Form.Group>
 
             {loadingIcs && (
               <div className="text-center py-3">
                 <Spinner animation="border" size="sm" className="me-2" />
-                Parsing file...
+                {t("common.loading")}
               </div>
             )}
 
             {parsedRaces.length > 0 && !loadingIcs && (
               <>
                 <Alert variant="info">
-                  <strong>Anteprima:</strong> {parsedRaces.length} gare trovate nel file ICS
+                  {parsedRaces.length} {t("history.pastRaces")}
                 </Alert>
 
                 <div className="table-responsive" style={{ maxHeight: "300px", overflowY: "auto" }}>
@@ -1348,10 +1341,10 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
                     <thead style={{ position: "sticky", top: 0, backgroundColor: "#fff", zIndex: 1 }}>
                       <tr>
                         <th>#</th>
-                        <th>Nome Gara</th>
-                        <th>Qualifiche</th>
-                        <th>Gara</th>
-                        <th>Sprint</th>
+                        <th>{t("admin.raceName")}</th>
+                        <th>{t("admin.qualifyingDate")}</th>
+                        <th>{t("admin.raceDate")}</th>
+                        <th>{t("formations.sprint")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1384,10 +1377,10 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
                   {importing ? (
                     <>
                       <Spinner animation="border" size="sm" className="me-2" />
-                      Importazione in corso...
+                      {t("common.loading")}
                     </>
                   ) : (
-                    `📥 Importa ${parsedRaces.length} Gare su Firestore`
+                    `📥 ${t("admin.importICS")} (${parsedRaces.length})`
                   )}
                 </Button>
               </>
@@ -1399,15 +1392,15 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
       <Col xs={12}>
         <Card className="shadow">
           <Card.Header className="bg-white d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">Gare Attuali ({races.length})</h5>
+            <h5 className="mb-0">{t("admin.raceCalendar")} ({races.length})</h5>
             <Button size="sm" variant="outline-primary" onClick={onDataChange}>
-              🔄 Ricarica
+              🔄
             </Button>
           </Card.Header>
           <Card.Body className="p-0">
             {races.length === 0 ? (
               <Alert variant="info" className="m-3">
-                Nessuna gara trovata
+                {t("leaderboard.noData")}
               </Alert>
             ) : (
               <div className="table-responsive">
@@ -1415,12 +1408,12 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
                   <thead className="table-light">
                     <tr>
                       <th style={{ width: "50px" }}>#</th>
-                      <th>Nome Gara</th>
-                      <th>Data Gara</th>
-                      <th>Data Qualifiche</th>
-                      <th className="text-center">Sprint</th>
-                      <th className="text-center">Risultati</th>
-                      <th style={{ width: "80px" }} className="text-center">Azioni</th>
+                      <th>{t("admin.raceName")}</th>
+                      <th>{t("admin.raceDate")}</th>
+                      <th>{t("admin.qualifyingDate")}</th>
+                      <th className="text-center">{t("formations.sprint")}</th>
+                      <th className="text-center">{t("admin.hasResults")}</th>
+                      <th style={{ width: "80px" }} className="text-center">{t("common.actions")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1430,10 +1423,10 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
                         <td>
                           {r.name}
                           {r.cancelledMain && (
-                            <Badge bg="danger" className="ms-2">CANCELLATA</Badge>
+                            <Badge bg="danger" className="ms-2">{t("errors.raceCancelled")}</Badge>
                           )}
                           {r.cancelledSprint && r.qualiSprintUTC && (
-                            <Badge bg="warning" text="dark" className="ms-2">SPRINT CANCELLATA</Badge>
+                            <Badge bg="warning" text="dark" className="ms-2">{t("formations.sprint")} {t("errors.raceCancelled")}</Badge>
                           )}
                         </td>
                         <td>
@@ -1465,7 +1458,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
                         </td>
                         <td className="text-center">
                           {r.officialResults ? (
-                            <Badge bg="success">Salvati</Badge>
+                            <Badge bg="success">{t("admin.hasResults")}</Badge>
                           ) : (
                             <Badge bg="secondary">Pending</Badge>
                           )}
@@ -1492,13 +1485,13 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
       {/* Modal per modificare date gara */}
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>✏️ Gestisci Gara - {editingRace?.name}</Modal.Title>
+          <Modal.Title>✏️ {t("admin.editRace")} - {editingRace?.name}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
             {/* Data Gara (solo visualizzazione) */}
             <Alert variant="light" className="mb-4">
-              <strong>Data Gara:</strong>{" "}
+              <strong>{t("admin.raceDate")}:</strong>{" "}
               {editingRace?.raceUTC && new Date(editingRace.raceUTC.seconds * 1000).toLocaleDateString("it-IT", {
                 weekday: "long",
                 year: "numeric",
@@ -1508,9 +1501,9 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
             </Alert>
 
             {/* Orario Deadline Gara Principale */}
-            <h6>⏰ Orario Deadline Formazione Gara Principale</h6>
+            <h6>⏰ {t("formations.deadline")} {t("formations.mainRace")}</h6>
             <Form.Group className="mb-3">
-              <Form.Label>Ora Deadline</Form.Label>
+              <Form.Label>{t("formations.deadline")}</Form.Label>
               <Form.Control
                 type="time"
                 value={editFormData.qualiTime}
@@ -1518,9 +1511,6 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
                 required
                 disabled={editingRace?.cancelledMain}
               />
-              <Form.Text className="text-muted">
-                Gli utenti non potranno inserire formazioni dopo quest'ora
-              </Form.Text>
             </Form.Group>
 
             {/* Bottone Cancella Gara */}
@@ -1531,11 +1521,11 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
                 className="mb-4"
                 onClick={() => handleCancelRace("main")}
               >
-                ⛔ Segna Gara come CANCELLATA
+                ⛔ {t("errors.raceCancelled")}
               </Button>
             ) : (
               <Alert variant="danger" className="mb-4">
-                <strong>⚠️ Questa gara è stata cancellata</strong>
+                <strong>⚠️ {t("errors.raceCancelled")}</strong>
               </Alert>
             )}
 
@@ -1543,10 +1533,10 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
             {editingRace?.qualiSprintUTC && (
               <>
                 <hr />
-                <h6>🏁 Sprint</h6>
+                <h6>🏁 {t("formations.sprint")}</h6>
 
                 <Form.Group className="mb-3">
-                  <Form.Label>Ora Deadline Sprint</Form.Label>
+                  <Form.Label>{t("formations.deadline")} {t("formations.sprint")}</Form.Label>
                   <Form.Control
                     type="time"
                     value={editFormData.sprintTime}
@@ -1562,11 +1552,11 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
                     size="sm"
                     onClick={() => handleCancelRace("sprint")}
                   >
-                    ⛔ Segna Sprint come CANCELLATA
+                    ⛔ {t("formations.sprint")} {t("errors.raceCancelled")}
                   </Button>
                 ) : (
                   <Alert variant="warning">
-                    <strong>⚠️ Questa sprint è stata cancellata</strong>
+                    <strong>⚠️ {t("formations.sprint")} {t("errors.raceCancelled")}</strong>
                   </Alert>
                 )}
               </>
@@ -1575,10 +1565,10 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowEditModal(false)}>
-            Annulla
+            {t("common.cancel")}
           </Button>
           <Button variant="primary" onClick={handleSaveRaceDates} disabled={uploading}>
-            {uploading ? <Spinner animation="border" size="sm" /> : "💾 Salva Orari"}
+            {uploading ? <Spinner animation="border" size="sm" /> : `💾 ${t("common.save")}`}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -1586,34 +1576,26 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
       {/* Modal conferma cancellazione */}
       <Modal show={showCancelModal} onHide={() => setShowCancelModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>⚠️ Conferma Cancellazione</Modal.Title>
+          <Modal.Title>⚠️ {t("common.confirm")}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Alert variant={cancelType === "main" ? "danger" : "warning"}>
-            <strong>Attenzione!</strong>
+            <strong>{t("common.warning")}!</strong>
             <br />
-            Stai per segnare {cancelType === "main" ? "la gara principale" : "la sprint"} come CANCELLATA.
-            <br />
-            <br />
-            Questa operazione:
-            <ul className="mb-0 mt-2">
-              <li>Non eliminerà i dati della gara</li>
-              <li>La gara non verrà conteggiata nei punteggi</li>
-              <li>Apparirà come "CANCELLATA" nello storico</li>
-            </ul>
+            {t("admin.deleteWarning")}
           </Alert>
-          <p className="mb-0">Vuoi continuare?</p>
+          <p className="mb-0">{t("admin.confirmReset")}</p>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowCancelModal(false)}>
-            Annulla
+            {t("common.cancel")}
           </Button>
           <Button
             variant={cancelType === "main" ? "danger" : "warning"}
             onClick={confirmCancelRace}
             disabled={uploading}
           >
-            {uploading ? <Spinner animation="border" size="sm" /> : "Sì, Cancella"}
+            {uploading ? <Spinner animation="border" size="sm" /> : t("common.confirm")}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -1630,6 +1612,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
  * @returns {JSX.Element} Database reset interface with backup functionality
  */
 function DatabaseReset({ participants, races, onDataChange }) {
+  const { t } = useLanguage();
   const [showModal, setShowModal] = useState(false);
   const [resetType, setResetType] = useState("");
   const [resetting, setResetting] = useState(false);
@@ -1701,11 +1684,11 @@ function DatabaseReset({ participants, races, onDataChange }) {
 
       setMessage({
         type: "success",
-        text: `✔️ Backup completato! File scaricato con ${Object.keys(backup.data.ranking).length} partecipanti e ${Object.keys(backup.data.races).length} gare.`
+        text: t("admin.backupCreated")
       });
     } catch (err) {
       console.error(err);
-      setMessage({ type: "danger", text: "❌ Errore durante la creazione del backup: " + err.message });
+      setMessage({ type: "danger", text: `${t("common.error")}: ${err.message}` });
     } finally {
       setBackingUp(false);
     }
@@ -1713,7 +1696,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
 
   const handleReset = async () => {
     if (confirmText !== "RESET") {
-      setMessage({ type: "warning", text: 'Devi scrivere "RESET" per confermare' });
+      setMessage({ type: "warning", text: t("admin.confirmReset") });
       return;
     }
 
@@ -1733,7 +1716,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
           });
         }
         await batch.commit();
-        setMessage({ type: "success", text: "✔️ Tutte le formazioni eliminate!" });
+        setMessage({ type: "success", text: t("success.deleted") });
       } else if (resetType === "ranking") {
         // Reset punteggi di tutti i partecipanti
         const rankSnap = await getDocs(collection(db, "ranking"));
@@ -1748,7 +1731,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
           });
         });
         await batch.commit();
-        setMessage({ type: "success", text: "✔️ Punteggi azzerati per tutti i partecipanti!" });
+        setMessage({ type: "success", text: t("success.updated") });
       } else if (resetType === "all") {
         // Reset completo (solo punteggi, mantiene partecipanti e gare)
         const rankSnap = await getDocs(collection(db, "ranking"));
@@ -1772,14 +1755,14 @@ function DatabaseReset({ participants, races, onDataChange }) {
         }
 
         await batch.commit();
-        setMessage({ type: "success", text: "✔️ Database completamente resettato!" });
+        setMessage({ type: "success", text: t("success.deleted") });
       }
 
       setShowModal(false);
       setConfirmText("");
     } catch (err) {
       console.error(err);
-      setMessage({ type: "danger", text: "❌ Errore durante il reset" });
+      setMessage({ type: "danger", text: t("common.error") });
     } finally {
       setResetting(false);
     }
@@ -1791,10 +1774,10 @@ function DatabaseReset({ participants, races, onDataChange }) {
         <Col xs={12}>
           <Card className="shadow border-success mb-4">
             <Card.Header className="bg-success text-white">
-              <h5 className="mb-0">💾 Backup Database</h5>
+              <h5 className="mb-0">💾 {t("admin.backup")}</h5>
             </Card.Header>
             <Card.Body>
-              <p>Scarica una copia completa del database in formato JSON. Include tutti i partecipanti, gare, formazioni e risultati.</p>
+              <p>{t("admin.databaseOperations")}</p>
               <Button
                 variant="success"
                 onClick={handleBackup}
@@ -1804,10 +1787,10 @@ function DatabaseReset({ participants, races, onDataChange }) {
                 {backingUp ? (
                   <>
                     <Spinner animation="border" size="sm" className="me-2" />
-                    Creazione backup...
+                    {t("common.loading")}
                   </>
                 ) : (
-                  "📥 Scarica Backup JSON"
+                  `📥 ${t("admin.downloadBackup")}`
                 )}
               </Button>
             </Card.Body>
@@ -1823,8 +1806,8 @@ function DatabaseReset({ participants, races, onDataChange }) {
         <Col xs={12}>
           <Card className="shadow border-danger">
             <Card.Body className="text-center">
-              <h5>💥 Reset Completo</h5>
-              <p className="text-muted">Elimina tutte le formazioni e azzera tutti i punteggi</p>
+              <h5>💥 {t("admin.resetAll")}</h5>
+              <p className="text-muted">{t("admin.confirmReset")}</p>
               <Button
                 variant="danger"
                 onClick={() => {
@@ -1832,7 +1815,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
                   setShowModal(true);
                 }}
               >
-                Reset Completo
+                {t("admin.resetAll")}
               </Button>
             </Card.Body>
           </Card>
@@ -1842,17 +1825,17 @@ function DatabaseReset({ participants, races, onDataChange }) {
       {/* Modal di conferma */}
       <Modal show={showModal} onHide={() => !resetting && setShowModal(false)} centered>
         <Modal.Header closeButton={!resetting}>
-          <Modal.Title>⚠️ Conferma Operazione</Modal.Title>
+          <Modal.Title>⚠️ {t("common.confirm")}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <p>
-            Stai per eseguire: <strong>Reset Completo</strong>
+            {t("admin.resetAll")}
           </p>
-          <p className="text-muted">Questa operazione eliminerà tutte le formazioni e azzererà tutti i punteggi.</p>
+          <p className="text-muted">{t("admin.confirmReset")}</p>
 
           <Form.Group>
             <Form.Label>
-              Scrivi <code>RESET</code> per confermare:
+              {t("admin.confirmReset")}
             </Form.Label>
             <Form.Control
               type="text"
@@ -1865,10 +1848,10 @@ function DatabaseReset({ participants, races, onDataChange }) {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowModal(false)} disabled={resetting}>
-            Annulla
+            {t("common.cancel")}
           </Button>
           <Button variant="danger" onClick={handleReset} disabled={resetting || confirmText !== "RESET"}>
-            {resetting ? "Esecuzione..." : "Conferma Reset"}
+            {resetting ? t("common.loading") : t("common.confirm")}
           </Button>
         </Modal.Footer>
       </Modal>

@@ -22,6 +22,7 @@ import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../const
 import RaceHistoryCard from "../components/RaceHistoryCard";
 import AdminLogin from "../components/AdminLogin";
 import Select from "react-select";
+import { useLanguage } from "../contexts/LanguageContext";
 import "../styles/customSelect.css";
 
 // Constants imported from centralized file
@@ -38,20 +39,23 @@ const BONUS_JOLLY_SPRINT = POINTS.BONUS_JOLLY_SPRINT;
  * Deadline status badge component
  * @param {Object} props - Component props
  * @param {boolean} props.open - Whether deadline is open
+ * @param {Function} props.t - Translation function
  * @returns {JSX.Element} Status badge
  */
-const DeadlineBadge = ({ open }) => (
+const DeadlineBadge = ({ open, t }) => (
   <Badge bg={open ? "success" : "danger"}>
-    {open ? " PRONTA " : " BLOCCATA "}
+    {open ? ` ${t("calculate.ready")} ` : ` ${t("calculate.locked")} `}
   </Badge>
 );
 
 /**
  * Double points indicator badge
+ * @param {Object} props - Component props
+ * @param {Function} props.t - Translation function
  * @returns {JSX.Element} Double points badge
  */
-const DoubleBadge = () => (
-  <Badge bg="warning" text="dark">🌟 Punti doppi! 🌟</Badge>
+const DoubleBadge = ({ t }) => (
+  <Badge bg="warning" text="dark">{t("calculate.doublePoints")}</Badge>
 );
 
 /**
@@ -113,6 +117,7 @@ const DriverWithLogo = ({ name }) => {
  * @returns {JSX.Element} Points calculation interface
  */
 function CalculatePointsContent() {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("race");
 
   // Race state
@@ -160,11 +165,12 @@ useEffect(() => {
       if (list.length) setRace(list[0]);
     } catch (err) {
       console.error(err);
-      setMsgRace({ variant: "danger", msg: "Errore nel caricamento delle gare." });
+      setMsgRace({ variant: "danger", msg: t("calculate.errorLoadingRaces") });
     } finally {
       setLoadingRace(false);
     }
   })();
+// eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
 
   /**
@@ -193,7 +199,7 @@ useEffect(() => {
         ));
         setSubs(arr);
       // eslint-disable-next-line no-unused-vars
-      }catch(e){ setErrSubs("Impossibile caricare submissions."); }
+      }catch(e){ setErrSubs(t("calculate.errorLoadingSubmissions")); }
       finally   { setLoadingSubs(false); }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -249,7 +255,7 @@ useEffect(() => {
         const season = raceDate.getFullYear();
         const round = race.round;
 
-        setMsgRace({variant:"info", msg:`🔄 Caricamento risultati da API per ${race.name}...`});
+        setMsgRace({variant:"info", msg: t("calculate.fetchingFromAPI", { race: race.name }).replace("{race}", race.name)});
 
         const apiResults = await fetchRaceResults(season, round);
 
@@ -265,7 +271,7 @@ useEffect(() => {
           });
           setMsgRace({
             variant:"success",
-            msg:`✅ Risultati caricati automaticamente da API! Verifica e modifica se necessario.`
+            msg: t("calculate.apiResultsLoaded")
           });
         } else {
           // No results available in DB or API
@@ -275,7 +281,7 @@ useEffect(() => {
           });
           setMsgRace({
             variant:"warning",
-            msg:`⚠️ Risultati non ancora disponibili per questa gara. Inserisci manualmente.`
+            msg: t("calculate.apiNoResults")
           });
         }
       } catch (error) {
@@ -286,7 +292,7 @@ useEffect(() => {
         });
         setMsgRace({
           variant:"warning",
-          msg:`⚠️ Impossibile caricare risultati da API. Inserisci manualmente.`
+          msg: t("calculate.apiError")
         });
       } finally {
         setFetchingResults(false);
@@ -302,10 +308,11 @@ useEffect(() => {
     setLoadingSubs(false);
   })().catch(err => {
     console.error(err);
-    setErrSubs("Impossibile caricare submissions.");
+    setErrSubs(t("calculate.errorLoadingSubmissions"));
     setLoadingSubs(false);
     setFetchingResults(false);
   });
+// eslint-disable-next-line react-hooks/exhaustive-deps
 }, [race]);
 
   const saveRace = async e=>{
@@ -318,7 +325,7 @@ useEffect(() => {
           SP1:formRace.SP1?.value||null,SP2:formRace.SP2?.value||null,SP3:formRace.SP3?.value||null,
           doublePoints:isLast,savedAt:Timestamp.now()
         }},{merge:true});
-      setMsgRace({variant:"info",msg:"Risultati salvati. Calcolo in corso…"});
+      setMsgRace({variant:"info",msg: t("calculate.resultsSaved")});
       const res = await calculatePointsForRace(race.id);
       await setDoc(
         doc(db, "races", race.id),
@@ -336,7 +343,7 @@ useEffect(() => {
       setSubs(sSnap.docs.map(d=>({id:d.id,...d.data()})));
     }catch(err){
       console.error(err);
-      setMsgRace({variant:"danger",msg:"Errore nel salvataggio o calcolo."});
+      setMsgRace({variant:"danger",msg: t("calculate.saveError")});
     }finally{ setSavingRace(false); }
   };
 
@@ -355,7 +362,7 @@ useEffect(() => {
         C1:formChamp.CC1.value,C2:formChamp.CC2.value,C3:formChamp.CC3.value,
         savedAt:Timestamp.now()
       },{merge:true});
-      setMsgChamp({variant:"info",msg:"Risultati salvati. Calcolo in corso…"});
+      setMsgChamp({variant:"info",msg: t("calculate.resultsSaved")});
       // La funzione legge i risultati da Firestore (appena salvati sopra)
       const res = await calculateChampionshipPoints();
       // Salva snapshot della classifica dopo il calcolo del campionato
@@ -363,7 +370,7 @@ useEffect(() => {
       setMsgChamp({variant:"success",msg:res});
     }catch(err){
       console.error(err);
-      setMsgChamp({variant:"danger",msg:"Errore nel salvataggio o calcolo."});
+      setMsgChamp({variant:"danger",msg: t("calculate.saveError")});
     }finally{ setSavingChamp(false); }
   };
 
@@ -402,8 +409,8 @@ useEffect(() => {
     <Container className="py-4">
       <Tab.Container activeKey={activeTab} onSelect={k=>setActiveTab(k)}>
         <Nav variant="tabs" className="justify-content-center mb-4">
-          <Nav.Item><Nav.Link eventKey="race">Calcolo Gara</Nav.Link></Nav.Item>
-          <Nav.Item><Nav.Link eventKey="champ">Calcolo Campionato</Nav.Link></Nav.Item>
+          <Nav.Item><Nav.Link eventKey="race">{t("calculate.raceTab")}</Nav.Link></Nav.Item>
+          <Nav.Item><Nav.Link eventKey="champ">{t("calculate.championshipTab")}</Nav.Link></Nav.Item>
         </Nav>
 
         <Tab.Content>
@@ -416,9 +423,9 @@ useEffect(() => {
                 <Card className="shadow">
                   <Card.Header className="bg-white d-flex justify-content-between">
                     <h5 className="mb-0">
-                      Calcola Punti Gara <DeadlineBadge open={allowedRace} />
+                      {t("calculate.calculateRacePoints")} <DeadlineBadge open={allowedRace} t={t} />
                     </h5>
-                    {isLast && <DoubleBadge />}
+                    {isLast && <DoubleBadge t={t} />}
                   </Card.Header>
                   <Card.Body>
                     {msgRace && (
@@ -429,7 +436,7 @@ useEffect(() => {
 
                     {/* selezione gara */}
                     <Form.Group className="mb-4">
-                      <Form.Label>Gara</Form.Label>
+                      <Form.Label>{t("calculate.race")}</Form.Label>
                       <Form.Select
                         value={race?.id||""}
                         onChange={e => {
@@ -446,7 +453,7 @@ useEffect(() => {
                     </Form.Group>
 
                     {/* podio principale */}
-                    <h6 className="fw-bold">Gara Principale</h6>
+                    <h6 className="fw-bold">{t("calculate.mainRace")}</h6>
                     {["P1","P2","P3"].map(f=>(
                       <Form.Group key={f} className="mb-3">
                         <Form.Label>{f}</Form.Label>
@@ -463,7 +470,7 @@ useEffect(() => {
                     {/* sprint */}
                     {race?.qualiSprintUTC && (
                       <>
-                        <h6 className="fw-bold mt-3">Sprint</h6>
+                        <h6 className="fw-bold mt-3">{t("calculate.sprint")}</h6>
                         {["SP1","SP2","SP3"].map(f=>(
                           <Form.Group key={f} className="mb-3">
                             <Form.Label>{f}</Form.Label>
@@ -483,7 +490,7 @@ useEffect(() => {
                       variant="danger" className="w-100 mt-3"
                       onClick={saveRace} disabled={!canSubmitRace}
                     >
-                      {savingRace ? "Salvataggio…" : "Calcola Punteggi"}
+                      {savingRace ? t("common.loading") : t("calculate.calculateAndSave")}
                     </Button>
                   </Card.Body>
                 </Card>
@@ -503,12 +510,12 @@ useEffect(() => {
               <Col xs={12} lg={8}>
                 <Card className="shadow border-danger">
                   <Card.Header className="bg-white text-center">
-                    <h5 className="mb-0">Calcola Punti Campionato</h5>
+                    <h5 className="mb-0">{t("calculate.calculateChampionshipPoints")}</h5>
                   </Card.Header>
                   <Card.Body>
                     {!championshipOpen && (
                       <Alert variant="warning" className="text-center">
-                        ⚠️ Calcolo disponibile solo a campionato concluso.
+                        {t("calculate.championshipAvailableAfterEnd")}
                       </Alert>
                     )}
                     {msgChamp && (
@@ -518,7 +525,7 @@ useEffect(() => {
                     )}
 
                     <Form onSubmit={saveChamp}>
-                      <h6 className="fw-bold">Piloti</h6>
+                      <h6 className="fw-bold">{t("calculate.drivers")}</h6>
                       {["CP1","CP2","CP3"].map(f=>(
                         <Form.Group key={f} className="mb-3">
                           <Form.Label>{f.replace("CP","P")}</Form.Label>
@@ -532,7 +539,7 @@ useEffect(() => {
                         </Form.Group>
                       ))}
 
-                      <h6 className="fw-bold mt-3">Costruttori</h6>
+                      <h6 className="fw-bold mt-3">{t("calculate.constructors")}</h6>
                       {["CC1","CC2","CC3"].map(f=>(
                         <Form.Group key={f} className="mb-3">
                           <Form.Label>{f.replace("CC","C")}</Form.Label>
@@ -550,7 +557,7 @@ useEffect(() => {
                         variant="danger" type="submit" className="w-100 mt-3"
                         disabled={!champReady}
                       >
-                        {savingChamp ? "Salvataggio…" : "Calcola Punti Campionato"}
+                        {savingChamp ? t("common.loading") : t("calculate.calculateChampionshipPoints")}
                       </Button>
                     </Form>
                   </Card.Body>

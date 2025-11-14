@@ -31,6 +31,7 @@ import { db } from "../services/firebase";
 import RaceHistoryCard from "../components/RaceHistoryCard";
 import { DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
+import { useLanguage } from "../contexts/LanguageContext";
 
 /**
  * Component to display driver name with team logo
@@ -101,6 +102,7 @@ export default function History() {
   const [championshipSubmissions, setChampionshipSubmissions] = useState([]);
   const [loadingChampionship, setLoadingChampionship] = useState(true);
   const { isDark } = useTheme();
+  const { t } = useLanguage();
 
   /**
    * Load past races from Firestore
@@ -119,12 +121,12 @@ export default function History() {
         setPastRaces(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       } catch (e) {
         console.error(e);
-        setError("Impossibile caricare le gare passate.");
+        setError(t("errors.generic"));
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [t]);
 
   /**
    * Load championship results and submissions
@@ -189,7 +191,7 @@ export default function History() {
   if (!pastRaces.length && !championshipResults)
     return (
       <Container className="py-5">
-        <Alert variant="info">Nessuna gara passata trovata.</Alert>
+        <Alert variant="info">{t("history.noRaces")}</Alert>
       </Container>
     );
 
@@ -244,7 +246,7 @@ export default function History() {
                 }}
               >
                 <h4 className="mb-0" style={{ color: accentColor }}>
-                  🏆 Risultati Campionato
+                  🏆 {t("history.championshipResults")}
                 </h4>
               </Card.Header>
 
@@ -253,14 +255,14 @@ export default function History() {
                 <Row className="mb-4">
                   <Col xs={12} md={6}>
                     <h6 className="fw-bold border-bottom pb-2" style={{ color: accentColor }}>
-                      Classifica Piloti
+                      {t("history.topDrivers")}
                     </h6>
                     <Table size="sm" className="mb-0">
                       <thead>
                         <tr>
-                          <th style={{ color: accentColor }}>Pos.</th>
-                          <th style={{ color: accentColor }}>Pilota</th>
-                          <th className="text-end" style={{ color: accentColor }}>Pts</th>
+                          <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
+                          <th style={{ color: accentColor }}>{t("formations.driver")}</th>
+                          <th className="text-end" style={{ color: accentColor }}>{t("common.points")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -285,14 +287,14 @@ export default function History() {
 
                   <Col xs={12} md={6}>
                     <h6 className="fw-bold border-bottom pb-2 mt-3 mt-md-0" style={{ color: accentColor }}>
-                      Classifica Costruttori
+                      {t("history.topConstructors")}
                     </h6>
                     <Table size="sm" className="mb-0">
                       <thead>
                         <tr>
-                          <th style={{ color: accentColor }}>Pos.</th>
+                          <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
                           <th style={{ color: accentColor }}>Team</th>
-                          <th className="text-end" style={{ color: accentColor }}>Pts</th>
+                          <th className="text-end" style={{ color: accentColor }}>{t("common.points")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -320,7 +322,7 @@ export default function History() {
                 {championshipSubmissions.length > 0 && (
                   <>
                     <h6 className="fw-bold mb-3 mt-4" style={{ color: accentColor }}>
-                      Formazioni e Punteggi
+                      {t("history.formationsAndPoints")}
                     </h6>
 
                     {/* Desktop View */}
@@ -328,7 +330,7 @@ export default function History() {
                       <Table hover className="align-middle" size="sm">
                         <thead>
                           <tr>
-                            <th style={{ color: accentColor }}>Giocatore</th>
+                            <th style={{ color: accentColor }}>{t("history.player")}</th>
                             <th style={{ color: accentColor }}>P1</th>
                             <th style={{ color: accentColor }}>P2</th>
                             <th style={{ color: accentColor }}>P3</th>
@@ -432,16 +434,16 @@ export default function History() {
                                   {sub.name}
                                 </h6>
                                 <Badge bg="danger" style={{ fontSize: "1rem" }}>
-                                  {pts.total} pts
+                                  {pts.total} {t("common.points").toLowerCase()}
                                 </Badge>
                               </div>
 
                               {/* Piloti */}
                               <div className="mb-3">
                                 <strong className="text-muted" style={{ fontSize: "0.85rem" }}>
-                                  PILOTI
+                                  {t("history.drivers").toUpperCase()}
                                   <Badge bg={pts.pilotiPts > 0 ? "success" : "secondary"} className="ms-2">
-                                    {pts.pilotiPts} pts
+                                    {pts.pilotiPts} {t("common.points").toLowerCase()}
                                   </Badge>
                                 </strong>
                                 <div className="mt-2">
@@ -462,9 +464,9 @@ export default function History() {
                               {/* Costruttori */}
                               <div>
                                 <strong className="text-muted" style={{ fontSize: "0.85rem" }}>
-                                  COSTRUTTORI
+                                  {t("history.constructors").toUpperCase()}
                                   <Badge bg={pts.costruttoriPts > 0 ? "success" : "secondary"} className="ms-2">
-                                    {pts.costruttoriPts} pts
+                                    {pts.costruttoriPts} {t("common.points").toLowerCase()}
                                   </Badge>
                                 </strong>
                                 <div className="mt-2">

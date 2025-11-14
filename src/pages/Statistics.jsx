@@ -26,6 +26,7 @@ import {
 } from "recharts";
 import { getChampionshipStatistics } from "../services/statisticsService";
 import { useTheme } from "../contexts/ThemeContext";
+import { useLanguage } from "../contexts/LanguageContext";
 
 const medals = ["🥇", "🥈", "🥉"];
 
@@ -48,6 +49,7 @@ export default function Statistics() {
   const [statistics, setStatistics] = useState(null);
   const [currentRanking, setCurrentRanking] = useState([]);
   const { isDark } = useTheme();
+  const { t } = useLanguage();
 
   useEffect(() => {
     (async () => {
@@ -72,7 +74,7 @@ export default function Statistics() {
         setCurrentRanking(ranking);
       } catch (err) {
         console.error(err);
-        setError("Impossibile caricare le statistiche del campionato.");
+        setError(t("statistics.errorLoading"));
       } finally {
         setLoading(false);
       }
@@ -89,7 +91,7 @@ export default function Statistics() {
     return (
       <Container className="py-5 text-center">
         <Spinner animation="border" />
-        <p className="mt-3">Caricamento statistiche...</p>
+        <p className="mt-3">{t("statistics.loading")}</p>
       </Container>
     );
   }
@@ -106,7 +108,7 @@ export default function Statistics() {
     return (
       <Container className="py-5">
         <Alert variant="info">
-          Nessuna gara disponibile per le statistiche.
+          {t("statistics.noRaces")}
         </Alert>
       </Container>
     );
@@ -193,7 +195,7 @@ export default function Statistics() {
       <Row>
         <Col xs={12}>
           <h2 className="mb-4" style={{ color: accentColor }}>
-            Statistiche Campionato
+            {t("statistics.title")}
           </h2>
         </Col>
       </Row>
@@ -216,7 +218,7 @@ export default function Statistics() {
                 borderBottom: `2px solid ${accentColor}`,
               }}
             >
-              Classifica Attuale
+              {t("statistics.currentRanking")}
             </Card.Header>
             <Card.Body className="p-0">
               <div className="table-responsive">
@@ -231,8 +233,8 @@ export default function Statistics() {
                       <th style={{ width: 60 }} className="text-center">
                         #
                       </th>
-                      <th>Giocatore</th>
-                      <th className="text-center">Punti</th>
+                      <th>{t("statistics.player")}</th>
+                      <th className="text-center">{t("statistics.points")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -275,7 +277,7 @@ export default function Statistics() {
                 borderBottom: `2px solid ${accentColor}`,
               }}
             >
-              Andamento Punti Cumulativi (Top 5)
+              {t("statistics.pointsProgression")} ({t("statistics.topPlayers")})
             </Card.Header>
             <Card.Body>
               <ResponsiveContainer width="100%" height={400}>
@@ -293,7 +295,7 @@ export default function Statistics() {
                     stroke={textColor}
                     style={{ fontSize: "0.85rem" }}
                     label={{
-                      value: "Punti",
+                      value: t("statistics.points"),
                       angle: -90,
                       position: "insideLeft",
                       style: { fill: textColor },
@@ -336,7 +338,7 @@ export default function Statistics() {
                 borderBottom: `2px solid ${accentColor}`,
               }}
             >
-              Andamento Posizioni in Classifica (Top 5)
+              {t("statistics.positionProgression")} ({t("statistics.topPlayers")})
             </Card.Header>
             <Card.Body>
               <ResponsiveContainer width="100%" height={400}>
@@ -360,7 +362,7 @@ export default function Statistics() {
                       (_, i) => i + 1
                     )}
                     label={{
-                      value: "Posizione",
+                      value: t("statistics.position"),
                       angle: -90,
                       position: "insideLeft",
                       style: { fill: textColor },

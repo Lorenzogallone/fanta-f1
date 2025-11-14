@@ -8,6 +8,7 @@ import { Tab, Nav } from "react-bootstrap";
 import FormationApp from "./FormationApp";
 import ChampionshipForm from "./ChampionshipForm";
 import { useTheme } from "../contexts/ThemeContext";
+import { useLanguage } from "../contexts/LanguageContext";
 
 /**
  * Formations page with tabbed interface for race and championship formations
@@ -16,6 +17,7 @@ import { useTheme } from "../contexts/ThemeContext";
 export default function Formations() {
   const [activeTab, setActiveTab] = useState("races");
   const { isDark } = useTheme();
+  const { t } = useLanguage();
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
 
@@ -30,7 +32,7 @@ export default function Formations() {
               borderBottomColor: activeTab === "races" ? accentColor : undefined,
             }}
           >
-            🏎️ Gare
+            🏎️ {t("formations.races")}
           </Nav.Link>
         </Nav.Item>
         <Nav.Item>
@@ -41,7 +43,7 @@ export default function Formations() {
               borderBottomColor: activeTab === "championship" ? accentColor : undefined,
             }}
           >
-            🏆 Campionato
+            🏆 {t("formations.championship")}
           </Nav.Link>
         </Nav.Item>
       </Nav>

@@ -12,6 +12,7 @@ import {
 import { db } from "../services/firebase";
 import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
+import { useLanguage } from "../contexts/LanguageContext";
 
 // Use centralized constants
 const driverTeam = DRIVER_TEAM;
@@ -51,6 +52,7 @@ function DriverCell({ driverName }) {
  */
 function SubmissionsList({ raceId, hasSprint, refresh }) {
   const { isDark } = useTheme();
+  const { t } = useLanguage();
   const [subs,    setSubs] = useState([]);
   const [loading, setLoad] = useState(true);
   const [error,   setErr ] = useState(null);
@@ -103,8 +105,8 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
     );
 
   // Render submissions list
-  const headerBase = ["#", "Utente", "P1", "P2", "P3", "Jolly"];
-  const headerSprint = ["SP1", "SP2", "SP3", "Jolly Sprint"];
+  const headerBase = ["#", t("leaderboard.player"), "P1", "P2", "P3", t("formations.joker")];
+  const headerSprint = ["SP1", "SP2", "SP3", `${t("formations.joker")} SP`];
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
 
@@ -141,28 +143,28 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
                       {i + 1}. {s.user}
                       {s.isLate && (
                         <Badge bg="warning" text="dark" className="ms-2">
-                          ⏰ In Ritardo (-3)
+                          ⏰ {t("formations.lateSubmission")} (-3)
                         </Badge>
                       )}
                     </h6>
                   </div>
 
                   <div className="mb-2">
-                    <strong className="text-muted" style={{ fontSize: "0.85rem" }}>GARA PRINCIPALE</strong>
+                    <strong className="text-muted" style={{ fontSize: "0.85rem" }}>{t("formations.mainRace").toUpperCase()}</strong>
                     <PickLine label="P1" driver={s.mainP1} />
                     <PickLine label="P2" driver={s.mainP2} />
                     <PickLine label="P3" driver={s.mainP3} />
-                    <PickLine label="Jolly 1" driver={s.mainJolly} />
-                    {s.mainJolly2 && <PickLine label="Jolly 2" driver={s.mainJolly2} />}
+                    <PickLine label={t("formations.joker")} driver={s.mainJolly} />
+                    {s.mainJolly2 && <PickLine label={`${t("formations.joker")} 2`} driver={s.mainJolly2} />}
                   </div>
 
                   {hasSprint && (
                     <div>
-                      <strong className="text-muted" style={{ fontSize: "0.85rem" }}>SPRINT</strong>
+                      <strong className="text-muted" style={{ fontSize: "0.85rem" }}>{t("formations.sprint").toUpperCase()}</strong>
                       <PickLine label="SP1" driver={s.sprintP1} />
                       <PickLine label="SP2" driver={s.sprintP2} />
                       <PickLine label="SP3" driver={s.sprintP3} />
-                      <PickLine label="Jolly SP" driver={s.sprintJolly} />
+                      <PickLine label={`${t("formations.joker")} SP`} driver={s.sprintJolly} />
                     </div>
                   )}
                 </Card.Body>
