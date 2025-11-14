@@ -135,6 +135,8 @@ export const it = {
     totalPoints: "Punti Totali",
     noRaces: "Nessuna gara completata",
     noChampionship: "Nessuna formazione campionato inviata",
+    raceCount: "{{count}} gare disputate",
+    completed: "Completata",
   },
 
   // Race Results
