@@ -30,7 +30,7 @@ export default function Home() {
             <Col xs={12}>
               <Button
                 as={Link}
-                to="/schiera"
+                to="/lineup"
                 variant="danger"
                 size="lg"
                 className="w-100 py-3"
@@ -58,7 +58,7 @@ export default function Home() {
             <Col xs={12} sm={6}>
               <Button
                 as={Link}
-                to="/race-results"
+                to="/results"
                 variant="outline-danger"
                 className="w-100 py-3"
                 style={{ height: "100%" }}
@@ -74,7 +74,7 @@ export default function Home() {
             <Col xs={12}>
               <Button
                 as={Link}
-                to="/storico"
+                to="/history"
                 variant="outline-danger"
                 className="w-100 py-3"
               >
@@ -86,7 +86,7 @@ export default function Home() {
             <Col xs={12}>
               <Button
                 as={Link}
-                to="/calcola"
+                to="/calculate"
                 variant="outline-secondary"
                 className="w-100 py-2"
                 style={{ fontSize: "0.9rem" }}

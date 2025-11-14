@@ -341,4 +341,16 @@ export const en = {
     it: "Italiano",
     en: "English",
   },
+
+  // Footer
+  footer: {
+    disclaimer: {
+      title: "Formula 1 Disclaimer",
+      text: "This is an unofficial fantasy game and is not affiliated with, endorsed by, or connected to Formula 1, Formula One Management, or any of its related entities. All F1-related trademarks, logos, and race data are property of Formula One World Championship Limited.",
+    },
+    legal: "Legal",
+    privacy: "Privacy Policy",
+    terms: "Terms of Service",
+    copyright: "Fanta F1 - All rights reserved",
+  },
 };
