@@ -76,6 +76,7 @@ export const en = {
   participantDetail: {
     notFound: "Participant not found",
     racesParticipated: "Races Participated",
+    lineupsSubmitted: "Lineups Submitted",
     averagePoints: "Average Points",
     championshipFormation: "Championship Formation",
     raceHistory: "Race History",

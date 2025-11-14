@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   Container,
   Row,
@@ -245,7 +246,25 @@ export default function Statistics() {
                       return (
                         <tr key={player.userId} className={isTop3 ? "fw-bold" : ""}>
                           <td className="text-center">{medal}</td>
-                          <td>{player.name}</td>
+                          <td>
+                            <Link
+                              to={`/participant/${player.userId}`}
+                              style={{
+                                color: "inherit",
+                                textDecoration: "none",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.textDecoration = "underline";
+                                e.target.style.color = accentColor;
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.textDecoration = "none";
+                                e.target.style.color = "inherit";
+                              }}
+                            >
+                              {player.name}
+                            </Link>
+                          </td>
                           <td className="text-center">
                             <Badge bg="success">{player.points}</Badge>
                           </td>

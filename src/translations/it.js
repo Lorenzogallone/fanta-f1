@@ -76,6 +76,7 @@ export const it = {
   participantDetail: {
     notFound: "Partecipante non trovato",
     racesParticipated: "Gare Partecipate",
+    lineupsSubmitted: "Formazioni Schierate",
     averagePoints: "Media Punti",
     championshipFormation: "Formazione Campionato",
     raceHistory: "Storico Gare",

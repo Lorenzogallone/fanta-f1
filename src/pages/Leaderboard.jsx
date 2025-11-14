@@ -149,12 +149,20 @@ export default function Leaderboard() {
                       <td className="text-center">{medal}</td>
                       <td>
                         <Link
-                          to={`/partecipante/${r.userId}`}
+                          to={`/participant/${r.userId}`}
                           style={{
                             color: "inherit",
                             textDecoration: "none",
+                            cursor: "pointer",
                           }}
-                          className="hover-link"
+                          onMouseEnter={(e) => {
+                            e.target.style.textDecoration = "underline";
+                            e.target.style.color = accentColor;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.textDecoration = "none";
+                            e.target.style.color = "inherit";
+                          }}
                         >
                           {r.name}
                         </Link>
