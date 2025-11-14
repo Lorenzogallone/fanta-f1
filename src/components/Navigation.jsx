@@ -93,6 +93,14 @@ export default function Navigation() {
             </Nav.Link>
             <Nav.Link
               as={Link}
+              to="/statistiche"
+              onClick={handleNavClick}
+              className={location.pathname === "/statistiche" ? "active" : ""}
+            >
+              📈 Statistiche
+            </Nav.Link>
+            <Nav.Link
+              as={Link}
               to="/championship"
               onClick={handleNavClick}
               className={location.pathname === "/championship" ? "active" : ""}

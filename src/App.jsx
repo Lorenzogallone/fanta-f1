@@ -19,6 +19,7 @@ const CalculatePoints = lazy(() => import("./pages/CalculatePoints"));
 const History = lazy(() => import("./pages/History"));
 const ChampionshipForm = lazy(() => import("./pages/ChampionshipForm"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
+const Statistics = lazy(() => import("./pages/Statistics"));
 
 // Componente di loading
 const PageLoader = () => (
@@ -43,6 +44,7 @@ export default function App() {
               <Route path="/schiera"    element={<FormationApp />} />
               <Route path="/calcola"    element={<CalculatePoints />} />
               <Route path="/storico"    element={<History />} />
+              <Route path="/statistiche" element={<Statistics />} />
               <Route path="/championship" element={<ChampionshipForm />} />
               <Route path="/admin"      element={<AdminPanel />} />
             </Routes>
