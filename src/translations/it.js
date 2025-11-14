@@ -77,7 +77,6 @@ export const it = {
     racesParticipated: "Gare Partecipate",
     averagePoints: "Media Punti",
     championshipFormation: "Formazione Campionato",
-    bestRace: "Miglior Gara",
     raceHistory: "Storico Gare",
     noRaces: "Nessuna gara trovata per questo partecipante",
   },
