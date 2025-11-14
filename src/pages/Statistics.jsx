@@ -14,6 +14,7 @@ import {
   Alert,
   Table,
   Badge,
+  Button,
 } from "react-bootstrap";
 import {
   LineChart,
@@ -25,7 +26,9 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import { getChampionshipStatistics } from "../services/statisticsService";
+import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../contexts/LanguageContext";
 
@@ -58,19 +61,17 @@ export default function Statistics() {
         const data = await getChampionshipStatistics();
         setStatistics(data);
 
-        // Calculate current ranking (last race)
-        const ranking = Object.keys(data.playerNames)
-          .map(userId => {
-            const history = data.playersData[userId] || [];
-            const lastRace = history[history.length - 1];
-            return {
-              userId,
-              name: data.playerNames[userId],
-              points: lastRace ? lastRace.cumulativePoints : 0,
-              position: lastRace ? lastRace.position : null,
-            };
-          })
-          .sort((a, b) => b.points - a.points);
+        // Get current ranking from database
+        const rankingSnap = await getDocs(
+          query(collection(db, "ranking"), orderBy("puntiTotali", "desc"))
+        );
+
+        const ranking = rankingSnap.docs.map((doc, index) => ({
+          userId: doc.id,
+          name: doc.data().name,
+          points: doc.data().puntiTotali || 0,
+          position: index + 1,
+        }));
 
         setCurrentRanking(ranking);
       } catch (err) {
@@ -80,7 +81,7 @@ export default function Statistics() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [t]);
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
@@ -247,23 +248,41 @@ export default function Statistics() {
                         <tr key={player.userId} className={isTop3 ? "fw-bold" : ""}>
                           <td className="text-center">{medal}</td>
                           <td>
-                            <Link
-                              to={`/participant/${player.userId}`}
-                              style={{
-                                color: "inherit",
-                                textDecoration: "none",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.target.style.textDecoration = "underline";
-                                e.target.style.color = accentColor;
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.textDecoration = "none";
-                                e.target.style.color = "inherit";
-                              }}
-                            >
-                              {player.name}
-                            </Link>
+                            <div className="d-flex align-items-center justify-content-between">
+                              <Link
+                                to={`/participant/${player.userId}`}
+                                style={{
+                                  color: "inherit",
+                                  textDecoration: "none",
+                                  flex: 1,
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.textDecoration = "underline";
+                                  e.currentTarget.style.color = accentColor;
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.textDecoration = "none";
+                                  e.currentTarget.style.color = "inherit";
+                                }}
+                              >
+                                {player.name}
+                              </Link>
+                              <Link to={`/participant/${player.userId}`}>
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  className="p-0 ms-2"
+                                  style={{
+                                    color: accentColor,
+                                    fontSize: "0.9rem",
+                                    textDecoration: "none",
+                                  }}
+                                  title={t("common.view") || "View details"}
+                                >
+                                  →
+                                </Button>
+                              </Link>
+                            </div>
                           </td>
                           <td className="text-center">
                             <Badge bg="success">{player.points}</Badge>
