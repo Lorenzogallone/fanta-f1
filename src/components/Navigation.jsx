@@ -1,20 +1,22 @@
 /**
  * @file Navigation.jsx
- * Main navigation bar with theme toggle and mobile menu support.
+ * Main navigation bar with theme toggle, language selector, and mobile menu support.
  */
 import React, { useState } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { Navbar, Container, Nav } from "react-bootstrap";
+import { Navbar, Container, Nav, Dropdown } from "react-bootstrap";
 import { useTheme } from "../contexts/ThemeContext";
+import { useLanguage } from "../contexts/LanguageContext";
 
 /**
- * Main navigation component with responsive mobile menu and theme switcher.
+ * Main navigation component with responsive mobile menu, theme switcher, and language selector.
  * @returns {JSX.Element} Navigation bar
  */
 export default function Navigation() {
   const location = useLocation();
   const [expanded, setExpanded] = useState(false);
   const { toggleTheme, isDark } = useTheme();
+  const { currentLanguage, changeLanguage, availableLanguages, t } = useLanguage();
 
   /**
    * Closes mobile menu when a nav item is clicked.
@@ -59,12 +61,42 @@ export default function Navigation() {
           />
         </Link>
 
-        {/* Theme toggle - always visible on right */}
-        <div className="d-flex align-items-center order-2 order-lg-3">
+        {/* Theme toggle and language selector - always visible on right */}
+        <div className="d-flex align-items-center gap-2 order-2 order-lg-3">
+          {/* Language Selector */}
+          <Dropdown align="end">
+            <Dropdown.Toggle
+              variant="link"
+              className="p-0 border-0 shadow-none text-decoration-none"
+              style={{
+                fontSize: "1.5rem",
+                lineHeight: 1,
+                color: "inherit",
+              }}
+              title={t("nav.changeLanguage")}
+            >
+              {availableLanguages.find((lang) => lang.code === currentLanguage)?.flag || "🌐"}
+            </Dropdown.Toggle>
+
+            <Dropdown.Menu>
+              {availableLanguages.map((lang) => (
+                <Dropdown.Item
+                  key={lang.code}
+                  onClick={() => changeLanguage(lang.code)}
+                  active={currentLanguage === lang.code}
+                >
+                  <span className="me-2">{lang.flag}</span>
+                  {lang.name}
+                </Dropdown.Item>
+              ))}
+            </Dropdown.Menu>
+          </Dropdown>
+
+          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
             className="theme-toggle"
-            aria-label="Toggle theme"
+            aria-label={t("nav.toggleTheme")}
             title={`Switch to ${isDark ? "light" : "dark"} theme`}
           >
             <div className="theme-toggle-slider">
@@ -82,7 +114,7 @@ export default function Navigation() {
               onClick={handleNavClick}
               className={location.pathname === "/" ? "active" : ""}
             >
-              📊 Classifica
+              📊 {t("nav.leaderboard")}
             </Nav.Link>
             <Nav.Link
               as={Link}
@@ -90,7 +122,7 @@ export default function Navigation() {
               onClick={handleNavClick}
               className={location.pathname === "/schiera" ? "active" : ""}
             >
-              🏎️ Schiera
+              🏎️ {t("nav.formations")}
             </Nav.Link>
             <Nav.Link
               as={Link}
@@ -98,7 +130,7 @@ export default function Navigation() {
               onClick={handleNavClick}
               className={location.pathname === "/storico" ? "active" : ""}
             >
-              📜 Storico
+              📜 {t("nav.history")}
             </Nav.Link>
             <Nav.Link
               as={Link}
@@ -106,7 +138,7 @@ export default function Navigation() {
               onClick={handleNavClick}
               className={location.pathname === "/statistiche" ? "active" : ""}
             >
-              📈 Statistiche
+              📈 {t("nav.statistics")}
             </Nav.Link>
             <Nav.Link
               as={Link}
@@ -114,7 +146,7 @@ export default function Navigation() {
               onClick={handleNavClick}
               className={location.pathname === "/calcola" ? "active" : ""}
             >
-              🧮 Calcola Punteggi
+              🧮 {t("nav.calculatePoints")}
             </Nav.Link>
             <Nav.Link
               as={Link}
@@ -122,7 +154,7 @@ export default function Navigation() {
               onClick={handleNavClick}
               className={`admin-link ${location.pathname === "/admin" ? "active" : ""}`}
             >
-              ⚙️ Admin
+              ⚙️ {t("nav.admin")}
             </Nav.Link>
           </Nav>
         </Navbar.Collapse>

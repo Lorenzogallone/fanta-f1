@@ -1,0 +1,282 @@
+/**
+ * @file en.js
+ * @description English translations
+ */
+
+export const en = {
+  // Common
+  common: {
+    save: "Save",
+    cancel: "Cancel",
+    delete: "Delete",
+    edit: "Edit",
+    add: "Add",
+    update: "Update",
+    close: "Close",
+    confirm: "Confirm",
+    back: "Back",
+    next: "Next",
+    loading: "Loading...",
+    error: "Error",
+    success: "Success",
+    warning: "Warning",
+    search: "Search",
+    filter: "Filter",
+    reset: "Reset",
+    submit: "Submit",
+    points: "Points",
+    position: "Position",
+    name: "Name",
+    date: "Date",
+    actions: "Actions",
+  },
+
+  // Navigation
+  nav: {
+    home: "Home",
+    leaderboard: "Leaderboard",
+    formations: "Lineup",
+    history: "History",
+    statistics: "Statistics",
+    admin: "Admin",
+    calculatePoints: "Calculate Points",
+    toggleTheme: "Toggle theme",
+    changeLanguage: "Change language",
+  },
+
+  // Home
+  home: {
+    title: "Fanta F1",
+    subtitle: "Manage your Formula 1 fantasy league",
+    welcome: "Welcome",
+    quickActions: "Quick Actions",
+    viewLeaderboard: "View Leaderboard",
+    submitFormation: "Submit Lineup",
+    viewHistory: "View History",
+    viewStats: "View Statistics",
+    currentLeaderboard: "Current Leaderboard Preview",
+  },
+
+  // Leaderboard
+  leaderboard: {
+    title: "Leaderboard",
+    rank: "Rank",
+    player: "Player",
+    totalPoints: "Total Points",
+    gap: "Gap",
+    jokers: "Jokers",
+    trend: "Trend",
+    leader: "Leader",
+    you: "You",
+    noData: "No data available",
+  },
+
+  // Formations
+  formations: {
+    title: "Submit Lineup",
+    races: "Races",
+    championship: "Championship",
+    selectUser: "Select user",
+    selectRace: "Select race",
+    mainRace: "Main Race",
+    sprint: "Sprint",
+    sprintOptional: "Sprint (optional)",
+    driver: "Driver",
+    joker: "Joker",
+    joker2: "Joker 2 (optional)",
+    submitBy: "Submit by",
+    deadline: "Deadline",
+    open: "OPEN",
+    closed: "CLOSED",
+    save: "Save Race",
+    saveFormation: "Save Lineup",
+    editFormation: "Edit Lineup",
+    resetFormation: "Reset Lineup",
+    formationSummary: "Lineup Summary",
+    required: "required",
+    optional: "optional",
+    jokersAvailable: "Jokers available",
+    duplicateWarning: "You selected the same driver multiple times",
+    lateSubmission: "Late Submission",
+    lateWarning: "You are about to submit after the deadline",
+    latePenalty: "Penalty: -3 points",
+    lateConfirm: "Yes, Accept Penalty (-3)",
+  },
+
+  // History
+  history: {
+    title: "Race History",
+    pastRaces: "Past Races",
+    round: "Round",
+    race: "Race",
+    date: "Date",
+    results: "Results",
+    officialResults: "Official Results",
+    formations: "Lineups",
+    formationsAndPoints: "Lineups & Points",
+    championshipResults: "Championship Results",
+    drivers: "Drivers",
+    constructors: "Constructors",
+    topDrivers: "Top 3 Drivers",
+    topConstructors: "Top 3 Constructors",
+    predictions: "Predictions",
+    player: "Player",
+    totalPoints: "Total Points",
+    noRaces: "No completed races",
+    noChampionship: "No championship lineups submitted yet",
+  },
+
+  // Statistics
+  statistics: {
+    title: "Championship Statistics",
+    currentRanking: "Current Ranking",
+    pointsProgression: "Cumulative Points Progression",
+    positionProgression: "Position Progression",
+    topPlayers: "Top 5",
+    race: "Race",
+    points: "Points",
+    position: "Position",
+    cumulative: "Cumulative",
+    noData: "No data available",
+  },
+
+  // Admin Panel
+  admin: {
+    title: "Administration Panel",
+    login: "Admin Login",
+    password: "Password",
+    loginButton: "Login",
+    logout: "Logout",
+    wrongPassword: "Wrong password",
+
+    // Tabs
+    participants: "Participants",
+    formations: "Lineups",
+    calendar: "Calendar",
+    database: "Database",
+
+    // Participants
+    addParticipant: "Add Participant",
+    editParticipant: "Edit Participant",
+    deleteParticipant: "Delete Participant",
+    participantName: "Participant Name",
+    totalPoints: "Total Points",
+    availableJokers: "Available Jokers",
+    lateSubmissionUsed: "Late Submission Used",
+    deleteWarning: "This action is irreversible",
+    participantAdded: "Participant added successfully",
+    participantUpdated: "Participant updated successfully",
+    participantDeleted: "Participant deleted successfully",
+
+    // Formations
+    manageFormations: "Manage Lineups",
+    addFormation: "Add Lineup",
+    editFormationTitle: "Edit Lineup",
+    selectUser: "Select user",
+    selectRace: "Select race",
+    formationAdded: "Lineup added successfully",
+    formationUpdated: "Lineup updated successfully",
+
+    // Calendar
+    manageCalendar: "Manage Calendar",
+    raceCalendar: "Race Calendar",
+    importICS: "Import from ICS file",
+    addRace: "Add Race",
+    editRace: "Edit Race",
+    raceName: "Race Name",
+    raceDate: "Race Date",
+    qualifyingDate: "Qualifying Date",
+    sprintDate: "Sprint Date",
+    hasResults: "Has Results",
+    raceUpdated: "Race updated successfully",
+
+    // Database
+    databaseOperations: "Database Operations",
+    backup: "Backup",
+    restore: "Restore",
+    resetFormations: "Reset Lineups",
+    resetPoints: "Reset Points",
+    resetAll: "Complete Reset",
+    downloadBackup: "Download Backup",
+    backupCreated: "Backup created successfully",
+    confirmReset: "Are you sure? This operation is irreversible",
+  },
+
+  // Calculate Points
+  calculate: {
+    title: "Calculate Points",
+    selectRace: "Select Race",
+    fetchResults: "Fetch Results",
+    officialResults: "Official Results",
+    submissions: "Submitted Lineups",
+    pointsPreview: "Points Preview",
+    calculateAndSave: "Calculate and Save Points",
+    calculating: "Calculating...",
+    pointsCalculated: "Points calculated successfully",
+    noSubmissions: "No lineups submitted for this race",
+  },
+
+  // Championship Form
+  championshipForm: {
+    title: "Championship Lineup",
+    subtitle: "Predict the Top 3 of the championship",
+    selectUser: "Select your name",
+    topDrivers: "Top 3 Drivers",
+    topConstructors: "Top 3 Constructors",
+    driver1: "1st Driver",
+    driver2: "2nd Driver",
+    driver3: "3rd Driver",
+    constructor1: "1st Constructor",
+    constructor2: "2nd Constructor",
+    constructor3: "3rd Constructor",
+    deadline: "Deadline",
+    midSeason: "Mid Season",
+    saveFormation: "Save Championship Lineup",
+    formationSaved: "Championship lineup saved successfully",
+    alreadySubmitted: "You have already submitted your championship lineup",
+    deadlinePassed: "The championship deadline has passed",
+  },
+
+  // Error Messages
+  errors: {
+    generic: "An error occurred",
+    networkError: "Network error",
+    notFound: "Not found",
+    unauthorized: "Unauthorized",
+    permissionDenied: "Insufficient permissions",
+    invalidData: "Invalid data",
+    duplicateDriver: "You cannot select the same driver multiple times",
+    incompleteForm: "Complete all required fields",
+    deadlineClosed: "Deadline closed",
+    lateSubmissionUsed: "You have already used the late submission option",
+    raceCancelled: "Race cancelled: cannot submit lineups",
+  },
+
+  // Success Messages
+  success: {
+    saved: "Saved successfully",
+    updated: "Updated successfully",
+    deleted: "Deleted successfully",
+    formationSaved: "Lineup saved successfully",
+    formationUpdated: "Lineup updated successfully",
+    pointsCalculated: "Points calculated successfully",
+  },
+
+  // Date & Time
+  dateTime: {
+    today: "Today",
+    yesterday: "Yesterday",
+    tomorrow: "Tomorrow",
+    daysAgo: "days ago",
+    in: "in",
+    days: "days",
+    hours: "hours",
+    minutes: "minutes",
+  },
+
+  // Language names
+  languages: {
+    it: "Italiano",
+    en: "English",
+  },
+};

@@ -1,0 +1,282 @@
+/**
+ * @file it.js
+ * @description Italian translations
+ */
+
+export const it = {
+  // Common
+  common: {
+    save: "Salva",
+    cancel: "Annulla",
+    delete: "Elimina",
+    edit: "Modifica",
+    add: "Aggiungi",
+    update: "Aggiorna",
+    close: "Chiudi",
+    confirm: "Conferma",
+    back: "Indietro",
+    next: "Avanti",
+    loading: "Caricamento...",
+    error: "Errore",
+    success: "Successo",
+    warning: "Attenzione",
+    search: "Cerca",
+    filter: "Filtra",
+    reset: "Reset",
+    submit: "Invia",
+    points: "Punti",
+    position: "Posizione",
+    name: "Nome",
+    date: "Data",
+    actions: "Azioni",
+  },
+
+  // Navigation
+  nav: {
+    home: "Home",
+    leaderboard: "Classifica",
+    formations: "Schiera",
+    history: "Storico",
+    statistics: "Statistiche",
+    admin: "Admin",
+    calculatePoints: "Calcola Punteggi",
+    toggleTheme: "Cambia tema",
+    changeLanguage: "Cambia lingua",
+  },
+
+  // Home
+  home: {
+    title: "Fanta F1",
+    subtitle: "Gestisci il tuo campionato fantasy di Formula 1",
+    welcome: "Benvenuto",
+    quickActions: "Azioni Rapide",
+    viewLeaderboard: "Vedi Classifica",
+    submitFormation: "Schiera Formazione",
+    viewHistory: "Vedi Storico",
+    viewStats: "Vedi Statistiche",
+    currentLeaderboard: "Anteprima Classifica Attuale",
+  },
+
+  // Leaderboard
+  leaderboard: {
+    title: "Classifica",
+    rank: "Pos.",
+    player: "Giocatore",
+    totalPoints: "Punti Totali",
+    gap: "Distacco",
+    jokers: "Jolly",
+    trend: "Andamento",
+    leader: "Leader",
+    you: "Tu",
+    noData: "Nessun dato disponibile",
+  },
+
+  // Formations
+  formations: {
+    title: "Schiera Formazione",
+    races: "Gare",
+    championship: "Campionato",
+    selectUser: "Seleziona utente",
+    selectRace: "Seleziona gara",
+    mainRace: "Gara Principale",
+    sprint: "Sprint",
+    sprintOptional: "Sprint (opzionale)",
+    driver: "Pilota",
+    joker: "Jolly",
+    joker2: "Jolly 2 (opzionale)",
+    submitBy: "Da schierare entro",
+    deadline: "Scadenza",
+    open: "APERTO",
+    closed: "CHIUSO",
+    save: "Salva Gara",
+    saveFormation: "Salva Formazione",
+    editFormation: "Modifica Formazione",
+    resetFormation: "Reset Formazione",
+    formationSummary: "Riepilogo Formazione",
+    required: "obbligatorio",
+    optional: "opzionale",
+    jokersAvailable: "Jolly disponibili",
+    duplicateWarning: "Hai selezionato lo stesso pilota più volte",
+    lateSubmission: "Inserimento in Ritardo",
+    lateWarning: "Stai per inserire la formazione dopo la deadline",
+    latePenalty: "Penalità: -3 punti",
+    lateConfirm: "Sì, Accetto la Penalità (-3)",
+  },
+
+  // History
+  history: {
+    title: "Storico Gare",
+    pastRaces: "Gare Passate",
+    round: "Round",
+    race: "Gara",
+    date: "Data",
+    results: "Risultati",
+    officialResults: "Risultati Ufficiali",
+    formations: "Formazioni",
+    formationsAndPoints: "Formazioni & Punteggi",
+    championshipResults: "Risultati Campionato",
+    drivers: "Piloti",
+    constructors: "Costruttori",
+    topDrivers: "Top 3 Piloti",
+    topConstructors: "Top 3 Costruttori",
+    predictions: "Pronostici",
+    player: "Giocatore",
+    totalPoints: "Punti Totali",
+    noRaces: "Nessuna gara completata",
+    noChampionship: "Nessuna formazione campionato inviata",
+  },
+
+  // Statistics
+  statistics: {
+    title: "Statistiche Campionato",
+    currentRanking: "Classifica Attuale",
+    pointsProgression: "Andamento Punti Cumulativi",
+    positionProgression: "Andamento Posizioni",
+    topPlayers: "Top 5",
+    race: "Gara",
+    points: "Punti",
+    position: "Posizione",
+    cumulative: "Cumulativo",
+    noData: "Nessun dato disponibile",
+  },
+
+  // Admin Panel
+  admin: {
+    title: "Pannello Amministrazione",
+    login: "Accesso Admin",
+    password: "Password",
+    loginButton: "Accedi",
+    logout: "Esci",
+    wrongPassword: "Password errata",
+
+    // Tabs
+    participants: "Partecipanti",
+    formations: "Formazioni",
+    calendar: "Calendario",
+    database: "Database",
+
+    // Participants
+    addParticipant: "Aggiungi Partecipante",
+    editParticipant: "Modifica Partecipante",
+    deleteParticipant: "Elimina Partecipante",
+    participantName: "Nome Partecipante",
+    totalPoints: "Punti Totali",
+    availableJokers: "Jolly Disponibili",
+    lateSubmissionUsed: "Inserimento Ritardo Usato",
+    deleteWarning: "Questa azione è irreversibile",
+    participantAdded: "Partecipante aggiunto con successo",
+    participantUpdated: "Partecipante modificato con successo",
+    participantDeleted: "Partecipante eliminato con successo",
+
+    // Formations
+    manageFormations: "Gestione Formazioni",
+    addFormation: "Aggiungi Formazione",
+    editFormationTitle: "Modifica Formazione",
+    selectUser: "Seleziona utente",
+    selectRace: "Seleziona gara",
+    formationAdded: "Formazione aggiunta con successo",
+    formationUpdated: "Formazione aggiornata con successo",
+
+    // Calendar
+    manageCalendar: "Gestione Calendario",
+    raceCalendar: "Calendario Gare",
+    importICS: "Importa da file ICS",
+    addRace: "Aggiungi Gara",
+    editRace: "Modifica Gara",
+    raceName: "Nome Gara",
+    raceDate: "Data Gara",
+    qualifyingDate: "Data Qualifiche",
+    sprintDate: "Data Sprint",
+    hasResults: "Ha Risultati",
+    raceUpdated: "Gara aggiornata con successo",
+
+    // Database
+    databaseOperations: "Operazioni Database",
+    backup: "Backup",
+    restore: "Ripristino",
+    resetFormations: "Reset Formazioni",
+    resetPoints: "Reset Punteggi",
+    resetAll: "Reset Completo",
+    downloadBackup: "Scarica Backup",
+    backupCreated: "Backup creato con successo",
+    confirmReset: "Sei sicuro? Questa operazione è irreversibile",
+  },
+
+  // Calculate Points
+  calculate: {
+    title: "Calcola Punteggi",
+    selectRace: "Seleziona Gara",
+    fetchResults: "Recupera Risultati",
+    officialResults: "Risultati Ufficiali",
+    submissions: "Formazioni Inviate",
+    pointsPreview: "Anteprima Punteggi",
+    calculateAndSave: "Calcola e Salva Punteggi",
+    calculating: "Calcolando...",
+    pointsCalculated: "Punteggi calcolati con successo",
+    noSubmissions: "Nessuna formazione inviata per questa gara",
+  },
+
+  // Championship Form
+  championshipForm: {
+    title: "Formazione Campionato",
+    subtitle: "Pronostica i Top 3 del campionato",
+    selectUser: "Seleziona il tuo nome",
+    topDrivers: "Top 3 Piloti",
+    topConstructors: "Top 3 Costruttori",
+    driver1: "1° Pilota",
+    driver2: "2° Pilota",
+    driver3: "3° Pilota",
+    constructor1: "1° Costruttore",
+    constructor2: "2° Costruttore",
+    constructor3: "3° Costruttore",
+    deadline: "Scadenza",
+    midSeason: "Metà Stagione",
+    saveFormation: "Salva Formazione Campionato",
+    formationSaved: "Formazione campionato salvata con successo",
+    alreadySubmitted: "Hai già inviato la tua formazione campionato",
+    deadlinePassed: "La deadline per il campionato è scaduta",
+  },
+
+  // Error Messages
+  errors: {
+    generic: "Si è verificato un errore",
+    networkError: "Errore di connessione",
+    notFound: "Non trovato",
+    unauthorized: "Non autorizzato",
+    permissionDenied: "Permessi insufficienti",
+    invalidData: "Dati non validi",
+    duplicateDriver: "Non puoi selezionare lo stesso pilota più volte",
+    incompleteForm: "Completa tutti i campi obbligatori",
+    deadlineClosed: "Deadline chiusa",
+    lateSubmissionUsed: "Hai già usato la possibilità di inserimento in ritardo",
+    raceCancelled: "Gara cancellata: non è possibile inserire formazioni",
+  },
+
+  // Success Messages
+  success: {
+    saved: "Salvato con successo",
+    updated: "Aggiornato con successo",
+    deleted: "Eliminato con successo",
+    formationSaved: "Formazione salvata con successo",
+    formationUpdated: "Formazione aggiornata con successo",
+    pointsCalculated: "Punteggi calcolati con successo",
+  },
+
+  // Date & Time
+  dateTime: {
+    today: "Oggi",
+    yesterday: "Ieri",
+    tomorrow: "Domani",
+    daysAgo: "giorni fa",
+    in: "tra",
+    days: "giorni",
+    hours: "ore",
+    minutes: "minuti",
+  },
+
+  // Language names
+  languages: {
+    it: "Italiano",
+    en: "English",
+  },
+};

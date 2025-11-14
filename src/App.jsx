@@ -12,6 +12,7 @@ import {
 import { Container as BContainer, Spinner } from "react-bootstrap";
 
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import Navigation from "./components/Navigation";
 import "./styles/theme.css";
 
@@ -37,32 +38,34 @@ const PageLoader = () => (
 );
 
 /**
- * Main application component with theme provider and routing
+ * Main application component with theme provider, language provider, and routing
  * @returns {JSX.Element} App with navigation and routes
  */
 export default function App() {
   return (
-    <ThemeProvider>
-      <Router>
-        <Navigation />
+    <LanguageProvider>
+      <ThemeProvider>
+        <Router>
+          <Navigation />
 
-        <BContainer className="py-4">
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/"           element={<Home />} />
-              <Route path="/classifica" element={<Leaderboard />} />
-              <Route path="/schiera"    element={<Formations />} />
-              <Route path="/calcola"    element={<CalculatePoints />} />
-              <Route path="/storico"    element={<History />} />
-              <Route path="/statistiche" element={<Statistics />} />
-              <Route path="/admin"      element={<AdminPanel />} />
-              {/* Legacy routes for compatibility */}
-              <Route path="/formations/races" element={<FormationApp />} />
-              <Route path="/formations/championship" element={<ChampionshipForm />} />
-            </Routes>
-          </Suspense>
-        </BContainer>
-      </Router>
-    </ThemeProvider>
+          <BContainer className="py-4">
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/"           element={<Home />} />
+                <Route path="/classifica" element={<Leaderboard />} />
+                <Route path="/schiera"    element={<Formations />} />
+                <Route path="/calcola"    element={<CalculatePoints />} />
+                <Route path="/storico"    element={<History />} />
+                <Route path="/statistiche" element={<Statistics />} />
+                <Route path="/admin"      element={<AdminPanel />} />
+                {/* Legacy routes for compatibility */}
+                <Route path="/formations/races" element={<FormationApp />} />
+                <Route path="/formations/championship" element={<ChampionshipForm />} />
+              </Routes>
+            </Suspense>
+          </BContainer>
+        </Router>
+      </ThemeProvider>
+    </LanguageProvider>
   );
 }
