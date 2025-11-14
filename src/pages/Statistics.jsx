@@ -25,18 +25,13 @@ import { useTheme } from "../contexts/ThemeContext";
 
 const medals = ["🥇", "🥈", "🥉"];
 
-// Colori per i grafici di ogni giocatore
-const PLAYER_COLORS = [
-  "#dc3545", // rosso
-  "#0d6efd", // blu
-  "#198754", // verde
-  "#ffc107", // giallo
-  "#6f42c1", // viola
-  "#fd7e14", // arancione
-  "#20c997", // teal
-  "#d63384", // pink
-  "#6c757d", // grigio
-  "#0dcaf0", // cyan
+// Colori distintivi per i top giocatori nei grafici (massimo 5)
+const CHART_COLORS = [
+  "#dc3545", // rosso - 1°
+  "#0d6efd", // blu - 2°
+  "#198754", // verde - 3°
+  "#ffc107", // giallo - 4°
+  "#6f42c1", // viola - 5°
 ];
 
 export default function Statistics() {
@@ -109,6 +104,9 @@ export default function Statistics() {
     );
   }
 
+  // Mostra solo i top 5 giocatori nei grafici per ridurre la confusione
+  const topPlayers = currentRanking.slice(0, 5);
+
   // Prepara i dati per il grafico dei punti cumulativi
   const pointsChartData = statistics.races.map((race, raceIndex) => {
     const dataPoint = {
@@ -116,7 +114,7 @@ export default function Statistics() {
       fullName: race.name,
     };
 
-    currentRanking.forEach(player => {
+    topPlayers.forEach(player => {
       const history = statistics.playersData[player.userId] || [];
       const raceData = history[raceIndex];
       dataPoint[player.name] = raceData ? raceData.cumulativePoints : 0;
@@ -132,7 +130,7 @@ export default function Statistics() {
       fullName: race.name,
     };
 
-    currentRanking.forEach(player => {
+    topPlayers.forEach(player => {
       const history = statistics.playersData[player.userId] || [];
       const raceData = history[raceIndex];
       dataPoint[player.name] = raceData ? raceData.position : null;
@@ -226,21 +224,11 @@ export default function Statistics() {
                     {currentRanking.map((player, idx) => {
                       const medal = medals[idx] ?? idx + 1;
                       const isTop3 = idx < 3;
-                      const playerColor = PLAYER_COLORS[idx % PLAYER_COLORS.length];
 
                       return (
                         <tr key={player.userId} className={isTop3 ? "fw-bold" : ""}>
                           <td className="text-center">{medal}</td>
-                          <td>
-                            <span
-                              style={{
-                                color: playerColor,
-                                fontWeight: "500",
-                              }}
-                            >
-                              {player.name}
-                            </span>
-                          </td>
+                          <td>{player.name}</td>
                           <td className="text-center">
                             <Badge bg="success">{player.points}</Badge>
                           </td>
@@ -272,7 +260,7 @@ export default function Statistics() {
                 borderBottom: `2px solid ${accentColor}`,
               }}
             >
-              Andamento Punti Cumulativi
+              Andamento Punti Cumulativi (Top 5)
             </Card.Header>
             <Card.Body>
               <ResponsiveContainer width="100%" height={400}>
@@ -301,15 +289,15 @@ export default function Statistics() {
                     wrapperStyle={{ fontSize: "0.85rem" }}
                     iconType="line"
                   />
-                  {currentRanking.map((player, idx) => (
+                  {topPlayers.map((player, idx) => (
                     <Line
                       key={player.userId}
                       type="monotone"
                       dataKey={player.name}
-                      stroke={PLAYER_COLORS[idx % PLAYER_COLORS.length]}
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
+                      stroke={CHART_COLORS[idx]}
+                      strokeWidth={3}
+                      dot={{ r: 5 }}
+                      activeDot={{ r: 7 }}
                     />
                   ))}
                 </LineChart>
@@ -333,7 +321,7 @@ export default function Statistics() {
                 borderBottom: `2px solid ${accentColor}`,
               }}
             >
-              Andamento Posizioni in Classifica
+              Andamento Posizioni in Classifica (Top 5)
             </Card.Header>
             <Card.Body>
               <ResponsiveContainer width="100%" height={400}>
@@ -368,15 +356,15 @@ export default function Statistics() {
                     wrapperStyle={{ fontSize: "0.85rem" }}
                     iconType="line"
                   />
-                  {currentRanking.map((player, idx) => (
+                  {topPlayers.map((player, idx) => (
                     <Line
                       key={player.userId}
                       type="monotone"
                       dataKey={player.name}
-                      stroke={PLAYER_COLORS[idx % PLAYER_COLORS.length]}
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
+                      stroke={CHART_COLORS[idx]}
+                      strokeWidth={3}
+                      dot={{ r: 5 }}
+                      activeDot={{ r: 7 }}
                     />
                   ))}
                 </LineChart>
@@ -384,94 +372,6 @@ export default function Statistics() {
             </Card.Body>
           </Card>
         </Col>
-      </Row>
-
-      {/* Statistiche dettagliate per ogni giocatore */}
-      <Row className="mt-4">
-        <Col xs={12}>
-          <h4 className="mb-3" style={{ color: accentColor }}>
-            Dettaglio per Giocatore
-          </h4>
-        </Col>
-        {currentRanking.map((player, idx) => {
-          const history = statistics.playersData[player.userId] || [];
-          const playerColor = PLAYER_COLORS[idx % PLAYER_COLORS.length];
-
-          // Calcola statistiche
-          const totalRaces = history.length;
-          const bestPosition = Math.min(...history.map(h => h.position));
-          const worstPosition = Math.max(...history.map(h => h.position));
-          const bestRacePoints = Math.max(...history.map(h => h.points));
-          const worstRacePoints = Math.min(...history.map(h => h.points));
-          const avgPointsPerRace = totalRaces > 0
-            ? (player.points / totalRaces).toFixed(1)
-            : 0;
-
-          return (
-            <Col key={player.userId} xs={12} lg={6} className="mb-4">
-              <Card
-                className="shadow"
-                style={{
-                  borderLeft: `4px solid ${playerColor}`,
-                  backgroundColor: bgCard,
-                }}
-              >
-                <Card.Header
-                  style={{
-                    backgroundColor: bgHeader,
-                    borderBottom: `2px solid ${playerColor}`,
-                  }}
-                >
-                  <h6 className="mb-0" style={{ color: playerColor }}>
-                    {idx + 1}. {player.name}
-                  </h6>
-                </Card.Header>
-                <Card.Body>
-                  <Row className="g-2">
-                    <Col xs={6} sm={4}>
-                      <div className="text-center p-2 rounded" style={{ backgroundColor: isDark ? "#2a2a2a" : "#f8f9fa" }}>
-                        <small className="text-muted d-block">Punti Totali</small>
-                        <strong style={{ color: playerColor }}>{player.points}</strong>
-                      </div>
-                    </Col>
-                    <Col xs={6} sm={4}>
-                      <div className="text-center p-2 rounded" style={{ backgroundColor: isDark ? "#2a2a2a" : "#f8f9fa" }}>
-                        <small className="text-muted d-block">Media Gara</small>
-                        <strong style={{ color: playerColor }}>{avgPointsPerRace}</strong>
-                      </div>
-                    </Col>
-                    <Col xs={6} sm={4}>
-                      <div className="text-center p-2 rounded" style={{ backgroundColor: isDark ? "#2a2a2a" : "#f8f9fa" }}>
-                        <small className="text-muted d-block">Gare</small>
-                        <strong style={{ color: playerColor }}>{totalRaces}</strong>
-                      </div>
-                    </Col>
-                    <Col xs={6} sm={4}>
-                      <div className="text-center p-2 rounded" style={{ backgroundColor: isDark ? "#2a2a2a" : "#f8f9fa" }}>
-                        <small className="text-muted d-block">Miglior Pos.</small>
-                        <strong style={{ color: playerColor }}>{bestPosition}°</strong>
-                      </div>
-                    </Col>
-                    <Col xs={6} sm={4}>
-                      <div className="text-center p-2 rounded" style={{ backgroundColor: isDark ? "#2a2a2a" : "#f8f9fa" }}>
-                        <small className="text-muted d-block">Peggior Pos.</small>
-                        <strong style={{ color: playerColor }}>{worstPosition}°</strong>
-                      </div>
-                    </Col>
-                    <Col xs={6} sm={4}>
-                      <div className="text-center p-2 rounded" style={{ backgroundColor: isDark ? "#2a2a2a" : "#f8f9fa" }}>
-                        <small className="text-muted d-block">Miglior Gara</small>
-                        <strong style={{ color: playerColor }}>
-                          {bestRacePoints > 0 ? `+${bestRacePoints}` : bestRacePoints}
-                        </strong>
-                      </div>
-                    </Col>
-                  </Row>
-                </Card.Body>
-              </Card>
-            </Col>
-          );
-        })}
       </Row>
     </Container>
   );
