@@ -9,7 +9,9 @@ const OPENF1_API_BASE_URL = "https://api.openf1.org/v1";
 
 // Rate limiting for OpenF1 API (max 3 requests per second)
 let lastOpenF1Request = 0;
-const OPENF1_MIN_INTERVAL = 350; // milliseconds between requests (slightly more than 1000/3)
+const OPENF1_MIN_INTERVAL = 400; // milliseconds between requests (more conservative to avoid 429)
+const MAX_RETRIES = 3;
+const RETRY_BASE_DELAY = 1000; // base delay for exponential backoff
 
 /**
  * Sleeps for a given amount of time
@@ -20,10 +22,12 @@ async function sleep(ms) {
 }
 
 /**
- * Rate-limited fetch for OpenF1 API
+ * Rate-limited fetch for OpenF1 API with retry logic for 429 errors
  * @param {string} url - URL to fetch
+ * @param {number} retryCount - Current retry attempt (default 0)
+ * @returns {Promise<Response>} Fetch response
  */
-async function rateLimitedFetch(url) {
+async function rateLimitedFetch(url, retryCount = 0) {
   const now = Date.now();
   const timeSinceLastRequest = now - lastOpenF1Request;
 
@@ -32,7 +36,29 @@ async function rateLimitedFetch(url) {
   }
 
   lastOpenF1Request = Date.now();
-  return fetch(url);
+
+  try {
+    const response = await fetch(url);
+
+    // Handle 429 Too Many Requests
+    if (response.status === 429 && retryCount < MAX_RETRIES) {
+      const retryDelay = RETRY_BASE_DELAY * Math.pow(2, retryCount);
+      console.warn(`Rate limit hit (429) for ${url}. Retrying in ${retryDelay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+      await sleep(retryDelay);
+      return rateLimitedFetch(url, retryCount + 1);
+    }
+
+    return response;
+  } catch (error) {
+    // Network error - retry with backoff
+    if (retryCount < MAX_RETRIES) {
+      const retryDelay = RETRY_BASE_DELAY * Math.pow(2, retryCount);
+      console.warn(`Network error for ${url}. Retrying in ${retryDelay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+      await sleep(retryDelay);
+      return rateLimitedFetch(url, retryCount + 1);
+    }
+    throw error;
+  }
 }
 
 /**
@@ -182,7 +208,12 @@ export async function fetchPracticeSession(season, round, sessionName) {
       s => s.session_name === sessionName
     );
 
-    if (!targetSession) return null;
+    if (!targetSession) {
+      // Log available sessions for debugging when target session not found
+      const availableSessions = targetMeeting.sessions.map(s => s.session_name).join(', ');
+      console.debug(`Session "${sessionName}" not found for ${season} R${round}. Available: ${availableSessions}`);
+      return null;
+    }
 
     const sessionKey = targetSession.session_key;
 
@@ -357,16 +388,21 @@ export async function fetchSprint(season, round) {
       }
     }
 
-    return sprintResults.map((result, idx) => {
+    return sprintResults.map((result) => {
       const driverTime = result.Time?.time;
       const driverTimeMs = driverTime ? timeToMs(driverTime) : 0;
 
       // Calculate gap with improved handling
       let gap = "—";
-      if (idx === 0) {
+      if (result.position === "1") {
+        // Leader always shows dash
         gap = "—";
       } else if (leaderTimeMs > 0 && driverTimeMs > 0) {
+        // Both leader and driver have valid times - calculate gap
         gap = calculateGap(leaderTimeMs, driverTimeMs);
+      } else if (driverTime && !leaderTime) {
+        // Driver has time but leader doesn't (edge case) - show time as gap
+        gap = `+${driverTime}`;
       } else if (result.status && result.status !== "Finished") {
         // Show short status for DNF/retired drivers
         const statusMap = {
@@ -375,6 +411,7 @@ export async function fetchSprint(season, round) {
           "Collision": "COL",
           "Spun off": "OFF",
           "Engine": "ENG",
+          "Disqualified": "DSQ",
         };
         gap = statusMap[result.status] || result.status.substring(0, 3).toUpperCase();
       }
@@ -465,14 +502,26 @@ export async function fetchAllSessions(season, round) {
 
     // Step 2: Based on weekend type, fetch additional sessions
     if (sprint !== null) {
-      // Sprint weekend: has Sprint Qualifying, NO FP2/FP3
-      const sprintQualifyingNames = season >= 2024
-        ? ["Sprint Qualifying", "Sprint Shootout"]
-        : ["Sprint Shootout", "Sprint Qualifying"];
+      // Sprint weekend: has Sprint Qualifying/Shootout, NO FP2/FP3
+      // Try all possible names for sprint qualifying (varies by season and API naming)
+      const sprintQualifyingNames = [
+        "Sprint Shootout",      // 2024+ name
+        "Sprint Qualifying",    // 2023 and older
+        "Sprint Quali",         // Alternative short name
+        "Shootout",            // Alternative name
+      ];
 
       for (const name of sprintQualifyingNames) {
         sprintQualifying = await fetchPracticeSession(season, round, name);
-        if (sprintQualifying !== null) break;
+        if (sprintQualifying !== null) {
+          console.log(`Found sprint qualifying as: ${name}`);
+          break;
+        }
+      }
+
+      // If still not found, log for debugging
+      if (!sprintQualifying) {
+        console.warn(`Sprint qualifying not found for ${season} R${round}. Tried: ${sprintQualifyingNames.join(', ')}`);
       }
     } else {
       // Normal weekend: has FP2 and FP3, NO Sprint Qualifying

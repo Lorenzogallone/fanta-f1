@@ -601,7 +601,49 @@ body {
   color: var(--accent-red-hover) !important;
 }
 
-/* Accordion Dark Mode */
+/* Accordion Styles - Light Mode */
+.accordion-item {
+  background-color: var(--bg-secondary);
+  border-color: #dee2e6; /* Bordo visibile in light mode */
+  border-width: 1px;
+  margin-bottom: 8px; /* Spazio tra gli accordion items */
+  border-radius: 4px; /* Angoli arrotondati per miglior aspetto */
+}
+
+.accordion-item:last-child {
+  margin-bottom: 0; /* Rimuovi margine dall'ultimo item */
+}
+
+.accordion-button {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  border-color: #dee2e6;
+}
+
+.accordion-button:not(.collapsed) {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  box-shadow: none;
+  border-bottom-color: #dee2e6; /* Bordo visibile anche quando espanso */
+}
+
+.accordion-button:focus {
+  border-color: var(--accent-red);
+  box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+.accordion-body {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-top: 1px solid #dee2e6; /* Linea divisoria tra header e body */
+}
+
+.accordion-collapse {
+  background-color: var(--bg-secondary);
+  border-color: #dee2e6;
+}
+
+/* Accordion Styles - Dark Mode */
 [data-theme="dark"] .accordion-item {
   background-color: var(--bg-secondary);
   border-color: #555555; /* Bordo più chiaro e visibile */
