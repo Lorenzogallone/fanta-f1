@@ -4,7 +4,7 @@
  * Uses OpenF1 API for practice sessions and Jolpica/Ergast API for qualifying, sprint, race
  */
 
-const ERGAST_API_BASE_URL = "http://api.jolpi.ca/ergast/f1";
+const ERGAST_API_BASE_URL = "https://api.jolpi.ca/ergast/f1";
 const OPENF1_API_BASE_URL = "https://api.openf1.org/v1";
 
 /**

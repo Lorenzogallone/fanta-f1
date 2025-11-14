@@ -371,15 +371,15 @@ export default function RaceResults() {
                 >
                   {/* FP1 */}
                   {sessions.hasFP1 && (
-                    <Accordion.Item eventKey="fp1">
+                    <Accordion.Item eventKey="fp1" style={{ backgroundColor: bgCard, borderColor: isDark ? "#444" : undefined }}>
                       <Accordion.Header>
                         <strong style={{ color: accentColor }}>
                           🔧 {t("raceResults.fp1")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body>
+                      <Accordion.Body style={{ backgroundColor: bgCard }}>
                         <div className="table-responsive">
-                          <Table hover className="align-middle" size="sm">
+                          <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
                                 <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
@@ -408,15 +408,15 @@ export default function RaceResults() {
 
                   {/* FP2 */}
                   {sessions.hasFP2 && (
-                    <Accordion.Item eventKey="fp2">
+                    <Accordion.Item eventKey="fp2" style={{ backgroundColor: bgCard, borderColor: isDark ? "#444" : undefined }}>
                       <Accordion.Header>
                         <strong style={{ color: accentColor }}>
                           🔧 {t("raceResults.fp2")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body>
+                      <Accordion.Body style={{ backgroundColor: bgCard }}>
                         <div className="table-responsive">
-                          <Table hover className="align-middle" size="sm">
+                          <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
                                 <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
@@ -445,15 +445,15 @@ export default function RaceResults() {
 
                   {/* FP3 */}
                   {sessions.hasFP3 && (
-                    <Accordion.Item eventKey="fp3">
+                    <Accordion.Item eventKey="fp3" style={{ backgroundColor: bgCard, borderColor: isDark ? "#444" : undefined }}>
                       <Accordion.Header>
                         <strong style={{ color: accentColor }}>
                           🔧 {t("raceResults.fp3")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body>
+                      <Accordion.Body style={{ backgroundColor: bgCard }}>
                         <div className="table-responsive">
-                          <Table hover className="align-middle" size="sm">
+                          <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
                                 <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
@@ -482,15 +482,15 @@ export default function RaceResults() {
 
                   {/* Sprint Qualifying */}
                   {sessions.hasSprintQualifying && (
-                    <Accordion.Item eventKey="sprintQualifying">
+                    <Accordion.Item eventKey="sprintQualifying" style={{ backgroundColor: bgCard, borderColor: isDark ? "#444" : undefined }}>
                       <Accordion.Header>
                         <strong style={{ color: accentColor }}>
                           ⚡ {t("raceResults.sprintQualifying")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body>
+                      <Accordion.Body style={{ backgroundColor: bgCard }}>
                         <div className="table-responsive">
-                          <Table hover className="align-middle" size="sm">
+                          <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
                                 <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
@@ -519,15 +519,15 @@ export default function RaceResults() {
 
                   {/* Qualifying */}
                   {sessions.hasQualifying && (
-                    <Accordion.Item eventKey="qualifying">
+                    <Accordion.Item eventKey="qualifying" style={{ backgroundColor: bgCard, borderColor: isDark ? "#444" : undefined }}>
                       <Accordion.Header>
                         <strong style={{ color: accentColor }}>
                           🏎️ {t("raceResults.qualifying")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body>
+                      <Accordion.Body style={{ backgroundColor: bgCard }}>
                         <div className="table-responsive">
-                          <Table hover className="align-middle" size="sm">
+                          <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
                                 <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
@@ -562,15 +562,15 @@ export default function RaceResults() {
 
                   {/* Sprint */}
                   {sessions.hasSprint && (
-                    <Accordion.Item eventKey="sprint">
+                    <Accordion.Item eventKey="sprint" style={{ backgroundColor: bgCard, borderColor: isDark ? "#444" : undefined }}>
                       <Accordion.Header>
                         <strong style={{ color: accentColor }}>
                           ⚡ {t("raceResults.sprint")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body>
+                      <Accordion.Body style={{ backgroundColor: bgCard }}>
                         <div className="table-responsive">
-                          <Table hover className="align-middle" size="sm">
+                          <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
                                 <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
@@ -607,15 +607,15 @@ export default function RaceResults() {
 
                   {/* Race */}
                   {sessions.hasRace && (
-                    <Accordion.Item eventKey="race">
+                    <Accordion.Item eventKey="race" style={{ backgroundColor: bgCard, borderColor: isDark ? "#444" : undefined }}>
                       <Accordion.Header>
                         <strong style={{ color: accentColor }}>
                           🏆 {t("raceResults.race")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body>
+                      <Accordion.Body style={{ backgroundColor: bgCard }}>
                         <div className="table-responsive">
-                          <Table hover className="align-middle" size="sm">
+                          <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
                                 <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
