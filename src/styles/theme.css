@@ -604,19 +604,27 @@ body {
 /* Accordion Dark Mode */
 [data-theme="dark"] .accordion-item {
   background-color: var(--bg-secondary);
-  border-color: var(--border-color);
+  border-color: #555555; /* Bordo più chiaro e visibile */
+  border-width: 1px;
+  margin-bottom: 8px; /* Spazio tra gli accordion items */
+  border-radius: 4px; /* Angoli arrotondati per miglior aspetto */
+}
+
+[data-theme="dark"] .accordion-item:last-child {
+  margin-bottom: 0; /* Rimuovi margine dall'ultimo item */
 }
 
 [data-theme="dark"] .accordion-button {
   background-color: var(--bg-tertiary) !important;
   color: var(--text-primary) !important;
-  border-color: var(--border-color);
+  border-color: #555555;
 }
 
 [data-theme="dark"] .accordion-button:not(.collapsed) {
   background-color: var(--bg-tertiary) !important;
   color: var(--text-primary) !important;
   box-shadow: none;
+  border-bottom-color: #555555; /* Bordo visibile anche quando espanso */
 }
 
 [data-theme="dark"] .accordion-button:focus {
@@ -631,9 +639,10 @@ body {
 [data-theme="dark"] .accordion-body {
   background-color: var(--bg-secondary);
   color: var(--text-primary);
+  border-top: 1px solid #555555; /* Linea divisoria tra header e body */
 }
 
 [data-theme="dark"] .accordion-collapse {
   background-color: var(--bg-secondary);
-  border-color: var(--border-color);
+  border-color: #555555;
 }
