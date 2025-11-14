@@ -71,6 +71,17 @@ export const it = {
     noData: "Nessun dato disponibile",
   },
 
+  // Participant Detail
+  participantDetail: {
+    notFound: "Partecipante non trovato",
+    racesParticipated: "Gare Partecipate",
+    averagePoints: "Media Punti",
+    championshipFormation: "Formazione Campionato",
+    bestRace: "Miglior Gara",
+    raceHistory: "Storico Gare",
+    noRaces: "Nessuna gara trovata per questo partecipante",
+  },
+
   // Formations
   formations: {
     title: "Schiera Formazione",

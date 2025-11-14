@@ -71,6 +71,17 @@ export const en = {
     noData: "No data available",
   },
 
+  // Participant Detail
+  participantDetail: {
+    notFound: "Participant not found",
+    racesParticipated: "Races Participated",
+    averagePoints: "Average Points",
+    championshipFormation: "Championship Formation",
+    bestRace: "Best Race",
+    raceHistory: "Race History",
+    noRaces: "No races found for this participant",
+  },
+
   // Formations
   formations: {
     title: "Submit Lineup",
