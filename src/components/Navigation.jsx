@@ -44,6 +44,7 @@ export default function Navigation() {
         <Navbar.Toggle
           aria-controls="main-navbar-nav"
           className="border-0 me-2 order-0"
+          style={{ transform: "scale(0.85)" }}
         />
 
         {/* Logo - centered on mobile */}
@@ -113,9 +114,9 @@ export default function Navigation() {
           <Nav className="mx-auto">
             <Nav.Link
               as={Link}
-              to="/leaderboard"
+              to="/"
               onClick={handleNavClick}
-              className={location.pathname === "/leaderboard" ? "active" : ""}
+              className={location.pathname === "/" ? "active" : ""}
             >
               📊 {t("nav.leaderboard")}
             </Nav.Link>
