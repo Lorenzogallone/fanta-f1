@@ -7,6 +7,34 @@
 const ERGAST_API_BASE_URL = "https://api.jolpi.ca/ergast/f1";
 const OPENF1_API_BASE_URL = "https://api.openf1.org/v1";
 
+// Rate limiting for OpenF1 API (max 3 requests per second)
+let lastOpenF1Request = 0;
+const OPENF1_MIN_INTERVAL = 350; // milliseconds between requests (slightly more than 1000/3)
+
+/**
+ * Sleeps for a given amount of time
+ * @param {number} ms - Milliseconds to sleep
+ */
+async function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Rate-limited fetch for OpenF1 API
+ * @param {string} url - URL to fetch
+ */
+async function rateLimitedFetch(url) {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastOpenF1Request;
+
+  if (timeSinceLastRequest < OPENF1_MIN_INTERVAL) {
+    await sleep(OPENF1_MIN_INTERVAL - timeSinceLastRequest);
+  }
+
+  lastOpenF1Request = Date.now();
+  return fetch(url);
+}
+
 /**
  * Mapping of driver names from API to app format
  */
@@ -33,6 +61,40 @@ const DRIVER_NAME_MAPPING = {
   "Hülkenberg": "Nico Hulkenberg",
   "Ocon": "Esteban Ocon",
   "Bearman": "Oliver Bearman",
+};
+
+/**
+ * Mapping of driver numbers to names (2024-2025 season)
+ * Used as fallback when API doesn't provide driver info
+ */
+const DRIVER_NUMBER_MAPPING = {
+  1: "Max Verstappen",
+  2: "Logan Sargeant", // 2024
+  4: "Lando Norris",
+  10: "Pierre Gasly",
+  11: "Sergio Perez",
+  14: "Fernando Alonso",
+  16: "Charles Leclerc",
+  18: "Lance Stroll",
+  20: "Kevin Magnussen",
+  22: "Yuki Tsunoda",
+  23: "Alexander Albon",
+  24: "Zhou Guanyu",
+  27: "Nico Hulkenberg",
+  31: "Esteban Ocon",
+  38: "Oliver Bearman",
+  43: "Franco Colapinto",
+  44: "Lewis Hamilton",
+  55: "Carlos Sainz",
+  63: "George Russell",
+  77: "Valtteri Bottas",
+  81: "Oscar Piastri",
+  // 2025 changes
+  12: "Andrea Kimi Antonelli", // New at Mercedes
+  17: "Jack Doohan", // New at Alpine
+  25: "Isack Hadjar", // New at RB
+  30: "Liam Lawson", // Racing Bulls
+  50: "Gabriel Bortoleto", // New at Sauber
 };
 
 /**
@@ -88,7 +150,7 @@ export async function fetchPracticeSession(season, round, sessionName) {
   try {
     // Step 1: Get all sessions for the year
     const sessionsUrl = `${OPENF1_API_BASE_URL}/sessions?year=${season}`;
-    const sessionsResponse = await fetch(sessionsUrl);
+    const sessionsResponse = await rateLimitedFetch(sessionsUrl);
 
     if (!sessionsResponse.ok) return null;
 
@@ -126,7 +188,7 @@ export async function fetchPracticeSession(season, round, sessionName) {
 
     // Step 2: Fetch all laps for this session
     const lapsUrl = `${OPENF1_API_BASE_URL}/laps?session_key=${sessionKey}`;
-    const lapsResponse = await fetch(lapsUrl);
+    const lapsResponse = await rateLimitedFetch(lapsUrl);
 
     if (!lapsResponse.ok) return null;
 
@@ -153,7 +215,7 @@ export async function fetchPracticeSession(season, round, sessionName) {
 
     // Step 4: Get driver info to map numbers to names
     const driversUrl = `${OPENF1_API_BASE_URL}/drivers?session_key=${sessionKey}`;
-    const driversResponse = await fetch(driversUrl);
+    const driversResponse = await rateLimitedFetch(driversUrl);
 
     let driverInfo = {};
     if (driversResponse.ok) {
@@ -167,16 +229,24 @@ export async function fetchPracticeSession(season, round, sessionName) {
       });
     }
 
-    // Step 5: Create sorted results array
+    // Step 5: Create sorted results array with fallback driver mapping
     const results = Object.entries(driverBestLaps)
-      .map(([driverNumber, data]) => ({
-        driverNumber: parseInt(driverNumber),
-        driver: driverInfo[driverNumber]?.name || `Driver #${driverNumber}`,
-        constructor: driverInfo[driverNumber]?.team || "—",
-        bestTime: data.time,
-        bestTimeFormatted: formatLapTime(data.time),
-        lapNumber: data.lapNumber,
-      }))
+      .map(([driverNumber, data]) => {
+        const driverNum = parseInt(driverNumber);
+        // Try API data first, then fallback to number mapping
+        const driverName = driverInfo[driverNumber]?.name
+          || DRIVER_NUMBER_MAPPING[driverNum]
+          || `Driver #${driverNumber}`;
+
+        return {
+          driverNumber: driverNum,
+          driver: driverName,
+          constructor: driverInfo[driverNumber]?.team || "—",
+          bestTime: data.time,
+          bestTimeFormatted: formatLapTime(data.time),
+          lapNumber: data.lapNumber,
+        };
+      })
       .sort((a, b) => a.bestTime - b.bestTime);
 
     // Add position and gap
