@@ -138,7 +138,17 @@ export default function Navigation() {
               onClick={handleNavClick}
               className={location.pathname === "/risultati" ? "active" : ""}
             >
-              🏁 {t("nav.raceResults")}
+              🏁 {t("nav.raceResults")}{" "}
+              <span
+                className="badge bg-warning text-dark"
+                style={{
+                  fontSize: "0.65em",
+                  verticalAlign: "super",
+                  padding: "0.25em 0.4em",
+                }}
+              >
+                BETA
+              </span>
             </Nav.Link>
             <Nav.Link
               as={Link}

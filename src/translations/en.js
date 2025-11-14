@@ -141,10 +141,12 @@ export const en = {
   raceResults: {
     title: "F1 Session Results",
     description: "Results from all sessions (Free Practice, Qualifying, Sprint, Race)",
+    betaNotice: "This feature is in BETA. Some data may be incomplete or not yet available.",
     selectRace: "Select Race",
     chooseRace: "Choose a race...",
     raceNotFound: "Race not found",
     noDataAvailable: "No data available for this race",
+    sessionNotFinished: "Some sessions may not be completed yet",
     fp1: "Free Practice 1",
     fp2: "Free Practice 2",
     fp3: "Free Practice 3",

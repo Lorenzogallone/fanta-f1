@@ -244,10 +244,16 @@ export default function RaceResults() {
               }}
             >
               <h3 className="mb-0" style={{ color: accentColor }}>
-                🏁 {t("raceResults.title")}
+                🏁 {t("raceResults.title")}{" "}
+                <Badge bg="warning" text="dark">
+                  BETA
+                </Badge>
               </h3>
             </Card.Header>
             <Card.Body>
+              <Alert variant="info" className="mb-3">
+                <strong>ℹ️ BETA:</strong> {t("raceResults.betaNotice")}
+              </Alert>
               <p className="text-muted mb-3">{t("raceResults.description")}</p>
 
               {/* Race Selector */}
@@ -337,6 +343,27 @@ export default function RaceResults() {
               </Card.Header>
 
               <Card.Body>
+                {/* Warning for ongoing/recent races */}
+                {(() => {
+                  const raceDate = selectedRace?.raceUTC?.toDate();
+                  const now = new Date();
+                  const daysSinceRace = raceDate ? (now - raceDate) / (1000 * 60 * 60 * 24) : 999;
+                  const daysUntilRace = raceDate ? (raceDate - now) / (1000 * 60 * 60 * 24) : 999;
+
+                  // Show warning if race is recent (within 2 days after) or upcoming (within 3 days before)
+                  // AND if the race session is not available yet
+                  const isRecentOrUpcoming = daysSinceRace < 2 || (daysUntilRace >= 0 && daysUntilRace < 3);
+                  const raceNotAvailable = !sessions.hasRace;
+
+                  if (isRecentOrUpcoming && raceNotAvailable) {
+                    return (
+                      <Alert variant="warning" className="mb-3">
+                        <strong>⚠️ {t("common.warning")}:</strong> {t("raceResults.sessionNotFinished")}
+                      </Alert>
+                    );
+                  }
+                  return null;
+                })()}
                 <Accordion
                   activeKey={activeKeys}
                   onSelect={(keys) => setActiveKeys(Array.isArray(keys) ? keys : [keys])}

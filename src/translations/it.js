@@ -141,10 +141,12 @@ export const it = {
   raceResults: {
     title: "Risultati Sessioni F1",
     description: "Risultati di tutte le sessioni (Prove Libere, Qualifiche, Sprint, Gara)",
+    betaNotice: "Questa funzionalità è in BETA. Alcuni dati potrebbero essere incompleti o non ancora disponibili.",
     selectRace: "Seleziona Gara",
     chooseRace: "Scegli una gara...",
     raceNotFound: "Gara non trovata",
     noDataAvailable: "Nessun dato disponibile per questa gara",
+    sessionNotFinished: "Alcune sessioni potrebbero non essere ancora completate",
     fp1: "Prove Libere 1",
     fp2: "Prove Libere 2",
     fp3: "Prove Libere 3",
