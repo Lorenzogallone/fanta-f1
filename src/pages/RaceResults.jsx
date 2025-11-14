@@ -371,8 +371,8 @@ export default function RaceResults() {
                           🔧 {t("raceResults.fp1")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body>
-                        <div className="table-responsive">
+                      <Accordion.Body className="p-2 p-md-3">
+                        <div className="table-responsive" style={{ fontSize: "0.9rem" }}>
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
@@ -406,8 +406,8 @@ export default function RaceResults() {
                           🔧 {t("raceResults.fp2")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body>
-                        <div className="table-responsive">
+                      <Accordion.Body className="p-2 p-md-3">
+                        <div className="table-responsive" style={{ fontSize: "0.9rem" }}>
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
@@ -441,8 +441,8 @@ export default function RaceResults() {
                           🔧 {t("raceResults.fp3")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body>
-                        <div className="table-responsive">
+                      <Accordion.Body className="p-2 p-md-3">
+                        <div className="table-responsive" style={{ fontSize: "0.9rem" }}>
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
@@ -476,8 +476,8 @@ export default function RaceResults() {
                           ⚡ {t("raceResults.sprintQualifying")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body>
-                        <div className="table-responsive">
+                      <Accordion.Body className="p-2 p-md-3">
+                        <div className="table-responsive" style={{ fontSize: "0.9rem" }}>
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
@@ -511,8 +511,8 @@ export default function RaceResults() {
                           🏎️ {t("raceResults.qualifying")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body>
-                        <div className="table-responsive">
+                      <Accordion.Body className="p-2 p-md-3">
+                        <div className="table-responsive" style={{ fontSize: "0.9rem" }}>
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
@@ -564,8 +564,8 @@ export default function RaceResults() {
                           ⚡ {t("raceResults.sprint")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body>
-                        <div className="table-responsive">
+                      <Accordion.Body className="p-2 p-md-3">
+                        <div className="table-responsive" style={{ fontSize: "0.9rem" }}>
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>
@@ -599,8 +599,8 @@ export default function RaceResults() {
                           🏆 {t("raceResults.race")}
                         </strong>
                       </Accordion.Header>
-                      <Accordion.Body>
-                        <div className="table-responsive">
+                      <Accordion.Body className="p-2 p-md-3">
+                        <div className="table-responsive" style={{ fontSize: "0.9rem" }}>
                           <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
                             <thead>
                               <tr>

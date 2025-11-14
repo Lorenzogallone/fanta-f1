@@ -298,7 +298,7 @@ export default function Statistics() {
                       value: t("statistics.points"),
                       angle: -90,
                       position: "insideLeft",
-                      style: { fill: textColor },
+                      style: { fill: textColor, fontSize: "0.7rem" },
                     }}
                   />
                   <Tooltip content={<CustomTooltip />} />
@@ -313,8 +313,7 @@ export default function Statistics() {
                       dataKey={player.name}
                       stroke={CHART_COLORS[idx]}
                       strokeWidth={3}
-                      dot={{ r: 5 }}
-                      activeDot={{ r: 7 }}
+                      dot={false}
                     />
                   ))}
                 </LineChart>
@@ -365,7 +364,7 @@ export default function Statistics() {
                       value: t("statistics.position"),
                       angle: -90,
                       position: "insideLeft",
-                      style: { fill: textColor },
+                      style: { fill: textColor, fontSize: "0.7rem" },
                     }}
                   />
                   <Tooltip content={<CustomTooltip />} />
@@ -380,8 +379,7 @@ export default function Statistics() {
                       dataKey={player.name}
                       stroke={CHART_COLORS[idx]}
                       strokeWidth={3}
-                      dot={{ r: 5 }}
-                      activeDot={{ r: 7 }}
+                      dot={false}
                     />
                   ))}
                 </LineChart>

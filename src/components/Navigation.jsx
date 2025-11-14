@@ -62,14 +62,14 @@ export default function Navigation() {
         </Link>
 
         {/* Theme toggle and language selector - always visible on right */}
-        <div className="d-flex align-items-center gap-2 order-2 order-lg-3">
+        <div className="d-flex align-items-center gap-1 order-2 order-lg-3">
           {/* Language Selector */}
           <Dropdown align="end">
             <Dropdown.Toggle
               variant="link"
               className="p-0 border-0 shadow-none text-decoration-none"
               style={{
-                fontSize: "1.5rem",
+                fontSize: "1.2rem",
                 lineHeight: 1,
                 color: "inherit",
               }}
@@ -98,6 +98,9 @@ export default function Navigation() {
             className="theme-toggle"
             aria-label={t("nav.toggleTheme")}
             title={`Switch to ${isDark ? "light" : "dark"} theme`}
+            style={{
+              transform: "scale(0.85)",
+            }}
           >
             <div className="theme-toggle-slider">
               {isDark ? "🌙" : "☀️"}
@@ -138,17 +141,7 @@ export default function Navigation() {
               onClick={handleNavClick}
               className={location.pathname === "/results" ? "active" : ""}
             >
-              🏁 {t("nav.raceResults")}{" "}
-              <span
-                className="badge bg-warning text-dark"
-                style={{
-                  fontSize: "0.65em",
-                  verticalAlign: "super",
-                  padding: "0.25em 0.4em",
-                }}
-              >
-                BETA
-              </span>
+              🏁 {t("nav.raceResults")}
             </Nav.Link>
             <Nav.Link
               as={Link}
