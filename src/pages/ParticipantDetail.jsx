@@ -261,7 +261,7 @@ export default function ParticipantDetail() {
                 </Col>
                 <Col xs={6} md={3}>
                   <div className="text-center">
-                    <div className="text-muted small">{t("participantDetail.racesParticipated")}</div>
+                    <div className="text-muted small">{t("participantDetail.lineupsSubmitted")}</div>
                     <div className="fs-2 fw-bold" style={{ color: accentColor }}>
                       {totalRaces}/{totalCompletedRaces}
                     </div>
@@ -311,7 +311,7 @@ export default function ParticipantDetail() {
                 </h5>
               </Card.Header>
               <Card.Body>
-                <h6 className="fw-bold mb-2">{t("formations.drivers")}</h6>
+                <h6 className="fw-bold mb-2">{t("history.drivers")}</h6>
                 <div className="mb-3">
                   {participant.championshipPiloti.map((driver, idx) => (
                     <div key={idx} className="py-2 border-bottom">
@@ -323,7 +323,7 @@ export default function ParticipantDetail() {
 
                 {participant.championshipCostruttori?.length === 3 && (
                   <>
-                    <h6 className="fw-bold mb-2 mt-3">{t("formations.constructors")}</h6>
+                    <h6 className="fw-bold mb-2 mt-3">{t("history.constructors")}</h6>
                     <div>
                       {participant.championshipCostruttori.map((team, idx) => (
                         <div key={idx} className="py-2 border-bottom">
@@ -346,94 +346,6 @@ export default function ParticipantDetail() {
             </Card>
           </Col>
         )}
-
-        {/* ============ RACE HISTORY ============ */}
-        <Col xs={12}>
-          <Card
-            className="shadow"
-            style={{
-              borderColor: accentColor,
-              backgroundColor: bgCard,
-            }}
-          >
-            <Card.Header
-              style={{
-                backgroundColor: bgHeader,
-                borderBottom: `2px solid ${accentColor}`,
-              }}
-            >
-              <h5 className="mb-0" style={{ color: accentColor }}>
-                📊 {t("participantDetail.raceHistory")}
-              </h5>
-            </Card.Header>
-            <Card.Body>
-              {raceHistory.length === 0 ? (
-                <Alert variant="info">{t("participantDetail.noRaces")}</Alert>
-              ) : (
-                <div className="table-responsive">
-                  <Table hover className="align-middle" style={{ fontSize: "0.95rem" }}>
-                    <thead>
-                      <tr>
-                        <th style={{ color: accentColor }}>{t("history.race")}</th>
-                        <th style={{ color: accentColor }} className="text-center">
-                          {t("common.points")}
-                        </th>
-                        <th style={{ color: accentColor }} className="text-center">
-                          {t("leaderboard.joker")}
-                        </th>
-                        <th style={{ color: accentColor }} className="text-center d-none d-md-table-cell">
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {raceHistory.map((race) => {
-                        const sub = race.submission;
-                        const hasPenalty = sub.penalty && sub.penalty < 0;
-                        const basePoints = sub.totalPoints || 0;
-
-                        return (
-                          <tr key={race.raceId}>
-                            <td>
-                              <div className="fw-bold">{race.raceName}</div>
-                              <small className="text-muted">
-                                {t("history.round")} {race.round}
-                              </small>
-                            </td>
-                            <td className="text-center">
-                              <div className="d-flex flex-column align-items-center gap-1">
-                                <Badge bg={basePoints > 0 ? "success" : basePoints < 0 ? "danger" : "secondary"} style={{ fontSize: "1rem" }}>
-                                  {basePoints}
-                                </Badge>
-                                {hasPenalty && (
-                                  <Badge bg="danger" style={{ fontSize: "0.75rem" }}>
-                                    {sub.penalty} penalty
-                                  </Badge>
-                                )}
-                              </div>
-                            </td>
-                            <td className="text-center">
-                              {sub.useJolly ? (
-                                <Badge bg="warning" text="dark" style={{ fontSize: "1.2rem" }}>⭐</Badge>
-                              ) : (
-                                <span className="text-muted">—</span>
-                              )}
-                            </td>
-                            <td className="text-center d-none d-md-table-cell">
-                              <Badge bg="success" pill>
-                                ✓ {t("formations.submitted") || "Submitted"}
-                              </Badge>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </Table>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
       </Row>
     </Container>
   );
