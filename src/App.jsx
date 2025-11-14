@@ -14,10 +14,11 @@ import "./styles/theme.css";
 // Lazy loading delle pagine per code splitting
 const Home = lazy(() => import("./pages/Home"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
+const Formations = lazy(() => import("./pages/Formations"));
 const FormationApp = lazy(() => import("./pages/FormationApp"));
+const ChampionshipForm = lazy(() => import("./pages/ChampionshipForm"));
 const CalculatePoints = lazy(() => import("./pages/CalculatePoints"));
 const History = lazy(() => import("./pages/History"));
-const ChampionshipForm = lazy(() => import("./pages/ChampionshipForm"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const Statistics = lazy(() => import("./pages/Statistics"));
 
@@ -41,12 +42,14 @@ export default function App() {
             <Routes>
               <Route path="/"           element={<Home />} />
               <Route path="/classifica" element={<Leaderboard />} />
-              <Route path="/schiera"    element={<FormationApp />} />
+              <Route path="/schiera"    element={<Formations />} />
               <Route path="/calcola"    element={<CalculatePoints />} />
               <Route path="/storico"    element={<History />} />
               <Route path="/statistiche" element={<Statistics />} />
-              <Route path="/championship" element={<ChampionshipForm />} />
               <Route path="/admin"      element={<AdminPanel />} />
+              {/* Route legacy per compatibilità */}
+              <Route path="/formations/races" element={<FormationApp />} />
+              <Route path="/formations/championship" element={<ChampionshipForm />} />
             </Routes>
           </Suspense>
         </BContainer>

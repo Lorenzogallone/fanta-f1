@@ -101,14 +101,6 @@ export default function Navigation() {
             </Nav.Link>
             <Nav.Link
               as={Link}
-              to="/championship"
-              onClick={handleNavClick}
-              className={location.pathname === "/championship" ? "active" : ""}
-            >
-              🏆 Schiera Campionato
-            </Nav.Link>
-            <Nav.Link
-              as={Link}
               to="/calcola"
               onClick={handleNavClick}
               className={location.pathname === "/calcola" ? "active" : ""}
