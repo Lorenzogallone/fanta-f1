@@ -18,15 +18,31 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../contexts/LanguageContext";
 
 /**
+ * Formats driver name to first initial + surname
+ * @param {string} name - Full driver name (e.g., "Max Verstappen")
+ * @returns {string} Formatted name (e.g., "M. Verstappen")
+ */
+function formatDriverName(name) {
+  if (!name) return "—";
+  const parts = name.trim().split(" ");
+  if (parts.length < 2) return name;
+  const firstName = parts[0];
+  const surname = parts.slice(1).join(" ");
+  return `${firstName.charAt(0)}. ${surname}`;
+}
+
+/**
  * Displays driver name with team logo.
  * @param {Object} props - Component props
  * @param {string} props.name - Driver name
+ * @param {boolean} props.short - Use short format (initial + surname)
  * @returns {JSX.Element} Driver name with team logo
  */
-function DriverWithLogo({ name }) {
+function DriverWithLogo({ name, short = false }) {
   if (!name) return <>—</>;
   const team = DRIVER_TEAM[name];
   const logoSrc = team ? TEAM_LOGOS[team] : null;
+  const displayName = short ? formatDriverName(name) : name;
   return (
     <span className="d-flex align-items-center">
       {logoSrc && (
@@ -41,7 +57,7 @@ function DriverWithLogo({ name }) {
           }}
         />
       )}
-      {name}
+      {displayName}
     </span>
   );
 }
@@ -508,17 +524,14 @@ function RaceHistoryCard({
                     const Cell = ({ pick, pts }) => (
                       <td className="text-center">
                         {pick ? (
-                          <>
-                            <DriverWithLogo name={pick} />
+                          <div className="d-flex align-items-center justify-content-center gap-2">
+                            <DriverWithLogo name={pick} short />
                             {showPoints && official && (
-                              <>
-                                {" "}
-                                <Badge bg={pts > 0 ? "success" : pts < 0 ? "danger" : "secondary"} pill>
-                                  {pts}
-                                </Badge>
-                              </>
+                              <Badge bg={pts > 0 ? "success" : pts < 0 ? "danger" : "secondary"} pill style={{ fontSize: "0.85rem" }}>
+                                {pts}
+                              </Badge>
                             )}
-                          </>
+                          </div>
                         ) : (
                           "—"
                         )}
