@@ -77,7 +77,6 @@ export const en = {
     racesParticipated: "Races Participated",
     averagePoints: "Average Points",
     championshipFormation: "Championship Formation",
-    bestRace: "Best Race",
     raceHistory: "Race History",
     noRaces: "No races found for this participant",
   },

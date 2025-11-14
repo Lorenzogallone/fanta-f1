@@ -178,11 +178,6 @@ export default function ParticipantDetail() {
   const averagePoints = totalRaces > 0
     ? (participant?.puntiTotali / totalRaces).toFixed(1)
     : 0;
-  const bestRace = raceHistory.length > 0
-    ? raceHistory.reduce((max, race) =>
-        (race.submission.totalPoints || 0) > (max?.submission.totalPoints || 0) ? race : max
-      , raceHistory[0])
-    : null;
 
   if (loading) {
     return (
@@ -277,7 +272,7 @@ export default function ParticipantDetail() {
 
         {/* ============ CHAMPIONSHIP FORMATION ============ */}
         {participant?.championshipPiloti?.length === 3 && (
-          <Col xs={12} lg={6}>
+          <Col xs={12}>
             <Card
               className="shadow h-100"
               style={{
@@ -327,63 +322,6 @@ export default function ParticipantDetail() {
                     </Badge>
                   </div>
                 )}
-              </Card.Body>
-            </Card>
-          </Col>
-        )}
-
-        {/* ============ BEST RACE ============ */}
-        {bestRace && (
-          <Col xs={12} lg={participant?.championshipPiloti?.length === 3 ? 6 : 12}>
-            <Card
-              className="shadow h-100"
-              style={{
-                borderColor: accentColor,
-                backgroundColor: bgCard,
-              }}
-            >
-              <Card.Header
-                style={{
-                  backgroundColor: bgHeader,
-                  borderBottom: `2px solid ${accentColor}`,
-                }}
-              >
-                <h5 className="mb-0" style={{ color: accentColor }}>
-                  ⭐ {t("participantDetail.bestRace")}
-                </h5>
-              </Card.Header>
-              <Card.Body>
-                <h6 className="fw-bold mb-3">
-                  {bestRace.raceName}
-                  <Badge bg="primary" className="ms-2">
-                    {bestRace.submission.totalPoints || 0} {t("common.points")}
-                  </Badge>
-                </h6>
-
-                <Table size="sm" borderless>
-                  <tbody>
-                    <tr>
-                      <td className="text-muted">{t("formations.mainDriver")}</td>
-                      <td><DriverWithLogo name={bestRace.submission.mainDriver} /></td>
-                    </tr>
-                    <tr>
-                      <td className="text-muted">{t("formations.sprintDriver")}</td>
-                      <td><DriverWithLogo name={bestRace.submission.sprintDriver} /></td>
-                    </tr>
-                    <tr>
-                      <td className="text-muted">{t("formations.reserveDriver")}</td>
-                      <td><DriverWithLogo name={bestRace.submission.reserveDriver} /></td>
-                    </tr>
-                    <tr>
-                      <td className="text-muted">{t("formations.firstConstructor")}</td>
-                      <td><TeamWithLogo name={bestRace.submission.firstConstructor} /></td>
-                    </tr>
-                    <tr>
-                      <td className="text-muted">{t("formations.secondConstructor")}</td>
-                      <td><TeamWithLogo name={bestRace.submission.secondConstructor} /></td>
-                    </tr>
-                  </tbody>
-                </Table>
               </Card.Body>
             </Card>
           </Col>
