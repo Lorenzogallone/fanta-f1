@@ -25,6 +25,7 @@ const FormationApp = lazy(() => import("./pages/FormationApp"));
 const ChampionshipForm = lazy(() => import("./pages/ChampionshipForm"));
 const CalculatePoints = lazy(() => import("./pages/CalculatePoints"));
 const History = lazy(() => import("./pages/History"));
+const RaceResults = lazy(() => import("./pages/RaceResults"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const Statistics = lazy(() => import("./pages/Statistics"));
 
@@ -58,6 +59,7 @@ export default function App() {
                 <Route path="/schiera"    element={<Formations />} />
                 <Route path="/calcola"    element={<CalculatePoints />} />
                 <Route path="/storico"    element={<History />} />
+                <Route path="/risultati"  element={<RaceResults />} />
                 <Route path="/statistiche" element={<Statistics />} />
                 <Route path="/admin"      element={<AdminPanel />} />
                 {/* Legacy routes for compatibility */}
