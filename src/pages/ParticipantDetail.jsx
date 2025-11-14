@@ -211,7 +211,7 @@ export default function ParticipantDetail() {
     return (
       <Container className="py-5">
         <Alert variant="danger">{error}</Alert>
-        <Button variant="secondary" onClick={() => navigate("/leaderboard")}>
+        <Button variant="secondary" onClick={() => navigate(-1)}>
           {t("common.back")}
         </Button>
       </Container>
@@ -223,7 +223,7 @@ export default function ParticipantDetail() {
       <Button
         variant="link"
         className="mb-3 p-0"
-        onClick={() => navigate("/leaderboard")}
+        onClick={() => navigate(-1)}
         style={{ color: accentColor }}
       >
         ← {t("common.back")}
@@ -292,7 +292,7 @@ export default function ParticipantDetail() {
 
         {/* ============ CHAMPIONSHIP FORMATION ============ */}
         {participant?.championshipPiloti?.length === 3 && (
-          <Col xs={12}>
+          <Col xs={12} lg={8} xl={6} className="mx-auto">
             <Card
               className="shadow h-100"
               style={{
@@ -310,12 +310,12 @@ export default function ParticipantDetail() {
                   🏆 {t("participantDetail.championshipFormation")}
                 </h5>
               </Card.Header>
-              <Card.Body>
+              <Card.Body className="p-3">
                 <h6 className="fw-bold mb-2">{t("history.drivers")}</h6>
                 <div className="mb-3">
                   {participant.championshipPiloti.map((driver, idx) => (
-                    <div key={idx} className="py-2 border-bottom">
-                      <span className="text-muted me-2">{idx + 1}°</span>
+                    <div key={idx} className="py-1 border-bottom d-flex align-items-center">
+                      <span className="text-muted me-2" style={{ minWidth: "25px" }}>{idx + 1}°</span>
                       <DriverWithLogo name={driver} />
                     </div>
                   ))}
@@ -326,8 +326,8 @@ export default function ParticipantDetail() {
                     <h6 className="fw-bold mb-2 mt-3">{t("history.constructors")}</h6>
                     <div>
                       {participant.championshipCostruttori.map((team, idx) => (
-                        <div key={idx} className="py-2 border-bottom">
-                          <span className="text-muted me-2">{idx + 1}°</span>
+                        <div key={idx} className="py-1 border-bottom d-flex align-items-center">
+                          <span className="text-muted me-2" style={{ minWidth: "25px" }}>{idx + 1}°</span>
                           <TeamWithLogo name={team} />
                         </div>
                       ))}
