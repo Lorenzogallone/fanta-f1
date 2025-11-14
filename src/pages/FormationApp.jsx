@@ -328,26 +328,6 @@ export default function FormationApp() {
   };
 
   /**
-   * Reset form to initial state
-   */
-  const handleResetForm = () => {
-    setForm((f) => ({
-      ...f,
-      P1: null,
-      P2: null,
-      P3: null,
-      jolly: null,
-      jolly2: null,
-      sprintP1: null,
-      sprintP2: null,
-      sprintP3: null,
-      sprintJolly: null,
-    }));
-    setTouched(false);
-    setFlash(null);
-  };
-
-  /**
    * Handle form submission
    * @param {Event} e - Form submit event
    */
@@ -612,25 +592,8 @@ export default function FormationApp() {
                   </>
                 )}
 
-                {/* RIEPILOGO */}
-                {race && form.userId && (fullMain || fullSpr) && (
-                  <FormationSummary
-                    form={form}
-                    hasMain={fullMain}
-                    hasSprint={fullSpr && isSprintRace}
-                    accentColor={colors.accent}
-                  />
-                )}
-
                 {/* BOTTONI */}
                 <Row className="g-2 mt-3">
-                  {race && (
-                    <Col xs={12}>
-                      <Button variant="outline-secondary" size="sm" className="w-100" onClick={handleResetForm}>
-                        🔄 {t("formations.resetFormation")}
-                      </Button>
-                    </Col>
-                  )}
                   <Col xs={isSprintRace ? 6 : 12}>
                     <Button
                       variant="danger"
@@ -665,7 +628,7 @@ export default function FormationApp() {
 
         {/* ---------- LISTA FORMAZIONI ---------- */}
         <Col xs={12} lg={6}>
-          {race && <RaceHistoryCard race={race} showOfficialResults={false} showPoints={false} compact={true} />}
+          {race && <RaceHistoryCard key={refreshKey} race={race} showOfficialResults={false} showPoints={false} compact={true} />}
         </Col>
       </Row>
 
@@ -786,75 +749,4 @@ export default function FormationApp() {
     );
   }
 
-  function FormationSummary({ form, hasMain, hasSprint, accentColor }) {
-    return (
-      <Card className="mt-3" style={{ borderLeft: `3px solid ${accentColor}` }}>
-        <Card.Body className="py-2">
-          <h6 className="mb-2" style={{ color: accentColor }}>
-            📋 {t("formations.formationSummary")}
-          </h6>
-          <Table size="sm" className="mb-0">
-            <tbody>
-              {hasMain && (
-                <>
-                  <tr>
-                    <td className="fw-bold" colSpan={2}>
-                      {t("formations.mainRace")}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>P1</td>
-                    <td>{form.P1?.value || "—"}</td>
-                  </tr>
-                  <tr>
-                    <td>P2</td>
-                    <td>{form.P2?.value || "—"}</td>
-                  </tr>
-                  <tr>
-                    <td>P3</td>
-                    <td>{form.P3?.value || "—"}</td>
-                  </tr>
-                  <tr>
-                    <td>{t("formations.joker")}</td>
-                    <td>{form.jolly?.value || "—"}</td>
-                  </tr>
-                  {form.jolly2 && (
-                    <tr>
-                      <td>{t("formations.joker2")}</td>
-                      <td>{form.jolly2.value}</td>
-                    </tr>
-                  )}
-                </>
-              )}
-              {hasSprint && (
-                <>
-                  <tr>
-                    <td className="fw-bold" colSpan={2}>
-                      {t("formations.sprint")}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>SP1</td>
-                    <td>{form.sprintP1?.value || "—"}</td>
-                  </tr>
-                  <tr>
-                    <td>SP2</td>
-                    <td>{form.sprintP2?.value || "—"}</td>
-                  </tr>
-                  <tr>
-                    <td>SP3</td>
-                    <td>{form.sprintP3?.value || "—"}</td>
-                  </tr>
-                  <tr>
-                    <td>{t("formations.joker")} SP</td>
-                    <td>{form.sprintJolly?.value || "—"}</td>
-                  </tr>
-                </>
-              )}
-            </tbody>
-          </Table>
-        </Card.Body>
-      </Card>
-    );
-  }
 }
