@@ -306,18 +306,18 @@ export default function History() {
 
                     {/* Desktop View */}
                     <div className="d-none d-lg-block table-responsive">
-                      <Table hover className="align-middle">
+                      <Table hover className="align-middle" size="sm">
                         <thead>
                           <tr>
                             <th style={{ color: accentColor }}>Giocatore</th>
                             <th style={{ color: accentColor }}>P1</th>
                             <th style={{ color: accentColor }}>P2</th>
                             <th style={{ color: accentColor }}>P3</th>
-                            <th className="text-center" style={{ color: accentColor }}>Pts Piloti</th>
+                            <th className="text-center" style={{ color: accentColor }}>Tot Piloti</th>
                             <th style={{ color: accentColor }}>C1</th>
                             <th style={{ color: accentColor }}>C2</th>
                             <th style={{ color: accentColor }}>C3</th>
-                            <th className="text-center" style={{ color: accentColor }}>Pts Costruttori</th>
+                            <th className="text-center" style={{ color: accentColor }}>Tot Costruttori</th>
                             <th className="text-center" style={{ color: accentColor }}>Totale</th>
                           </tr>
                         </thead>
@@ -328,22 +328,28 @@ export default function History() {
                               <tr key={sub.userId}>
                                 <td className="fw-bold">{sub.name}</td>
                                 <td>
-                                  <DriverWithLogo name={sub.piloti[0]} />
-                                  {sub.piloti[0] === championshipResults.P1 && (
-                                    <Badge bg="success" className="ms-2">{POINTS.MAIN[1]}</Badge>
-                                  )}
+                                  <div className="d-flex align-items-center gap-2">
+                                    <DriverWithLogo name={sub.piloti[0]} />
+                                    {sub.piloti[0] === championshipResults.P1 && (
+                                      <Badge bg="success" pill>{POINTS.MAIN[1]}</Badge>
+                                    )}
+                                  </div>
                                 </td>
                                 <td>
-                                  <DriverWithLogo name={sub.piloti[1]} />
-                                  {sub.piloti[1] === championshipResults.P2 && (
-                                    <Badge bg="success" className="ms-2">{POINTS.MAIN[2]}</Badge>
-                                  )}
+                                  <div className="d-flex align-items-center gap-2">
+                                    <DriverWithLogo name={sub.piloti[1]} />
+                                    {sub.piloti[1] === championshipResults.P2 && (
+                                      <Badge bg="success" pill>{POINTS.MAIN[2]}</Badge>
+                                    )}
+                                  </div>
                                 </td>
                                 <td>
-                                  <DriverWithLogo name={sub.piloti[2]} />
-                                  {sub.piloti[2] === championshipResults.P3 && (
-                                    <Badge bg="success" className="ms-2">{POINTS.MAIN[3]}</Badge>
-                                  )}
+                                  <div className="d-flex align-items-center gap-2">
+                                    <DriverWithLogo name={sub.piloti[2]} />
+                                    {sub.piloti[2] === championshipResults.P3 && (
+                                      <Badge bg="success" pill>{POINTS.MAIN[3]}</Badge>
+                                    )}
+                                  </div>
                                 </td>
                                 <td className="text-center">
                                   <Badge bg={pts.pilotiPts > 0 ? "success" : "secondary"} pill>
@@ -351,22 +357,28 @@ export default function History() {
                                   </Badge>
                                 </td>
                                 <td>
-                                  <TeamWithLogo name={sub.costruttori[0]} />
-                                  {sub.costruttori[0] === championshipResults.C1 && (
-                                    <Badge bg="success" className="ms-2">{POINTS.MAIN[1]}</Badge>
-                                  )}
+                                  <div className="d-flex align-items-center gap-2">
+                                    <TeamWithLogo name={sub.costruttori[0]} />
+                                    {sub.costruttori[0] === championshipResults.C1 && (
+                                      <Badge bg="success" pill>{POINTS.MAIN[1]}</Badge>
+                                    )}
+                                  </div>
                                 </td>
                                 <td>
-                                  <TeamWithLogo name={sub.costruttori[1]} />
-                                  {sub.costruttori[1] === championshipResults.C2 && (
-                                    <Badge bg="success" className="ms-2">{POINTS.MAIN[2]}</Badge>
-                                  )}
+                                  <div className="d-flex align-items-center gap-2">
+                                    <TeamWithLogo name={sub.costruttori[1]} />
+                                    {sub.costruttori[1] === championshipResults.C2 && (
+                                      <Badge bg="success" pill>{POINTS.MAIN[2]}</Badge>
+                                    )}
+                                  </div>
                                 </td>
                                 <td>
-                                  <TeamWithLogo name={sub.costruttori[2]} />
-                                  {sub.costruttori[2] === championshipResults.C3 && (
-                                    <Badge bg="success" className="ms-2">{POINTS.MAIN[3]}</Badge>
-                                  )}
+                                  <div className="d-flex align-items-center gap-2">
+                                    <TeamWithLogo name={sub.costruttori[2]} />
+                                    {sub.costruttori[2] === championshipResults.C3 && (
+                                      <Badge bg="success" pill>{POINTS.MAIN[3]}</Badge>
+                                    )}
+                                  </div>
                                 </td>
                                 <td className="text-center">
                                   <Badge bg={pts.costruttoriPts > 0 ? "success" : "secondary"} pill>

@@ -148,11 +148,37 @@ export default function AdminPanel() {
 function ParticipantsManager({ participants: propParticipants, loading: propLoading, onDataChange }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
-  const [editingId, setEditingId] = useState(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [currentParticipant, setCurrentParticipant] = useState(null);
   const [formData, setFormData] = useState({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
+  const { isDark } = useTheme();
 
   // Usa i partecipanti passati come props
   const participants = propParticipants;
+
+  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
+
+  // Apri dialog aggiunta
+  const openAddDialog = () => {
+    setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
+    setMessage(null);
+    setShowAddDialog(true);
+  };
+
+  // Apri dialog modifica
+  const openEditDialog = (participant) => {
+    setCurrentParticipant(participant);
+    setFormData({
+      id: participant.id,
+      name: participant.name,
+      puntiTotali: participant.puntiTotali || 0,
+      jolly: participant.jolly || 0,
+      usedLateSubmission: participant.usedLateSubmission || false,
+    });
+    setMessage(null);
+    setShowEditDialog(true);
+  };
 
   // Aggiungi nuovo partecipante
   const handleAdd = async (e) => {
@@ -177,9 +203,10 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
         championshipPts: 0,
       });
 
-      setMessage({ type: "success", text: "Partecipante aggiunto!" });
+      setMessage({ type: "success", text: "Partecipante aggiunto con successo!" });
       setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
       onDataChange();
+      setTimeout(() => setShowAddDialog(false), 1500);
     } catch (err) {
       console.error(err);
       setMessage({ type: "danger", text: "Errore durante l'aggiunta" });
@@ -189,34 +216,22 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
   };
 
   // Modifica partecipante
-  const handleEdit = (participant) => {
-    setEditingId(participant.id);
-    setFormData({
-      id: participant.id,
-      name: participant.name,
-      puntiTotali: participant.puntiTotali || 0,
-      jolly: participant.jolly || 0,
-      usedLateSubmission: participant.usedLateSubmission || false,
-    });
-  };
-
   const handleUpdate = async (e) => {
     e.preventDefault();
     setSaving(true);
     setMessage(null);
 
     try {
-      await updateDoc(doc(db, "ranking", editingId), {
+      await updateDoc(doc(db, "ranking", currentParticipant.id), {
         name: formData.name,
         puntiTotali: parseInt(formData.puntiTotali) || 0,
         jolly: parseInt(formData.jolly) || 0,
         usedLateSubmission: formData.usedLateSubmission,
       });
 
-      setMessage({ type: "success", text: "Partecipante aggiornato!" });
-      setEditingId(null);
-      setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
+      setMessage({ type: "success", text: "Partecipante aggiornato con successo!" });
       onDataChange();
+      setTimeout(() => setShowEditDialog(false), 1500);
     } catch (err) {
       console.error(err);
       setMessage({ type: "danger", text: "Errore durante l'aggiornamento" });
@@ -226,36 +241,20 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
   };
 
   // Elimina partecipante
-  const handleDelete = async (id, name) => {
-    if (!window.confirm(`Sei sicuro di voler eliminare ${name}?`)) return;
+  const handleDelete = async () => {
+    if (!window.confirm(`Sei sicuro di voler eliminare ${currentParticipant.name}?\n\nQuesta azione è irreversibile!`)) return;
 
     setSaving(true);
+    setMessage(null);
+
     try {
-      await deleteDoc(doc(db, "ranking", id));
+      await deleteDoc(doc(db, "ranking", currentParticipant.id));
       setMessage({ type: "success", text: "Partecipante eliminato!" });
       onDataChange();
+      setTimeout(() => setShowEditDialog(false), 1500);
     } catch (err) {
       console.error(err);
       setMessage({ type: "danger", text: "Errore durante l'eliminazione" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Reset Late Submission
-  const handleResetLateSubmission = async (id, name) => {
-    if (!window.confirm(`Resettare il flag Late Submission per ${name}?\n\nQuesto permetterà all'utente di usare di nuovo l'inserimento in ritardo.`)) return;
-
-    setSaving(true);
-    try {
-      await updateDoc(doc(db, "ranking", id), {
-        usedLateSubmission: false
-      });
-      setMessage({ type: "success", text: `Late Submission resettata per ${name}!` });
-      onDataChange();
-    } catch (err) {
-      console.error(err);
-      setMessage({ type: "danger", text: "Errore durante il reset" });
     } finally {
       setSaving(false);
     }
@@ -270,65 +269,195 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
   }
 
   return (
-    <Row className="g-4">
-      <Col xs={12} lg={6}>
-        <Card className="shadow">
-          <Card.Header className="bg-white">
-            <h5 className="mb-0">
-              {editingId ? "✏️ Modifica Partecipante" : "➕ Aggiungi Partecipante"}
-            </h5>
-          </Card.Header>
-          <Card.Body>
+    <>
+      <Row className="mb-3">
+        <Col>
+          <div className="d-flex justify-content-between align-items-center">
+            <h5 className="mb-0">Lista Partecipanti ({participants.length})</h5>
+            <Button variant="danger" onClick={openAddDialog}>
+              ➕ Aggiungi Partecipante
+            </Button>
+          </div>
+        </Col>
+      </Row>
+
+      <Row>
+        <Col>
+          <Card className="shadow">
+            <Card.Body className="p-0">
+              {participants.length === 0 ? (
+                <Alert variant="info" className="m-3">
+                  Nessun partecipante trovato. Clicca su "Aggiungi Partecipante" per iniziare.
+                </Alert>
+              ) : (
+                <div className="table-responsive">
+                  <Table hover className="mb-0 align-middle">
+                    <thead>
+                      <tr>
+                        <th>Nome</th>
+                        <th className="text-center">Punti</th>
+                        <th className="text-center">Jolly</th>
+                        <th className="text-center">Late Used</th>
+                        <th className="text-center" style={{ width: 100 }}>Azioni</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {participants.map((p) => (
+                        <tr key={p.id}>
+                          <td>
+                            <div>
+                              <strong>{p.name}</strong>
+                              <br />
+                              <small className="text-muted">ID: {p.id}</small>
+                            </div>
+                          </td>
+                          <td className="text-center">
+                            <span className="fw-semibold">{p.puntiTotali || 0}</span>
+                          </td>
+                          <td className="text-center">
+                            <span className="fw-semibold">{p.jolly || 0}</span>
+                          </td>
+                          <td className="text-center">
+                            <Badge bg={p.usedLateSubmission ? "warning" : "secondary"}>
+                              {p.usedLateSubmission ? "Sì" : "No"}
+                            </Badge>
+                          </td>
+                          <td className="text-center">
+                            <Button
+                              size="sm"
+                              variant="outline-primary"
+                              onClick={() => openEditDialog(p)}
+                            >
+                              ✏️ Modifica
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Dialog Aggiunta Partecipante */}
+      <Modal show={showAddDialog} onHide={() => setShowAddDialog(false)} centered>
+        <Modal.Header closeButton style={{ borderBottomColor: accentColor }}>
+          <Modal.Title>➕ Aggiungi Nuovo Partecipante</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleAdd}>
+          <Modal.Body>
             {message && (
               <Alert variant={message.type} dismissible onClose={() => setMessage(null)}>
                 {message.text}
               </Alert>
             )}
 
-            <Form onSubmit={editingId ? handleUpdate : handleAdd}>
-              <Form.Group className="mb-3">
-                <Form.Label>ID Utente *</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="es: mario"
-                  value={formData.id}
-                  onChange={(e) => setFormData({ ...formData, id: e.target.value })}
-                  disabled={editingId !== null}
-                  required
-                />
-                <Form.Text>Usato come identificativo unico (non modificabile)</Form.Text>
-              </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>ID Utente *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="es: mario"
+                value={formData.id}
+                onChange={(e) => setFormData({ ...formData, id: e.target.value })}
+                required
+                autoFocus
+              />
+              <Form.Text>Identificativo unico (non modificabile dopo la creazione)</Form.Text>
+            </Form.Group>
 
-              <Form.Group className="mb-3">
-                <Form.Label>Nome Completo *</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="es: Mario Rossi"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Nome Completo *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="es: Mario Rossi"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+            </Form.Group>
 
-              <Form.Group className="mb-3">
-                <Form.Label>Punti Totali</Form.Label>
-                <Form.Control
-                  type="number"
-                  value={formData.puntiTotali}
-                  onChange={(e) => setFormData({ ...formData, puntiTotali: e.target.value })}
-                />
-              </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Punti Totali</Form.Label>
+              <Form.Control
+                type="number"
+                value={formData.puntiTotali}
+                onChange={(e) => setFormData({ ...formData, puntiTotali: e.target.value })}
+              />
+              <Form.Text>Lascia 0 per un nuovo partecipante</Form.Text>
+            </Form.Group>
 
-              <Form.Group className="mb-3">
-                <Form.Label>Jolly Disponibili</Form.Label>
-                <Form.Control
-                  type="number"
-                  value={formData.jolly}
-                  onChange={(e) => setFormData({ ...formData, jolly: e.target.value })}
-                />
-              </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Jolly Disponibili</Form.Label>
+              <Form.Control
+                type="number"
+                value={formData.jolly}
+                onChange={(e) => setFormData({ ...formData, jolly: e.target.value })}
+              />
+              <Form.Text>Numero di jolly disponibili</Form.Text>
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowAddDialog(false)} disabled={saving}>
+              Annulla
+            </Button>
+            <Button variant="danger" type="submit" disabled={saving}>
+              {saving ? "Aggiunta..." : "Aggiungi Partecipante"}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
 
-              {editingId && (
+      {/* Dialog Modifica Partecipante */}
+      <Modal show={showEditDialog} onHide={() => setShowEditDialog(false)} centered>
+        <Modal.Header closeButton style={{ borderBottomColor: accentColor }}>
+          <Modal.Title>✏️ Modifica Partecipante</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleUpdate}>
+          <Modal.Body>
+            {message && (
+              <Alert variant={message.type} dismissible onClose={() => setMessage(null)}>
+                {message.text}
+              </Alert>
+            )}
+
+            {currentParticipant && (
+              <>
+                <Alert variant="light" className="mb-3">
+                  <strong>ID:</strong> {currentParticipant.id}
+                </Alert>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Nome Completo *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                    autoFocus
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Punti Totali</Form.Label>
+                  <Form.Control
+                    type="number"
+                    value={formData.puntiTotali}
+                    onChange={(e) => setFormData({ ...formData, puntiTotali: e.target.value })}
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Jolly Disponibili</Form.Label>
+                  <Form.Control
+                    type="number"
+                    value={formData.jolly}
+                    onChange={(e) => setFormData({ ...formData, jolly: e.target.value })}
+                  />
+                </Form.Group>
+
                 <Form.Group className="mb-3">
                   <Form.Check
                     type="checkbox"
@@ -340,112 +469,31 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
                     Se disattivato, l'utente potrà usare di nuovo l'inserimento in ritardo
                   </Form.Text>
                 </Form.Group>
-              )}
 
-              <div className="d-flex gap-2">
-                <Button variant="danger" type="submit" disabled={saving} className="flex-grow-1">
-                  {saving ? "Salvataggio..." : editingId ? "Aggiorna" : "Aggiungi"}
-                </Button>
-                {editingId && (
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      setEditingId(null);
-                      setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
-                    }}
-                  >
-                    Annulla
+                <hr />
+
+                <div className="d-grid">
+                  <Button variant="outline-danger" onClick={handleDelete} disabled={saving}>
+                    🗑️ Elimina Partecipante
                   </Button>
-                )}
-              </div>
-            </Form>
-          </Card.Body>
-        </Card>
-      </Col>
-
-      <Col xs={12} lg={6}>
-        <Card className="shadow">
-          <Card.Header className="bg-white d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">Lista Partecipanti ({participants.length})</h5>
-            <Button size="sm" variant="outline-primary" onClick={onDataChange}>
-              🔄 Ricarica
-            </Button>
-          </Card.Header>
-          <Card.Body className="p-0">
-            {participants.length === 0 ? (
-              <Alert variant="info" className="m-3">
-                Nessun partecipante trovato
-              </Alert>
-            ) : (
-              <div className="table-responsive">
-                <Table hover className="mb-0">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Nome</th>
-                      <th className="text-center">Punti</th>
-                      <th className="text-center">Jolly</th>
-                      <th className="text-center">Late Used</th>
-                      <th className="text-center">Azioni</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {participants.map((p) => (
-                      <tr key={p.id}>
-                        <td>
-                          <strong>{p.name}</strong>
-                          <br />
-                          <small className="text-muted">ID: {p.id}</small>
-                        </td>
-                        <td className="text-center">
-                          <Badge bg="primary">{p.puntiTotali || 0}</Badge>
-                        </td>
-                        <td className="text-center">
-                          <Badge bg="success">{p.jolly || 0}</Badge>
-                        </td>
-                        <td className="text-center">
-                          <div className="d-flex align-items-center justify-content-center gap-1">
-                            <Badge bg={p.usedLateSubmission ? "danger" : "secondary"}>
-                              {p.usedLateSubmission ? "✓" : "✗"}
-                            </Badge>
-                            {p.usedLateSubmission && (
-                              <Button
-                                size="sm"
-                                variant="outline-info"
-                                title="Reset Late Submission"
-                                onClick={() => handleResetLateSubmission(p.id, p.name)}
-                              >
-                                🔄
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                        <td className="text-center">
-                          <Button
-                            size="sm"
-                            variant="outline-warning"
-                            className="me-1"
-                            onClick={() => handleEdit(p)}
-                          >
-                            ✏️
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline-danger"
-                            onClick={() => handleDelete(p.id, p.name)}
-                          >
-                            🗑️
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
+                  <Form.Text className="text-muted text-center mt-2">
+                    Attenzione: questa azione è irreversibile
+                  </Form.Text>
+                </div>
+              </>
             )}
-          </Card.Body>
-        </Card>
-      </Col>
-    </Row>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowEditDialog(false)} disabled={saving}>
+              Annulla
+            </Button>
+            <Button variant="danger" type="submit" disabled={saving}>
+              {saving ? "Salvataggio..." : "Salva Modifiche"}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+    </>
   );
 }
 
