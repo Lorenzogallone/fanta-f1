@@ -148,11 +148,15 @@ export const en = {
     fp1: "Free Practice 1",
     fp2: "Free Practice 2",
     fp3: "Free Practice 3",
+    sprintQualifying: "Sprint Qualifying",
     qualifying: "Qualifying",
     sprint: "Sprint",
     race: "Race",
     bestTime: "Best Time",
     time: "Time",
+    canStillSubmit: "You can still submit your lineup!",
+    qualifyingNotStarted: "Qualifying hasn't started yet",
+    goToFormation: "Go to Lineup",
   },
 
   // Statistics

@@ -16,7 +16,9 @@ import {
   Alert,
   Badge,
   Form,
+  Button,
 } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import {
   collection,
   getDocs,
@@ -65,14 +67,17 @@ function DriverWithLogo({ name }) {
 export default function RaceResults() {
   const { isDark } = useTheme();
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   const [races, setRaces] = useState([]);
   const [selectedRaceId, setSelectedRaceId] = useState(null);
+  const [selectedRace, setSelectedRace] = useState(null);
   const [sessions, setSessions] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [error, setError] = useState(null);
   const [activeKeys, setActiveKeys] = useState([]);
+  const [canSubmitFormation, setCanSubmitFormation] = useState(false);
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
@@ -115,6 +120,8 @@ export default function RaceResults() {
             defaultKeys.push("race");
           } else if (lastRaceData.hasSprint) {
             defaultKeys.push("sprint");
+          } else if (lastRaceData.hasSprintQualifying) {
+            defaultKeys.push("sprintQualifying");
           } else if (lastRaceData.hasQualifying) {
             defaultKeys.push("qualifying");
           } else if (lastRaceData.hasFP3) {
@@ -145,6 +152,7 @@ export default function RaceResults() {
     setLoadingSessions(true);
     setSessions(null);
     setError(null);
+    setCanSubmitFormation(false);
 
     try {
       const race = races.find((r) => r.id === raceId);
@@ -153,12 +161,16 @@ export default function RaceResults() {
         return;
       }
 
+      setSelectedRace(race);
+
       const season = race.raceUTC.toDate().getFullYear();
       const round = race.round;
 
       const sessionData = await fetchAllSessions(season, round);
 
-      if (!sessionData.hasQualifying && !sessionData.hasSprint && !sessionData.hasRace) {
+      if (!sessionData.hasFP1 && !sessionData.hasFP2 && !sessionData.hasFP3 &&
+          !sessionData.hasSprintQualifying && !sessionData.hasQualifying &&
+          !sessionData.hasSprint && !sessionData.hasRace) {
         setError(t("raceResults.noDataAvailable"));
         setSessions(null);
         return;
@@ -172,12 +184,21 @@ export default function RaceResults() {
         ...sessionData,
       });
 
+      // Check if user can still submit formation
+      // If qualifying or sprint qualifying hasn't happened yet and deadline hasn't passed
+      const now = Timestamp.now();
+      const deadlineHasPassed = race.raceUTC.toDate() < now.toDate();
+      const canSubmit = !deadlineHasPassed && (!sessionData.hasQualifying || !sessionData.hasSprintQualifying);
+      setCanSubmitFormation(canSubmit);
+
       // Set default expanded keys
       const defaultKeys = [];
       if (sessionData.hasRace) {
         defaultKeys.push("race");
       } else if (sessionData.hasSprint) {
         defaultKeys.push("sprint");
+      } else if (sessionData.hasSprintQualifying) {
+        defaultKeys.push("sprintQualifying");
       } else if (sessionData.hasQualifying) {
         defaultKeys.push("qualifying");
       } else if (sessionData.hasFP3) {
@@ -247,6 +268,30 @@ export default function RaceResults() {
                   ))}
                 </Form.Select>
               </Form.Group>
+
+              {/* Submit Formation Button */}
+              {canSubmitFormation && selectedRace && (
+                <Alert variant="info" className="mt-3 mb-0">
+                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+                    <div>
+                      <strong>{t("raceResults.canStillSubmit")}</strong>
+                      <div className="small">{t("raceResults.qualifyingNotStarted")}</div>
+                    </div>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => navigate("/schiera")}
+                      style={{
+                        backgroundColor: accentColor,
+                        borderColor: accentColor,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      🏎️ {t("raceResults.goToFormation")}
+                    </Button>
+                  </div>
+                </Alert>
+              )}
             </Card.Body>
           </Card>
         </Col>
@@ -392,6 +437,43 @@ export default function RaceResults() {
                             </thead>
                             <tbody>
                               {sessions.fp3.map((result, idx) => (
+                                <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
+                                  <td>{result.position}</td>
+                                  <td>
+                                    <DriverWithLogo name={result.driver} />
+                                  </td>
+                                  <td className="font-monospace">{result.bestTimeFormatted}</td>
+                                  <td className="text-muted">{result.gap}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </Table>
+                        </div>
+                      </Accordion.Body>
+                    </Accordion.Item>
+                  )}
+
+                  {/* Sprint Qualifying */}
+                  {sessions.hasSprintQualifying && (
+                    <Accordion.Item eventKey="sprintQualifying">
+                      <Accordion.Header>
+                        <strong style={{ color: accentColor }}>
+                          ⚡ {t("raceResults.sprintQualifying")}
+                        </strong>
+                      </Accordion.Header>
+                      <Accordion.Body>
+                        <div className="table-responsive">
+                          <Table hover className="align-middle" size="sm">
+                            <thead>
+                              <tr>
+                                <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
+                                <th style={{ color: accentColor }}>{t("formations.driver")}</th>
+                                <th style={{ color: accentColor }}>{t("raceResults.bestTime")}</th>
+                                <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {sessions.sprintQualifying.map((result, idx) => (
                                 <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
                                   <td>{result.position}</td>
                                   <td>

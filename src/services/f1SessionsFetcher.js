@@ -340,10 +340,14 @@ export async function fetchRace(season, round) {
  */
 export async function fetchAllSessions(season, round) {
   try {
-    const [fp1, fp2, fp3, qualifying, sprint, race] = await Promise.all([
+    // Determine sprint qualifying name based on season (Sprint Shootout in 2023, Sprint Qualifying from 2024)
+    const sprintQualifyingName = season >= 2024 ? "Sprint Qualifying" : "Sprint Shootout";
+
+    const [fp1, fp2, fp3, sprintQualifying, qualifying, sprint, race] = await Promise.all([
       fetchPracticeSession(season, round, "Practice 1"),
       fetchPracticeSession(season, round, "Practice 2"),
       fetchPracticeSession(season, round, "Practice 3"),
+      fetchPracticeSession(season, round, sprintQualifyingName),
       fetchQualifying(season, round),
       fetchSprint(season, round),
       fetchRace(season, round),
@@ -353,12 +357,14 @@ export async function fetchAllSessions(season, round) {
       fp1,
       fp2,
       fp3,
+      sprintQualifying,
       qualifying,
       sprint,
       race,
       hasFP1: fp1 !== null,
       hasFP2: fp2 !== null,
       hasFP3: fp3 !== null,
+      hasSprintQualifying: sprintQualifying !== null,
       hasQualifying: qualifying !== null,
       hasSprint: sprint !== null,
       hasRace: race !== null,
@@ -369,12 +375,14 @@ export async function fetchAllSessions(season, round) {
       fp1: null,
       fp2: null,
       fp3: null,
+      sprintQualifying: null,
       qualifying: null,
       sprint: null,
       race: null,
       hasFP1: false,
       hasFP2: false,
       hasFP3: false,
+      hasSprintQualifying: false,
       hasQualifying: false,
       hasSprint: false,
       hasRace: false,
@@ -430,6 +438,7 @@ export async function areSessionsAvailable(season, round) {
       sessions.hasFP1 ||
       sessions.hasFP2 ||
       sessions.hasFP3 ||
+      sessions.hasSprintQualifying ||
       sessions.hasQualifying ||
       sessions.hasSprint ||
       sessions.hasRace
