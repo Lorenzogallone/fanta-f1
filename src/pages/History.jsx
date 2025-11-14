@@ -1,10 +1,11 @@
-/* -----------------------------------------------------------------------
-   src/History.jsx
-   -----------------------------------------------------------------------
-   • Mostra tutte le gare concluse con risultati, formazioni e punteggi
-   • Usa il componente unificato RaceHistoryCard
-   • Mostra i risultati del campionato quando disponibili
----------------------------------------------------------------------------*/
+/**
+ * @file History.jsx
+ * @description Historical race results and championship results page
+ * Displays all completed races with results, formations, and points
+ * Uses the unified RaceHistoryCard component
+ * Shows championship results when available
+ */
+
 import React, { useState, useEffect } from "react";
 import {
   Container,
@@ -32,7 +33,10 @@ import { DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 
 /**
- * Componente per visualizzare nome pilota/team con logo
+ * Component to display driver name with team logo
+ * @param {Object} props - Component props
+ * @param {string} props.name - Driver name
+ * @returns {JSX.Element} Driver name with team logo
  */
 function DriverWithLogo({ name }) {
   if (!name) return <>—</>;
@@ -58,7 +62,10 @@ function DriverWithLogo({ name }) {
 }
 
 /**
- * Componente per visualizzare team con logo
+ * Component to display team name with logo
+ * @param {Object} props - Component props
+ * @param {string} props.name - Team name
+ * @returns {JSX.Element} Team name with logo
  */
 function TeamWithLogo({ name }) {
   if (!name) return <>—</>;
@@ -82,7 +89,10 @@ function TeamWithLogo({ name }) {
   );
 }
 
-/* ============================== HISTORY ============================== */
+/**
+ * History page displaying past races and championship results
+ * @returns {JSX.Element} History page with race results and championship standings
+ */
 export default function History() {
   const [pastRaces, setPastRaces] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -92,7 +102,9 @@ export default function History() {
   const [loadingChampionship, setLoadingChampionship] = useState(true);
   const { isDark } = useTheme();
 
-  // Carica le gare passate
+  /**
+   * Load past races from Firestore
+   */
   useEffect(() => {
     (async () => {
       try {
@@ -114,16 +126,18 @@ export default function History() {
     })();
   }, []);
 
-  // Carica i risultati del campionato
+  /**
+   * Load championship results and submissions
+   */
   useEffect(() => {
     (async () => {
       try {
-        // 1. Carica risultati ufficiali del campionato
+        // Load official championship results
         const champDoc = await getDoc(doc(db, "championship", "results"));
         if (champDoc.exists()) {
           setChampionshipResults(champDoc.data());
 
-          // 2. Carica tutte le submissions dal ranking
+          // Load all submissions from ranking
           const rankingSnap = await getDocs(collection(db, "ranking"));
           const submissions = [];
 
@@ -144,7 +158,7 @@ export default function History() {
             }
           });
 
-          // Ordina per nome
+          // Sort by name
           submissions.sort((a, b) => a.name.localeCompare(b.name, "it"));
           setChampionshipSubmissions(submissions);
         }
@@ -179,7 +193,12 @@ export default function History() {
       </Container>
     );
 
-  // Funzione per calcolare i punti di una submission
+  /**
+   * Calculate championship points for a submission
+   * @param {Object} submission - User's championship submission
+   * @param {Object} official - Official championship results
+   * @returns {Object} Points breakdown with pilotiPts, costruttoriPts, and total
+   */
   const calculateChampionshipPoints = (submission, official) => {
     if (!official) return { pilotiPts: 0, costruttoriPts: 0, total: 0 };
 
@@ -193,7 +212,7 @@ export default function History() {
     if (submission.costruttori[1] === official.C2) costruttoriPts += POINTS.MAIN[2];
     if (submission.costruttori[2] === official.C3) costruttoriPts += POINTS.MAIN[3];
 
-    // Regola speciale: 29 → 30
+    // Special rule: 29 points rounds up to 30
     if (pilotiPts === 29) pilotiPts = 30;
     if (costruttoriPts === 29) costruttoriPts = 30;
 

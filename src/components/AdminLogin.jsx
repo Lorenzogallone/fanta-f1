@@ -1,13 +1,27 @@
-// src/components/AdminLogin.jsx
+/**
+ * @file AdminLogin.jsx
+ * Provides admin authentication via password prompt.
+ */
 import React, { useState } from "react";
 import { Container, Row, Col, Card, Form, Button } from "react-bootstrap";
 
 export const ADMIN_PASSWORD = "SUCASOLERA";
 
+/**
+ * Admin login form component with password validation.
+ * @param {Object} props - Component props
+ * @param {Function} props.onSuccess - Callback when authentication succeeds
+ * @param {boolean} props.useLocalStorage - Whether to persist auth in localStorage
+ * @returns {JSX.Element} Admin login form
+ */
 export default function AdminLogin({ onSuccess, useLocalStorage = false }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
 
+  /**
+   * Handles form submission and password validation.
+   * @param {Event} e - Form submit event
+   */
   const handleSubmit = (e) => {
     e.preventDefault();
     if (password === ADMIN_PASSWORD) {

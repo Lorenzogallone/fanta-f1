@@ -1,4 +1,7 @@
-// src/ChampionshipSubmissions.jsx
+/**
+ * @file ChampionshipSubmissions.jsx
+ * Displays championship lineup submissions from all users.
+ */
 import React, { useState, useEffect } from "react";
 import { Card, Table, Spinner, Alert, Image } from "react-bootstrap";
 import { collection, getDocs } from "firebase/firestore";
@@ -6,10 +9,16 @@ import { db } from "../services/firebase";
 import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 
-/* Usa costanti centralizzate */
+// Use centralized constants
 const driverTeam = DRIVER_TEAM;
 const teamLogos = TEAM_LOGOS;
 
+/**
+ * Shows all submitted championship lineups with top 3 drivers and constructors.
+ * @param {Object} props - Component props
+ * @param {number} props.refresh - Timestamp to trigger data refresh
+ * @returns {JSX.Element} Championship submissions table
+ */
 export default function ChampionshipSubmissions({ refresh }) {
   const { isDark } = useTheme();
   const [subs, setSubs] = useState([]);
@@ -42,7 +51,7 @@ export default function ChampionshipSubmissions({ refresh }) {
         setSubs(list);
       } catch (e) {
         console.error(e);
-        setError("Impossibile caricare le formazioni campionato.");
+        setError("Unable to load championship lineups.");
       } finally {
         setLoading(false);
       }
@@ -70,7 +79,7 @@ export default function ChampionshipSubmissions({ refresh }) {
   if (!subs.length) {
     return (
       <Alert variant="info" className="mt-4">
-        Nessuna formazione campionato inviata.
+        No championship lineups submitted yet.
       </Alert>
     );
   }

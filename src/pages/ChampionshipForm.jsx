@@ -1,4 +1,8 @@
-// src/ChampionshipForm.jsx
+/**
+ * @file ChampionshipForm.jsx
+ * @description Championship formation submission form with driver and constructor predictions
+ */
+
 import React, { useState, useEffect } from "react";
 import {
   Container,
@@ -19,13 +23,17 @@ import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS } from "../constants/rac
 import { useTheme } from "../contexts/ThemeContext";
 import "../styles/customSelect.css";
 
-/* ---------- costanti importate da file centralizzato --------- */
+// Constants imported from centralized file
 const drivers = DRIVERS;
 const constructors = CONSTRUCTORS;
 const driverTeam = DRIVER_TEAM;
 const teamLogos = TEAM_LOGOS;
 
-/* helper per opzioni driver con logo ---------------------------------- */
+/**
+ * Helper to create driver options with team logos
+ * @param {string[]} driversList - List of driver names
+ * @returns {Object[]} Select options with logos
+ */
 const asDriverOptions = (driversList) =>
   driversList.map((name) => {
     const team = driverTeam[name];
@@ -41,7 +49,11 @@ const asDriverOptions = (driversList) =>
     };
   });
 
-/* helper per opzioni costruttori con logo ------------------------------ */
+/**
+ * Helper to create constructor options with team logos
+ * @param {string[]} constructorsList - List of constructor names
+ * @returns {Object[]} Select options with logos
+ */
 const asConstructorOptions = (constructorsList) =>
   constructorsList.map((name) => {
     const logo = teamLogos[name];
@@ -56,6 +68,10 @@ const asConstructorOptions = (constructorsList) =>
     };
   });
 
+/**
+ * Championship formation form component
+ * @returns {JSX.Element} Championship prediction form with deadline management
+ */
 export default function ChampionshipForm() {
   const { isDark } = useTheme();
   const [rankingOptions, setRankingOptions] = useState([]);
@@ -72,19 +88,21 @@ export default function ChampionshipForm() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
 
-  /* usato per far "ricaricare" ChampionshipSubmissions */
+  // Used to trigger refresh of ChampionshipSubmissions component
   const [refreshKey, setRefreshKey] = useState(0);
 
-  /* per rilevare se esiste già una formazione */
+  // Track if editing existing formation
   const [isEdit, setIsEdit] = useState(false);
 
-  /* deadline calcolata dinamicamente */
+  // Dynamically calculated deadline
   const [deadlineMs, setDeadlineMs] = useState(null);
   const [deadlineText, setDeadlineText] = useState("");
   const [loadingDeadline, setLoadingDeadline] = useState(true);
   const pastDeadline = deadlineMs ? Date.now() > deadlineMs : false;
 
-  /* ------------- carica lista utenti da "ranking" ---------------- */
+  /**
+   * Load user list from ranking collection
+   */
   useEffect(() => {
     (async () => {
       try {
@@ -106,7 +124,9 @@ export default function ChampionshipForm() {
     })();
   }, []);
 
-  /* ------------- calcola deadline dinamica dalla gara di metà campionato ---- */
+  /**
+   * Calculate dynamic deadline based on mid-championship race
+   */
   useEffect(() => {
     (async () => {
       try {
@@ -118,23 +138,23 @@ export default function ChampionshipForm() {
         }));
 
         if (races.length === 0) {
-          // Nessuna gara trovata, usa fallback
+          // No races found, use fallback
           setDeadlineMs(new Date("2025-09-07T23:59:00").getTime());
           setDeadlineText("07/09 ore 23:59");
           setLoadingDeadline(false);
           return;
         }
 
-        // Trova la gara di metà campionato
+        // Find mid-championship race
         const midRound = Math.ceil(races.length / 2);
         const midRace = races.find(r => r.round === midRound);
 
         if (midRace && midRace.raceUTC) {
-          // Deadline = subito dopo la gara di metà campionato
+          // Deadline = immediately after mid-championship race
           const raceDate = midRace.raceUTC.toDate();
           setDeadlineMs(raceDate.getTime());
 
-          // Formatta la data per il badge
+          // Format date for badge display
           const formatted = raceDate.toLocaleDateString("it-IT", {
             day: "2-digit",
             month: "2-digit",
@@ -144,13 +164,13 @@ export default function ChampionshipForm() {
           });
           setDeadlineText(formatted);
         } else {
-          // Fallback se non si trova la gara di metà
+          // Fallback if mid-race not found
           setDeadlineMs(new Date("2025-09-07T23:59:00").getTime());
           setDeadlineText("07/09 ore 23:59");
         }
       } catch (e) {
         console.error("Errore calcolo deadline:", e);
-        // Fallback in caso di errore
+        // Fallback on error
         setDeadlineMs(new Date("2025-09-07T23:59:00").getTime());
         setDeadlineText("07/09 ore 23:59");
       } finally {
@@ -159,7 +179,9 @@ export default function ChampionshipForm() {
     })();
   }, []);
 
-  /* ------------- se cambia userId, precompila con valori esistenti -- */
+  /**
+   * Pre-fill form with existing values when userId changes
+   */
   useEffect(() => {
     const { userId } = form;
     if (!userId) {
@@ -174,7 +196,7 @@ export default function ChampionshipForm() {
           const data = userDoc.data();
           const { championshipPiloti, championshipCostruttori } = data;
 
-          // Trova oggetti select corrispondenti
+          // Find corresponding select option objects
           const driverOpts = asDriverOptions(drivers);
           const constructorOpts = asConstructorOptions(constructors);
 
@@ -201,7 +223,7 @@ export default function ChampionshipForm() {
             }));
             setIsEdit(true);
           } else {
-            // Nessuna formazione trovata per l'utente
+            // No formation found for user
             setForm((f) => ({
               ...f,
               D1: null,

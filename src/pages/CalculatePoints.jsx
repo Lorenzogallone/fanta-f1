@@ -1,4 +1,9 @@
-// src/CalculatePoints.jsx
+/**
+ * @file CalculatePoints.jsx
+ * @description Admin panel for calculating race and championship points
+ * Handles both race results entry and points calculation with automatic F1 API fetching
+ */
+
 import React, { useEffect, useState } from "react";
 import {
   Card, Form, Button, Alert, Spinner, Container,
@@ -19,7 +24,7 @@ import AdminLogin from "../components/AdminLogin";
 import Select from "react-select";
 import "../styles/customSelect.css";
 
-/* ---------- costanti importate da file centralizzato ---------- */
+// Constants imported from centralized file
 const drivers = DRIVERS;
 const constructors = CONSTRUCTORS;
 const driverTeam = DRIVER_TEAM;
@@ -29,19 +34,31 @@ const PTS_SPRINT = POINTS.SPRINT;
 const BONUS_JOLLY_MAIN = POINTS.BONUS_JOLLY_MAIN;
 const BONUS_JOLLY_SPRINT = POINTS.BONUS_JOLLY_SPRINT;
 
-/* ---------- badge util ---------- */
+/**
+ * Deadline status badge component
+ * @param {Object} props - Component props
+ * @param {boolean} props.open - Whether deadline is open
+ * @returns {JSX.Element} Status badge
+ */
 const DeadlineBadge = ({ open }) => (
   <Badge bg={open ? "success" : "danger"}>
     {open ? " PRONTA " : " BLOCCATA "}
   </Badge>
 );
+
+/**
+ * Double points indicator badge
+ * @returns {JSX.Element} Double points badge
+ */
 const DoubleBadge = () => (
   <Badge bg="warning" text="dark">🌟 Punti doppi! 🌟</Badge>
 );
 
-
-
-/* ---------- helper select con logo ---------- */
+/**
+ * Helper to create driver option with logo
+ * @param {string} d - Driver name
+ * @returns {Object} Select option with logo
+ */
 const asDriverOpt = d => ({
   value: d,
   label: (
@@ -51,6 +68,11 @@ const asDriverOpt = d => ({
     </div>
   ),
 });
+/**
+ * Helper to create constructor option with logo
+ * @param {string} c - Constructor name
+ * @returns {Object} Select option with logo
+ */
 const asConstructorOpt = c => ({
   value: c,
   label: (
@@ -63,7 +85,12 @@ const asConstructorOpt = c => ({
 const driverOptions      = drivers.map(asDriverOpt);
 const constructorOptions = constructors.map(asConstructorOpt);
 
-/* ---------- logo + nome pilota ---------- */
+/**
+ * Component to display driver name with team logo
+ * @param {Object} props - Component props
+ * @param {string} props.name - Driver name
+ * @returns {JSX.Element} Driver name with logo
+ */
 const DriverWithLogo = ({ name }) => {
   if (!name) return <>—</>;
   const team = driverTeam[name];
@@ -81,11 +108,14 @@ const DriverWithLogo = ({ name }) => {
   );
 };
 
-/* ======================== MAIN ======================== */
+/**
+ * Main points calculation component with tabs for race and championship
+ * @returns {JSX.Element} Points calculation interface
+ */
 function CalculatePointsContent() {
   const [activeTab, setActiveTab] = useState("race");
 
-  /* ---------- stato gara ---------- */
+  // Race state
   const [races, setRaces] = useState([]);
   const [race,  setRace]  = useState(null);
   const [loadingRace, setLoadingRace] = useState(true);
@@ -97,37 +127,36 @@ function CalculatePointsContent() {
     P1:null,P2:null,P3:null, SP1:null,SP2:null,SP3:null
   });
 
-  /* preview */
+  // Preview state
   const [official,  setOfficial]   = useState(null);
   const [subs,      setSubs]       = useState([]);
   const [loadingSubs, setLoadingSubs] = useState(true);
   const [rankingMap,setRankingMap] = useState({});
   const [errSubs,   setErrSubs]    = useState(null);
 
-  /* ---------- stato campionato ---------- */
+  // Championship state
   const [formChamp,setFormChamp]   = useState({
     CP1:null,CP2:null,CP3:null, CC1:null,CC2:null,CC3:null
   });
   const [savingChamp,setSavingChamp]=useState(false);
   const [msgChamp,setMsgChamp]     = useState(null);
 
-
-
-  /* ---------------- LOAD LISTA GARE ----------------- */
-  /* ========== LOAD GARE  (sceglie la 1ª ancora da calcolare) ========== */
+  /**
+   * Load race list (selects first race not yet calculated)
+   */
 useEffect(() => {
   (async () => {
     try {
-      // 1️⃣  carica tutte le gare ordinate per data
+      // Load all races ordered by date
       const snap = await getDocs(
         query(collection(db, "races"), orderBy("raceUTC", "asc"))
       );
 
-      // 2️⃣  lista completa
+      // Complete list
       const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setRaces(list);
 
-      // 3️⃣  default = prima gara della lista
+      // Default = first race in list
       if (list.length) setRace(list[0]);
     } catch (err) {
       console.error(err);
@@ -138,22 +167,24 @@ useEffect(() => {
   })();
 }, []);
 
-  /* ---------------- LOAD PREVIEW -------------------- */
+  /**
+   * Load preview data (submissions and official results)
+   */
   useEffect(()=>{
     if(!race) return;
     (async()=>{
       setLoadingSubs(true); setErrSubs(null);
       try{
-        /* mappa utenti una sola volta */
+        // Load user mapping once
         if(!Object.keys(rankingMap).length){
           const mapSnap = await getDocs(collection(db,"ranking"));
           const map={}; mapSnap.docs.forEach(d=>{map[d.id]=d.data().name;});
           setRankingMap(map);
         }
-        /* risultati ufficiali */
+        // Official results
         const rDoc = await getDoc(doc(db,"races",race.id));
         setOfficial(rDoc.data().officialResults ?? null);
-        /* submissions */
+        // Submissions
         const sSnap= await getDocs(collection(db,"races",race.id,"submissions"));
         const arr  = sSnap.docs.map(d=>({id:d.id,...d.data()}));
         arr.sort((a,b)=>(
@@ -168,7 +199,7 @@ useEffect(() => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[race]);
 
-  /* ---------------- HANDLERS GARA ------------------- */
+  // Race submission validation helpers
   const nowMS = Date.now();
   const allowedRace = race && nowMS > race.raceUTC.seconds*1000 + 90*60*1000;
   const mainFilled  = formRace.P1&&formRace.P2&&formRace.P3;
@@ -178,6 +209,9 @@ useEffect(() => {
   const canSubmitRace = allowedRace && mainFilled && sprintFilled && !savingRace;
   const onSelRace = (sel,f)=>setFormRace(s=>({...s,[f]:sel}));
 
+/**
+ * Auto-fetch race results from F1 API when race changes
+ */
 useEffect(() => {
   if (!race) return;
 
@@ -185,18 +219,18 @@ useEffect(() => {
     setFetchingResults(true);
     setMsgRace(null);
 
-    /* 1️⃣ leggi il documento della gara dal database */
+    // Read race document from database
     const snap = await getDoc(doc(db, "races", race.id));
     const off  = snap.exists() ? snap.data().officialResults ?? null : null;
     setOfficial(off);
 
-    /* Helper per convertire nome pilota in opzione select */
+    // Helper to convert driver name to select option
     const toOpt = name =>
       name
         ? driverOptions.find(o => o.value === name) || { value: name, label: name }
         : null;
 
-    /* 2️⃣ se ci sono risultati ufficiali nel DB, usa quelli */
+    // If official results exist in DB, use them
     if (off) {
       setFormRace({
         P1 : toOpt(off.P1),
@@ -208,9 +242,9 @@ useEffect(() => {
       });
       setFetchingResults(false);
     } else {
-      /* 3️⃣ nessun risultato nel DB → prova a fetchare dall'API */
+      // No results in DB → try fetching from API
       try {
-        // Estrai season e round dalla data della gara
+        // Extract season and round from race date
         const raceDate = new Date(race.raceUTC.seconds * 1000);
         const season = raceDate.getFullYear();
         const round = race.round;
@@ -220,7 +254,7 @@ useEffect(() => {
         const apiResults = await fetchRaceResults(season, round);
 
         if (apiResults) {
-          // Pre-compila con i risultati dall'API
+          // Pre-fill with API results
           setFormRace({
             P1 : toOpt(apiResults.main.P1),
             P2 : toOpt(apiResults.main.P2),
@@ -234,7 +268,7 @@ useEffect(() => {
             msg:`✅ Risultati caricati automaticamente da API! Verifica e modifica se necessario.`
           });
         } else {
-          // Nessun risultato disponibile né nel DB né nell'API
+          // No results available in DB or API
           setFormRace({
             P1:null, P2:null, P3:null,
             SP1:null, SP2:null, SP3:null
@@ -259,7 +293,7 @@ useEffect(() => {
       }
     }
 
-    /* 4️⃣ carica submissions */
+    // Load submissions
     const subSnap = await getDocs(
       collection(db, "races", race.id, "submissions")
     );

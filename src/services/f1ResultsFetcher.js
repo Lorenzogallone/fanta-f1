@@ -1,14 +1,13 @@
-// src/services/f1ResultsFetcher.js
 /**
- * Service per fetchare automaticamente i risultati delle gare F1
- * Usa Jolpica F1 API (sostituto ufficiale di Ergast)
+ * @file F1 race results fetcher service
+ * Automatically fetches F1 race results using Jolpica F1 API (official Ergast replacement)
  */
 
 const API_BASE_URL = "http://api.jolpi.ca/ergast/f1";
 
 /**
- * Mapping nomi piloti dall'API ai nomi utilizzati nell'app
- * Formati API comuni: "Verstappen", "Leclerc", "Norris", ecc.
+ * Mapping of driver names from API to app format
+ * Common API formats: "Verstappen", "Leclerc", "Norris", etc.
  */
 const DRIVER_NAME_MAPPING = {
   // Red Bull Racing
@@ -56,21 +55,21 @@ const DRIVER_NAME_MAPPING = {
 };
 
 /**
- * Normalizza il nome del pilota dall'API al formato dell'app
- * @param {Object} driver - Oggetto driver dall'API
- * @returns {string|null} - Nome completo del pilota o null se non trovato
+ * Normalizes driver name from API format to app format
+ * @param {Object} driver - Driver object from API
+ * @returns {string|null} Full driver name or null if not found
  */
 function normalizeDriverName(driver) {
   if (!driver) return null;
 
   const familyName = driver.familyName;
 
-  // Controlla prima nel mapping
+  // Check mapping first
   if (DRIVER_NAME_MAPPING[familyName]) {
     return DRIVER_NAME_MAPPING[familyName];
   }
 
-  // Fallback: costruisci nome completo
+  // Fallback: construct full name
   const fullName = `${driver.givenName} ${driver.familyName}`;
   console.warn(`⚠️ Pilota non mappato: ${fullName}. Usare mapping manuale.`);
 
@@ -78,16 +77,16 @@ function normalizeDriverName(driver) {
 }
 
 /**
- * Fetcha i risultati di una gara specifica
- * @param {number} season - Anno della stagione (es. 2025)
- * @param {number} round - Numero round della gara
- * @returns {Promise<Object|null>} - Oggetto con risultati gara e sprint, o null se non disponibili
+ * Fetches results for a specific race
+ * @param {number} season - Season year (e.g., 2025)
+ * @param {number} round - Race round number
+ * @returns {Promise<Object|null>} Object with race and sprint results, or null if unavailable
  */
 export async function fetchRaceResults(season, round) {
   try {
     console.log(`🔄 Fetching risultati per ${season} Round ${round}...`);
 
-    // Fetch risultati gara principale
+    // Fetch main race results
     const raceUrl = `${API_BASE_URL}/${season}/${round}/results.json`;
     const raceResponse = await fetch(raceUrl);
 
@@ -111,14 +110,14 @@ export async function fetchRaceResults(season, round) {
       return null;
     }
 
-    // Estrai top 3
+    // Extract top 3
     const mainResults = {
       P1: normalizeDriverName(results[0]?.Driver),
       P2: normalizeDriverName(results[1]?.Driver),
       P3: normalizeDriverName(results[2]?.Driver),
     };
 
-    // Fetch risultati sprint (se disponibili)
+    // Fetch sprint results (if available)
     let sprintResults = null;
     try {
       const sprintUrl = `${API_BASE_URL}/${season}/${round}/sprint.json`;
@@ -164,8 +163,8 @@ export async function fetchRaceResults(season, round) {
 }
 
 /**
- * Fetcha i risultati dell'ultima gara disputata della stagione corrente
- * @returns {Promise<Object|null>} - Risultati ultima gara o null
+ * Fetches results of the last completed race in the current season
+ * @returns {Promise<Object|null>} Last race results or null
  */
 export async function fetchLastRaceResults() {
   try {
@@ -187,7 +186,7 @@ export async function fetchLastRaceResults() {
     const season = race.season;
     const round = race.round;
 
-    // Usa la funzione principale per ottenere tutti i dettagli
+    // Use main function to get all details
     return await fetchRaceResults(season, round);
 
   } catch (error) {
@@ -197,10 +196,10 @@ export async function fetchLastRaceResults() {
 }
 
 /**
- * Verifica se i risultati di una gara sono già disponibili
- * @param {number} season - Anno della stagione
- * @param {number} round - Numero round della gara
- * @returns {Promise<boolean>} - true se i risultati sono disponibili
+ * Checks if race results are available
+ * @param {number} season - Season year
+ * @param {number} round - Race round number
+ * @returns {Promise<boolean>} True if results are available
  */
 export async function areResultsAvailable(season, round) {
   try {
@@ -219,18 +218,18 @@ export async function areResultsAvailable(season, round) {
 }
 
 /**
- * Estrae season e round da una data di gara
- * @param {Date} raceDate - Data della gara
- * @returns {Object} - { season: number, estimatedRound: number }
+ * Extracts season and round from a race date
+ * @param {Date} raceDate - Race date
+ * @returns {Object} Object with season and estimatedRound numbers
  */
 export function extractSeasonAndRound(raceDate) {
   const season = raceDate.getFullYear();
 
-  // Stima approssimativa del round basata sulla data
-  // F1 inizia a marzo circa, con ~24 gare in ~9 mesi
-  const startOfSeason = new Date(season, 2, 1); // 1 marzo
+  // Approximate round estimate based on date
+  // F1 starts around March, with ~24 races in ~9 months
+  const startOfSeason = new Date(season, 2, 1); // March 1st
   const daysSinceStart = Math.floor((raceDate - startOfSeason) / (1000 * 60 * 60 * 24));
-  const estimatedRound = Math.max(1, Math.floor(daysSinceStart / 14) + 1); // ~ogni 2 settimane
+  const estimatedRound = Math.max(1, Math.floor(daysSinceStart / 14) + 1); // ~every 2 weeks
 
   return { season, estimatedRound };
 }

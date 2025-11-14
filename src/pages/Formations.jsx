@@ -1,10 +1,18 @@
-// src/pages/Formations.jsx
+/**
+ * @file Formations.jsx
+ * @description Formation management page with tabs for races and championship
+ */
+
 import React, { useState } from "react";
 import { Tab, Nav } from "react-bootstrap";
 import FormationApp from "./FormationApp";
 import ChampionshipForm from "./ChampionshipForm";
 import { useTheme } from "../contexts/ThemeContext";
 
+/**
+ * Formations page with tabbed interface for race and championship formations
+ * @returns {JSX.Element} Tabbed formation interface
+ */
 export default function Formations() {
   const [activeTab, setActiveTab] = useState("races");
   const { isDark } = useTheme();

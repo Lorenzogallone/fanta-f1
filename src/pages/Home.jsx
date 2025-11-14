@@ -1,17 +1,25 @@
-// src/Home.jsx
+/**
+ * @file Home.jsx
+ * @description Home page displaying main navigation options and current leaderboard
+ */
+
 import React from "react";
 import { Container, Row, Col, Card, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import Leaderboard from "./Leaderboard";
 import { useTheme } from "../contexts/ThemeContext";
 
+/**
+ * Home page component with quick navigation and leaderboard preview
+ * @returns {JSX.Element} Home page with navigation cards and leaderboard
+ */
 export default function Home() {
   const { isDark } = useTheme();
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
 
   return (
     <Container className="py-5">
-      {/* Opzioni */}
+      {/* Main navigation options */}
       <Row className="justify-content-center mb-5">
         <Col xs={12} md={10} lg={8}>
           <Card className="shadow">
@@ -66,7 +74,7 @@ export default function Home() {
         </Col>
       </Row>
 
-      {/* Anteprima dell'attuale Classifica */}
+      {/* Current leaderboard preview */}
       <Row className="justify-content-center">
         <Col xs={12} md={10} lg={8}>
           <Card className="shadow">

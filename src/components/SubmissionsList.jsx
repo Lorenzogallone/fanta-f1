@@ -1,7 +1,10 @@
-// src/SubmissionsList.jsx  –  light-F1 styling with team logos
+/**
+ * @file SubmissionsList.jsx
+ * Displays race lineup submissions with team logos and responsive layout.
+ */
 import React, { useState, useEffect } from "react";
 import {
-  Card, Table, Spinner, Alert,
+  Card, Table, Spinner, Alert, Badge,
 } from "react-bootstrap";
 import {
   collection, query, orderBy, getDocs,
@@ -10,12 +13,15 @@ import { db } from "../services/firebase";
 import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 
-/* Usa costanti centralizzate */
+// Use centralized constants
 const driverTeam = DRIVER_TEAM;
 const teamLogos = TEAM_LOGOS;
 
 /**
- * Restituisce JSX con logo + nome del pilota, oppure "—" se assente.
+ * Displays driver name with team logo or dash if not provided.
+ * @param {Object} props - Component props
+ * @param {string} props.driverName - Driver name
+ * @returns {JSX.Element} Driver cell with logo
  */
 function DriverCell({ driverName }) {
   if (!driverName) return <>—</>;
@@ -36,10 +42,12 @@ function DriverCell({ driverName }) {
 }
 
 /**
- * Props
- *  ─ raceId    : ID della gara selezionata
- *  ─ hasSprint : true se la gara ha la Sprint
- *  ─ refresh   : timestamp che forza il reload
+ * Displays submitted race lineups with responsive mobile/desktop layouts.
+ * @param {Object} props - Component props
+ * @param {string} props.raceId - Selected race ID
+ * @param {boolean} props.hasSprint - Whether race has a sprint
+ * @param {number} props.refresh - Timestamp to force reload
+ * @returns {JSX.Element} Submissions list
  */
 function SubmissionsList({ raceId, hasSprint, refresh }) {
   const { isDark } = useTheme();
@@ -47,7 +55,7 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
   const [loading, setLoad] = useState(true);
   const [error,   setErr ] = useState(null);
 
-  /* ---------- fetch submissions ------------------------------------ */
+  // Fetch submissions from Firestore
   useEffect(() => {
     if (!raceId) {
       setSubs([]);
@@ -67,15 +75,14 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
         setSubs(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       } catch (e) {
         console.error(e);
-        setErr("Impossibile caricare le formazioni.");
+        setErr("Unable to load lineups.");
       } finally {
         setLoad(false);
       }
     })();
   }, [raceId, refresh]);
 
-
-  /* ---------- UI states -------------------------------------------- */
+  // Loading state
   if (loading)
     return (
       <Card className="mt-4 shadow">
@@ -91,11 +98,11 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
   if (!subs.length)
     return (
       <Alert variant="info" className="mt-4">
-        Nessuna formazione ancora schierata per questa gara.
+        No lineups submitted for this race yet.
       </Alert>
     );
 
-  /* ---------- render ----------------------------------------------- */
+  // Render submissions list
   const headerBase = ["#", "Utente", "P1", "P2", "P3", "Jolly"];
   const headerSprint = ["SP1", "SP2", "SP3", "Jolly Sprint"];
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
@@ -111,10 +118,10 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
     >
       <Card.Body>
         <Card.Title className="text-center mb-3">
-          Formazioni ricevute&nbsp;
+          Submitted Lineups
         </Card.Title>
 
-        {/* Layout MOBILE - Cards */}
+        {/* Mobile layout - cards */}
         <div className="d-lg-none">
           {subs.map((s, i) => {
             const PickLine = ({ label, driver }) => (
@@ -164,7 +171,7 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
           })}
         </div>
 
-        {/* Layout DESKTOP - Table */}
+        {/* Desktop layout - table */}
         <div className="d-none d-lg-block table-responsive">
           <Table striped bordered hover size="sm" className="mb-0">
             <thead>
@@ -191,7 +198,7 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
                       )}
                     </td>
 
-                    {/* MAIN PICKS */}
+                    {/* Main race picks */}
                     <td>
                       <DriverCell driverName={s.mainP1} />
                     </td>
@@ -212,7 +219,7 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
                       { !s.mainJolly && !s.mainJolly2 && "—" }
                     </td>
 
-                    {/* SPRINT PICKS */}
+                    {/* Sprint race picks */}
                     {hasSprint && (
                       <>
                         <td>

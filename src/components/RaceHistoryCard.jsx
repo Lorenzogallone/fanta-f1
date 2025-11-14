@@ -1,11 +1,7 @@
-// src/components/RaceHistoryCard.jsx
-/*
- * Componente unificato per mostrare storico gare, formazioni e punteggi
- * - Supporta main + sprint
- * - Supporta jolly2
- * - Supporta punti doppi
- * - Adattivo al tema dark/light
- * - Stile minimal bianco/nero + rosso
+/**
+ * @file RaceHistoryCard.jsx
+ * Unified component for displaying race history, lineups and scores.
+ * Supports main race, sprint races, double jolly, double points, and dark/light themes.
  */
 import React, { useState, useEffect } from "react";
 import {
@@ -21,7 +17,10 @@ import { DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 
 /**
- * Visualizza nome del pilota con logo della scuderia
+ * Displays driver name with team logo.
+ * @param {Object} props - Component props
+ * @param {string} props.name - Driver name
+ * @returns {JSX.Element} Driver name with team logo
  */
 function DriverWithLogo({ name }) {
   if (!name) return <>—</>;
@@ -47,11 +46,13 @@ function DriverWithLogo({ name }) {
 }
 
 /**
- * Props:
- * - race: oggetto gara con id, name, round, raceUTC, officialResults, etc.
- * - showOfficialResults: (default true) mostra i risultati ufficiali
- * - showPoints: (default true) mostra i punteggi individuali
- * - compact: (default false) versione compatta senza header esteso
+ * Displays race history card with official results, lineups and scores.
+ * @param {Object} props - Component props
+ * @param {Object} props.race - Race object with id, name, round, raceUTC, officialResults
+ * @param {boolean} props.showOfficialResults - Whether to show official race results
+ * @param {boolean} props.showPoints - Whether to show individual scores
+ * @param {boolean} props.compact - Compact version without extended header
+ * @returns {JSX.Element} Race history card
  */
 function RaceHistoryCard({
   race,
@@ -65,7 +66,7 @@ function RaceHistoryCard({
   const [errorSub, setErrorSub] = useState(null);
   const [rankingMap, setRankingMap] = useState({});
 
-  // Carica mappa userId → nome da "ranking"
+  // Load userId → name mapping from "ranking" collection
   useEffect(() => {
     (async () => {
       try {
@@ -76,12 +77,12 @@ function RaceHistoryCard({
         });
         setRankingMap(map);
       } catch (e) {
-        console.error("Errore caricamento ranking:", e);
+        console.error("Error loading ranking:", e);
       }
     })();
   }, []);
 
-  // Carica le submissions per questa gara
+  // Load submissions for this race
   useEffect(() => {
     (async () => {
       try {
@@ -90,7 +91,7 @@ function RaceHistoryCard({
         );
         let list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
-        // Ordina alfabeticamente
+        // Sort alphabetically
         list.sort((a, b) => {
           const aName = a.user || rankingMap[a.id] || a.id;
           const bName = b.user || rankingMap[b.id] || b.id;
@@ -100,7 +101,7 @@ function RaceHistoryCard({
         setSubs(list);
       } catch (e) {
         console.error(e);
-        setErrorSub("Impossibile caricare le formazioni.");
+        setErrorSub("Unable to load lineups.");
       } finally {
         setLoadingSub(false);
       }
@@ -164,18 +165,18 @@ function RaceHistoryCard({
         {/* Alert for cancelled races */}
         {cancelledMain && (
           <Alert variant="danger" className="mb-3">
-            <strong>⛔ Gara Cancellata</strong><br />
-            Questa gara è stata cancellata e non viene conteggiata nei punteggi.
+            <strong>⛔ Race Cancelled</strong><br />
+            This race has been cancelled and is not counted in the scores.
           </Alert>
         )}
         {cancelledSprint && hasSprint && !cancelledMain && (
           <Alert variant="warning" className="mb-3">
-            <strong>⛔ Sprint Cancellata</strong><br />
-            La sprint di questa gara è stata cancellata e non viene conteggiata nei punteggi.
+            <strong>⛔ Sprint Cancelled</strong><br />
+            This sprint race has been cancelled and is not counted in the scores.
           </Alert>
         )}
 
-        {/* ======= RISULTATI UFFICIALI ======= */}
+        {/* Official results section */}
         {showOfficialResults && official && !cancelledMain ? (
           <>
             <h6 className="fw-bold border-bottom pb-1" style={{ color: accentColor }}>
@@ -248,11 +249,11 @@ function RaceHistoryCard({
           </>
         ) : showOfficialResults && !official ? (
           <Alert variant="warning">
-            Risultati ufficiali non ancora disponibili.
+            Official results not yet available.
           </Alert>
         ) : null}
 
-        {/* ======= FORMAZIONI & PUNTEGGI ======= */}
+        {/* Lineups and scores section */}
         {loadingSub ? (
           <div className="text-center py-3">
             <Spinner animation="border" />
@@ -260,17 +261,17 @@ function RaceHistoryCard({
         ) : errorSub ? (
           <Alert variant="danger">{errorSub}</Alert>
         ) : subs.length === 0 ? (
-          <Alert variant="info">Nessuna formazione inviata.</Alert>
+          <Alert variant="info">No lineups submitted yet.</Alert>
         ) : (
           <>
             <h6 className="fw-bold mb-3" style={{ color: accentColor }}>
-              {showPoints && official ? "Formazioni e Punteggi" : "Formazioni"}
+              {showPoints && official ? "Lineups and Scores" : "Lineups"}
             </h6>
 
-            {/* Layout MOBILE - Cards */}
+            {/* Mobile layout - cards */}
             <div className="d-lg-none">
               {subs.map((s, idx) => {
-                /* -------- Calcolo punteggi -------- */
+                /* Points calculation */
                 const p1Pts = showPoints && official && s.mainP1 === official.P1 ? POINTS.MAIN[1] : 0;
                 const p2Pts = showPoints && official && s.mainP2 === official.P2 ? POINTS.MAIN[2] : 0;
                 const p3Pts = showPoints && official && s.mainP3 === official.P3 ? POINTS.MAIN[3] : 0;
@@ -294,7 +295,7 @@ function RaceHistoryCard({
                       : p1Pts + p2Pts + p3Pts + j1Pts + j2Pts + (s.isLate ? (s.latePenalty || -3) : 0)
                     : null;
 
-                /* -------- Sprint -------- */
+                /* Sprint points */
                 let sp1Pts = 0,
                   sp2Pts = 0,
                   sp3Pts = 0,
@@ -400,13 +401,13 @@ function RaceHistoryCard({
               })}
             </div>
 
-            {/* Layout DESKTOP - Table */}
+            {/* Desktop layout - table */}
             <div className="d-none d-lg-block table-responsive">
               <Table striped bordered hover size="sm" className="align-middle">
                 <thead className="table-light">
                   <tr>
                     <th style={{ width: 40, color: accentColor }} className="text-center">#</th>
-                    <th style={{ color: accentColor }} className="text-center">Utente</th>
+                    <th style={{ color: accentColor }} className="text-center">User</th>
                     <th style={{ color: accentColor }} className="text-center">
                       P1 {showPoints && official && <small>(Pts)</small>}
                     </th>
@@ -451,7 +452,7 @@ function RaceHistoryCard({
 
                 <tbody>
                   {subs.map((s, idx) => {
-                    /* -------- Calcolo punteggi -------- */
+                    /* Points calculation */
                     const p1Pts = showPoints && official && s.mainP1 === official.P1 ? POINTS.MAIN[1] : 0;
                     const p2Pts = showPoints && official && s.mainP2 === official.P2 ? POINTS.MAIN[2] : 0;
                     const p3Pts = showPoints && official && s.mainP3 === official.P3 ? POINTS.MAIN[3] : 0;
@@ -475,7 +476,7 @@ function RaceHistoryCard({
                           : p1Pts + p2Pts + p3Pts + j1Pts + j2Pts
                         : null;
 
-                    /* -------- Sprint -------- */
+                    /* Sprint points */
                     let sp1Pts = 0,
                       sp2Pts = 0,
                       sp3Pts = 0,
@@ -501,7 +502,7 @@ function RaceHistoryCard({
 
                     const userName = s.user || rankingMap[s.id] || s.id;
 
-                    /* Cella helper con badge per i punti */
+                    /* Helper cell with points badge */
                     const Cell = ({ pick, pts }) => (
                       <td className="text-center">
                         {pick ? (
@@ -534,14 +535,14 @@ function RaceHistoryCard({
                           )}
                         </td>
 
-                        {/* Main picks */}
+                        {/* Main race picks */}
                         <Cell pick={s.mainP1} pts={p1Pts} />
                         <Cell pick={s.mainP2} pts={p2Pts} />
                         <Cell pick={s.mainP3} pts={p3Pts} />
                         <Cell pick={s.mainJolly} pts={j1Pts} />
                         {hasJolly2 && <Cell pick={s.mainJolly2} pts={j2Pts} />}
 
-                        {/* Sprint picks */}
+                        {/* Sprint race picks */}
                         {hasSprint && (
                           <>
                             <Cell pick={s.sprintP1} pts={sp1Pts} />
@@ -551,7 +552,7 @@ function RaceHistoryCard({
                           </>
                         )}
 
-                        {/* Totali */}
+                        {/* Totals */}
                         {showPoints && official && (
                           <>
                             <td

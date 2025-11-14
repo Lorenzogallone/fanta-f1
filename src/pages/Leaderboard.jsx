@@ -1,4 +1,8 @@
-// src/Leaderboard.jsx
+/**
+ * @file Leaderboard.jsx
+ * @description Real-time leaderboard component displaying current rankings and position changes
+ */
+
 import React, { useState, useEffect } from "react";
 import { Card, Table, Spinner, Badge } from "react-bootstrap";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
@@ -8,13 +12,19 @@ import { getLastRankingSnapshot, calculatePositionChange } from "../services/ran
 
 const medals = ["🥇", "🥈", "🥉"];
 
+/**
+ * Leaderboard component showing live ranking with position trends
+ * @returns {JSX.Element} Leaderboard table with live updates
+ */
 export default function Leaderboard() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [previousSnapshot, setPreviousSnapshot] = useState(null);
   const { isDark } = useTheme();
 
-  /* Carica l'ultimo snapshot della classifica */
+  /**
+   * Load the last ranking snapshot for position comparison
+   */
   useEffect(() => {
     (async () => {
       const lastSnapshot = await getLastRankingSnapshot();
@@ -24,7 +34,9 @@ export default function Leaderboard() {
     })();
   }, []);
 
-  /* live ranking */
+  /**
+   * Subscribe to live ranking updates from Firestore
+   */
   useEffect(() => {
     const q = query(collection(db, "ranking"), orderBy("puntiTotali", "desc"));
     const unsub = onSnapshot(q, (snap) => {
@@ -102,12 +114,15 @@ export default function Leaderboard() {
                   const gap = idx === 0 ? "—" : `-${leaderPts - r.pts}`;
                   const isTop3 = idx < 3;
 
-                  // Calcola la differenza di posizione
+                  // Calculate position change from previous snapshot
                   const positionChange = previousSnapshot
                     ? calculatePositionChange(r.userId, r.position, previousSnapshot)
                     : 0;
 
-                  // Componente per mostrare l'andamento
+                  /**
+                   * Component to display position trend indicator
+                   * @returns {JSX.Element} Trend badge with color-coded arrow
+                   */
                   const TrendBadge = () => {
                     if (positionChange === 0) {
                       return <span style={{ color: "#6c757d" }}>—</span>;

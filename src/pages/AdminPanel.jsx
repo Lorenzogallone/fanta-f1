@@ -1,4 +1,9 @@
-// src/AdminPanel.jsx
+/**
+ * @file AdminPanel.jsx
+ * @description Admin panel for managing participants, formations, race calendar, and database operations
+ * Provides comprehensive administrative tools with authentication protection
+ */
+
 import React, { useState, useEffect } from "react";
 import {
   Container,
@@ -32,31 +37,39 @@ import Select from "react-select";
 import { useTheme } from "../contexts/ThemeContext";
 import AdminLogin from "../components/AdminLogin";
 
-/* ==================== COMPONENTE PRINCIPALE ==================== */
+/**
+ * Main admin panel component with tabbed interface
+ * @returns {JSX.Element} Admin panel with authentication and management tabs
+ */
 export default function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState("participants");
 
-  // Shared data per evitare fetch multipli
+  // Shared data to avoid multiple fetches
   const [sharedParticipants, setSharedParticipants] = useState([]);
   const [sharedRaces, setSharedRaces] = useState([]);
   const [loadingShared, setLoadingShared] = useState(false);
 
   useEffect(() => {
-    // Controlla se già autenticato
+    // Check if already authenticated
     const auth = localStorage.getItem("adminAuth");
     if (auth === "true") {
       setIsAuthenticated(true);
     }
   }, []);
 
-  // Carica dati condivisi quando autenticato
+  /**
+   * Load shared data when authenticated
+   */
   useEffect(() => {
     if (isAuthenticated) {
       loadSharedData();
     }
   }, [isAuthenticated]);
 
+  /**
+   * Load participants and races data
+   */
   const loadSharedData = async () => {
     setLoadingShared(true);
     try {
@@ -144,7 +157,14 @@ export default function AdminPanel() {
   );
 }
 
-/* ==================== GESTIONE PARTECIPANTI ==================== */
+/**
+ * Participants management component
+ * @param {Object} props - Component props
+ * @param {Array} props.participants - List of participants
+ * @param {boolean} props.loading - Loading state
+ * @param {Function} props.onDataChange - Callback to refresh data
+ * @returns {JSX.Element} Participants management interface
+ */
 function ParticipantsManager({ participants: propParticipants, loading: propLoading, onDataChange }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
@@ -154,19 +174,24 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
   const [formData, setFormData] = useState({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
   const { isDark } = useTheme();
 
-  // Usa i partecipanti passati come props
+  // Use participants passed as props
   const participants = propParticipants;
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
 
-  // Apri dialog aggiunta
+  /**
+   * Open add participant dialog
+   */
   const openAddDialog = () => {
     setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
     setMessage(null);
     setShowAddDialog(true);
   };
 
-  // Apri dialog modifica
+  /**
+   * Open edit participant dialog
+   * @param {Object} participant - Participant to edit
+   */
   const openEditDialog = (participant) => {
     setCurrentParticipant(participant);
     setFormData({
@@ -180,7 +205,10 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
     setShowEditDialog(true);
   };
 
-  // Aggiungi nuovo partecipante
+  /**
+   * Handle adding new participant
+   * @param {Event} e - Form submit event
+   */
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!formData.id || !formData.name) {
@@ -497,15 +525,23 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
   );
 }
 
-/* ==================== GESTIONE FORMAZIONI ==================== */
+/**
+ * Formations management component for admin editing
+ * @param {Object} props - Component props
+ * @param {Array} props.participants - List of participants
+ * @param {Array} props.races - List of races
+ * @param {boolean} props.loading - Loading state
+ * @param {Function} props.onDataChange - Callback to refresh data
+ * @returns {JSX.Element} Formations management interface
+ */
 function FormationsManager({ participants: propParticipants, races: propRaces, loading: propLoading, onDataChange }) {
-  // Usa i dati passati come props
+  // Use data passed as props
   const participants = propParticipants;
   const races = propRaces;
 
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
-  const [touched, setTouched] = useState(false); // Per mostrare errori solo dopo il primo tentativo
+  const [touched, setTouched] = useState(false); // Show errors only after first attempt
 
   const [selectedUser, setSelectedUser] = useState("");
   const [selectedRace, setSelectedRace] = useState(null);
@@ -526,7 +562,9 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
 
   const [isLateSubmission, setIsLateSubmission] = useState(false);
 
-  // Carica lo stato delle formazioni e seleziona automaticamente la prima gara senza formazione
+  /**
+   * Load formation status and auto-select first race without formation
+   */
   useEffect(() => {
     if (!selectedUser || races.length === 0) return;
 
@@ -557,7 +595,9 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
     })();
   }, [selectedUser, races]);
 
-  // Carica formazione esistente quando seleziono utente + gara
+  /**
+   * Load existing formation when user and race are selected
+   */
   useEffect(() => {
     if (!selectedUser || !selectedRace) {
       setExistingFormation(null);
@@ -568,6 +608,9 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
     loadFormation();
   }, [selectedUser, selectedRace]);
 
+  /**
+   * Load formation data from Firestore
+   */
   const loadFormation = async () => {
     try {
       const formDoc = await getDoc(
@@ -1027,9 +1070,16 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
   );
 }
 
-/* ==================== GESTIONE CALENDARIO ==================== */
+/**
+ * Calendar management component with ICS import support
+ * @param {Object} props - Component props
+ * @param {Array} props.races - List of races
+ * @param {boolean} props.loading - Loading state
+ * @param {Function} props.onDataChange - Callback to refresh data
+ * @returns {JSX.Element} Calendar management interface
+ */
 function CalendarManager({ races: propRaces, loading: propLoading, onDataChange }) {
-  // Usa le gare passate come props
+  // Use races passed as props
   const races = propRaces;
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState(null);
@@ -1059,7 +1109,10 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
 
 
 
-  // ICS Import handlers
+  /**
+   * Handle ICS file selection and parsing
+   * @param {Event} e - File input change event
+   */
   const handleIcsFileSelect = async (e) => {
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
@@ -1086,6 +1139,9 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
     }
   };
 
+  /**
+   * Import parsed races into Firestore
+   */
   const handleIcsImport = async () => {
     if (!parsedRaces.length) {
       setMessage({ type: "warning", text: "Nessuna gara da importare" });
@@ -1565,7 +1621,14 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
   );
 }
 
-/* ==================== RESET DATABASE ==================== */
+/**
+ * Database reset and backup component
+ * @param {Object} props - Component props
+ * @param {Array} props.participants - List of participants
+ * @param {Array} props.races - List of races
+ * @param {Function} props.onDataChange - Callback to refresh data
+ * @returns {JSX.Element} Database reset interface with backup functionality
+ */
 function DatabaseReset({ participants, races, onDataChange }) {
   const [showModal, setShowModal] = useState(false);
   const [resetType, setResetType] = useState("");
@@ -1574,6 +1637,9 @@ function DatabaseReset({ participants, races, onDataChange }) {
   const [confirmText, setConfirmText] = useState("");
   const [backingUp, setBackingUp] = useState(false);
 
+  /**
+   * Create and download full database backup as JSON
+   */
   const handleBackup = async () => {
     setBackingUp(true);
     setMessage(null);

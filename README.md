@@ -1,130 +1,130 @@
 # 🏎️ Fanta F1
 
-Un'applicazione web per gestire il fantacalcio di Formula 1 tra amici.
+A web application to manage Formula 1 fantasy league among friends.
 
-## 🎮 Cos'è Fanta F1?
+## 🎮 What is Fanta F1?
 
-Fanta F1 è un gioco fantasy basato sul campionato mondiale di Formula 1. Ogni partecipante schiera una formazione di piloti per ogni gara e accumula punti in base alle loro prestazioni reali in pista.
+Fanta F1 is a fantasy game based on the Formula 1 World Championship. Each participant creates a formation of drivers for every race and accumulates points based on their real performance on track.
 
-## 📋 Come Funziona
+## 📋 How It Works
 
-### Formazione Gara
-Per ogni Gran Premio, ogni giocatore **schiera la formazione prima dell'inizio della gara**:
-- **3 Piloti (P1, P2, P3)**: Pronostico dei primi 3 classificati in ordine
-- **1 Jolly**: Un pilota bonus che garantisce 5 punti extra se finisce sul podio
-- **1 Jolly 2 (opzionale)**: Secondo jolly sbloccabile con la regola 29→30
+### Race Formation
+For each Grand Prix, every player **submits their formation before the race starts**:
+- **3 Drivers (P1, P2, P3)**: Prediction of the top 3 finishers in order
+- **1 Joker**: A bonus driver that grants 5 extra points if they finish on the podium
+- **1 Joker 2 (optional)**: Second joker unlockable with the 29→30 rule
 
 ### Sprint Race
-Per i weekend con Sprint Race, si può schierare una formazione separata:
-- **3 Piloti Sprint (SP1, SP2, SP3)**: Pronostico podio sprint
-- **1 Jolly Sprint**: Bonus di 2 punti se finisce sul podio sprint
+For weekends with Sprint Races, a separate formation can be submitted:
+- **3 Sprint Drivers (SP1, SP2, SP3)**: Sprint podium prediction
+- **1 Sprint Joker**: Bonus of 2 points if they finish on the sprint podium
 
-### Formazione Campionato
-**A metà stagione**, ogni giocatore pronostica:
-- **Top 3 Piloti** del campionato mondiale piloti
-- **Top 3 Costruttori** del campionato mondiale costruttori
+### Championship Formation
+**Mid-season**, each player predicts:
+- **Top 3 Drivers** of the drivers' world championship
+- **Top 3 Constructors** of the constructors' world championship
 
-I punti vengono assegnati a fine stagione con lo stesso sistema delle gare.
+Points are awarded at the end of the season using the same system as races.
 
-## 🏆 Sistema di Punteggio
+## 🏆 Scoring System
 
-### Punti Gara Principale
-**Solo i primi 3 classificati assegnano punti:**
-- **Indovini il 1° classificato (P1)**: 12 punti
-- **Indovini il 2° classificato (P2)**: 10 punti
-- **Indovini il 3° classificato (P3)**: 8 punti
+### Main Race Points
+**Only the top 3 finishers award points:**
+- **Guess 1st place (P1)**: 12 points
+- **Guess 2nd place (P2)**: 10 points
+- **Guess 3rd place (P3)**: 8 points
 
-### Punti Sprint
-**Solo i primi 3 classificati assegnano punti:**
-- **Indovini il 1° classificato (SP1)**: 8 punti
-- **Indovini il 2° classificato (SP2)**: 6 punti
-- **Indovini il 3° classificato (SP3)**: 4 punti
+### Sprint Points
+**Only the top 3 finishers award points:**
+- **Guess 1st place (SP1)**: 8 points
+- **Guess 2nd place (SP2)**: 6 points
+- **Guess 3rd place (SP3)**: 4 points
 
-### Bonus Jolly
-- Il **Jolly gara** dà **5 punti fissi** se il pilota scelto finisce sul podio (top 3), **indipendentemente dalla posizione**
-- Il **Jolly 2** funziona allo stesso modo del jolly gara (5 punti se sul podio)
-- Il **Jolly sprint** dà **2 punti fissi** se il pilota finisce sul podio sprint
-- Jolly gara principale e sprint sono indipendenti
+### Joker Bonus
+- The **race joker** gives **5 fixed points** if the chosen driver finishes on the podium (top 3), **regardless of position**
+- **Joker 2** works the same way as the race joker (5 points if on podium)
+- The **sprint joker** gives **2 fixed points** if the driver finishes on the sprint podium
+- Main race and sprint jokers are independent
 
-### Regola Speciale: 29→30
-- Se indovini tutto il podio in ordine (12+10+8 = 30 punti totali), guadagni **1 jolly extra** da usare in una gara futura
-- Vale sia per gara principale che per sprint
-- Vale anche per la formazione campionato
+### Special Rule: 29→30
+- If you guess the entire podium in order (12+10+8 = 30 total points), you earn **1 extra joker** to use in a future race
+- Valid for both main race and sprint
+- Also valid for championship formation
 
-### Punteggio Campionato
-A fine stagione, si assegnano gli stessi punti delle gare:
-- Indovini il 1° pilota/costruttore: 12 punti
-- Indovini il 2° pilota/costruttore: 10 punti
-- Indovini il 3° pilota/costruttore: 8 punti
-- Anche qui vale la regola 29→30!
+### Championship Scoring
+At the end of the season, the same points as races are awarded:
+- Guess 1st driver/constructor: 12 points
+- Guess 2nd driver/constructor: 10 points
+- Guess 3rd driver/constructor: 8 points
+- The 29→30 rule also applies here!
 
-### 🏁 Ultima Gara - Punti Doppi
-Per l'ultima gara della stagione, **tutti i punti vengono raddoppiati**:
-- Gara principale: 24, 20, 16 punti (anziché 12, 10, 8)
-- Sprint (se presente): 16, 12, 8 punti (anziché 8, 6, 4)
-- Jolly gara: 10 punti (anziché 5)
-- Jolly sprint: 4 punti (anziché 2)
-- Anche i punti della regola 29→30 vengono raddoppiati!
+### 🏁 Last Race - Double Points
+For the last race of the season, **all points are doubled**:
+- Main race: 24, 20, 16 points (instead of 12, 10, 8)
+- Sprint (if present): 16, 12, 8 points (instead of 8, 6, 4)
+- Race joker: 10 points (instead of 5)
+- Sprint joker: 4 points (instead of 2)
+- The 29→30 rule points are also doubled!
 
-## 🖥️ Funzionalità dell'App
+## 🖥️ App Features
 
-### 📊 Classifica
-Visualizza la classifica in tempo reale con:
-- Posizione e punti totali
-- Distacco dal leader
-- Jolly disponibili
+### 📊 Leaderboard
+View the real-time standings with:
+- Position and total points
+- Gap from leader
+- Available jokers
 
-### 🏁 Storico Gare
-Consulta i risultati delle gare passate:
-- Risultati ufficiali della gara
-- Formazioni schierate da ogni giocatore
-- Punti ottenuti per gara
+### 🏁 Race History
+Check past race results:
+- Official race results
+- Formations submitted by each player
+- Points earned per race
 
-### 🎯 Schiera Formazione
-Inserisci la tua formazione per la prossima gara:
-- Selezione guidata con loghi dei team
-- Validazione anti-duplicati
-- Anteprima della formazione
-- Supporto per sprint race
+### 🎯 Submit Formation
+Enter your formation for the next race:
+- Guided selection with team logos
+- Anti-duplicate validation
+- Formation preview
+- Sprint race support
 
-### 📅 Formazioni Campionato
-Pronostica i top 3 piloti e costruttori a metà stagione per guadagnare punti bonus a fine anno.
+### 📅 Championship Formations
+Predict the top 3 drivers and constructors mid-season to earn bonus points at year's end.
 
-### ⚙️ Pannello Admin
-Gli amministratori hanno accesso completo a tutte le funzionalità:
+### ⚙️ Admin Panel
+Administrators have full access to all features:
 
-**👥 Gestione Partecipanti**
-- Aggiungere nuovi partecipanti
-- Modificare punti e jolly di ogni partecipante
-- Eliminare partecipanti
+**👥 Participant Management**
+- Add new participants
+- Modify points and jokers for each participant
+- Delete participants
 
-**📝 Gestione Formazioni**
-- **Inserire formazioni in ritardo** per qualsiasi utente (bypass deadline)
-- **Modificare formazioni esistenti** anche dopo la scadenza
-- Visualizzare quali gare hanno già formazioni inserite
-- Funziona per gare principali, sprint e formazioni campionato
+**📝 Formation Management**
+- **Submit late formations** for any user (bypass deadline)
+- **Edit existing formations** even after deadline
+- View which races already have formations submitted
+- Works for main races, sprints, and championship formations
 
-**📅 Gestione Calendario**
-- **Modificare date e orari delle gare** (raceUTC, qualiUTC)
-- **Modificare deadline formazioni** (qualiUTC e qualiSprintUTC)
-- Aggiungere o rimuovere sprint da una gara
-- Visualizzare stato risultati per ogni gara
+**📅 Calendar Management**
+- **Modify race dates and times** (raceUTC, qualiUTC)
+- **Modify formation deadlines** (qualiUTC and qualiSprintUTC)
+- Add or remove sprint from a race
+- View results status for each race
 
-**🗑️ Reset Database**
-- Backup completo del database (scarica JSON)
-- Reset formazioni (elimina tutte le submissions)
-- Reset punteggi (azzera punti mantenendo partecipanti)
-- Reset completo (punteggi + formazioni)
+**🗑️ Database Reset**
+- Complete database backup (download JSON)
+- Reset formations (delete all submissions)
+- Reset scores (zero points keeping participants)
+- Complete reset (scores + formations)
 
-## 🎨 Caratteristiche
+## 🎨 Features
 
-- ✅ **Design Minimal**: Stile pulito bianco/nero/rosso
-- 🌓 **Dark Mode**: Supporto completo per tema scuro
-- 📱 **Responsive**: Ottimizzato per desktop e mobile
-- ⚡ **Real-time**: Aggiornamenti live tramite Firebase
-- 🔒 **Sicuro**: Pannello admin protetto da password
+- ✅ **Minimal Design**: Clean white/black/red style
+- 🌓 **Dark Mode**: Full dark theme support
+- 📱 **Responsive**: Optimized for desktop and mobile
+- ⚡ **Real-time**: Live updates via Firebase
+- 🔒 **Secure**: Admin panel protected by password
 
-## 🛠️ Stack Tecnologico
+## 🛠️ Tech Stack
 
 - **Frontend**: React 19.1.0 + React Bootstrap 2.10.10
 - **Backend**: Firebase/Firestore (NoSQL database)
@@ -133,133 +133,133 @@ Gli amministratori hanno accesso completo a tutte le funzionalità:
 - **Build**: Vite 6.3.5
 - **Deploy**: Firebase Hosting
 
-## 📁 Struttura del Progetto
+## 📁 Project Structure
 
 ```
 fanta-f1/
-├── public/                   # Loghi team e asset statici
+├── public/                   # Team logos and static assets
 ├── src/
-│   ├── pages/                # Componenti pagina (routes)
+│   ├── pages/                # Page components (routes)
 │   │   ├── Home.jsx          # Homepage
-│   │   ├── History.jsx       # Storico gare
-│   │   ├── Leaderboard.jsx   # Classifica
-│   │   ├── FormationApp.jsx  # Schiera formazione
-│   │   ├── ChampionshipForm.jsx # Formazioni campionato
-│   │   ├── CalculatePoints.jsx  # Calcolo punteggi (admin)
-│   │   └── AdminPanel.jsx    # Pannello amministrazione
-│   ├── components/           # Componenti riutilizzabili
-│   │   ├── Navigation.jsx    # Navbar con dark mode toggle
-│   │   ├── RaceHistoryCard.jsx # Card gara unificata
+│   │   ├── History.jsx       # Race history
+│   │   ├── Leaderboard.jsx   # Standings
+│   │   ├── FormationApp.jsx  # Submit formation
+│   │   ├── ChampionshipForm.jsx # Championship formations
+│   │   ├── CalculatePoints.jsx  # Points calculation (admin)
+│   │   └── AdminPanel.jsx    # Administration panel
+│   ├── components/           # Reusable components
+│   │   ├── Navigation.jsx    # Navbar with dark mode toggle
+│   │   ├── RaceHistoryCard.jsx # Unified race card
 │   │   ├── ChampionshipSubmissions.jsx
 │   │   └── SubmissionsList.jsx
 │   ├── contexts/             # React Context providers
-│   │   └── ThemeContext.jsx  # Gestione dark/light mode
-│   ├── services/             # Servizi backend e calcoli
-│   │   ├── firebase.js       # Configurazione Firebase
-│   │   ├── pointsCalculator.js # Calcolo punteggi gare
+│   │   └── ThemeContext.jsx  # Dark/light mode management
+│   ├── services/             # Backend services and calculations
+│   │   ├── firebase.js       # Firebase configuration
+│   │   ├── pointsCalculator.js # Race points calculation
 │   │   └── championshipPointsCalculator.js
 │   ├── utils/                # Utility functions
 │   │   └── pointsCalculation.js
-│   ├── constants/            # Costanti centralizzate
-│   │   └── racing.js         # Piloti, team, punteggi
-│   ├── styles/               # File CSS
-│   │   ├── theme.css         # Variabili CSS dark/light
-│   │   ├── App.css           # Stili globali
-│   │   ├── index.css         # Reset e base
-│   │   └── customSelect.css  # Stili react-select
-│   ├── App.jsx               # Componente principale + routing
-│   └── main.jsx              # Entry point applicazione
-├── scripts_calendar/         # Script per importare calendario gare
+│   ├── constants/            # Centralized constants
+│   │   └── racing.js         # Drivers, teams, scores
+│   ├── styles/               # CSS files
+│   │   ├── theme.css         # CSS dark/light variables
+│   │   ├── App.css           # Global styles
+│   │   ├── index.css         # Reset and base
+│   │   └── customSelect.css  # React-select styles
+│   ├── App.jsx               # Main component + routing
+│   └── main.jsx              # Application entry point
+├── scripts_calendar/         # Scripts to import race calendar
 └── README.md
 ```
 
-## 🗄️ Struttura Database (Firestore)
+## 🗄️ Database Structure (Firestore)
 
 ### Collection: `ranking`
-Documenti con ID utente contenenti:
-- `name`: Nome del partecipante
-- `puntiTotali`: Punti totali accumulati
-- `jolly`: Numero di jolly disponibili
-- `pointsByRace`: Oggetto con punteggi per gara
-- `championshipPiloti`: Array con i 3 piloti pronosticati
-- `championshipCostruttori`: Array con i 3 costruttori pronosticati
-- `championshipPts`: Punti campionato
+Documents with user ID containing:
+- `name`: Participant name
+- `puntiTotali`: Total accumulated points
+- `jolly`: Number of available jokers
+- `pointsByRace`: Object with points per race
+- `championshipPiloti`: Array with 3 predicted drivers
+- `championshipCostruttori`: Array with 3 predicted constructors
+- `championshipPts`: Championship points
 
 ### Collection: `races`
-Documenti per ogni gara con:
-- `name`: Nome del Gran Premio
-- `round`: Numero della gara
-- `raceUTC`: Timestamp della gara
-- `qualiSprintUTC`: Timestamp sprint (se presente)
-- `officialResults`: Array con risultati ufficiali
-- `sprintResults`: Array con risultati sprint
+Documents for each race with:
+- `name`: Grand Prix name
+- `round`: Race number
+- `raceUTC`: Race timestamp
+- `qualiSprintUTC`: Sprint timestamp (if present)
+- `officialResults`: Array with official results
+- `sprintResults`: Array with sprint results
 - `pointsCalculated`: Boolean
 
 #### Subcollection: `submissions`
-Per ogni gara, contiene le formazioni dei giocatori:
-- `user`, `userId`: Identificativo utente
-- `mainP1`, `mainP2`, `mainP3`, `mainJolly`, `mainJolly2`: Formazione principale
-- `sprintP1`, `sprintP2`, `sprintP3`, `sprintJolly`: Formazione sprint
-- `submittedAt`: Timestamp di invio
+For each race, contains player formations:
+- `user`, `userId`: User identifier
+- `mainP1`, `mainP2`, `mainP3`, `mainJolly`, `mainJolly2`: Main formation
+- `sprintP1`, `sprintP2`, `sprintP3`, `sprintJolly`: Sprint formation
+- `submittedAt`: Submission timestamp
 
-## 🎯 Regole del Gioco
+## 🎯 Game Rules
 
-1. **Deadline**: Le formazioni devono essere inviate prima dell'inizio della gara
-2. **No Modifiche**: Una volta inviata, la formazione non può essere modificata
-3. **Piloti Unici**: Non si possono selezionare piloti duplicati nella stessa gara
-4. **Jolly Multipli**: Si possono usare gli stessi piloti tra gara principale e sprint
-5. **Regola 29→30**: Indovinando tutto il podio (30 punti), si sblocca 1 jolly extra
-6. **Jolly gara = 5 punti**: Il jolly gara non raddoppia i punti, ma aggiunge 5 punti fissi se sul podio
-7. **Jolly sprint = 2 punti**: Il jolly sprint aggiunge 2 punti fissi se il pilota finisce sul podio sprint
-8. **Ultima gara x2**: Nell'ultima gara della stagione, tutti i punti vengono raddoppiati
+1. **Deadline**: Formations must be submitted before the race starts
+2. **No Modifications**: Once submitted, the formation cannot be modified
+3. **Unique Drivers**: You cannot select duplicate drivers in the same race
+4. **Multiple Jokers**: You can use the same drivers between main race and sprint
+5. **29→30 Rule**: By guessing the entire podium (30 points), you unlock 1 extra joker
+6. **Race joker = 5 points**: The race joker doesn't double points, but adds 5 fixed points if on podium
+7. **Sprint joker = 2 points**: The sprint joker adds 2 fixed points if the driver finishes on the sprint podium
+8. **Last race x2**: In the last race of the season, all points are doubled
 
-## 🔐 Accesso Admin
+## 🔐 Admin Access
 
-Il pannello admin è protetto da password e offre privilegi speciali:
+The admin panel is password-protected and offers special privileges:
 
 ### Password
-La password è configurata in `src/pages/AdminPanel.jsx`:
+The password is configured in `src/pages/AdminPanel.jsx`:
 ```javascript
 const ADMIN_PASSWORD = "SUCASOLERA";
 ```
-**⚠️ Importante**: Cambia questa password prima del deploy in produzione!
+**⚠️ Important**: Change this password before production deployment!
 
-### Privilegi Admin
+### Admin Privileges
 
-Gli admin hanno poteri speciali che gli utenti normali non hanno:
+Admins have special powers that normal users don't have:
 
-1. **✅ Bypass Deadline Formazioni**
-   - Gli admin possono inserire formazioni **in qualsiasi momento**
-   - Non ci sono controlli sulle deadline (qualiUTC, qualiSprintUTC)
-   - Gli utenti normali invece sono bloccati dopo la scadenza
+1. **✅ Formation Deadline Bypass**
+   - Admins can submit formations **at any time**
+   - There are no deadline checks (qualiUTC, qualiSprintUTC)
+   - Normal users are blocked after the deadline
 
-2. **✅ Modifica Formazioni Esistenti**
-   - Gli admin possono modificare formazioni già inviate
-   - Quando selezioni utente+gara, il form si pre-compila se esiste già
-   - Il salvataggio sovrascrive la formazione precedente
+2. **✅ Edit Existing Formations**
+   - Admins can modify already submitted formations
+   - When selecting user+race, the form pre-fills if it already exists
+   - Saving overwrites the previous formation
 
-3. **✅ Modifica Date Gare**
-   - Gli admin possono cambiare le deadline delle formazioni
-   - Possono posticipare o anticipare qualifiche e gare
-   - Possono aggiungere/rimuovere sprint
+3. **✅ Modify Race Dates**
+   - Admins can change formation deadlines
+   - They can postpone or bring forward qualifying and races
+   - They can add/remove sprints
 
-4. **✅ Gestione Completa Database**
-   - Backup completo prima di operazioni critiche
-   - Reset selettivo (solo formazioni o solo punteggi)
-   - Visualizzazione stato completo sistema
+4. **✅ Full Database Management**
+   - Complete backup before critical operations
+   - Selective reset (only formations or only scores)
+   - Complete system status visualization
 
-## 🤝 Contribuire
+## 🤝 Contributing
 
-Questo è un progetto privato per uso personale. Se hai suggerimenti o trovi bug, contatta il maintainer.
+This is a private project for personal use. If you have suggestions or find bugs, contact the maintainer.
 
-## 📄 Licenza
+## 📄 License
 
-Uso privato - Tutti i diritti riservati
+Private use - All rights reserved
 
-## 👨‍💻 Autore
+## 👨‍💻 Author
 
-Progetto sviluppato per gestire il fantacalcio F1 tra amici.
+Project developed to manage F1 fantasy league among friends.
 
 ---
 
-**🏁 Buona gara e che vinca il migliore! 🏆**
+**🏁 Good race and may the best win! 🏆**

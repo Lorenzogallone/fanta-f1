@@ -1,4 +1,8 @@
-// src/App.jsx
+/**
+ * @file App.jsx
+ * @description Main application component with routing and lazy-loaded pages
+ */
+
 import { lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
@@ -11,7 +15,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Navigation from "./components/Navigation";
 import "./styles/theme.css";
 
-// Lazy loading delle pagine per code splitting
+// Lazy loading pages for code splitting
 const Home = lazy(() => import("./pages/Home"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const Formations = lazy(() => import("./pages/Formations"));
@@ -22,21 +26,26 @@ const History = lazy(() => import("./pages/History"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const Statistics = lazy(() => import("./pages/Statistics"));
 
-// Componente di loading
+/**
+ * Loading spinner displayed while pages are loading
+ * @returns {JSX.Element} Centered spinner component
+ */
 const PageLoader = () => (
   <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "60vh" }}>
     <Spinner animation="border" variant="danger" />
   </div>
 );
 
+/**
+ * Main application component with theme provider and routing
+ * @returns {JSX.Element} App with navigation and routes
+ */
 export default function App() {
   return (
     <ThemeProvider>
       <Router>
-        {/* ------- NAVBAR ------------------------------------------------ */}
         <Navigation />
 
-        {/* ------- CONTENUTO -------------------------------------------- */}
         <BContainer className="py-4">
           <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -47,7 +56,7 @@ export default function App() {
               <Route path="/storico"    element={<History />} />
               <Route path="/statistiche" element={<Statistics />} />
               <Route path="/admin"      element={<AdminPanel />} />
-              {/* Route legacy per compatibilità */}
+              {/* Legacy routes for compatibility */}
               <Route path="/formations/races" element={<FormationApp />} />
               <Route path="/formations/championship" element={<ChampionshipForm />} />
             </Routes>
