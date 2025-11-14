@@ -426,27 +426,35 @@ export async function fetchRace(season, round) {
  */
 export async function fetchAllSessions(season, round) {
   try {
-    // Fetch basic sessions first
-    const [fp1, fp2, fp3, qualifying, sprint, race] = await Promise.all([
+    // Step 1: Fetch FP1, Sprint, Qualifying, Race first to determine weekend type
+    const [fp1, sprint, qualifying, race] = await Promise.all([
       fetchPracticeSession(season, round, "Practice 1"),
-      fetchPracticeSession(season, round, "Practice 2"),
-      fetchPracticeSession(season, round, "Practice 3"),
-      fetchQualifying(season, round),
       fetchSprint(season, round),
+      fetchQualifying(season, round),
       fetchRace(season, round),
     ]);
 
-    // Try to fetch sprint qualifying with multiple possible names
+    let fp2 = null;
+    let fp3 = null;
     let sprintQualifying = null;
-    const sprintQualifyingNames = season >= 2024
-      ? ["Sprint Qualifying", "Sprint Shootout", "Sprint"]
-      : ["Sprint Shootout", "Sprint Qualifying", "Sprint"];
 
-    for (const name of sprintQualifyingNames) {
-      sprintQualifying = await fetchPracticeSession(season, round, name);
-      if (sprintQualifying !== null) {
-        break; // Found it, stop trying other names
+    // Step 2: Based on weekend type, fetch additional sessions
+    if (sprint !== null) {
+      // Sprint weekend: has Sprint Qualifying, NO FP2/FP3
+      const sprintQualifyingNames = season >= 2024
+        ? ["Sprint Qualifying", "Sprint Shootout"]
+        : ["Sprint Shootout", "Sprint Qualifying"];
+
+      for (const name of sprintQualifyingNames) {
+        sprintQualifying = await fetchPracticeSession(season, round, name);
+        if (sprintQualifying !== null) break;
       }
+    } else {
+      // Normal weekend: has FP2 and FP3, NO Sprint Qualifying
+      [fp2, fp3] = await Promise.all([
+        fetchPracticeSession(season, round, "Practice 2"),
+        fetchPracticeSession(season, round, "Practice 3"),
+      ]);
     }
 
     return {
