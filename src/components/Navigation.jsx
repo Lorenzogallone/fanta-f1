@@ -110,33 +110,33 @@ export default function Navigation() {
           <Nav className="mx-auto">
             <Nav.Link
               as={Link}
-              to="/"
+              to="/leaderboard"
               onClick={handleNavClick}
-              className={location.pathname === "/" ? "active" : ""}
+              className={location.pathname === "/leaderboard" ? "active" : ""}
             >
               📊 {t("nav.leaderboard")}
             </Nav.Link>
             <Nav.Link
               as={Link}
-              to="/schiera"
+              to="/lineup"
               onClick={handleNavClick}
-              className={location.pathname === "/schiera" ? "active" : ""}
+              className={location.pathname === "/lineup" ? "active" : ""}
             >
               🏎️ {t("nav.formations")}
             </Nav.Link>
             <Nav.Link
               as={Link}
-              to="/storico"
+              to="/history"
               onClick={handleNavClick}
-              className={location.pathname === "/storico" ? "active" : ""}
+              className={location.pathname === "/history" ? "active" : ""}
             >
               📜 {t("nav.history")}
             </Nav.Link>
             <Nav.Link
               as={Link}
-              to="/risultati"
+              to="/results"
               onClick={handleNavClick}
-              className={location.pathname === "/risultati" ? "active" : ""}
+              className={location.pathname === "/results" ? "active" : ""}
             >
               🏁 {t("nav.raceResults")}{" "}
               <span
@@ -152,17 +152,17 @@ export default function Navigation() {
             </Nav.Link>
             <Nav.Link
               as={Link}
-              to="/statistiche"
+              to="/statistics"
               onClick={handleNavClick}
-              className={location.pathname === "/statistiche" ? "active" : ""}
+              className={location.pathname === "/statistics" ? "active" : ""}
             >
               📈 {t("nav.statistics")}
             </Nav.Link>
             <Nav.Link
               as={Link}
-              to="/calcola"
+              to="/calculate"
               onClick={handleNavClick}
-              className={location.pathname === "/calcola" ? "active" : ""}
+              className={location.pathname === "/calculate" ? "active" : ""}
             >
               🧮 {t("nav.calculatePoints")}
             </Nav.Link>

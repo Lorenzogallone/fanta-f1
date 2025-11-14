@@ -341,4 +341,16 @@ export const it = {
     it: "Italiano",
     en: "English",
   },
+
+  // Footer
+  footer: {
+    disclaimer: {
+      title: "Disclaimer Formula 1",
+      text: "Questo è un gioco fantasy non ufficiale e non è affiliato, approvato o connesso a Formula 1, Formula One Management o a qualsiasi delle sue entità correlate. Tutti i marchi, loghi e dati relativi alla F1 sono proprietà di Formula One World Championship Limited.",
+    },
+    legal: "Note Legali",
+    privacy: "Privacy Policy",
+    terms: "Termini di Servizio",
+    copyright: "Fanta F1 - Tutti i diritti riservati",
+  },
 };

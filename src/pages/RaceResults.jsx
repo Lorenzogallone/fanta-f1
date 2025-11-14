@@ -280,7 +280,7 @@ export default function RaceResults() {
                     <Button
                       variant="primary"
                       size="sm"
-                      onClick={() => navigate("/schiera")}
+                      onClick={() => navigate("/lineup")}
                       style={{
                         backgroundColor: accentColor,
                         borderColor: accentColor,

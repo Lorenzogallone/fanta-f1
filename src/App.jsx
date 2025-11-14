@@ -14,6 +14,7 @@ import { Container as BContainer, Spinner } from "react-bootstrap";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import Navigation from "./components/Navigation";
+import Footer from "./components/Footer";
 import "./styles/theme.css";
 
 // Lazy loading pages for code splitting
@@ -54,20 +55,30 @@ export default function App() {
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/"           element={<Home />} />
-                <Route path="/classifica" element={<Leaderboard />} />
-                <Route path="/partecipante/:userId" element={<ParticipantDetail />} />
-                <Route path="/schiera"    element={<Formations />} />
-                <Route path="/calcola"    element={<CalculatePoints />} />
-                <Route path="/storico"    element={<History />} />
-                <Route path="/risultati"  element={<RaceResults />} />
-                <Route path="/statistiche" element={<Statistics />} />
+                <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/participant/:userId" element={<ParticipantDetail />} />
+                <Route path="/lineup"     element={<Formations />} />
+                <Route path="/calculate"  element={<CalculatePoints />} />
+                <Route path="/history"    element={<History />} />
+                <Route path="/results"    element={<RaceResults />} />
+                <Route path="/statistics" element={<Statistics />} />
                 <Route path="/admin"      element={<AdminPanel />} />
                 {/* Legacy routes for compatibility */}
                 <Route path="/formations/races" element={<FormationApp />} />
                 <Route path="/formations/championship" element={<ChampionshipForm />} />
+                {/* Italian routes redirects for backward compatibility */}
+                <Route path="/classifica" element={<Leaderboard />} />
+                <Route path="/partecipante/:userId" element={<ParticipantDetail />} />
+                <Route path="/schiera" element={<Formations />} />
+                <Route path="/calcola" element={<CalculatePoints />} />
+                <Route path="/storico" element={<History />} />
+                <Route path="/risultati" element={<RaceResults />} />
+                <Route path="/statistiche" element={<Statistics />} />
               </Routes>
             </Suspense>
           </BContainer>
+
+          <Footer />
         </Router>
       </ThemeProvider>
     </LanguageProvider>
