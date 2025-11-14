@@ -79,12 +79,33 @@ export default function Navigation() {
               {availableLanguages.find((lang) => lang.code === currentLanguage)?.flag || "🌐"}
             </Dropdown.Toggle>
 
-            <Dropdown.Menu>
+            <Dropdown.Menu
+              style={{
+                backgroundColor: isDark ? "#1a1a1a" : "#ffffff",
+                border: `1px solid ${isDark ? "#333333" : "#dee2e6"}`,
+              }}
+            >
               {availableLanguages.map((lang) => (
                 <Dropdown.Item
                   key={lang.code}
                   onClick={() => changeLanguage(lang.code)}
                   active={currentLanguage === lang.code}
+                  style={{
+                    backgroundColor: currentLanguage === lang.code
+                      ? (isDark ? "#333333" : "#e9ecef")
+                      : "transparent",
+                    color: isDark ? "#ffffff" : "#212529",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (currentLanguage !== lang.code) {
+                      e.target.style.backgroundColor = isDark ? "#2a2a2a" : "#f8f9fa";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (currentLanguage !== lang.code) {
+                      e.target.style.backgroundColor = "transparent";
+                    }
+                  }}
                 >
                   <span className="me-2">{lang.flag}</span>
                   {lang.name}
