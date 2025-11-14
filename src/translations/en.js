@@ -37,6 +37,7 @@ export const en = {
     leaderboard: "Leaderboard",
     formations: "Lineup",
     history: "History",
+    raceResults: "Race Results",
     statistics: "Statistics",
     admin: "Admin",
     calculatePoints: "Calculate Points",
@@ -134,6 +135,24 @@ export const en = {
     totalPoints: "Total Points",
     noRaces: "No completed races",
     noChampionship: "No championship lineups submitted yet",
+  },
+
+  // Race Results
+  raceResults: {
+    title: "F1 Session Results",
+    description: "Results from all sessions (Free Practice, Qualifying, Sprint, Race)",
+    selectRace: "Select Race",
+    chooseRace: "Choose a race...",
+    raceNotFound: "Race not found",
+    noDataAvailable: "No data available for this race",
+    fp1: "Free Practice 1",
+    fp2: "Free Practice 2",
+    fp3: "Free Practice 3",
+    qualifying: "Qualifying",
+    sprint: "Sprint",
+    race: "Race",
+    bestTime: "Best Time",
+    time: "Time",
   },
 
   // Statistics

@@ -37,6 +37,7 @@ export const it = {
     leaderboard: "Classifica",
     formations: "Schiera",
     history: "Storico",
+    raceResults: "Risultati Gare",
     statistics: "Statistiche",
     admin: "Admin",
     calculatePoints: "Calcola Punteggi",
@@ -134,6 +135,24 @@ export const it = {
     totalPoints: "Punti Totali",
     noRaces: "Nessuna gara completata",
     noChampionship: "Nessuna formazione campionato inviata",
+  },
+
+  // Race Results
+  raceResults: {
+    title: "Risultati Sessioni F1",
+    description: "Risultati di tutte le sessioni (Prove Libere, Qualifiche, Sprint, Gara)",
+    selectRace: "Seleziona Gara",
+    chooseRace: "Scegli una gara...",
+    raceNotFound: "Gara non trovata",
+    noDataAvailable: "Nessun dato disponibile per questa gara",
+    fp1: "Prove Libere 1",
+    fp2: "Prove Libere 2",
+    fp3: "Prove Libere 3",
+    qualifying: "Qualifiche",
+    sprint: "Sprint",
+    race: "Gara",
+    bestTime: "Miglior Tempo",
+    time: "Tempo",
   },
 
   // Statistics
