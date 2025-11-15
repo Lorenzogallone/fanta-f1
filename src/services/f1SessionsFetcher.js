@@ -211,13 +211,25 @@ export async function fetchPracticeSession(season, round, sessionName) {
     }
 
     // Find the session with the matching name in this meeting
-    const targetSession = targetMeeting.sessions.find(
+    // Special handling: Sprint Qualifying can be session_name="Sprint" + session_type="Qualifying"
+    let targetSession = targetMeeting.sessions.find(
       s => s.session_name === sessionName
     );
 
+    // If looking for "Sprint Shootout" or "Sprint Qualifying" and not found, try alternate matching
+    if (!targetSession && (sessionName === "Sprint Shootout" || sessionName === "Sprint Qualifying")) {
+      // Look for session_name="Sprint" with session_type="Qualifying"
+      targetSession = targetMeeting.sessions.find(
+        s => s.session_name === "Sprint" && s.session_type === "Qualifying"
+      );
+      if (targetSession) {
+        console.info(`[OpenF1] Found sprint qualifying as session_name="Sprint" + session_type="Qualifying" for ${season} R${round}`);
+      }
+    }
+
     if (!targetSession) {
       // Log available sessions for debugging when target session not found
-      const availableSessions = targetMeeting.sessions.map(s => s.session_name).join(', ');
+      const availableSessions = targetMeeting.sessions.map(s => `${s.session_name} (${s.session_type})`).join(', ');
       console.info(`[OpenF1] Session "${sessionName}" not found for ${season} R${round}.`);
       console.info(`[OpenF1] Available sessions: ${availableSessions}`);
       return null;
@@ -639,5 +651,64 @@ export async function areSessionsAvailable(season, round) {
     );
   } catch (error) {
     return false;
+  }
+}
+
+/**
+ * Fetches current driver standings
+ * @param {number} season - Season year (optional, defaults to current)
+ * @returns {Promise<Array|null>} Array of driver standings or null
+ */
+export async function fetchDriverStandings(season = "current") {
+  try {
+    const url = `${ERGAST_API_BASE_URL}/${season}/driverStandings.json`;
+    const response = await fetch(url);
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const standings = data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings;
+
+    if (!standings || standings.length === 0) return null;
+
+    return standings.map((standing) => ({
+      position: standing.position,
+      points: standing.points,
+      wins: standing.wins,
+      driver: normalizeDriverName(standing.Driver),
+      constructor: standing.Constructors?.[0]?.name || "—",
+    }));
+  } catch (error) {
+    console.error(`Error fetching driver standings for ${season}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Fetches current constructor standings
+ * @param {number} season - Season year (optional, defaults to current)
+ * @returns {Promise<Array|null>} Array of constructor standings or null
+ */
+export async function fetchConstructorStandings(season = "current") {
+  try {
+    const url = `${ERGAST_API_BASE_URL}/${season}/constructorStandings.json`;
+    const response = await fetch(url);
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const standings = data.MRData?.StandingsTable?.StandingsLists?.[0]?.ConstructorStandings;
+
+    if (!standings || standings.length === 0) return null;
+
+    return standings.map((standing) => ({
+      position: standing.position,
+      points: standing.points,
+      wins: standing.wins,
+      constructor: standing.Constructor?.name || "—",
+    }));
+  } catch (error) {
+    console.error(`Error fetching constructor standings for ${season}:`, error);
+    return null;
   }
 }

@@ -17,6 +17,8 @@ import {
   Badge,
   Form,
   Button,
+  Nav,
+  Tab,
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import {
@@ -30,6 +32,8 @@ import { db } from "../services/firebase";
 import {
   fetchAllSessions,
   fetchLastRaceSessions,
+  fetchDriverStandings,
+  fetchConstructorStandings,
 } from "../services/f1SessionsFetcher";
 import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
@@ -48,6 +52,31 @@ function DriverWithLogo({ name }) {
         <img
           src={logoSrc}
           alt={team}
+          style={{
+            height: 20,
+            width: 20,
+            objectFit: "contain",
+            marginRight: 6,
+          }}
+        />
+      )}
+      {name}
+    </span>
+  );
+}
+
+/**
+ * Component to display team with logo
+ */
+function TeamWithLogo({ name }) {
+  if (!name) return <>—</>;
+  const logoSrc = TEAM_LOGOS[name];
+  return (
+    <span className="d-flex align-items-center">
+      {logoSrc && (
+        <img
+          src={logoSrc}
+          alt={name}
           style={{
             height: 20,
             width: 20,
@@ -82,6 +111,12 @@ export default function RaceResults() {
   // Lazy loading states for individual sessions
   const [loadingSessionKeys, setLoadingSessionKeys] = useState({});
   const [sessionsCache, setSessionsCache] = useState({});
+
+  // Standings states
+  const [activeTab, setActiveTab] = useState("results");
+  const [driverStandings, setDriverStandings] = useState(null);
+  const [constructorStandings, setConstructorStandings] = useState(null);
+  const [loadingStandings, setLoadingStandings] = useState(false);
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
@@ -316,6 +351,29 @@ export default function RaceResults() {
   }, [t]);
 
   /**
+   * Load standings when standings tab becomes active
+   */
+  useEffect(() => {
+    if (activeTab === "standings" && !driverStandings && !constructorStandings) {
+      (async () => {
+        setLoadingStandings(true);
+        try {
+          const [drivers, constructors] = await Promise.all([
+            fetchDriverStandings(),
+            fetchConstructorStandings(),
+          ]);
+          setDriverStandings(drivers);
+          setConstructorStandings(constructors);
+        } catch (error) {
+          console.error("Error loading standings:", error);
+        } finally {
+          setLoadingStandings(false);
+        }
+      })();
+    }
+  }, [activeTab, driverStandings, constructorStandings]);
+
+  /**
    * Load sessions when race changes (with caching)
    */
   const handleRaceChange = async (raceId) => {
@@ -465,14 +523,44 @@ export default function RaceResults() {
                 borderBottom: `2px solid ${accentColor}`,
               }}
             >
-              <h3 className="mb-0" style={{ color: accentColor }}>
-                🏁 {t("raceResults.title")}
-              </h3>
+              <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                <h3 className="mb-3 mb-md-0" style={{ color: accentColor }}>
+                  🏁 {t("raceResults.title")}
+                </h3>
+                <Nav variant="pills" activeKey={activeTab} onSelect={setActiveTab}>
+                  <Nav.Item>
+                    <Nav.Link
+                      eventKey="results"
+                      style={{
+                        backgroundColor: activeTab === "results" ? accentColor : "transparent",
+                        color: activeTab === "results" ? "#fff" : (isDark ? "#fff" : "#000"),
+                        borderColor: accentColor,
+                      }}
+                    >
+                      📊 Risultati
+                    </Nav.Link>
+                  </Nav.Item>
+                  <Nav.Item>
+                    <Nav.Link
+                      eventKey="standings"
+                      style={{
+                        backgroundColor: activeTab === "standings" ? accentColor : "transparent",
+                        color: activeTab === "standings" ? "#fff" : (isDark ? "#fff" : "#000"),
+                        borderColor: accentColor,
+                      }}
+                    >
+                      🏆 Classifiche
+                    </Nav.Link>
+                  </Nav.Item>
+                </Nav>
+              </div>
             </Card.Header>
             <Card.Body>
-              <p className="text-muted mb-3">{t("raceResults.description")}</p>
+              {activeTab === "results" && (
+                <>
+                  <p className="text-muted mb-3">{t("raceResults.description")}</p>
 
-              {/* Race Selector */}
+                  {/* Race Selector */}
               <Form.Group>
                 <Form.Label className="fw-bold">{t("raceResults.selectRace")}</Form.Label>
                 <Form.Select
@@ -687,6 +775,271 @@ export default function RaceResults() {
             </Card>
           </Col>
         )}
+                </>
+              )}
+
+              {/* Standings Tab */}
+              {activeTab === "standings" && (
+                <>
+                  {loadingStandings ? (
+                    <div className="text-center py-5">
+                      <Spinner animation="border" variant={isDark ? "light" : "primary"} style={{ width: '3rem', height: '3rem' }} />
+                      <p className="mt-3 text-muted">{t("common.loading")}</p>
+                    </div>
+                  ) : (
+                    <Row className="g-4">
+                      {/* Driver Standings */}
+                      <Col xs={12} lg={6}>
+                        <h5 className="mb-3" style={{ color: accentColor }}>
+                          🏎️ Classifica Piloti
+                        </h5>
+                        {driverStandings && driverStandings.length > 0 ? (
+                          <>
+                            {/* Podium */}
+                            <div className="d-flex justify-content-center align-items-end gap-3 mb-4">
+                              {/* 2nd Place */}
+                              {driverStandings[1] && (
+                                <div className="text-center" style={{ width: '30%' }}>
+                                  <div
+                                    style={{
+                                      backgroundColor: '#C0C0C0',
+                                      height: '80px',
+                                      borderRadius: '8px 8px 0 0',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontWeight: 'bold',
+                                      fontSize: '2rem',
+                                      color: '#fff',
+                                      textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                                    }}
+                                  >
+                                    2
+                                  </div>
+                                  <div className="p-2">
+                                    <DriverWithLogo name={driverStandings[1].driver} />
+                                    <div className="fw-bold mt-1" style={{ color: accentColor }}>
+                                      {driverStandings[1].points} pts
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* 1st Place */}
+                              {driverStandings[0] && (
+                                <div className="text-center" style={{ width: '30%' }}>
+                                  <div
+                                    style={{
+                                      backgroundColor: '#FFD700',
+                                      height: '120px',
+                                      borderRadius: '8px 8px 0 0',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontWeight: 'bold',
+                                      fontSize: '2.5rem',
+                                      color: '#fff',
+                                      textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                                    }}
+                                  >
+                                    1
+                                  </div>
+                                  <div className="p-2">
+                                    <DriverWithLogo name={driverStandings[0].driver} />
+                                    <div className="fw-bold mt-1" style={{ color: accentColor }}>
+                                      {driverStandings[0].points} pts
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* 3rd Place */}
+                              {driverStandings[2] && (
+                                <div className="text-center" style={{ width: '30%' }}>
+                                  <div
+                                    style={{
+                                      backgroundColor: '#CD7F32',
+                                      height: '60px',
+                                      borderRadius: '8px 8px 0 0',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontWeight: 'bold',
+                                      fontSize: '1.8rem',
+                                      color: '#fff',
+                                      textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                                    }}
+                                  >
+                                    3
+                                  </div>
+                                  <div className="p-2">
+                                    <DriverWithLogo name={driverStandings[2].driver} />
+                                    <div className="fw-bold mt-1" style={{ color: accentColor }}>
+                                      {driverStandings[2].points} pts
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Full Standings Table */}
+                            <div className="table-responsive">
+                              <Table hover size="sm" variant={isDark ? "dark" : undefined}>
+                                <thead>
+                                  <tr>
+                                    <th style={{ color: accentColor }}>Pos</th>
+                                    <th style={{ color: accentColor }}>Pilota</th>
+                                    <th className="text-end" style={{ color: accentColor }}>Punti</th>
+                                    <th className="text-end" style={{ color: accentColor }}>Vitt.</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {driverStandings.map((standing, idx) => (
+                                    <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
+                                      <td>{standing.position}</td>
+                                      <td><DriverWithLogo name={standing.driver} /></td>
+                                      <td className="text-end">{standing.points}</td>
+                                      <td className="text-end">{standing.wins}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </Table>
+                            </div>
+                          </>
+                        ) : (
+                          <Alert variant="info">Classifica piloti non disponibile</Alert>
+                        )}
+                      </Col>
+
+                      {/* Constructor Standings */}
+                      <Col xs={12} lg={6}>
+                        <h5 className="mb-3" style={{ color: accentColor }}>
+                          🏁 Classifica Costruttori
+                        </h5>
+                        {constructorStandings && constructorStandings.length > 0 ? (
+                          <>
+                            {/* Podium */}
+                            <div className="d-flex justify-content-center align-items-end gap-3 mb-4">
+                              {/* 2nd Place */}
+                              {constructorStandings[1] && (
+                                <div className="text-center" style={{ width: '30%' }}>
+                                  <div
+                                    style={{
+                                      backgroundColor: '#C0C0C0',
+                                      height: '80px',
+                                      borderRadius: '8px 8px 0 0',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontWeight: 'bold',
+                                      fontSize: '2rem',
+                                      color: '#fff',
+                                      textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                                    }}
+                                  >
+                                    2
+                                  </div>
+                                  <div className="p-2">
+                                    <TeamWithLogo name={constructorStandings[1].constructor} />
+                                    <div className="fw-bold mt-1" style={{ color: accentColor }}>
+                                      {constructorStandings[1].points} pts
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* 1st Place */}
+                              {constructorStandings[0] && (
+                                <div className="text-center" style={{ width: '30%' }}>
+                                  <div
+                                    style={{
+                                      backgroundColor: '#FFD700',
+                                      height: '120px',
+                                      borderRadius: '8px 8px 0 0',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontWeight: 'bold',
+                                      fontSize: '2.5rem',
+                                      color: '#fff',
+                                      textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                                    }}
+                                  >
+                                    1
+                                  </div>
+                                  <div className="p-2">
+                                    <TeamWithLogo name={constructorStandings[0].constructor} />
+                                    <div className="fw-bold mt-1" style={{ color: accentColor }}>
+                                      {constructorStandings[0].points} pts
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* 3rd Place */}
+                              {constructorStandings[2] && (
+                                <div className="text-center" style={{ width: '30%' }}>
+                                  <div
+                                    style={{
+                                      backgroundColor: '#CD7F32',
+                                      height: '60px',
+                                      borderRadius: '8px 8px 0 0',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontWeight: 'bold',
+                                      fontSize: '1.8rem',
+                                      color: '#fff',
+                                      textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                                    }}
+                                  >
+                                    3
+                                  </div>
+                                  <div className="p-2">
+                                    <TeamWithLogo name={constructorStandings[2].constructor} />
+                                    <div className="fw-bold mt-1" style={{ color: accentColor }}>
+                                      {constructorStandings[2].points} pts
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Full Standings Table */}
+                            <div className="table-responsive">
+                              <Table hover size="sm" variant={isDark ? "dark" : undefined}>
+                                <thead>
+                                  <tr>
+                                    <th style={{ color: accentColor }}>Pos</th>
+                                    <th style={{ color: accentColor }}>Team</th>
+                                    <th className="text-end" style={{ color: accentColor }}>Punti</th>
+                                    <th className="text-end" style={{ color: accentColor }}>Vitt.</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {constructorStandings.map((standing, idx) => (
+                                    <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
+                                      <td>{standing.position}</td>
+                                      <td><TeamWithLogo name={standing.constructor} /></td>
+                                      <td className="text-end">{standing.points}</td>
+                                      <td className="text-end">{standing.wins}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </Table>
+                            </div>
+                          </>
+                        ) : (
+                          <Alert variant="info">Classifica costruttori non disponibile</Alert>
+                        )}
+                      </Col>
+                    </Row>
+                  )}
+                </>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
 
       </Row>
     </Container>
