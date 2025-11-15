@@ -23,7 +23,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "../hooks/useLanguage";
 import PlayerStatsView from "../components/PlayerStatsView";
 
 /**

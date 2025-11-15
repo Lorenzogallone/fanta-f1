@@ -37,7 +37,7 @@ import {
 } from "../services/f1SessionsFetcher";
 import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "../hooks/useLanguage";
 
 /**
  * Component to display driver with team logo

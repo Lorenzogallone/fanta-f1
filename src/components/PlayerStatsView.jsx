@@ -25,7 +25,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "../hooks/useLanguage";
 import "../styles/statistics.css";
 
 /**

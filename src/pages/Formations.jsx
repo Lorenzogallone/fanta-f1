@@ -8,7 +8,7 @@ import { Tab, Nav } from "react-bootstrap";
 import FormationApp from "./FormationApp";
 import ChampionshipForm from "./ChampionshipForm";
 import { useTheme } from "../contexts/ThemeContext";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "../hooks/useLanguage";
 
 /**
  * Formations page with tabbed interface for race and championship formations
