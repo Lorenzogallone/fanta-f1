@@ -100,24 +100,27 @@ export default function ParticipantDetail() {
 
   const [participant, setParticipant] = useState(null);
   const [raceHistory, setRaceHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingParticipant, setLoadingParticipant] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(true);
   const [error, setError] = useState(null);
+  const [totalCompletedRaces, setTotalCompletedRaces] = useState(0);
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
   const bgHeader = isDark ? "var(--bg-tertiary)" : "#ffffff";
 
   /**
-   * Load participant data and race history
+   * Load participant data and race history with progressive loading
    */
   useEffect(() => {
     (async () => {
       try {
-        // Load participant basic info from ranking
+        // Load participant basic info from ranking - show immediately
         const userDoc = await getDoc(doc(db, "ranking", userId));
         if (!userDoc.exists()) {
           setError(t("participantDetail.notFound"));
-          setLoading(false);
+          setLoadingParticipant(false);
+          setLoadingHistory(false);
           return;
         }
 
@@ -131,6 +134,7 @@ export default function ParticipantDetail() {
           championshipCostruttori: userData.championshipCostruttori || [],
           championshipPts: userData.championshipPts || 0,
         });
+        setLoadingParticipant(false); // Show participant info immediately
 
         // Load all past races
         const now = Timestamp.now();
@@ -142,33 +146,42 @@ export default function ParticipantDetail() {
           )
         );
 
-        // Load submissions for each race
-        const history = [];
-        for (const raceDoc of racesSnap.docs) {
-          const raceData = raceDoc.data();
-          const submissionDoc = await getDoc(
-            doc(db, "races", raceDoc.id, "submissions", userId)
-          );
+        setTotalCompletedRaces(racesSnap.size);
 
-          if (submissionDoc.exists()) {
-            const subData = submissionDoc.data();
-            history.push({
-              raceId: raceDoc.id,
-              raceName: raceData.name,
-              round: raceData.round,
-              raceUTC: raceData.raceUTC,
-              submission: subData,
-              officialResults: raceData.officialResults,
-            });
+        // OPTIMIZED: Load submissions for all races IN PARALLEL
+        const submissionsPromises = racesSnap.docs.map(async (raceDoc) => {
+          const raceData = raceDoc.data();
+          try {
+            const submissionDoc = await getDoc(
+              doc(db, "races", raceDoc.id, "submissions", userId)
+            );
+
+            if (submissionDoc.exists()) {
+              return {
+                raceId: raceDoc.id,
+                raceName: raceData.name,
+                round: raceData.round,
+                raceUTC: raceData.raceUTC,
+                submission: submissionDoc.data(),
+                officialResults: raceData.officialResults,
+              };
+            }
+          } catch (err) {
+            console.error(`Error fetching submission for race ${raceDoc.id}:`, err);
           }
-        }
+          return null;
+        });
+
+        // Wait for all submissions to load in parallel
+        const allSubmissions = await Promise.all(submissionsPromises);
+        const history = allSubmissions.filter(Boolean); // Remove null entries
 
         setRaceHistory(history);
       } catch (e) {
         console.error("Error loading participant:", e);
         setError(t("errors.generic"));
       } finally {
-        setLoading(false);
+        setLoadingHistory(false);
       }
     })();
   }, [userId, t]);
@@ -179,35 +192,7 @@ export default function ParticipantDetail() {
     ? (participant?.puntiTotali / totalRaces).toFixed(1)
     : 0;
 
-  // Count total completed races (from all races collection)
-  const [totalCompletedRaces, setTotalCompletedRaces] = useState(0);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const now = Timestamp.now();
-        const racesSnap = await getDocs(
-          query(
-            collection(db, "races"),
-            where("raceUTC", "<", now)
-          )
-        );
-        setTotalCompletedRaces(racesSnap.size);
-      } catch (e) {
-        console.error("Error counting races:", e);
-      }
-    })();
-  }, []);
-
-  if (loading) {
-    return (
-      <Container className="py-5 text-center">
-        <Spinner animation="border" />
-        <p className="mt-3">{t("common.loading")}</p>
-      </Container>
-    );
-  }
-
+  // Show error if participant not found
   if (error) {
     return (
       <Container className="py-5">
@@ -215,6 +200,16 @@ export default function ParticipantDetail() {
         <Button variant="secondary" onClick={() => navigate(-1)}>
           {t("common.back")}
         </Button>
+      </Container>
+    );
+  }
+
+  // Show spinner only while loading participant basic info
+  if (loadingParticipant) {
+    return (
+      <Container className="py-5 text-center">
+        <Spinner animation="border" />
+        <p className="mt-3">{t("common.loading")}</p>
       </Container>
     );
   }
@@ -343,6 +338,69 @@ export default function ParticipantDetail() {
                     </Badge>
                   </div>
                 )}
+              </Card.Body>
+            </Card>
+          </Col>
+        )}
+
+        {/* ============ RACE HISTORY ============ */}
+        {loadingHistory ? (
+          <Col xs={12}>
+            <Card
+              className="shadow"
+              style={{
+                borderColor: accentColor,
+                backgroundColor: bgCard,
+              }}
+            >
+              <Card.Body className="text-center py-5">
+                <Spinner animation="border" size="sm" />
+                <p className="mt-3 mb-0 text-muted">{t("participantDetail.loadingHistory") || "Loading race history..."}</p>
+              </Card.Body>
+            </Card>
+          </Col>
+        ) : raceHistory.length > 0 && (
+          <Col xs={12}>
+            <Card
+              className="shadow"
+              style={{
+                borderColor: accentColor,
+                backgroundColor: bgCard,
+              }}
+            >
+              <Card.Header
+                style={{
+                  backgroundColor: bgHeader,
+                  borderBottom: `2px solid ${accentColor}`,
+                }}
+              >
+                <h5 className="mb-0" style={{ color: accentColor }}>
+                  📊 {t("participantDetail.raceHistory") || "Race History"}
+                </h5>
+              </Card.Header>
+              <Card.Body className="p-0">
+                <div className="table-responsive">
+                  <Table hover className="mb-0">
+                    <thead>
+                      <tr>
+                        <th>{t("common.round") || "Round"}</th>
+                        <th>{t("common.race") || "Race"}</th>
+                        <th className="text-center">{t("participantDetail.submitted") || "Submitted"}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {raceHistory.map((race) => (
+                        <tr key={race.raceId}>
+                          <td>{race.round}</td>
+                          <td>{race.raceName}</td>
+                          <td className="text-center">
+                            <Badge bg="success">✓</Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
               </Card.Body>
             </Card>
           </Col>
