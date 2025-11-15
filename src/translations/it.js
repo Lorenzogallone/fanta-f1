@@ -168,11 +168,31 @@ export const it = {
     goToFormation: "Vai allo Schieramento",
     sessionsTab: "Sessioni",
     standingsTab: "Campionato",
+    liveTab: "Live",
     allFilter: "Tutti",
     driverStandings: "Classifica Piloti",
     constructorStandings: "Classifica Costruttori",
     driverStandingsNotAvailable: "Classifica piloti non disponibile",
     constructorStandingsNotAvailable: "Classifica costruttori non disponibile",
+  },
+
+  // Live Timing
+  liveTiming: {
+    loading: "Caricamento dati live...",
+    errorLoading: "Errore nel caricamento dei dati live",
+    noLiveSession: "Nessuna sessione in corso",
+    nextSession: "Prossima sessione",
+    started: "Iniziata",
+    timingTable: "Tabella Tempi",
+    pos: "Pos",
+    driver: "Pilota",
+    tire: "Gomme",
+    pits: "Pit",
+    gap: "Distacco",
+    q1: "Q1",
+    q2: "Q2",
+    q3: "Q3",
+    eliminated: "Eliminato",
   },
 
   // Statistics

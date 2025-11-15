@@ -168,11 +168,31 @@ export const en = {
     goToFormation: "Go to Lineup",
     sessionsTab: "Sessions",
     standingsTab: "Standings",
+    liveTab: "Live",
     allFilter: "All",
     driverStandings: "Driver Standings",
     constructorStandings: "Constructor Standings",
     driverStandingsNotAvailable: "Driver standings not available",
     constructorStandingsNotAvailable: "Constructor standings not available",
+  },
+
+  // Live Timing
+  liveTiming: {
+    loading: "Loading live data...",
+    errorLoading: "Error loading live data",
+    noLiveSession: "No live session",
+    nextSession: "Next session",
+    started: "Started",
+    timingTable: "Timing Table",
+    pos: "Pos",
+    driver: "Driver",
+    tire: "Tire",
+    pits: "Pits",
+    gap: "Gap",
+    q1: "Q1",
+    q2: "Q2",
+    q3: "Q3",
+    eliminated: "Eliminated",
   },
 
   // Statistics
