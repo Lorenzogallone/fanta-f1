@@ -229,6 +229,7 @@ export default function RaceResults() {
         }));
         setRaces(raceList);
         setLoadingRaces(false); // Show race selector immediately
+        setLoadingSessions(true); // Start loading sessions for default race
 
         // After races load, get last race info and start loading sessions
         const lastRaceData = await fetchLastRaceSessions();
@@ -293,6 +294,7 @@ export default function RaceResults() {
               defaultKeys.push("fp1");
             }
             setActiveKeys(defaultKeys);
+            setLoadingSessions(false); // Sessions loaded
           }
         }
 
@@ -343,14 +345,17 @@ export default function RaceResults() {
               defaultKeys.push("fp1");
             }
             setActiveKeys(defaultKeys);
+            setLoadingSessions(false); // Sessions loaded
           } catch (err) {
             console.error("Error loading fallback race sessions:", err);
+            setLoadingSessions(false); // Stop loading even on error
           }
         }
       } catch (e) {
         console.error("Error loading races:", e);
         setError(t("errors.generic"));
         setLoadingRaces(false);
+        setLoadingSessions(false);
       }
     };
 
