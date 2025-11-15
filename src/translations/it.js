@@ -37,7 +37,7 @@ export const it = {
     leaderboard: "Classifica",
     formations: "Schiera",
     history: "Storico",
-    raceResults: "Risultati Gare",
+    raceResults: "F1 Hub",
     statistics: "Statistiche",
     admin: "Admin",
     calculatePoints: "Calcola Punteggi",

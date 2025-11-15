@@ -37,7 +37,7 @@ export const en = {
     leaderboard: "Leaderboard",
     formations: "Lineup",
     history: "History",
-    raceResults: "Race Results",
+    raceResults: "F1 Hub",
     statistics: "Statistics",
     admin: "Admin",
     calculatePoints: "Calculate Points",
