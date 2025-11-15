@@ -28,7 +28,16 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { collection, query, orderBy, getDocs } from "firebase/firestore";
+import {
+  collection,
+  query,
+  orderBy,
+  getDocs,
+  doc,
+  getDoc,
+  where,
+  Timestamp,
+} from "firebase/firestore";
 import { getChampionshipStatistics } from "../services/statisticsService";
 import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
@@ -132,24 +141,79 @@ export default function Statistics() {
 
   // Load individual player statistics when selected
   useEffect(() => {
-    if (!selectedPlayerId || !statistics) return;
+    if (!selectedPlayerId) return;
 
     const loadPlayerStatistics = async () => {
       setLoadingPlayerStats(true);
       try {
-        // Get player data from statistics
-        const playerData = statistics.playersData[selectedPlayerId];
-        const playerInfo = currentRanking.find(p => p.userId === selectedPlayerId);
-
-        if (playerData && playerInfo) {
-          setPlayerStats({
-            name: playerInfo.name,
-            totalPoints: playerInfo.points,
-            position: playerInfo.position,
-            history: playerData,
-            races: statistics.races,
-          });
+        // Get full player data from ranking
+        const userDoc = await getDoc(doc(db, "ranking", selectedPlayerId));
+        if (!userDoc.exists()) {
+          setLoadingPlayerStats(false);
+          return;
         }
+
+        const userData = userDoc.data();
+
+        // Load all past races with submissions
+        const now = Timestamp.now();
+        const racesSnap = await getDocs(
+          query(
+            collection(db, "races"),
+            where("raceUTC", "<", now),
+            orderBy("raceUTC", "desc")
+          )
+        );
+
+        // Count total completed races
+        const totalCompleted = racesSnap.docs.filter(doc => doc.data().officialResults).length;
+
+        // Load submissions for all races in parallel
+        const submissionsPromises = racesSnap.docs.map(async (raceDoc) => {
+          const raceData = raceDoc.data();
+
+          // Only include races with official results
+          if (!raceData.officialResults) {
+            return null;
+          }
+
+          try {
+            const submissionDoc = await getDoc(
+              doc(db, "races", raceDoc.id, "submissions", selectedPlayerId)
+            );
+
+            return {
+              raceId: raceDoc.id,
+              raceName: raceData.name,
+              round: raceData.round,
+              raceUTC: raceData.raceUTC,
+              submission: submissionDoc.exists() ? submissionDoc.data() : null,
+              officialResults: raceData.officialResults,
+              cancelledSprint: raceData.cancelledSprint || false,
+              cancelledMain: raceData.cancelledMain || false,
+            };
+          } catch (err) {
+            console.error(`Error fetching submission for race ${raceDoc.id}:`, err);
+            return null;
+          }
+        });
+
+        const allSubmissions = await Promise.all(submissionsPromises);
+        const raceHistory = allSubmissions.filter(Boolean);
+
+        setPlayerStats({
+          playerData: {
+            name: userData.name,
+            totalPoints: userData.puntiTotali || 0,
+            position: currentRanking.find(p => p.userId === selectedPlayerId)?.position,
+            jolly: userData.jolly ?? 0,
+            championshipPiloti: userData.championshipPiloti || [],
+            championshipCostruttori: userData.championshipCostruttori || [],
+            championshipPts: userData.championshipPts || 0,
+          },
+          raceHistory,
+          totalCompletedRaces: totalCompleted,
+        });
       } catch (err) {
         console.error("Error loading player statistics:", err);
       } finally {
@@ -158,7 +222,7 @@ export default function Statistics() {
     };
 
     loadPlayerStatistics();
-  }, [selectedPlayerId, statistics, currentRanking]);
+  }, [selectedPlayerId, currentRanking]);
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
@@ -305,7 +369,7 @@ export default function Statistics() {
                   fontWeight: activeTab === "general" ? "bold" : "normal",
                 }}
               >
-                📊 Classifica Generale
+                📊 {t("statistics.generalRanking")}
               </Nav.Link>
             </Nav.Item>
             <Nav.Item>
@@ -317,7 +381,7 @@ export default function Statistics() {
                   fontWeight: activeTab === "player" ? "bold" : "normal",
                 }}
               >
-                👤 Statistiche Giocatore
+                👤 {t("statistics.playerStatistics")}
               </Nav.Link>
             </Nav.Item>
           </Nav>
@@ -417,7 +481,7 @@ export default function Statistics() {
               </div>
               <div className="px-3 pb-2 text-center">
                 <small className="text-muted">
-                  💡 Clicca su un giocatore per vedere i suoi dettagli
+                  💡 {t("statistics.clickPlayerHint")}
                 </small>
               </div>
             </Card.Body>
@@ -437,7 +501,7 @@ export default function Statistics() {
               {/* Filtro Giocatori */}
               <div className="mb-3">
                 <h6 className="mb-2 fw-semibold" style={{ color: accentColor }}>
-                  👥 Giocatori da visualizzare:
+                  👥 {t("statistics.playersToShow")}
                 </h6>
                 <div className="d-flex justify-content-center gap-2 flex-wrap">
                   <Button
@@ -474,7 +538,7 @@ export default function Statistics() {
                       color: playersFilter === "all" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
                     }}
                   >
-                    Tutti
+                    {t("statistics.all")}
                   </Button>
                 </div>
               </div>
@@ -482,7 +546,7 @@ export default function Statistics() {
               {/* Filtro Gare */}
               <div>
                 <h6 className="mb-2 fw-semibold" style={{ color: accentColor }}>
-                  🏁 Gare da visualizzare:
+                  🏁 {t("statistics.racesToShow")}
                 </h6>
                 <div className="d-flex justify-content-center gap-2 flex-wrap">
                   <Button
@@ -495,7 +559,7 @@ export default function Statistics() {
                       color: racesFilter === "5" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
                     }}
                   >
-                    Ultime 5
+                    {t("statistics.last")} 5
                   </Button>
                   <Button
                     size="sm"
@@ -507,7 +571,7 @@ export default function Statistics() {
                       color: racesFilter === "10" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
                     }}
                   >
-                    Ultime 10
+                    {t("statistics.last")} 10
                   </Button>
                   <Button
                     size="sm"
@@ -519,7 +583,7 @@ export default function Statistics() {
                       color: racesFilter === "all" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
                     }}
                   >
-                    Tutte
+                    {t("statistics.allFeminine")}
                   </Button>
                 </div>
               </div>
@@ -794,15 +858,11 @@ export default function Statistics() {
                 {!loadingPlayerStats && playerStats && (
                   <div className="mt-4">
                     <PlayerStatsView
-                      playerData={{
-                        name: playerStats.name,
-                        position: playerStats.position,
-                        totalPoints: playerStats.totalPoints,
-                      }}
-                      races={playerStats.races}
-                      history={playerStats.history}
-                      totalCompletedRaces={statistics?.races?.length || 0}
+                      playerData={playerStats.playerData}
+                      raceHistory={playerStats.raceHistory}
+                      totalCompletedRaces={playerStats.totalCompletedRaces}
                       showCharts={true}
+                      showBackButton={false}
                     />
                   </div>
                 )}
@@ -810,7 +870,7 @@ export default function Statistics() {
                 {/* No player selected message */}
                 {!loadingPlayerStats && !playerStats && selectedPlayerId === null && (
                   <Alert variant="info" className="mt-4 text-center">
-                    {t("statistics.selectPlayerPrompt") || "Seleziona un giocatore dal menu a tendina per visualizzare le sue statistiche dettagliate"}
+                    {t("statistics.selectPlayerPrompt")}
                   </Alert>
                 )}
               </Card.Body>
