@@ -232,65 +232,120 @@ export default function RaceResults() {
 
         // After races load, get last race info and start loading sessions
         const lastRaceData = await fetchLastRaceSessions();
+        let selectedRace = null;
+
         if (lastRaceData) {
           // Find matching race in Firestore
           const matchingRace = raceList.find(
             (r) => r.round === lastRaceData.round
           );
           if (matchingRace) {
+            selectedRace = matchingRace;
             setSelectedRaceId(matchingRace.id);
             setSelectedRace(matchingRace);
+
+            // Show sessions structure immediately
+            setSessions({
+              raceName: lastRaceData.raceName,
+              date: lastRaceData.date,
+              season: lastRaceData.season,
+              round: lastRaceData.round,
+              // Flags to show which accordions to render
+              hasFP1: lastRaceData.hasFP1,
+              hasFP2: lastRaceData.hasFP2,
+              hasFP3: lastRaceData.hasFP3,
+              hasSprintQualifying: lastRaceData.hasSprintQualifying,
+              hasQualifying: lastRaceData.hasQualifying,
+              hasSprint: lastRaceData.hasSprint,
+              hasRace: lastRaceData.hasRace,
+              // Data will be loaded lazily
+              fp1: lastRaceData.fp1,
+              fp2: lastRaceData.fp2,
+              fp3: lastRaceData.fp3,
+              sprintQualifying: lastRaceData.sprintQualifying,
+              qualifying: lastRaceData.qualifying,
+              sprint: lastRaceData.sprint,
+              race: lastRaceData.race,
+            });
+
+            // Cache the loaded sessions
+            const cacheKey = `${lastRaceData.season}-${lastRaceData.round}`;
+            setSessionsCache(prev => ({
+              ...prev,
+              [cacheKey]: lastRaceData
+            }));
+
+            // Set default expanded keys based on session status
+            const defaultKeys = [];
+            if (lastRaceData.hasRace) {
+              defaultKeys.push("race");
+            } else if (lastRaceData.hasSprint) {
+              defaultKeys.push("sprint");
+            } else if (lastRaceData.hasSprintQualifying) {
+              defaultKeys.push("sprintQualifying");
+            } else if (lastRaceData.hasQualifying) {
+              defaultKeys.push("qualifying");
+            } else if (lastRaceData.hasFP3) {
+              defaultKeys.push("fp3");
+            } else if (lastRaceData.hasFP2) {
+              defaultKeys.push("fp2");
+            } else if (lastRaceData.hasFP1) {
+              defaultKeys.push("fp1");
+            }
+            setActiveKeys(defaultKeys);
           }
+        }
 
-          // Show sessions structure immediately
-          setSessions({
-            raceName: lastRaceData.raceName,
-            date: lastRaceData.date,
-            season: lastRaceData.season,
-            round: lastRaceData.round,
-            // Flags to show which accordions to render
-            hasFP1: lastRaceData.hasFP1,
-            hasFP2: lastRaceData.hasFP2,
-            hasFP3: lastRaceData.hasFP3,
-            hasSprintQualifying: lastRaceData.hasSprintQualifying,
-            hasQualifying: lastRaceData.hasQualifying,
-            hasSprint: lastRaceData.hasSprint,
-            hasRace: lastRaceData.hasRace,
-            // Data will be loaded lazily
-            fp1: lastRaceData.fp1,
-            fp2: lastRaceData.fp2,
-            fp3: lastRaceData.fp3,
-            sprintQualifying: lastRaceData.sprintQualifying,
-            qualifying: lastRaceData.qualifying,
-            sprint: lastRaceData.sprint,
-            race: lastRaceData.race,
-          });
+        // Fallback: if no race was selected from API, select the most recent race from database
+        if (!selectedRace && raceList.length > 0) {
+          console.log("No matching race from API, selecting most recent race from database");
+          const mostRecentRace = raceList[0]; // Already sorted by raceUTC desc
+          setSelectedRaceId(mostRecentRace.id);
+          setSelectedRace(mostRecentRace);
 
-          // Cache the loaded sessions
-          const cacheKey = `${lastRaceData.season}-${lastRaceData.round}`;
-          setSessionsCache(prev => ({
-            ...prev,
-            [cacheKey]: lastRaceData
-          }));
+          // Load sessions for this race
+          const season = mostRecentRace.raceUTC.toDate().getFullYear();
+          const round = mostRecentRace.round;
 
-          // Set default expanded keys based on session status
-          const defaultKeys = [];
-          if (lastRaceData.hasRace) {
-            defaultKeys.push("race");
-          } else if (lastRaceData.hasSprint) {
-            defaultKeys.push("sprint");
-          } else if (lastRaceData.hasSprintQualifying) {
-            defaultKeys.push("sprintQualifying");
-          } else if (lastRaceData.hasQualifying) {
-            defaultKeys.push("qualifying");
-          } else if (lastRaceData.hasFP3) {
-            defaultKeys.push("fp3");
-          } else if (lastRaceData.hasFP2) {
-            defaultKeys.push("fp2");
-          } else if (lastRaceData.hasFP1) {
-            defaultKeys.push("fp1");
+          try {
+            const sessionData = await fetchAllSessions(season, round);
+
+            setSessions({
+              raceName: mostRecentRace.name,
+              date: mostRecentRace.raceUTC.toDate().toLocaleDateString(),
+              season,
+              round,
+              ...sessionData,
+            });
+
+            // Cache the sessions
+            const cacheKey = `${season}-${round}`;
+            setSessionsCache(prev => ({
+              ...prev,
+              [cacheKey]: sessionData
+            }));
+
+            // Set default expanded keys
+            const defaultKeys = [];
+            if (sessionData.hasRace) {
+              defaultKeys.push("race");
+            } else if (sessionData.hasSprint) {
+              defaultKeys.push("sprint");
+            } else if (sessionData.hasSprintQualifying) {
+              defaultKeys.push("sprintQualifying");
+            } else if (sessionData.hasQualifying) {
+              defaultKeys.push("qualifying");
+            } else if (sessionData.hasFP3) {
+              defaultKeys.push("fp3");
+            } else if (sessionData.hasFP2) {
+              defaultKeys.push("fp2");
+            } else if (sessionData.hasFP1) {
+              defaultKeys.push("fp1");
+            }
+            setActiveKeys(defaultKeys);
+          } catch (err) {
+            console.error("Error loading fallback race sessions:", err);
           }
-          setActiveKeys(defaultKeys);
         }
       } catch (e) {
         console.error("Error loading races:", e);
