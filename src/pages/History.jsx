@@ -32,7 +32,7 @@ import { db } from "../services/firebase";
 import RaceHistoryCard from "../components/RaceHistoryCard";
 import { DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "../hooks/useLanguage";
 
 /**
  * Component to display driver name with team logo
@@ -103,6 +103,7 @@ export default function History() {
   const [championshipResults, setChampionshipResults] = useState(null);
   const [championshipSubmissions, setChampionshipSubmissions] = useState([]);
   const [loadingChampionship, setLoadingChampionship] = useState(true);
+  const [isLoadingRaceData, setIsLoadingRaceData] = useState(false);
   const { isDark } = useTheme();
   const { t } = useLanguage();
 
@@ -186,6 +187,23 @@ export default function History() {
 
   // Get selected race
   const selectedRace = pastRaces.find((r) => r.id === selectedRaceId);
+
+  /**
+   * Handle race selection change with loading state
+   * Provides immediate visual feedback when changing races
+   */
+  const handleRaceChange = (raceId) => {
+    if (raceId === selectedRaceId) return; // No change
+
+    setIsLoadingRaceData(true);
+    setSelectedRaceId(raceId);
+
+    // Simulate minimum loading time for smooth UX
+    // This ensures the spinner is visible even if data loads instantly from cache
+    setTimeout(() => {
+      setIsLoadingRaceData(false);
+    }, 400);
+  };
 
   if (loading)
     return (
@@ -535,7 +553,7 @@ export default function History() {
                   <Form.Label className="fw-bold">{t("raceResults.selectRace")}</Form.Label>
                   <Form.Select
                     value={selectedRaceId || ""}
-                    onChange={(e) => setSelectedRaceId(e.target.value)}
+                    onChange={(e) => handleRaceChange(e.target.value)}
                     style={{
                       borderColor: accentColor,
                     }}
@@ -550,9 +568,28 @@ export default function History() {
                   </Form.Select>
                 </Form.Group>
 
-                {/* Selected Race Details */}
-                {selectedRace && <RaceHistoryCard race={selectedRace} />}
+                {/* Loading state when changing races */}
+                {isLoadingRaceData && selectedRace && (
+                  <div className="text-center py-5 mb-4">
+                    <div className="mb-3">
+                      <h5 style={{ color: accentColor }}>
+                        {t("history.round")} {selectedRace.round} - {selectedRace.name}
+                      </h5>
+                      <small className="text-muted">
+                        {selectedRace.raceUTC && new Date(selectedRace.raceUTC.seconds * 1000).toLocaleDateString("it-IT")}
+                      </small>
+                    </div>
+                    <Spinner animation="border" variant={isDark ? "light" : "primary"} style={{ width: '3rem', height: '3rem' }} />
+                    <p className="mt-3 text-muted">{t("common.loading")}</p>
+                  </div>
+                )}
 
+                {/* Selected Race Details - shown when not loading */}
+                {selectedRace && !isLoadingRaceData && (
+                  <RaceHistoryCard race={selectedRace} key={selectedRaceId} />
+                )}
+
+                {/* Placeholder when no race selected */}
                 {!selectedRace && (
                   <Alert variant="info">
                     {t("raceResults.chooseRace")}

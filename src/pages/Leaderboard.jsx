@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "../hooks/useLanguage";
 import { getLastRankingSnapshot, calculatePositionChange } from "../services/rankingSnapshot";
 
 const medals = ["🥇", "🥈", "🥉"];

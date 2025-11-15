@@ -140,6 +140,34 @@ service cloud.firestore {
       // allow write: if isAdmin();
     }
 
+    /* ===================== BACKUP DATABASE ==============================
+     * Collezione: /backups/{backupId}
+     *
+     * Struttura documento:
+     * - races: array (snapshot gare e submissions)
+     * - ranking: array (snapshot classifica)
+     * - metadata: object
+     *   - type: string (manual, auto_race, auto_championship)
+     *   - timestamp: timestamp
+     *   - totalRaces: number
+     *   - totalParticipants: number
+     *   - raceName: string (per auto_race)
+     *   - raceId: string (per auto_race)
+     *   - description: string
+     *
+     * REGOLE FUTURE:
+     * - Read: tutti possono leggere i backup
+     * - Write: solo admin può creare/modificare/eliminare backup
+     * ==================================================================== */
+    match /backups/{backupId} {
+      // TEMPORANEO - Accesso completo
+      allow read, write: if true;
+
+      // FUTURO CON AUTH:
+      // allow read: if true;
+      // allow write: if isAdmin();
+    }
+
     /* ===================== FALLBACK ====================================
      * Blocca accesso a qualsiasi altra collezione non definita sopra
      * ==================================================================== */
