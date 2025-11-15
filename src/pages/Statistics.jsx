@@ -34,13 +34,18 @@ import { useLanguage } from "../contexts/LanguageContext";
 
 const medals = ["🥇", "🥈", "🥉"];
 
-// Distinct colors for top players in charts (max 5)
+// Distinct colors for players in charts
 const CHART_COLORS = [
   "#dc3545", // red - 1st
   "#0d6efd", // blue - 2nd
   "#198754", // green - 3rd
   "#ffc107", // yellow - 4th
   "#6f42c1", // purple - 5th
+  "#fd7e14", // orange - 6th
+  "#20c997", // teal - 7th
+  "#d63384", // pink - 8th
+  "#17a2b8", // cyan - 9th
+  "#6c757d", // gray - 10th
 ];
 
 /**
@@ -53,6 +58,7 @@ export default function Statistics() {
   const [error, setError] = useState(null);
   const [statistics, setStatistics] = useState(null);
   const [currentRanking, setCurrentRanking] = useState([]);
+  const [playersFilter, setPlayersFilter] = useState("5"); // "5", "10", "all"
   const { isDark } = useTheme();
   const { t } = useLanguage();
 
@@ -121,8 +127,12 @@ export default function Statistics() {
     );
   }
 
-  // Show only top 5 players in charts to reduce visual clutter
-  const topPlayers = currentRanking.slice(0, 5);
+  // Apply filter to determine how many players to show in charts
+  const numPlayers = playersFilter === "5" ? 5 : playersFilter === "10" ? 10 : currentRanking.length;
+  const topPlayers = currentRanking.slice(0, numPlayers);
+
+  // Get label for chart headers based on filter
+  const playersLabel = playersFilter === "5" ? "Top 5" : playersFilter === "10" ? "Top 10" : t("statistics.allPlayers") || "Tutti i giocatori";
 
   // Prepare chart data only if statistics are loaded
   let pointsChartData = [];
@@ -210,6 +220,50 @@ export default function Statistics() {
           <h2 className="mb-4" style={{ color: accentColor }}>
             {t("statistics.title")}
           </h2>
+        </Col>
+      </Row>
+
+      {/* Filter Buttons */}
+      <Row className="mb-4">
+        <Col xs={12}>
+          <div className="d-flex justify-content-center gap-2 flex-wrap">
+            <Button
+              size="sm"
+              variant={playersFilter === "5" ? "danger" : "outline-secondary"}
+              onClick={() => setPlayersFilter("5")}
+              style={{
+                backgroundColor: playersFilter === "5" ? accentColor : "transparent",
+                borderColor: playersFilter === "5" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                color: playersFilter === "5" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
+              }}
+            >
+              Top 5
+            </Button>
+            <Button
+              size="sm"
+              variant={playersFilter === "10" ? "danger" : "outline-secondary"}
+              onClick={() => setPlayersFilter("10")}
+              style={{
+                backgroundColor: playersFilter === "10" ? accentColor : "transparent",
+                borderColor: playersFilter === "10" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                color: playersFilter === "10" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
+              }}
+            >
+              Top 10
+            </Button>
+            <Button
+              size="sm"
+              variant={playersFilter === "all" ? "danger" : "outline-secondary"}
+              onClick={() => setPlayersFilter("all")}
+              style={{
+                backgroundColor: playersFilter === "all" ? accentColor : "transparent",
+                borderColor: playersFilter === "all" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                color: playersFilter === "all" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
+              }}
+            >
+              Tutti
+            </Button>
+          </div>
         </Col>
       </Row>
 
@@ -328,7 +382,7 @@ export default function Statistics() {
                     borderBottom: `2px solid ${accentColor}`,
                   }}
                 >
-                  {t("statistics.pointsProgression")} ({t("statistics.topPlayers")})
+                  {t("statistics.pointsProgression")} ({playersLabel})
                 </Card.Header>
                 <Card.Body className="text-center" style={{ height: 400, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <div>
@@ -353,7 +407,7 @@ export default function Statistics() {
                     borderBottom: `2px solid ${accentColor}`,
                   }}
                 >
-                  {t("statistics.positionProgression")} ({t("statistics.topPlayers")})
+                  {t("statistics.positionProgression")} ({playersLabel})
                 </Card.Header>
                 <Card.Body className="text-center" style={{ height: 400, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <div>
@@ -382,7 +436,7 @@ export default function Statistics() {
                     borderBottom: `2px solid ${accentColor}`,
                   }}
                 >
-                  {t("statistics.pointsProgression")} ({t("statistics.topPlayers")})
+                  {t("statistics.pointsProgression")} ({playersLabel})
                 </Card.Header>
                 <Card.Body>
                   <ResponsiveContainer width="100%" height={400}>
@@ -416,7 +470,7 @@ export default function Statistics() {
                           key={player.userId}
                           type="monotone"
                           dataKey={player.name}
-                          stroke={CHART_COLORS[idx]}
+                          stroke={CHART_COLORS[idx % CHART_COLORS.length]}
                           strokeWidth={3}
                           dot={false}
                         />
@@ -442,7 +496,7 @@ export default function Statistics() {
                     borderBottom: `2px solid ${accentColor}`,
                   }}
                 >
-                  {t("statistics.positionProgression")} ({t("statistics.topPlayers")})
+                  {t("statistics.positionProgression")} ({playersLabel})
                 </Card.Header>
                 <Card.Body>
                   <ResponsiveContainer width="100%" height={400}>
@@ -482,7 +536,7 @@ export default function Statistics() {
                           key={player.userId}
                           type="monotone"
                           dataKey={player.name}
-                          stroke={CHART_COLORS[idx]}
+                          stroke={CHART_COLORS[idx % CHART_COLORS.length]}
                           strokeWidth={3}
                           dot={false}
                         />
