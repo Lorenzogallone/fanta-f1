@@ -117,6 +117,7 @@ export default function RaceResults() {
   const [driverStandings, setDriverStandings] = useState(null);
   const [constructorStandings, setConstructorStandings] = useState(null);
   const [loadingStandings, setLoadingStandings] = useState(false);
+  const [standingsFilter, setStandingsFilter] = useState("all"); // "5", "10", "all"
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
@@ -525,7 +526,7 @@ export default function RaceResults() {
             >
               <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
                 <h3 className="mb-3 mb-md-0" style={{ color: accentColor }}>
-                  🏁 {t("raceResults.title")}
+                  🏁 F1 Hub
                 </h3>
                 <Nav variant="pills" activeKey={activeTab} onSelect={setActiveTab}>
                   <Nav.Item>
@@ -537,7 +538,7 @@ export default function RaceResults() {
                         borderColor: accentColor,
                       }}
                     >
-                      📊 Risultati
+                      📊 Sessioni
                     </Nav.Link>
                   </Nav.Item>
                   <Nav.Item>
@@ -549,7 +550,7 @@ export default function RaceResults() {
                         borderColor: accentColor,
                       }}
                     >
-                      🏆 Classifiche
+                      🏆 Campionato
                     </Nav.Link>
                   </Nav.Item>
                 </Nav>
@@ -614,39 +615,79 @@ export default function RaceResults() {
                       <p className="mt-3 text-muted">{t("common.loading")}</p>
                     </div>
                   ) : (
-                    <Row className="g-4">
-                      {/* Driver Standings */}
-                      <Col xs={12} lg={6}>
-                        <h5 className="mb-3" style={{ color: accentColor }}>
-                          🏎️ Classifica Piloti
-                        </h5>
-                        {driverStandings && driverStandings.length > 0 ? (
-                          <>
-                            {/* Podium */}
-                            <div className="d-flex justify-content-center align-items-end gap-3 mb-4">
+                    <>
+                      {/* Filter Buttons */}
+                      <div className="d-flex justify-content-center gap-2 mb-4 flex-wrap">
+                        <Button
+                          size="sm"
+                          variant={standingsFilter === "5" ? "danger" : "outline-secondary"}
+                          onClick={() => setStandingsFilter("5")}
+                          style={{
+                            backgroundColor: standingsFilter === "5" ? accentColor : "transparent",
+                            borderColor: standingsFilter === "5" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                          }}
+                        >
+                          Top 5
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={standingsFilter === "10" ? "danger" : "outline-secondary"}
+                          onClick={() => setStandingsFilter("10")}
+                          style={{
+                            backgroundColor: standingsFilter === "10" ? accentColor : "transparent",
+                            borderColor: standingsFilter === "10" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                          }}
+                        >
+                          Top 10
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={standingsFilter === "all" ? "danger" : "outline-secondary"}
+                          onClick={() => setStandingsFilter("all")}
+                          style={{
+                            backgroundColor: standingsFilter === "all" ? accentColor : "transparent",
+                            borderColor: standingsFilter === "all" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                          }}
+                        >
+                          Tutti
+                        </Button>
+                      </div>
+
+                      <Row className="g-4">
+                        {/* Driver Standings */}
+                        <Col xs={12} lg={6}>
+                          <h5 className="mb-3" style={{ color: accentColor }}>
+                            🏎️ Classifica Piloti
+                          </h5>
+                          {driverStandings && driverStandings.length > 0 ? (
+                            <>
+                              {/* Podium */}
+                              <div className="d-flex justify-content-center align-items-end gap-2 gap-md-3 mb-4" style={{ maxWidth: '100%', overflow: 'hidden' }}>
                               {/* 2nd Place */}
                               {driverStandings[1] && (
-                                <div className="text-center" style={{ width: '30%' }}>
+                                <div className="text-center" style={{ flex: '1', maxWidth: '32%', minWidth: 0 }}>
                                   <div
                                     style={{
                                       backgroundColor: '#C0C0C0',
-                                      height: '80px',
+                                      height: '60px',
                                       borderRadius: '8px 8px 0 0',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
                                       fontWeight: 'bold',
-                                      fontSize: '2rem',
+                                      fontSize: 'clamp(1.2rem, 4vw, 2rem)',
                                       color: '#fff',
-                                      textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                                      textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
                                     }}
                                   >
                                     2
                                   </div>
-                                  <div className="p-2">
-                                    <DriverWithLogo name={driverStandings[1].driver} />
-                                    <div className="fw-bold mt-1" style={{ color: accentColor }}>
-                                      {driverStandings[1].points} pts
+                                  <div className="p-1 p-md-2" style={{ fontSize: 'clamp(0.7rem, 2vw, 0.9rem)', overflow: 'hidden' }}>
+                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {driverStandings[1].driver.split(' ').pop()}
+                                    </div>
+                                    <div className="fw-bold mt-1" style={{ color: accentColor, fontSize: 'clamp(0.75rem, 2.5vw, 1rem)' }}>
+                                      {driverStandings[1].points}
                                     </div>
                                   </div>
                                 </div>
@@ -654,27 +695,29 @@ export default function RaceResults() {
 
                               {/* 1st Place */}
                               {driverStandings[0] && (
-                                <div className="text-center" style={{ width: '30%' }}>
+                                <div className="text-center" style={{ flex: '1', maxWidth: '32%', minWidth: 0 }}>
                                   <div
                                     style={{
                                       backgroundColor: '#FFD700',
-                                      height: '120px',
+                                      height: '90px',
                                       borderRadius: '8px 8px 0 0',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
                                       fontWeight: 'bold',
-                                      fontSize: '2.5rem',
+                                      fontSize: 'clamp(1.5rem, 5vw, 2.5rem)',
                                       color: '#fff',
-                                      textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                                      textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
                                     }}
                                   >
                                     1
                                   </div>
-                                  <div className="p-2">
-                                    <DriverWithLogo name={driverStandings[0].driver} />
-                                    <div className="fw-bold mt-1" style={{ color: accentColor }}>
-                                      {driverStandings[0].points} pts
+                                  <div className="p-1 p-md-2" style={{ fontSize: 'clamp(0.7rem, 2vw, 0.9rem)', overflow: 'hidden' }}>
+                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {driverStandings[0].driver.split(' ').pop()}
+                                    </div>
+                                    <div className="fw-bold mt-1" style={{ color: accentColor, fontSize: 'clamp(0.75rem, 2.5vw, 1rem)' }}>
+                                      {driverStandings[0].points}
                                     </div>
                                   </div>
                                 </div>
@@ -682,27 +725,29 @@ export default function RaceResults() {
 
                               {/* 3rd Place */}
                               {driverStandings[2] && (
-                                <div className="text-center" style={{ width: '30%' }}>
+                                <div className="text-center" style={{ flex: '1', maxWidth: '32%', minWidth: 0 }}>
                                   <div
                                     style={{
                                       backgroundColor: '#CD7F32',
-                                      height: '60px',
+                                      height: '45px',
                                       borderRadius: '8px 8px 0 0',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
                                       fontWeight: 'bold',
-                                      fontSize: '1.8rem',
+                                      fontSize: 'clamp(1rem, 3.5vw, 1.8rem)',
                                       color: '#fff',
-                                      textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                                      textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
                                     }}
                                   >
                                     3
                                   </div>
-                                  <div className="p-2">
-                                    <DriverWithLogo name={driverStandings[2].driver} />
-                                    <div className="fw-bold mt-1" style={{ color: accentColor }}>
-                                      {driverStandings[2].points} pts
+                                  <div className="p-1 p-md-2" style={{ fontSize: 'clamp(0.7rem, 2vw, 0.9rem)', overflow: 'hidden' }}>
+                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {driverStandings[2].driver.split(' ').pop()}
+                                    </div>
+                                    <div className="fw-bold mt-1" style={{ color: accentColor, fontSize: 'clamp(0.75rem, 2.5vw, 1rem)' }}>
+                                      {driverStandings[2].points}
                                     </div>
                                   </div>
                                 </div>
@@ -711,24 +756,30 @@ export default function RaceResults() {
 
                             {/* Full Standings Table */}
                             <div className="table-responsive">
-                              <Table hover size="sm" variant={isDark ? "dark" : undefined}>
+                              <Table hover size="sm" variant={isDark ? "dark" : undefined} className="mb-0">
                                 <thead>
                                   <tr>
-                                    <th style={{ color: accentColor }}>Pos</th>
-                                    <th style={{ color: accentColor }}>Pilota</th>
-                                    <th className="text-end" style={{ color: accentColor }}>Punti</th>
-                                    <th className="text-end" style={{ color: accentColor }}>Vitt.</th>
+                                    <th style={{ color: accentColor, width: '10%', padding: '0.5rem 0.25rem' }}>#</th>
+                                    <th style={{ color: accentColor, padding: '0.5rem 0.25rem' }}>Pilota</th>
+                                    <th className="text-end" style={{ color: accentColor, width: '20%', padding: '0.5rem 0.25rem' }}>Pt</th>
+                                    <th className="text-end d-none d-md-table-cell" style={{ color: accentColor, width: '15%', padding: '0.5rem 0.25rem' }}>Win</th>
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {driverStandings.map((standing, idx) => (
-                                    <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                      <td>{standing.position}</td>
-                                      <td><DriverWithLogo name={standing.driver} /></td>
-                                      <td className="text-end">{standing.points}</td>
-                                      <td className="text-end">{standing.wins}</td>
-                                    </tr>
-                                  ))}
+                                  {driverStandings
+                                    .slice(0, standingsFilter === "5" ? 5 : standingsFilter === "10" ? 10 : driverStandings.length)
+                                    .map((standing, idx) => (
+                                      <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
+                                        <td style={{ padding: '0.5rem 0.25rem' }}>{standing.position}</td>
+                                        <td style={{ padding: '0.5rem 0.25rem' }}>
+                                          <div className="d-flex align-items-center">
+                                            <DriverWithLogo name={standing.driver} />
+                                          </div>
+                                        </td>
+                                        <td className="text-end" style={{ padding: '0.5rem 0.25rem' }}>{standing.points}</td>
+                                        <td className="text-end d-none d-md-table-cell" style={{ padding: '0.5rem 0.25rem' }}>{standing.wins}</td>
+                                      </tr>
+                                    ))}
                                 </tbody>
                               </Table>
                             </div>
@@ -746,30 +797,32 @@ export default function RaceResults() {
                         {constructorStandings && constructorStandings.length > 0 ? (
                           <>
                             {/* Podium */}
-                            <div className="d-flex justify-content-center align-items-end gap-3 mb-4">
+                            <div className="d-flex justify-content-center align-items-end gap-2 gap-md-3 mb-4" style={{ maxWidth: '100%', overflow: 'hidden' }}>
                               {/* 2nd Place */}
                               {constructorStandings[1] && (
-                                <div className="text-center" style={{ width: '30%' }}>
+                                <div className="text-center" style={{ flex: '1', maxWidth: '32%', minWidth: 0 }}>
                                   <div
                                     style={{
                                       backgroundColor: '#C0C0C0',
-                                      height: '80px',
+                                      height: '60px',
                                       borderRadius: '8px 8px 0 0',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
                                       fontWeight: 'bold',
-                                      fontSize: '2rem',
+                                      fontSize: 'clamp(1.2rem, 4vw, 2rem)',
                                       color: '#fff',
-                                      textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                                      textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
                                     }}
                                   >
                                     2
                                   </div>
-                                  <div className="p-2">
-                                    <TeamWithLogo name={constructorStandings[1].constructor} />
-                                    <div className="fw-bold mt-1" style={{ color: accentColor }}>
-                                      {constructorStandings[1].points} pts
+                                  <div className="p-1 p-md-2" style={{ fontSize: 'clamp(0.65rem, 1.8vw, 0.85rem)', overflow: 'hidden' }}>
+                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {constructorStandings[1].constructor}
+                                    </div>
+                                    <div className="fw-bold mt-1" style={{ color: accentColor, fontSize: 'clamp(0.75rem, 2.5vw, 1rem)' }}>
+                                      {constructorStandings[1].points}
                                     </div>
                                   </div>
                                 </div>
@@ -777,27 +830,29 @@ export default function RaceResults() {
 
                               {/* 1st Place */}
                               {constructorStandings[0] && (
-                                <div className="text-center" style={{ width: '30%' }}>
+                                <div className="text-center" style={{ flex: '1', maxWidth: '32%', minWidth: 0 }}>
                                   <div
                                     style={{
                                       backgroundColor: '#FFD700',
-                                      height: '120px',
+                                      height: '90px',
                                       borderRadius: '8px 8px 0 0',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
                                       fontWeight: 'bold',
-                                      fontSize: '2.5rem',
+                                      fontSize: 'clamp(1.5rem, 5vw, 2.5rem)',
                                       color: '#fff',
-                                      textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                                      textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
                                     }}
                                   >
                                     1
                                   </div>
-                                  <div className="p-2">
-                                    <TeamWithLogo name={constructorStandings[0].constructor} />
-                                    <div className="fw-bold mt-1" style={{ color: accentColor }}>
-                                      {constructorStandings[0].points} pts
+                                  <div className="p-1 p-md-2" style={{ fontSize: 'clamp(0.65rem, 1.8vw, 0.85rem)', overflow: 'hidden' }}>
+                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {constructorStandings[0].constructor}
+                                    </div>
+                                    <div className="fw-bold mt-1" style={{ color: accentColor, fontSize: 'clamp(0.75rem, 2.5vw, 1rem)' }}>
+                                      {constructorStandings[0].points}
                                     </div>
                                   </div>
                                 </div>
@@ -805,27 +860,29 @@ export default function RaceResults() {
 
                               {/* 3rd Place */}
                               {constructorStandings[2] && (
-                                <div className="text-center" style={{ width: '30%' }}>
+                                <div className="text-center" style={{ flex: '1', maxWidth: '32%', minWidth: 0 }}>
                                   <div
                                     style={{
                                       backgroundColor: '#CD7F32',
-                                      height: '60px',
+                                      height: '45px',
                                       borderRadius: '8px 8px 0 0',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
                                       fontWeight: 'bold',
-                                      fontSize: '1.8rem',
+                                      fontSize: 'clamp(1rem, 3.5vw, 1.8rem)',
                                       color: '#fff',
-                                      textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                                      textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
                                     }}
                                   >
                                     3
                                   </div>
-                                  <div className="p-2">
-                                    <TeamWithLogo name={constructorStandings[2].constructor} />
-                                    <div className="fw-bold mt-1" style={{ color: accentColor }}>
-                                      {constructorStandings[2].points} pts
+                                  <div className="p-1 p-md-2" style={{ fontSize: 'clamp(0.65rem, 1.8vw, 0.85rem)', overflow: 'hidden' }}>
+                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {constructorStandings[2].constructor}
+                                    </div>
+                                    <div className="fw-bold mt-1" style={{ color: accentColor, fontSize: 'clamp(0.75rem, 2.5vw, 1rem)' }}>
+                                      {constructorStandings[2].points}
                                     </div>
                                   </div>
                                 </div>
@@ -834,24 +891,30 @@ export default function RaceResults() {
 
                             {/* Full Standings Table */}
                             <div className="table-responsive">
-                              <Table hover size="sm" variant={isDark ? "dark" : undefined}>
+                              <Table hover size="sm" variant={isDark ? "dark" : undefined} className="mb-0">
                                 <thead>
                                   <tr>
-                                    <th style={{ color: accentColor }}>Pos</th>
-                                    <th style={{ color: accentColor }}>Team</th>
-                                    <th className="text-end" style={{ color: accentColor }}>Punti</th>
-                                    <th className="text-end" style={{ color: accentColor }}>Vitt.</th>
+                                    <th style={{ color: accentColor, width: '10%', padding: '0.5rem 0.25rem' }}>#</th>
+                                    <th style={{ color: accentColor, padding: '0.5rem 0.25rem' }}>Team</th>
+                                    <th className="text-end" style={{ color: accentColor, width: '20%', padding: '0.5rem 0.25rem' }}>Pt</th>
+                                    <th className="text-end d-none d-md-table-cell" style={{ color: accentColor, width: '15%', padding: '0.5rem 0.25rem' }}>Win</th>
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {constructorStandings.map((standing, idx) => (
-                                    <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                      <td>{standing.position}</td>
-                                      <td><TeamWithLogo name={standing.constructor} /></td>
-                                      <td className="text-end">{standing.points}</td>
-                                      <td className="text-end">{standing.wins}</td>
-                                    </tr>
-                                  ))}
+                                  {constructorStandings
+                                    .slice(0, standingsFilter === "5" ? 5 : standingsFilter === "10" ? 10 : constructorStandings.length)
+                                    .map((standing, idx) => (
+                                      <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
+                                        <td style={{ padding: '0.5rem 0.25rem' }}>{standing.position}</td>
+                                        <td style={{ padding: '0.5rem 0.25rem' }}>
+                                          <div className="d-flex align-items-center">
+                                            <TeamWithLogo name={standing.constructor} />
+                                          </div>
+                                        </td>
+                                        <td className="text-end" style={{ padding: '0.5rem 0.25rem' }}>{standing.points}</td>
+                                        <td className="text-end d-none d-md-table-cell" style={{ padding: '0.5rem 0.25rem' }}>{standing.wins}</td>
+                                      </tr>
+                                    ))}
                                 </tbody>
                               </Table>
                             </div>
