@@ -39,7 +39,7 @@ import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import LiveTiming from "../components/LiveTiming";
-import { getCurrentLiveSession } from "../services/openF1Service";
+import f1LiveTimingService from "../services/f1LiveTimingService";
 
 /**
  * Component to display driver with team logo
@@ -125,10 +125,21 @@ export default function RaceResults() {
   // Check for live session on mount
   useEffect(() => {
     async function checkLive() {
-      const liveSession = await getCurrentLiveSession();
-      if (liveSession) {
-        setHasLiveSession(true);
-        setActiveTab("live"); // Open live tab if there's a live session
+      try {
+        // Connect to SignalR to check for live session
+        await f1LiveTimingService.connect();
+
+        // Set up a callback to check when session info is received
+        const checkTimer = setTimeout(() => {
+          if (f1LiveTimingService.hasActiveSession()) {
+            setHasLiveSession(true);
+            setActiveTab("live"); // Open live tab if there's a live session
+          }
+        }, 2000); // Wait 2 seconds for initial data
+
+        return () => clearTimeout(checkTimer);
+      } catch (error) {
+        console.error("Error checking live session:", error);
       }
     }
     checkLive();

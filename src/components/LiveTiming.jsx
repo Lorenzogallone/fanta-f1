@@ -1,22 +1,14 @@
 /**
  * @file LiveTiming.jsx
- * @description Live F1 session timing component
+ * @description Live F1 session timing component using SignalR
  */
 
 import React, { useState, useEffect } from "react";
 import { Row, Col, Card, Badge, Table, Alert, Spinner } from "react-bootstrap";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
-import {
-  getCurrentLiveSession,
-  getNextSession,
-  getSessionPositions,
-  getSessionLaps,
-  getSessionStints,
-  getSessionPitStops,
-  getSessionDrivers,
-  getTireCompoundDisplay,
-} from "../services/openF1Service";
+import { getTireCompoundDisplay } from "../services/openF1Service";
+import f1LiveTimingService from "../services/f1LiveTimingService";
 
 /**
  * Tire compound badge component
@@ -40,17 +32,16 @@ function TireBadge({ compound }) {
 }
 
 /**
- * Live Timing Component
+ * Live Timing Component using SignalR
  */
 export default function LiveTiming() {
-  const [liveSession, setLiveSession] = useState(null);
-  const [nextSession, setNextSession] = useState(null);
-  const [drivers, setDrivers] = useState([]);
-  const [positions, setPositions] = useState([]);
-  const [stints, setStints] = useState([]);
-  const [pitStops, setPitStops] = useState([]);
+  const [timingData, setTimingData] = useState([]);
+  const [sessionInfo, setSessionInfo] = useState(null);
+  const [sessionStatus, setSessionStatus] = useState(null);
+  const [trackStatus, setTrackStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   const { isDark } = useTheme();
   const { t } = useLanguage();
@@ -58,59 +49,63 @@ export default function LiveTiming() {
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
 
-  // Check for live session on mount and every 30 seconds
+  // Connect to SignalR on mount
   useEffect(() => {
-    checkLiveSession();
-    const interval = setInterval(checkLiveSession, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    async function initializeSignalR() {
+      try {
+        setLoading(true);
 
-  // Fetch session data when live session changes
-  useEffect(() => {
-    if (liveSession) {
-      fetchSessionData();
-      const interval = setInterval(fetchSessionData, 10000); // Update every 10 seconds
-      return () => clearInterval(interval);
-    }
-  }, [liveSession]);
+        // Connect to F1 Live Timing
+        await f1LiveTimingService.connect();
+        setIsConnected(true);
 
-  async function checkLiveSession() {
-    try {
-      const live = await getCurrentLiveSession();
-      setLiveSession(live);
+        // Set up callbacks for data updates
+        f1LiveTimingService.onSessionInfoUpdate = (data) => {
+          setSessionInfo(data);
+          setLoading(false);
+        };
 
-      if (!live) {
-        const next = await getNextSession();
-        setNextSession(next);
+        f1LiveTimingService.onSessionStatusUpdate = (data) => {
+          setSessionStatus(data);
+        };
+
+        f1LiveTimingService.onTrackStatusUpdate = (data) => {
+          setTrackStatus(data);
+        };
+
+        f1LiveTimingService.onTimingDataUpdate = () => {
+          const formatted = f1LiveTimingService.getFormattedTimingData();
+          setTimingData(formatted);
+        };
+
+        f1LiveTimingService.onDriverListUpdate = () => {
+          const formatted = f1LiveTimingService.getFormattedTimingData();
+          setTimingData(formatted);
+        };
+
+        f1LiveTimingService.onPositionUpdate = () => {
+          const formatted = f1LiveTimingService.getFormattedTimingData();
+          setTimingData(formatted);
+        };
+
+        // Check initial connection state
+        if (f1LiveTimingService.isConnected) {
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Error connecting to F1 Live Timing:", err);
+        setError(t("liveTiming.errorLoading"));
+        setLoading(false);
       }
-
-      setLoading(false);
-    } catch (err) {
-      console.error("Error checking live session:", err);
-      setError(t("liveTiming.errorLoading"));
-      setLoading(false);
     }
-  }
 
-  async function fetchSessionData() {
-    if (!liveSession) return;
+    initializeSignalR();
 
-    try {
-      const [driversData, positionsData, stintsData, pitStopsData] = await Promise.all([
-        getSessionDrivers(liveSession.session_key),
-        getSessionPositions(liveSession.session_key),
-        getSessionStints(liveSession.session_key),
-        getSessionPitStops(liveSession.session_key),
-      ]);
-
-      setDrivers(driversData);
-      setPositions(positionsData);
-      setStints(stintsData);
-      setPitStops(pitStopsData);
-    } catch (err) {
-      console.error("Error fetching session data:", err);
-    }
-  }
+    // Cleanup on unmount
+    return () => {
+      f1LiveTimingService.disconnect();
+    };
+  }, [t]);
 
   if (loading) {
     return (
@@ -125,74 +120,30 @@ export default function LiveTiming() {
     return <Alert variant="danger">{error}</Alert>;
   }
 
-  // No live session - show next session info
-  if (!liveSession) {
+  // Check if there's an active session
+  const hasActiveSession = f1LiveTimingService.hasActiveSession();
+
+  // No live session - show message
+  if (!hasActiveSession || !sessionInfo) {
     return (
       <Card className="shadow" style={{ borderColor: accentColor, backgroundColor: bgCard }}>
         <Card.Body className="text-center py-5">
           <div style={{ fontSize: "4rem", marginBottom: "1rem" }}>🏁</div>
           <h4 style={{ color: accentColor }}>{t("liveTiming.noLiveSession")}</h4>
-          {nextSession && (
-            <div className="mt-4">
-              <h5>{t("liveTiming.nextSession")}</h5>
-              <p className="mb-1">
-                <strong>{nextSession.session_name}</strong> - {nextSession.meeting_official_name}
-              </p>
-              <p className="text-muted">
-                {new Date(nextSession.date_start).toLocaleString(t("dateTime.locale"), {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            </div>
-          )}
+          <p className="text-muted mt-3">
+            {isConnected
+              ? "Connesso al server F1 Live Timing. In attesa di una sessione attiva..."
+              : "Connessione al server F1 Live Timing..."}
+          </p>
         </Card.Body>
       </Card>
     );
   }
 
-  // Live session active - show timing data
-  const isQualifying = liveSession.session_name?.toLowerCase().includes("qualifying");
-  const isRace = liveSession.session_name?.toLowerCase().includes("race");
-
-  // Get latest position for each driver
-  const latestPositions = {};
-  positions.forEach(pos => {
-    if (!latestPositions[pos.driver_number] || new Date(pos.date) > new Date(latestPositions[pos.driver_number].date)) {
-      latestPositions[pos.driver_number] = pos;
-    }
-  });
-
-  // Get current stint for each driver
-  const currentStints = {};
-  stints.forEach(stint => {
-    if (!currentStints[stint.driver_number] || stint.stint_number > currentStints[stint.driver_number].stint_number) {
-      currentStints[stint.driver_number] = stint;
-    }
-  });
-
-  // Combine data for display
-  const timingData = drivers.map(driver => {
-    const position = latestPositions[driver.driver_number];
-    const stint = currentStints[driver.driver_number];
-    const driverPits = pitStops.filter(pit => pit.driver_number === driver.driver_number);
-
-    return {
-      ...driver,
-      position: position?.position || "—",
-      compound: stint?.compound || "UNKNOWN",
-      pitCount: driverPits.length,
-      gap: position?.gap_to_leader || "—",
-    };
-  }).sort((a, b) => {
-    const posA = typeof a.position === "number" ? a.position : 999;
-    const posB = typeof b.position === "number" ? b.position : 999;
-    return posA - posB;
-  });
+  // Determine session type
+  const sessionType = sessionInfo.Type || "";
+  const isQualifying = sessionType.toLowerCase().includes("qualifying");
+  const isRace = sessionType.toLowerCase().includes("race");
 
   return (
     <div>
@@ -205,13 +156,18 @@ export default function LiveTiming() {
                 <Badge bg="danger" className="pulse-badge" style={{ fontSize: "1rem" }}>
                   🔴 LIVE
                 </Badge>
-                <h4 className="mb-0">{liveSession.session_name}</h4>
+                <h4 className="mb-0">
+                  {sessionInfo.Meeting?.Name || "F1 Session"} - {sessionInfo.Name || sessionType}
+                </h4>
               </div>
-              <p className="text-muted mb-0 mt-1">{liveSession.meeting_official_name}</p>
+              <p className="text-muted mb-0 mt-1">
+                Status: <strong>{sessionStatus || "In Progress"}</strong>
+                {trackStatus && ` | Track: ${trackStatus}`}
+              </p>
             </Col>
             <Col xs={12} md={4} className="text-md-end mt-3 mt-md-0">
               <small className="text-muted">
-                {t("liveTiming.started")}: {new Date(liveSession.date_start).toLocaleTimeString()}
+                Lap: {f1LiveTimingService.getLapCount() || "—"}
               </small>
             </Col>
           </Row>
@@ -232,34 +188,92 @@ export default function LiveTiming() {
                   <th style={{ width: "50px" }}>#</th>
                   <th>{t("liveTiming.driver")}</th>
                   <th className="text-center">{t("liveTiming.tire")}</th>
+                  {isQualifying && (
+                    <>
+                      <th className="text-end">{t("liveTiming.q1")}</th>
+                      <th className="text-end">{t("liveTiming.q2")}</th>
+                      <th className="text-end">{t("liveTiming.q3")}</th>
+                    </>
+                  )}
                   {isRace && (
                     <th className="text-center">{t("liveTiming.pits")}</th>
                   )}
-                  <th className="text-end">{t("liveTiming.gap")}</th>
+                  {!isQualifying && (
+                    <th className="text-end">{t("liveTiming.gap")}</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
-                {timingData.map((driver, idx) => (
-                  <tr key={driver.driver_number}>
-                    <td className="text-center fw-bold">{driver.position}</td>
-                    <td className="fw-semibold">{driver.driver_number}</td>
-                    <td>
-                      <div className="d-flex align-items-center">
-                        <span className="me-2">{driver.name_acronym}</span>
-                        <small className="text-muted">{driver.team_name}</small>
-                      </div>
-                    </td>
-                    <td className="text-center">
-                      <TireBadge compound={driver.compound} />
-                    </td>
-                    {isRace && (
-                      <td className="text-center">{driver.pitCount}</td>
-                    )}
-                    <td className="text-end text-muted">
-                      {typeof driver.gap === "number" ? `+${driver.gap.toFixed(3)}` : driver.gap}
+                {timingData.length === 0 ? (
+                  <tr>
+                    <td colSpan={isQualifying ? 7 : (isRace ? 6 : 5)} className="text-center text-muted py-4">
+                      {t("liveTiming.loading")}
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  timingData.map((driver, idx) => {
+                    // Determine elimination status for qualifying
+                    const position = typeof driver.position === "number" ? driver.position : parseInt(driver.position) || 999;
+                    const isEliminatedQ1 = isQualifying && position > 15;
+                    const isEliminatedQ2 = isQualifying && position > 10 && position <= 15;
+                    const rowStyle = isEliminatedQ1 || isEliminatedQ2
+                      ? { backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)" }
+                      : {};
+
+                    return (
+                      <tr key={driver.number} style={rowStyle}>
+                        <td className="text-center fw-bold">
+                          {driver.position}
+                          {isEliminatedQ1 && (
+                            <Badge bg="secondary" className="ms-1" style={{ fontSize: "0.65rem" }}>
+                              {t("liveTiming.eliminated")}
+                            </Badge>
+                          )}
+                          {isEliminatedQ2 && (
+                            <Badge bg="warning" className="ms-1" style={{ fontSize: "0.65rem" }}>
+                              {t("liveTiming.eliminated")}
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="fw-semibold">{driver.number}</td>
+                        <td>
+                          <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center">
+                            <span className="me-2 fw-semibold">{driver.name}</span>
+                            <small className="text-muted">{driver.team}</small>
+                          </div>
+                        </td>
+                        <td className="text-center">
+                          <TireBadge compound={driver.compound} />
+                        </td>
+                        {isQualifying && (
+                          <>
+                            <td className="text-end">
+                              <span style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
+                                {driver.q1 || "—"}
+                              </span>
+                            </td>
+                            <td className="text-end">
+                              <span style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
+                                {driver.q2 || "—"}
+                              </span>
+                            </td>
+                            <td className="text-end">
+                              <span style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
+                                {driver.q3 || "—"}
+                              </span>
+                            </td>
+                          </>
+                        )}
+                        {isRace && (
+                          <td className="text-center">{driver.pitStops}</td>
+                        )}
+                        {!isQualifying && (
+                          <td className="text-end text-muted">{driver.gap}</td>
+                        )}
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </Table>
           </div>
