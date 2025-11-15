@@ -264,7 +264,7 @@ export default function ParticipantDetail() {
   };
 
   // Calculate statistics
-  const totalRaces = raceHistory.length;
+  const totalRaces = raceHistory.filter(race => race.submission !== null).length; // Count only submitted races
   const averagePoints = totalRaces > 0
     ? (participant?.puntiTotali / totalRaces).toFixed(1)
     : 0;
