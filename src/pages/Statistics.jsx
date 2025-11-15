@@ -253,7 +253,11 @@ export default function Statistics() {
   const topPlayers = currentRanking.slice(0, numPlayers);
 
   // Get label for chart headers based on players filter
-  const playersLabel = playersFilter === "5" ? "Top 5 Giocatori" : playersFilter === "10" ? "Top 10 Giocatori" : "Tutti i Giocatori";
+  const playersLabel = playersFilter === "5"
+    ? t("statistics.top5Players")
+    : playersFilter === "10"
+    ? t("statistics.top10Players")
+    : t("statistics.allPlayers");
 
   // Prepare chart data only if statistics are loaded
   let pointsChartData = [];
