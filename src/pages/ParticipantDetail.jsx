@@ -41,6 +41,7 @@ export default function ParticipantDetail() {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [error, setError] = useState(null);
   const [totalCompletedRaces, setTotalCompletedRaces] = useState(0);
+  const [participantPosition, setParticipantPosition] = useState(null);
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
 
@@ -60,6 +61,19 @@ export default function ParticipantDetail() {
         }
 
         const userData = userDoc.data();
+
+        // Load all participants to calculate position
+        const allParticipantsSnap = await getDocs(collection(db, "ranking"));
+        const ranking = allParticipantsSnap.docs
+          .map(doc => ({
+            userId: doc.id,
+            ...doc.data(),
+          }))
+          .sort((a, b) => (b.puntiTotali || 0) - (a.puntiTotali || 0));
+
+        const position = ranking.findIndex(p => p.userId === userId) + 1;
+        setParticipantPosition(position > 0 ? position : null);
+
         setParticipant({
           userId,
           name: userData.name,
@@ -158,6 +172,7 @@ export default function ParticipantDetail() {
           playerData={{
             name: participant?.name,
             totalPoints: participant?.puntiTotali || 0,
+            position: participantPosition,
             jolly: participant?.jolly ?? 0,
             championshipPiloti: participant?.championshipPiloti || [],
             championshipCostruttori: participant?.championshipCostruttori || [],
@@ -182,6 +197,7 @@ export default function ParticipantDetail() {
         playerData={{
           name: participant?.name,
           totalPoints: participant?.puntiTotali || 0,
+          position: participantPosition,
           jolly: participant?.jolly ?? 0,
           championshipPiloti: participant?.championshipPiloti || [],
           championshipCostruttori: participant?.championshipCostruttori || [],
