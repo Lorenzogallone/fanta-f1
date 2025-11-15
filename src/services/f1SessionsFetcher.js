@@ -685,6 +685,34 @@ export async function fetchDriverStandings(season = "current") {
 }
 
 /**
+ * Normalizes constructor/team names from Ergast API to match our app's team names
+ * @param {string} teamName - Team name from Ergast API
+ * @returns {string} Normalized team name matching TEAM_LOGOS keys
+ */
+function normalizeTeamName(teamName) {
+  if (!teamName) return "—";
+
+  const name = teamName.trim();
+
+  // Direct mappings for teams that need normalization
+  const teamMappings = {
+    "Alpine F1 Team": "Alpine",
+    "Haas F1 Team": "Haas",
+    "Kick Sauber": "Sauber",
+    "Sauber Motorsport": "Sauber",
+    "RB F1 Team": "Vcarb",
+    "RB": "Vcarb",
+    "Racing Bulls": "Vcarb",
+    "AlphaTauri": "Vcarb",
+    "Red Bull Racing": "Red Bull",
+    "Aston Martin F1 Team": "Aston Martin",
+  };
+
+  // Return mapped name or original if no mapping found
+  return teamMappings[name] || name;
+}
+
+/**
  * Fetches current constructor standings
  * @param {number} season - Season year (optional, defaults to current)
  * @returns {Promise<Array|null>} Array of constructor standings or null
@@ -705,7 +733,7 @@ export async function fetchConstructorStandings(season = "current") {
       position: standing.position,
       points: standing.points,
       wins: standing.wins,
-      constructor: standing.Constructor?.name || "—",
+      constructor: normalizeTeamName(standing.Constructor?.name) || "—",
     }));
   } catch (error) {
     console.error(`Error fetching constructor standings for ${season}:`, error);
