@@ -41,6 +41,7 @@ export default function LiveTiming() {
   const [trackStatus, setTrackStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isCorsError, setIsCorsError] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
 
   const { isDark } = useTheme();
@@ -56,7 +57,15 @@ export default function LiveTiming() {
         setLoading(true);
 
         // Connect to F1 Live Timing
-        await f1LiveTimingService.connect();
+        const result = await f1LiveTimingService.connect();
+
+        if (!result.success) {
+          setError(result.message);
+          setIsCorsError(result.isCorsError);
+          setLoading(false);
+          return;
+        }
+
         setIsConnected(true);
 
         // Set up callbacks for data updates
@@ -117,6 +126,32 @@ export default function LiveTiming() {
   }
 
   if (error) {
+    if (isCorsError) {
+      return (
+        <Card className="shadow" style={{ borderColor: accentColor, backgroundColor: bgCard }}>
+          <Card.Body className="py-4">
+            <Alert variant="warning" className="mb-3">
+              <Alert.Heading className="h5">
+                🚧 {t("liveTiming.corsError")}
+              </Alert.Heading>
+              <p className="mb-2">{t("liveTiming.corsExplanation")}</p>
+              <hr />
+              <p className="mb-2"><strong>{t("liveTiming.corsWorkaround")}</strong></p>
+              <ul className="mb-0">
+                <li>{t("liveTiming.corsOption1")}</li>
+                <li>{t("liveTiming.corsOption2")}</li>
+                <li>{t("liveTiming.corsOption3")}</li>
+              </ul>
+            </Alert>
+            <div className="text-center">
+              <small className="text-muted">
+                API Endpoint: <code>livetiming.formula1.com/signalr</code>
+              </small>
+            </div>
+          </Card.Body>
+        </Card>
+      );
+    }
     return <Alert variant="danger">{error}</Alert>;
   }
 

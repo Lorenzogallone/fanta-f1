@@ -193,6 +193,12 @@ export const it = {
     q2: "Q2",
     q3: "Q3",
     eliminated: "Eliminato",
+    corsError: "Restrizioni CORS del Browser",
+    corsExplanation: "L'API ufficiale F1 Live Timing blocca le richieste dirette dal browser per motivi di sicurezza (CORS). Questa funzionalità BETA necessita di un server proxy per funzionare.",
+    corsWorkaround: "Possibili soluzioni:",
+    corsOption1: "Attendere che implementiamo un server proxy",
+    corsOption2: "Usare un'estensione browser che disabilita CORS (non consigliato per sicurezza)",
+    corsOption3: "Visualizzare i dati storici nella tab Sessioni",
   },
 
   // Statistics
