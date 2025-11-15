@@ -457,14 +457,14 @@ export default function ParticipantDetail() {
               </Card.Header>
               <Card.Body className="p-0">
                 <div className="table-responsive">
-                  <Table hover className="mb-0" size="sm">
+                  <Table hover className="mb-0" size="sm" style={{ fontSize: "0.9rem" }}>
                     <thead>
                       <tr>
-                        <th className="text-center">{t("history.round") || "Round"}</th>
-                        <th>{t("history.race") || "Race"}</th>
-                        <th className="text-center">{t("history.mainPoints") || "Main"}</th>
-                        <th className="text-center">{t("history.sprintPoints") || "Sprint"}</th>
-                        <th className="text-center">{t("common.total") || "Total"}</th>
+                        <th className="text-center" style={{ width: "60px" }}>R</th>
+                        <th>{t("raceResults.race") || "Gara"}</th>
+                        <th className="text-center" style={{ width: "70px" }}>Main</th>
+                        <th className="text-center" style={{ width: "70px" }}>Sprint</th>
+                        <th className="text-center" style={{ width: "70px" }}>{t("leaderboard.total") || "Totale"}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -473,39 +473,44 @@ export default function ParticipantDetail() {
 
                         return (
                           <tr key={race.raceId}>
-                            <td className="text-center fw-semibold">{race.round}</td>
+                            <td className="text-center fw-semibold text-muted" style={{ fontSize: "0.85rem" }}>
+                              {race.round}
+                            </td>
                             <td>{race.raceName}</td>
-                            <td className="text-center">
+                            <td className="text-center fw-semibold">
                               {points.mainPoints !== null ? (
-                                <Badge
-                                  bg={points.mainPoints < 0 ? "danger" : points.mainPoints === 0 ? "secondary" : "success"}
-                                  text={points.mainPoints < 0 ? "light" : undefined}
+                                <span
+                                  style={{
+                                    color: points.mainPoints < 0 ? "#dc3545" : points.mainPoints === 0 ? "#6c757d" : "#198754"
+                                  }}
                                 >
                                   {points.mainPoints > 0 ? `+${points.mainPoints}` : points.mainPoints}
-                                </Badge>
+                                </span>
                               ) : (
                                 <span className="text-muted">—</span>
                               )}
                             </td>
-                            <td className="text-center">
+                            <td className="text-center fw-semibold">
                               {points.sprintPoints !== null ? (
-                                <Badge
-                                  bg={points.sprintPoints < 0 ? "danger" : points.sprintPoints === 0 ? "secondary" : "info"}
-                                  text={points.sprintPoints < 0 ? "light" : undefined}
+                                <span
+                                  style={{
+                                    color: points.sprintPoints < 0 ? "#dc3545" : points.sprintPoints === 0 ? "#6c757d" : "#198754"
+                                  }}
                                 >
                                   {points.sprintPoints > 0 ? `+${points.sprintPoints}` : points.sprintPoints}
-                                </Badge>
+                                </span>
                               ) : (
                                 <span className="text-muted">—</span>
                               )}
                             </td>
-                            <td className="text-center">
-                              <Badge
-                                bg={points.total < 0 ? "danger" : points.total === 0 ? "secondary" : "primary"}
-                                text={points.total < 0 ? "light" : undefined}
+                            <td className="text-center fw-bold">
+                              <span
+                                style={{
+                                  color: points.total < 0 ? "#dc3545" : points.total === 0 ? "#6c757d" : "#198754"
+                                }}
                               >
                                 {points.total > 0 ? `+${points.total}` : points.total}
-                              </Badge>
+                              </span>
                             </td>
                           </tr>
                         );
