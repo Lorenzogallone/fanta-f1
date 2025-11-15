@@ -4,7 +4,7 @@
  * Re-exports useLanguage for easier access to translations
  */
 
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "./useLanguage";
 
 /**
  * Hook to access translation function

@@ -6,7 +6,7 @@ import React, { useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Navbar, Container, Nav, Dropdown } from "react-bootstrap";
 import { useTheme } from "../contexts/ThemeContext";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "../hooks/useLanguage";
 
 /**
  * Main navigation component with responsive mobile menu, theme switcher, and language selector.

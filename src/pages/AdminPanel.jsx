@@ -35,8 +35,15 @@ import { db } from "../services/firebase";
 import { DRIVERS } from "../constants/racing";
 import Select from "react-select";
 import { useTheme } from "../contexts/ThemeContext";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "../hooks/useLanguage";
 import AdminLogin from "../components/AdminLogin";
+import {
+  createAndSaveBackup,
+  getAllBackups,
+  deleteBackup,
+  restoreFromBackup,
+  downloadBackupAsJSON,
+} from "../services/backupService";
 
 /**
  * Main admin panel component with tabbed interface
@@ -534,6 +541,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
  */
 function FormationsManager({ participants: propParticipants, races: propRaces, loading: propLoading, onDataChange }) {
   const { t } = useLanguage();
+  const { isDark } = useTheme();
   // Use data passed as props
   const participants = propParticipants;
   const races = propRaces;
@@ -832,6 +840,66 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
 
   const hasSprint = Boolean(selectedRace?.qualiSprintUTC);
 
+  // Custom styles for react-select with dark mode support
+  const selectStyles = {
+    control: (base, state) => ({
+      ...base,
+      backgroundColor: isDark ? '#2d3748' : '#fff',
+      borderColor: state.isFocused
+        ? '#dc3545'
+        : isDark
+        ? '#4a5568'
+        : '#ced4da',
+      boxShadow: state.isFocused ? '0 0 0 0.2rem rgba(220,53,69,.25)' : 'none',
+      '&:hover': {
+        borderColor: '#dc3545',
+      },
+    }),
+    menu: (base) => ({
+      ...base,
+      backgroundColor: isDark ? '#2d3748' : '#fff',
+      border: isDark ? '1px solid #4a5568' : '1px solid #ced4da',
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isFocused
+        ? isDark
+          ? '#4a5568'
+          : '#f8f9fa'
+        : isDark
+        ? '#2d3748'
+        : '#fff',
+      color: isDark ? '#e2e8f0' : '#212529',
+      '&:active': {
+        backgroundColor: isDark ? '#4a5568' : '#e2e6ea',
+      },
+    }),
+    singleValue: (base) => ({
+      ...base,
+      color: isDark ? '#e2e8f0' : '#212529',
+    }),
+    input: (base) => ({
+      ...base,
+      color: isDark ? '#e2e8f0' : '#212529',
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: isDark ? '#a0aec0' : '#6c757d',
+    }),
+  };
+
+  const invalidSelectStyles = {
+    ...selectStyles,
+    control: (base, state) => ({
+      ...selectStyles.control(base, state),
+      borderColor: '#dc3545',
+      boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)',
+    }),
+  };
+
+  const bgCard = isDark ? 'var(--bg-secondary)' : '#ffffff';
+  const bgHeader = isDark ? 'var(--bg-tertiary)' : '#ffffff';
+
   if (propLoading) {
     return (
       <div className="text-center py-5">
@@ -851,8 +919,8 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
       </Col>
 
       <Col xs={12}>
-        <Card className="shadow">
-          <Card.Header className="bg-white">
+        <Card className="shadow" style={{ backgroundColor: bgCard }}>
+          <Card.Header style={{ backgroundColor: bgHeader }}>
             <h5 className="mb-0">
               {existingFormation ? `✏️ ${t("admin.editFormationTitle")}` : `➕ ${t("admin.addFormation")}`}
             </h5>
@@ -924,9 +992,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                       value={formData.mainP1}
                       onChange={(sel) => setFormData({ ...formData, mainP1: sel })}
                       placeholder={t("formations.selectUser")}
-                      styles={isFieldInvalid('mainP1') ? {
-                        control: (base) => ({ ...base, borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)' })
-                      } : {}}
+                      styles={isFieldInvalid('mainP1') ? invalidSelectStyles : selectStyles}
                       noOptionsMessage={() => t("errors.duplicateDriver")}
                     />
                   </Form.Group>
@@ -938,9 +1004,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                       value={formData.mainP2}
                       onChange={(sel) => setFormData({ ...formData, mainP2: sel })}
                       placeholder={t("formations.selectUser")}
-                      styles={isFieldInvalid('mainP2') ? {
-                        control: (base) => ({ ...base, borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)' })
-                      } : {}}
+                      styles={isFieldInvalid('mainP2') ? invalidSelectStyles : selectStyles}
                       noOptionsMessage={() => t("errors.duplicateDriver")}
                     />
                   </Form.Group>
@@ -952,9 +1016,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                       value={formData.mainP3}
                       onChange={(sel) => setFormData({ ...formData, mainP3: sel })}
                       placeholder={t("formations.selectUser")}
-                      styles={isFieldInvalid('mainP3') ? {
-                        control: (base) => ({ ...base, borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)' })
-                      } : {}}
+                      styles={isFieldInvalid('mainP3') ? invalidSelectStyles : selectStyles}
                       noOptionsMessage={() => t("errors.duplicateDriver")}
                     />
                   </Form.Group>
@@ -966,9 +1028,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                       value={formData.mainJolly}
                       onChange={(sel) => setFormData({ ...formData, mainJolly: sel })}
                       placeholder={t("formations.selectUser")}
-                      styles={isFieldInvalid('mainJolly') ? {
-                        control: (base) => ({ ...base, borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)' })
-                      } : {}}
+                      styles={isFieldInvalid('mainJolly') ? invalidSelectStyles : selectStyles}
                       noOptionsMessage={() => t("errors.duplicateDriver")}
                     />
                   </Form.Group>
@@ -980,6 +1040,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                       value={formData.mainJolly2}
                       onChange={(sel) => setFormData({ ...formData, mainJolly2: sel })}
                       placeholder={t("formations.selectUser")}
+                      styles={selectStyles}
                       isClearable
                       noOptionsMessage={() => t("errors.duplicateDriver")}
                     />
@@ -1009,6 +1070,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                           value={formData.sprintP1}
                           onChange={(sel) => setFormData({ ...formData, sprintP1: sel })}
                           placeholder={t("formations.selectUser")}
+                          styles={selectStyles}
                           isClearable
                           noOptionsMessage={() => t("errors.duplicateDriver")}
                         />
@@ -1021,6 +1083,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                           value={formData.sprintP2}
                           onChange={(sel) => setFormData({ ...formData, sprintP2: sel })}
                           placeholder={t("formations.selectUser")}
+                          styles={selectStyles}
                           isClearable
                           noOptionsMessage={() => t("errors.duplicateDriver")}
                         />
@@ -1033,6 +1096,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                           value={formData.sprintP3}
                           onChange={(sel) => setFormData({ ...formData, sprintP3: sel })}
                           placeholder={t("formations.selectUser")}
+                          styles={selectStyles}
                           isClearable
                           noOptionsMessage={() => t("errors.duplicateDriver")}
                         />
@@ -1045,6 +1109,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                           value={formData.sprintJolly}
                           onChange={(sel) => setFormData({ ...formData, sprintJolly: sel })}
                           placeholder={t("formations.selectUser")}
+                          styles={selectStyles}
                           isClearable
                           noOptionsMessage={() => t("errors.duplicateDriver")}
                         />
@@ -1613,6 +1678,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
  */
 function DatabaseReset({ participants, races, onDataChange }) {
   const { t } = useLanguage();
+  const { isDark } = useTheme();
   const [showModal, setShowModal] = useState(false);
   const [resetType, setResetType] = useState("");
   const [resetting, setResetting] = useState(false);
@@ -1620,77 +1686,127 @@ function DatabaseReset({ participants, races, onDataChange }) {
   const [confirmText, setConfirmText] = useState("");
   const [backingUp, setBackingUp] = useState(false);
 
+  // Backup management states
+  const [backups, setBackups] = useState([]);
+  const [loadingBackups, setLoadingBackups] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [selectedBackup, setSelectedBackup] = useState(null);
+  const [restoring, setRestoring] = useState(false);
+
   /**
-   * Create and download full database backup as JSON
+   * Load all backups from database
    */
-  const handleBackup = async () => {
+  const loadBackups = async () => {
+    setLoadingBackups(true);
+    try {
+      const allBackups = await getAllBackups();
+      setBackups(allBackups);
+    } catch (err) {
+      console.error("Error loading backups:", err);
+      setMessage({ type: "danger", text: `Errore caricamento backup: ${err.message}` });
+    } finally {
+      setLoadingBackups(false);
+    }
+  };
+
+  // Load backups on mount
+  useEffect(() => {
+    loadBackups();
+  }, []);
+
+  /**
+   * Create manual backup - both download and save to database
+   */
+  const handleCreateBackup = async () => {
     setBackingUp(true);
     setMessage(null);
 
     try {
-      const backup = {
-        timestamp: new Date().toISOString(),
-        version: "1.0",
-        data: {}
-      };
-
-      // Backup ranking
-      const rankingSnap = await getDocs(collection(db, "ranking"));
-      backup.data.ranking = {};
-      rankingSnap.docs.forEach(doc => {
-        backup.data.ranking[doc.id] = doc.data();
+      // Create and save backup to database
+      const backupId = await createAndSaveBackup("manual", {
+        createdBy: "admin",
+        description: "Backup manuale creato dall'admin panel",
       });
 
-      // Backup races con submissions
-      const racesSnap = await getDocs(collection(db, "races"));
-      backup.data.races = {};
-
-      for (const raceDoc of racesSnap.docs) {
-        const raceData = raceDoc.data();
-        backup.data.races[raceDoc.id] = {
-          ...raceData,
-          submissions: {}
-        };
-
-        // Backup submissions per questa gara
-        const subsSnap = await getDocs(collection(db, "races", raceDoc.id, "submissions"));
-        subsSnap.docs.forEach(subDoc => {
-          backup.data.races[raceDoc.id].submissions[subDoc.id] = subDoc.data();
-        });
+      // Also download it as JSON
+      const backupsSnap = await getDocs(collection(db, "backups"));
+      const savedBackup = backupsSnap.docs.find(d => d.id === backupId);
+      if (savedBackup) {
+        downloadBackupAsJSON(savedBackup.data(), `backup-manual-${Date.now()}`);
       }
-
-      // Backup championship
-      try {
-        const champDoc = await getDoc(doc(db, "championship", "results"));
-        if (champDoc.exists()) {
-          backup.data.championship = champDoc.data();
-        }
-      } catch (e) {
-        // Championship potrebbe non esistere ancora
-        backup.data.championship = null;
-      }
-
-      // Crea il file JSON e scaricalo
-      const jsonString = JSON.stringify(backup, null, 2);
-      const blob = new Blob([jsonString], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `fanta-f1-backup-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
 
       setMessage({
         type: "success",
-        text: t("admin.backupCreated")
+        text: "✅ Backup creato e salvato con successo!"
       });
+
+      // Reload backups list
+      await loadBackups();
     } catch (err) {
       console.error(err);
-      setMessage({ type: "danger", text: `${t("common.error")}: ${err.message}` });
+      setMessage({ type: "danger", text: `Errore: ${err.message}` });
     } finally {
       setBackingUp(false);
+    }
+  };
+
+  /**
+   * Delete a backup from database
+   */
+  const handleDeleteBackup = async (backupId) => {
+    if (!window.confirm("Sei sicuro di voler eliminare questo backup?")) {
+      return;
+    }
+
+    try {
+      await deleteBackup(backupId);
+      setMessage({ type: "success", text: "Backup eliminato" });
+      await loadBackups();
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: "danger", text: `Errore: ${err.message}` });
+    }
+  };
+
+  /**
+   * Show restore preview modal
+   */
+  const handleShowRestorePreview = (backup) => {
+    setSelectedBackup(backup);
+    setShowRestoreModal(true);
+  };
+
+  /**
+   * Restore database from backup
+   */
+  const handleRestore = async () => {
+    if (confirmText !== "RESTORE") {
+      setMessage({ type: "warning", text: "Devi digitare RESTORE per confermare" });
+      return;
+    }
+
+    setRestoring(true);
+    setMessage(null);
+
+    try {
+      await restoreFromBackup(selectedBackup);
+      setMessage({
+        type: "success",
+        text: "✅ Database ripristinato con successo!"
+      });
+      setShowRestoreModal(false);
+      setConfirmText("");
+      setSelectedBackup(null);
+
+      // Refresh data
+      if (onDataChange) {
+        onDataChange();
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: "danger", text: `Errore ripristino: ${err.message}` });
+    } finally {
+      setRestoring(false);
     }
   };
 
@@ -1771,26 +1887,27 @@ function DatabaseReset({ participants, races, onDataChange }) {
   return (
     <>
       <Row className="g-4">
+        {/* Create Backup Section */}
         <Col xs={12}>
           <Card className="shadow border-success mb-4">
             <Card.Header className="bg-success text-white">
-              <h5 className="mb-0">💾 {t("admin.backup")}</h5>
+              <h5 className="mb-0">💾 Backup Database</h5>
             </Card.Header>
             <Card.Body>
-              <p>{t("admin.databaseOperations")}</p>
+              <p className="mb-3">Crea un backup completo del database (gare, classifiche, submissions). Il backup verrà salvato nel database e scaricato come file JSON.</p>
               <Button
                 variant="success"
-                onClick={handleBackup}
+                onClick={handleCreateBackup}
                 disabled={backingUp}
                 className="w-100"
               >
                 {backingUp ? (
                   <>
                     <Spinner animation="border" size="sm" className="me-2" />
-                    {t("common.loading")}
+                    Creazione backup...
                   </>
                 ) : (
-                  `📥 ${t("admin.downloadBackup")}`
+                  "📥 Crea Backup Manuale"
                 )}
               </Button>
             </Card.Body>
@@ -1801,6 +1918,94 @@ function DatabaseReset({ participants, races, onDataChange }) {
               {message.text}
             </Alert>
           )}
+        </Col>
+
+        {/* Backups List Section */}
+        <Col xs={12}>
+          <Card className="shadow border-info mb-4">
+            <Card.Header className="bg-info text-white d-flex justify-content-between align-items-center">
+              <h5 className="mb-0">📋 Backup Salvati</h5>
+              <Button
+                size="sm"
+                variant="light"
+                onClick={loadBackups}
+                disabled={loadingBackups}
+              >
+                {loadingBackups ? (
+                  <Spinner animation="border" size="sm" />
+                ) : (
+                  "🔄 Aggiorna"
+                )}
+              </Button>
+            </Card.Header>
+            <Card.Body>
+              {loadingBackups ? (
+                <div className="text-center py-3">
+                  <Spinner animation="border" />
+                </div>
+              ) : backups.length === 0 ? (
+                <Alert variant="info" className="mb-0">
+                  Nessun backup disponibile. Crea il tuo primo backup!
+                </Alert>
+              ) : (
+                <div className="table-responsive">
+                  <Table hover variant={isDark ? "dark" : undefined}>
+                    <thead>
+                      <tr>
+                        <th>Tipo</th>
+                        <th>Data</th>
+                        <th>Gare</th>
+                        <th>Partecipanti</th>
+                        <th className="text-end">Azioni</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {backups.map((backup) => {
+                        const timestamp = backup.metadata?.timestamp?.toDate?.() || new Date();
+                        return (
+                          <tr key={backup.id}>
+                            <td>
+                              <Badge bg={backup.metadata?.type === "manual" ? "success" : "primary"}>
+                                {backup.metadata?.type || "manual"}
+                              </Badge>
+                            </td>
+                            <td>{timestamp.toLocaleString("it-IT")}</td>
+                            <td>{backup.metadata?.totalRaces || backup.races?.length || 0}</td>
+                            <td>{backup.metadata?.totalParticipants || backup.ranking?.length || 0}</td>
+                            <td className="text-end">
+                              <Button
+                                size="sm"
+                                variant="outline-primary"
+                                className="me-2"
+                                onClick={() => downloadBackupAsJSON(backup, backup.id)}
+                              >
+                                📥
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline-warning"
+                                className="me-2"
+                                onClick={() => handleShowRestorePreview(backup)}
+                              >
+                                ⚡ Ripristina
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline-danger"
+                                onClick={() => handleDeleteBackup(backup.id)}
+                              >
+                                🗑️
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </Table>
+                </div>
+              )}
+            </Card.Body>
+          </Card>
         </Col>
 
         <Col xs={12}>
@@ -1822,7 +2027,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
         </Col>
       </Row>
 
-      {/* Modal di conferma */}
+      {/* Modal di conferma Reset */}
       <Modal show={showModal} onHide={() => !resetting && setShowModal(false)} centered>
         <Modal.Header closeButton={!resetting}>
           <Modal.Title>⚠️ {t("common.confirm")}</Modal.Title>
@@ -1852,6 +2057,114 @@ function DatabaseReset({ participants, races, onDataChange }) {
           </Button>
           <Button variant="danger" onClick={handleReset} disabled={resetting || confirmText !== "RESET"}>
             {resetting ? t("common.loading") : t("common.confirm")}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal Ripristino Backup */}
+      <Modal
+        show={showRestoreModal}
+        onHide={() => !restoring && setShowRestoreModal(false)}
+        centered
+        size="lg"
+      >
+        <Modal.Header closeButton={!restoring}>
+          <Modal.Title>⚡ Ripristino Database</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Alert variant="danger">
+            <strong>⚠️ ATTENZIONE: OPERAZIONE IRREVERSIBILE</strong>
+            <p className="mb-0 mt-2">
+              Il ripristino cancellerà TUTTI i dati attuali (gare, classifiche, submissions)
+              e li sostituirà con i dati del backup selezionato.
+              <strong> Questa operazione NON può essere annullata!</strong>
+            </p>
+          </Alert>
+
+          {selectedBackup && (
+            <>
+              <h6 className="mb-3">📋 Anteprima Backup</h6>
+              <Table bordered size="sm" variant={isDark ? "dark" : undefined}>
+                <tbody>
+                  <tr>
+                    <th style={{ width: "40%" }}>Tipo Backup:</th>
+                    <td>
+                      <Badge bg={selectedBackup.metadata?.type === "manual" ? "success" : "primary"}>
+                        {selectedBackup.metadata?.type || "manual"}
+                      </Badge>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Data Creazione:</th>
+                    <td>
+                      {(selectedBackup.metadata?.timestamp?.toDate?.() || new Date()).toLocaleString("it-IT")}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Numero Gare:</th>
+                    <td>
+                      <Badge bg="info">
+                        {selectedBackup.metadata?.totalRaces || selectedBackup.races?.length || 0} gare
+                      </Badge>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Numero Partecipanti:</th>
+                    <td>
+                      <Badge bg="info">
+                        {selectedBackup.metadata?.totalParticipants || selectedBackup.ranking?.length || 0} partecipanti
+                      </Badge>
+                    </td>
+                  </tr>
+                  {selectedBackup.metadata?.description && (
+                    <tr>
+                      <th>Descrizione:</th>
+                      <td>{selectedBackup.metadata.description}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </Table>
+
+              <Form.Group className="mt-4">
+                <Form.Label>
+                  <strong>Digita "RESTORE" per confermare il ripristino:</strong>
+                </Form.Label>
+                <Form.Control
+                  type="text"
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                  placeholder="RESTORE"
+                  disabled={restoring}
+                  autoComplete="off"
+                />
+              </Form.Group>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowRestoreModal(false);
+              setConfirmText("");
+            }}
+            disabled={restoring}
+          >
+            Annulla
+          </Button>
+          <Button
+            variant="warning"
+            onClick={handleRestore}
+            disabled={restoring || confirmText !== "RESTORE"}
+          >
+            {restoring ? (
+              <>
+                <Spinner animation="border" size="sm" className="me-2" />
+                Ripristino in corso...
+              </>
+            ) : (
+              "⚡ Ripristina Backup"
+            )}
           </Button>
         </Modal.Footer>
       </Modal>

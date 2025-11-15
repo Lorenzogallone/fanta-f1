@@ -4,7 +4,7 @@
  */
 import React, { useState } from "react";
 import { Container, Row, Col, Card, Form, Button } from "react-bootstrap";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "../hooks/useLanguage";
 
 export const ADMIN_PASSWORD = "SUCASOLERA";
 

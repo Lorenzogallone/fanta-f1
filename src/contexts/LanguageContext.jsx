@@ -4,27 +4,14 @@
  * Provides language selection and persistence across sessions
  */
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect } from "react";
 import { translations, DEFAULT_LANGUAGE, supportedLanguages } from "../translations";
 
 /**
  * Language context
  * @type {React.Context}
  */
-const LanguageContext = createContext(undefined);
-
-/**
- * Hook to use language context
- * @returns {Object} Language context value with currentLanguage, t, changeLanguage, availableLanguages
- * @throws {Error} If used outside LanguageProvider
- */
-export const useLanguage = () => {
-  const context = useContext(LanguageContext);
-  if (!context) {
-    throw new Error("useLanguage must be used within a LanguageProvider");
-  }
-  return context;
-};
+export const LanguageContext = createContext(undefined);
 
 /**
  * Language provider component

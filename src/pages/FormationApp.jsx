@@ -37,7 +37,7 @@ import { db } from "../services/firebase";
 import RaceHistoryCard from "../components/RaceHistoryCard";
 import { DRIVERS, DRIVER_TEAM, TEAM_LOGOS, TIME_CONSTANTS } from "../constants/racing";
 import { useThemeColors } from "../hooks/useThemeColors";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "../hooks/useLanguage";
 import { getLateWindowInfo } from "../utils/lateSubmissionHelper";
 import "../styles/customSelect.css";
 
