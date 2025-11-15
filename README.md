@@ -219,10 +219,7 @@ The admin panel is password-protected and offers special privileges:
 
 ### Password
 The password is configured in `src/pages/AdminPanel.jsx`:
-```javascript
-const ADMIN_PASSWORD = "SUCASOLERA";
-```
-**⚠️ Important**: Change this password before production deployment!
+Since it's just a friend game it's based on mutual trust, it's just a very basic safety measure.
 
 ### Admin Privileges
 
