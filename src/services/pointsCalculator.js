@@ -1,4 +1,8 @@
-// src/pointsCalculator.js
+/**
+ * @file Race points calculator service
+ * Calculates and persists points for main and sprint races with bonus logic
+ */
+
 import {
   updateDoc,
   setDoc,
@@ -8,34 +12,37 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { db } from "../services/firebase";
+import { POINTS } from "../constants/racing";
 
-/* ------------------------------------------------------------ *
- *  È l’ultima gara del calendario?                             *
- * ------------------------------------------------------------ */
+/**
+ * Checks if a race is the last race in the calendar
+ * @param {Array} racesArr - Array of race objects
+ * @param {string} raceId - Race identifier
+ * @returns {boolean} True if this is the last race
+ */
 export function isLastRace(racesArr, raceId) {
   if (!racesArr?.length || !raceId) return false;
   const maxRound = Math.max(...racesArr.map((r) => r.round));
   return racesArr.find((r) => r.id === raceId)?.round === maxRound;
 }
 
-/* ------------------------------------------------------------ *
- *  Punteggi base e bonus                                       *
- * ------------------------------------------------------------ */
-const PTS_MAIN   = { 1: 12, 2: 10, 3: 7 };
-const PTS_SPRINT = { 1:  8, 2:  6, 3: 4 };
+// Point constants imported from centralized file
+const PTS_MAIN = POINTS.MAIN;
+const PTS_SPRINT = POINTS.SPRINT;
+const BONUS_JOLLY_MAIN = POINTS.BONUS_JOLLY_MAIN;
+const BONUS_JOLLY_SPRINT = POINTS.BONUS_JOLLY_SPRINT;
+const PENALTY_EMPTY_LIST = POINTS.PENALTY_EMPTY_LIST;
 
-const BONUS_JOLLY_MAIN   = 5;
-const BONUS_JOLLY_SPRINT = 2;
-const PENALTY_EMPTY_LIST = -3;
-
-/* ------------------------------------------------------------ *
- *  Calcolo e persistenza                                       *
- * ------------------------------------------------------------ */
+/**
+ * Calculates and persists points for a race based on official results
+ * @param {string} raceId - Race identifier
+ * @param {Object} official - Official results object with P1-P3, SP1-SP3, doublePoints
+ * @returns {Promise<string>} Success message with number of updated submissions
+ */
 export async function calculatePointsForRace(raceId, official) {
-  /* 1️⃣  Salva/aggiorna i risultati ufficiali della gara ------- */
-  // `official` arriva dal frontend (P1-P3, SP1-SP3, doublePoints)  
-  // se non viene passato, li leggo semplicemente da Firestore.
+  // Step 1: Save/update official race results
+  // If official results are passed from frontend, update Firestore
   if (official) {
     await setDoc(
       doc(db, "races", raceId),
@@ -44,23 +51,32 @@ export async function calculatePointsForRace(raceId, official) {
     );
   }
 
-  /* 2️⃣  Recupero risultati definitivi e check ------------------ */
+  // Step 2: Retrieve final results and validate
   const raceRef  = doc(db, "races", raceId);
   const raceSnap = await getDoc(raceRef);
   if (!raceSnap.exists()) throw new Error("Gara non trovata");
 
+  const raceData = raceSnap.data();
   const {
     P1, P2, P3,
     SP1 = null, SP2 = null, SP3 = null,
     doublePoints = false,
-  } = raceSnap.data().officialResults ?? {};
+  } = raceData.officialResults ?? {};
+
+  // Skip cancelled races
+  const cancelledMain = raceData.cancelledMain || false;
+  const cancelledSprint = raceData.cancelledSprint || false;
+
+  if (cancelledMain) {
+    throw new Error("⛔ Gara cancellata: il calcolo punti è disabilitato.");
+  }
 
   if (!P1 || !P2 || !P3)
     throw new Error("Risultati ufficiali incompleti (manca il podio).");
 
-  const sprintPresent = !!SP1;
+  const sprintPresent = !!SP1 && !cancelledSprint;
 
-  /* 3️⃣  Itera sulle submissions --------------------------------- */
+  // Step 3: Iterate through all submissions
   const subsSnap = await getDocs(
     collection(db, "races", raceId, "submissions")
   );
@@ -71,7 +87,7 @@ export async function calculatePointsForRace(raceId, official) {
     const s      = subDoc.data();
     const userId = subDoc.id;
 
-    /* ------ calcolo punteggi MAIN ----------------------------- */
+    // Calculate MAIN race points
     let mainPts;
     if (!s.mainP1) {
       mainPts = PENALTY_EMPTY_LIST;
@@ -86,9 +102,14 @@ export async function calculatePointsForRace(raceId, official) {
       if (s.mainJolly2 && podio.includes(s.mainJolly2)) mainPts += BONUS_JOLLY_MAIN;
     }
 
-    /* ------ calcolo punteggi SPRINT --------------------------- */
+    // Apply late submission penalty
+    if (s.isLate && s.latePenalty) {
+      mainPts += s.latePenalty; // -3
+    }
+
+    // Calculate SPRINT race points
     let sprintPts = 0;
-    if (sprintPresent) {
+    if (sprintPresent && !cancelledSprint) {
       if (!s.sprintP1) {
         sprintPts = PENALTY_EMPTY_LIST;
       } else {
@@ -102,7 +123,7 @@ export async function calculatePointsForRace(raceId, official) {
       }
     }
 
-    /* ------ regola speciale 29 → 30 + jolly extra -------------- */
+    // Special rule: 29 points becomes 30 + extra jolly
     if (mainPts === 29) {
       mainPts += 1;
       batchWrites.push(
@@ -110,13 +131,13 @@ export async function calculatePointsForRace(raceId, official) {
       );
     }
 
-    /* ------ moltiplicatore ultima gara ------------------------ */
+    // Double points multiplier for final race
     if (doublePoints) {
       mainPts   *= 2;
       sprintPts *= 2;
     }
 
-    /* ------ salva nella singola SUBMISSION -------------------- */
+    // Save points to submission document
     batchWrites.push(
       updateDoc(subDoc.ref, {
         pointsEarned:       mainPts,
@@ -124,7 +145,7 @@ export async function calculatePointsForRace(raceId, official) {
       })
     );
 
-    /* ------ aggiorna il RANKING (mappa completa) -------------- */
+    // Update ranking with complete points map
     const rankRef  = doc(db, "ranking", userId);
     const rankSnap = await getDoc(rankRef);
     const oldPB    = rankSnap.exists() ? rankSnap.data().pointsByRace || {} : {};
@@ -147,7 +168,7 @@ export async function calculatePointsForRace(raceId, official) {
     );
   }
 
-  /* 4️⃣  commit parallelo --------------------------------------- */
+  // Step 4: Commit all updates in parallel
   await Promise.all(batchWrites);
   return `✔️ Calcolo completato: aggiornate ${subsSnap.size} submissions e ranking`;
 }

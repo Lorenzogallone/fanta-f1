@@ -1,0 +1,10 @@
+/* Larghezza minima per colonne form */
+.form-col {
+  flex: 0 0 auto;
+  min-width: 320px;
+}
+
+/* Evita scrollbar orizzontale */
+.container, .container-fluid {
+  overflow-x: hidden;
+}
