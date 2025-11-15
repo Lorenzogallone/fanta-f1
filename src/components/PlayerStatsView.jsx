@@ -237,7 +237,6 @@ export default function PlayerStatsView({
       chartHistory.push({
         cumulativePoints,
         racePoints: points.total,
-        position: playerData.position, // Note: This is current position, not historical
       });
     });
   }
@@ -277,7 +276,18 @@ export default function PlayerStatsView({
             </Card.Header>
             <Card.Body>
               <Row className="g-3">
-                <Col xs={6} md={3}>
+                {/* Position (if available) */}
+                {playerData.position && (
+                  <Col xs={6} md={playerData.position ? 2 : 3}>
+                    <div className="text-center">
+                      <div className="text-muted small">{t("statistics.position")}</div>
+                      <div className="fs-2 fw-bold" style={{ color: accentColor }}>
+                        {playerData.position}°
+                      </div>
+                    </div>
+                  </Col>
+                )}
+                <Col xs={6} md={playerData.position ? 2 : 3}>
                   <div className="text-center">
                     <div className="text-muted small">{t("leaderboard.totalPoints")}</div>
                     <div className="fs-2 fw-bold" style={{ color: accentColor }}>
@@ -285,7 +295,7 @@ export default function PlayerStatsView({
                     </div>
                   </div>
                 </Col>
-                <Col xs={6} md={3}>
+                <Col xs={6} md={playerData.position ? 3 : 3}>
                   <div className="text-center">
                     <div className="text-muted small">{t("participantDetail.lineupsSubmitted")}</div>
                     <div className="fs-2 fw-bold" style={{ color: accentColor }}>
@@ -293,7 +303,7 @@ export default function PlayerStatsView({
                     </div>
                   </div>
                 </Col>
-                <Col xs={6} md={3}>
+                <Col xs={6} md={playerData.position ? 3 : 3}>
                   <div className="text-center">
                     <div className="text-muted small">{t("participantDetail.averagePoints")}</div>
                     <div className="fs-2 fw-bold" style={{ color: accentColor }}>
@@ -301,7 +311,7 @@ export default function PlayerStatsView({
                     </div>
                   </div>
                 </Col>
-                <Col xs={6} md={3}>
+                <Col xs={6} md={playerData.position ? 2 : 3}>
                   <div className="text-center">
                     <div className="text-muted small">{t("leaderboard.jokers")}</div>
                     <div className="fs-2 fw-bold">
@@ -436,70 +446,6 @@ export default function PlayerStatsView({
                 </Card.Body>
               </Card>
             </Col>
-
-            {/* Position progression chart - Only if we have position data */}
-            {playerData.position && (
-              <Col xs={12}>
-                <Card
-                  className="shadow"
-                  style={{
-                    borderColor: accentColor,
-                    backgroundColor: bgCard,
-                  }}
-                >
-                  <Card.Header
-                    as="h6"
-                    className="fw-semibold"
-                    style={{
-                      backgroundColor: bgHeader,
-                      borderBottom: `2px solid ${accentColor}`,
-                    }}
-                  >
-                    📊 {t("statistics.positionProgression")}
-                  </Card.Header>
-                  <Card.Body className="chart-container-optimized">
-                    <ResponsiveContainer width="100%" height={400}>
-                      <LineChart
-                        data={chartRaces.map((race, idx) => ({
-                          name: `R${race.round}`,
-                          fullName: race.name,
-                          position: chartHistory[idx]?.position || null,
-                        }))}
-                        margin={{ top: 10, right: 5, left: 0, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                        <XAxis
-                          dataKey="name"
-                          stroke={textColor}
-                          style={{ fontSize: "0.8rem" }}
-                        />
-                        <YAxis
-                          stroke={textColor}
-                          style={{ fontSize: "0.8rem" }}
-                          width={50}
-                          reversed
-                          label={{
-                            value: t("statistics.position"),
-                            angle: -90,
-                            position: "insideLeft",
-                            style: { fill: textColor, fontSize: "0.7rem" },
-                          }}
-                        />
-                        <Tooltip content={(props) => <CustomTooltip {...props} isDark={isDark} accentColor={accentColor} />} />
-                        <Line
-                          type="monotone"
-                          dataKey="position"
-                          name={t("statistics.position")}
-                          stroke={accentColor}
-                          strokeWidth={3}
-                          dot={false}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </Card.Body>
-                </Card>
-              </Col>
-            )}
           </>
         )}
 
