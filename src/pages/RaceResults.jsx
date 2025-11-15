@@ -38,8 +38,6 @@ import {
 import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
-import LiveTiming from "../components/LiveTiming";
-import f1LiveTimingService from "../services/f1LiveTimingService";
 
 /**
  * Component to display driver with team logo
@@ -115,41 +113,11 @@ export default function RaceResults() {
   const [sessionsCache, setSessionsCache] = useState({});
 
   // Standings states
-  const [activeTab, setActiveTab] = useState("results"); // Will be updated based on live session
-  const [hasLiveSession, setHasLiveSession] = useState(false);
+  const [activeTab, setActiveTab] = useState("results");
   const [driverStandings, setDriverStandings] = useState(null);
   const [constructorStandings, setConstructorStandings] = useState(null);
   const [loadingStandings, setLoadingStandings] = useState(false);
   const [standingsFilter, setStandingsFilter] = useState("all"); // "5", "10", "all"
-
-  // Check for live session on mount
-  useEffect(() => {
-    async function checkLive() {
-      try {
-        // Connect to SignalR to check for live session
-        const result = await f1LiveTimingService.connect();
-
-        if (!result.success) {
-          // CORS error or connection failed - don't auto-switch to live tab
-          console.log("Live timing unavailable:", result.message);
-          return;
-        }
-
-        // Set up a callback to check when session info is received
-        const checkTimer = setTimeout(() => {
-          if (f1LiveTimingService.hasActiveSession()) {
-            setHasLiveSession(true);
-            setActiveTab("live"); // Open live tab if there's a live session
-          }
-        }, 2000); // Wait 2 seconds for initial data
-
-        return () => clearTimeout(checkTimer);
-      } catch (error) {
-        console.error("Error checking live session:", error);
-      }
-    }
-    checkLive();
-  }, []);
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
@@ -563,40 +531,6 @@ export default function RaceResults() {
                 <Nav variant="pills" activeKey={activeTab} onSelect={setActiveTab}>
                   <Nav.Item>
                     <Nav.Link
-                      eventKey="live"
-                      style={{
-                        backgroundColor: activeTab === "live" ? accentColor : "transparent",
-                        color: activeTab === "live" ? "#fff" : (isDark ? "#fff" : "#000"),
-                        borderColor: accentColor,
-                        position: "relative",
-                      }}
-                    >
-                      {hasLiveSession && (
-                        <span
-                          style={{
-                            position: "absolute",
-                            top: "5px",
-                            right: "5px",
-                            width: "8px",
-                            height: "8px",
-                            borderRadius: "50%",
-                            backgroundColor: "#dc3545",
-                            animation: "pulse 2s infinite",
-                          }}
-                        />
-                      )}
-                      🔴 {t("raceResults.liveTab")}{" "}
-                      <Badge
-                        bg="warning"
-                        text="dark"
-                        style={{ fontSize: "0.6rem", verticalAlign: "super" }}
-                      >
-                        BETA
-                      </Badge>
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link
                       eventKey="results"
                       style={{
                         backgroundColor: activeTab === "results" ? accentColor : "transparent",
@@ -623,10 +557,6 @@ export default function RaceResults() {
               </div>
             </Card.Header>
             <Card.Body>
-              {activeTab === "live" && (
-                <LiveTiming />
-              )}
-
               {activeTab === "results" && (
                 <>
                   <p className="text-muted mb-3">{t("raceResults.description")}</p>
