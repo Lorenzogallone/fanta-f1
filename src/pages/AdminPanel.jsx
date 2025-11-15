@@ -534,6 +534,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
  */
 function FormationsManager({ participants: propParticipants, races: propRaces, loading: propLoading, onDataChange }) {
   const { t } = useLanguage();
+  const { isDark } = useTheme();
   // Use data passed as props
   const participants = propParticipants;
   const races = propRaces;
@@ -832,6 +833,66 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
 
   const hasSprint = Boolean(selectedRace?.qualiSprintUTC);
 
+  // Custom styles for react-select with dark mode support
+  const selectStyles = {
+    control: (base, state) => ({
+      ...base,
+      backgroundColor: isDark ? '#2d3748' : '#fff',
+      borderColor: state.isFocused
+        ? '#dc3545'
+        : isDark
+        ? '#4a5568'
+        : '#ced4da',
+      boxShadow: state.isFocused ? '0 0 0 0.2rem rgba(220,53,69,.25)' : 'none',
+      '&:hover': {
+        borderColor: '#dc3545',
+      },
+    }),
+    menu: (base) => ({
+      ...base,
+      backgroundColor: isDark ? '#2d3748' : '#fff',
+      border: isDark ? '1px solid #4a5568' : '1px solid #ced4da',
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isFocused
+        ? isDark
+          ? '#4a5568'
+          : '#f8f9fa'
+        : isDark
+        ? '#2d3748'
+        : '#fff',
+      color: isDark ? '#e2e8f0' : '#212529',
+      '&:active': {
+        backgroundColor: isDark ? '#4a5568' : '#e2e6ea',
+      },
+    }),
+    singleValue: (base) => ({
+      ...base,
+      color: isDark ? '#e2e8f0' : '#212529',
+    }),
+    input: (base) => ({
+      ...base,
+      color: isDark ? '#e2e8f0' : '#212529',
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: isDark ? '#a0aec0' : '#6c757d',
+    }),
+  };
+
+  const invalidSelectStyles = {
+    ...selectStyles,
+    control: (base, state) => ({
+      ...selectStyles.control(base, state),
+      borderColor: '#dc3545',
+      boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)',
+    }),
+  };
+
+  const bgCard = isDark ? 'var(--bg-secondary)' : '#ffffff';
+  const bgHeader = isDark ? 'var(--bg-tertiary)' : '#ffffff';
+
   if (propLoading) {
     return (
       <div className="text-center py-5">
@@ -851,8 +912,8 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
       </Col>
 
       <Col xs={12}>
-        <Card className="shadow">
-          <Card.Header className="bg-white">
+        <Card className="shadow" style={{ backgroundColor: bgCard }}>
+          <Card.Header style={{ backgroundColor: bgHeader }}>
             <h5 className="mb-0">
               {existingFormation ? `✏️ ${t("admin.editFormationTitle")}` : `➕ ${t("admin.addFormation")}`}
             </h5>
@@ -924,9 +985,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                       value={formData.mainP1}
                       onChange={(sel) => setFormData({ ...formData, mainP1: sel })}
                       placeholder={t("formations.selectUser")}
-                      styles={isFieldInvalid('mainP1') ? {
-                        control: (base) => ({ ...base, borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)' })
-                      } : {}}
+                      styles={isFieldInvalid('mainP1') ? invalidSelectStyles : selectStyles}
                       noOptionsMessage={() => t("errors.duplicateDriver")}
                     />
                   </Form.Group>
@@ -938,9 +997,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                       value={formData.mainP2}
                       onChange={(sel) => setFormData({ ...formData, mainP2: sel })}
                       placeholder={t("formations.selectUser")}
-                      styles={isFieldInvalid('mainP2') ? {
-                        control: (base) => ({ ...base, borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)' })
-                      } : {}}
+                      styles={isFieldInvalid('mainP2') ? invalidSelectStyles : selectStyles}
                       noOptionsMessage={() => t("errors.duplicateDriver")}
                     />
                   </Form.Group>
@@ -952,9 +1009,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                       value={formData.mainP3}
                       onChange={(sel) => setFormData({ ...formData, mainP3: sel })}
                       placeholder={t("formations.selectUser")}
-                      styles={isFieldInvalid('mainP3') ? {
-                        control: (base) => ({ ...base, borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)' })
-                      } : {}}
+                      styles={isFieldInvalid('mainP3') ? invalidSelectStyles : selectStyles}
                       noOptionsMessage={() => t("errors.duplicateDriver")}
                     />
                   </Form.Group>
@@ -966,9 +1021,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                       value={formData.mainJolly}
                       onChange={(sel) => setFormData({ ...formData, mainJolly: sel })}
                       placeholder={t("formations.selectUser")}
-                      styles={isFieldInvalid('mainJolly') ? {
-                        control: (base) => ({ ...base, borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)' })
-                      } : {}}
+                      styles={isFieldInvalid('mainJolly') ? invalidSelectStyles : selectStyles}
                       noOptionsMessage={() => t("errors.duplicateDriver")}
                     />
                   </Form.Group>
@@ -980,6 +1033,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                       value={formData.mainJolly2}
                       onChange={(sel) => setFormData({ ...formData, mainJolly2: sel })}
                       placeholder={t("formations.selectUser")}
+                      styles={selectStyles}
                       isClearable
                       noOptionsMessage={() => t("errors.duplicateDriver")}
                     />
@@ -1009,6 +1063,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                           value={formData.sprintP1}
                           onChange={(sel) => setFormData({ ...formData, sprintP1: sel })}
                           placeholder={t("formations.selectUser")}
+                          styles={selectStyles}
                           isClearable
                           noOptionsMessage={() => t("errors.duplicateDriver")}
                         />
@@ -1021,6 +1076,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                           value={formData.sprintP2}
                           onChange={(sel) => setFormData({ ...formData, sprintP2: sel })}
                           placeholder={t("formations.selectUser")}
+                          styles={selectStyles}
                           isClearable
                           noOptionsMessage={() => t("errors.duplicateDriver")}
                         />
@@ -1033,6 +1089,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                           value={formData.sprintP3}
                           onChange={(sel) => setFormData({ ...formData, sprintP3: sel })}
                           placeholder={t("formations.selectUser")}
+                          styles={selectStyles}
                           isClearable
                           noOptionsMessage={() => t("errors.duplicateDriver")}
                         />
@@ -1045,6 +1102,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                           value={formData.sprintJolly}
                           onChange={(sel) => setFormData({ ...formData, sprintJolly: sel })}
                           placeholder={t("formations.selectUser")}
+                          styles={selectStyles}
                           isClearable
                           noOptionsMessage={() => t("errors.duplicateDriver")}
                         />
