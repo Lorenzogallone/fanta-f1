@@ -1,112 +1,68 @@
-// src/CalculatePoints.jsx
+/**
+ * @file CalculatePoints.jsx
+ * @description Admin panel for calculating race and championship points
+ * Handles both race results entry and points calculation with automatic F1 API fetching
+ */
+
 import React, { useEffect, useState } from "react";
 import {
   Card, Form, Button, Alert, Spinner, Container,
   Row, Col, Badge, Tab, Nav, Table
 } from "react-bootstrap";
 import {
-  collection, query, orderBy, getDocs, 
+  collection, query, orderBy, getDocs,
   doc, setDoc, getDoc, Timestamp
 } from "firebase/firestore";
-import { db } from "./firebase";
-import { isLastRace, calculatePointsForRace } from "./pointsCalculator";
-import { calculateChampionshipPoints } from "./championshipPointsCalculator";
+import { db } from "../services/firebase";
+import { isLastRace, calculatePointsForRace } from "../services/pointsCalculator";
+import { calculateChampionshipPoints } from "../services/championshipPointsCalculator";
+import { saveRankingSnapshot } from "../services/rankingSnapshot";
+import { fetchRaceResults } from "../services/f1ResultsFetcher";
+import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
+import RaceHistoryCard from "../components/RaceHistoryCard";
+import AdminLogin from "../components/AdminLogin";
 import Select from "react-select";
-import "./customSelect.css";
+import { useLanguage } from "../contexts/LanguageContext";
+import "../styles/customSelect.css";
 
-/* ---------- liste base (copia uguali) ---------- */
-/* — liste piloti e costruttori — */
-const drivers = [
-  "Max Verstappen",
-  "Yuki Tsunoda",
-  "Charles Leclerc",
-  "Lewis Hamilton",
-  "George Russell",
-  "Andrea Kimi Antonelli",
-  "Lando Norris",
-  "Oscar Piastri",
-  "Fernando Alonso",
-  "Lance Stroll",
-  "Pierre Gasly",
-  "Franco Colapinto",
-  "Oliver Bearman",
-  "Esteban Ocon",
-  "Nico Hülkenberg",
-  "Gabriel Bortoleto",
-  "Liam Lawson",
-  "Isack Hadjar",
-  "Alexander Albon",
-  "Carlos Sainz Jr.",
-];
+// Constants imported from centralized file
+const drivers = DRIVERS;
+const constructors = CONSTRUCTORS;
+const driverTeam = DRIVER_TEAM;
+const teamLogos = TEAM_LOGOS;
+const PTS_MAIN = POINTS.MAIN;
+const PTS_SPRINT = POINTS.SPRINT;
+const BONUS_JOLLY_MAIN = POINTS.BONUS_JOLLY_MAIN;
+const BONUS_JOLLY_SPRINT = POINTS.BONUS_JOLLY_SPRINT;
 
-const constructors = [
-  "Red Bull",
-  "Ferrari",
-  "Mercedes",
-  "McLaren",
-  "Aston Martin",
-  "Alpine",
-  "Haas",
-  "Sauber",
-  "Vcarb",
-  "Williams",
-];
-
-const driverTeam = {
-  "Max Verstappen": "Red Bull",
-  "Yuki Tsunoda": "Red Bull",
-  "Charles Leclerc": "Ferrari",
-  "Lewis Hamilton": "Ferrari",
-  "George Russell": "Mercedes",
-  "Andrea Kimi Antonelli": "Mercedes",
-  "Lando Norris": "McLaren",
-  "Oscar Piastri": "McLaren",
-  "Fernando Alonso": "Aston Martin",
-  "Lance Stroll": "Aston Martin",
-  "Pierre Gasly": "Alpine",
-  "Franco Colapinto": "Alpine",
-  "Oliver Bearman": "Haas",
-  "Esteban Ocon": "Haas",
-  "Nico Hülkenberg": "Sauber",
-  "Gabriel Bortoleto": "Sauber",
-  "Liam Lawson": "Vcarb",
-  "Isack Hadjar": "Vcarb",
-  "Alexander Albon": "Williams",
-  "Carlos Sainz Jr.": "Williams",
-};
-
-const teamLogos = {
-  Ferrari: "/ferrari.png",
-  Mercedes: "/mercedes.png",
-  "Red Bull": "/redbull.png",
-  McLaren: "/mclaren.png",
-  "Aston Martin": "/aston.png",
-  Alpine: "/alpine.png",
-  Haas: "/haas.png",
-  Williams: "/williams.png",
-  Sauber: "/sauber.png",
-  Vcarb: "/vcarb.png",
-};
-
-/* ---------- costanti punteggio ---------- */
-const PTS_MAIN   = { 1: 12, 2: 10, 3: 7 };
-const PTS_SPRINT = { 1:  8, 2:  6, 3: 4 };
-const BONUS_JOLLY_MAIN   = 5;
-const BONUS_JOLLY_SPRINT = 2;
-
-/* ---------- badge util ---------- */
-const DeadlineBadge = ({ open }) => (
+/**
+ * Deadline status badge component
+ * @param {Object} props - Component props
+ * @param {boolean} props.open - Whether deadline is open
+ * @param {Function} props.t - Translation function
+ * @returns {JSX.Element} Status badge
+ */
+const DeadlineBadge = ({ open, t }) => (
   <Badge bg={open ? "success" : "danger"}>
-    {open ? " PRONTA " : " BLOCCATA "}
+    {open ? ` ${t("calculate.ready")} ` : ` ${t("calculate.locked")} `}
   </Badge>
 );
-const DoubleBadge = () => (
-  <Badge bg="warning" text="dark">🌟 Punti doppi! 🌟</Badge>
+
+/**
+ * Double points indicator badge
+ * @param {Object} props - Component props
+ * @param {Function} props.t - Translation function
+ * @returns {JSX.Element} Double points badge
+ */
+const DoubleBadge = ({ t }) => (
+  <Badge bg="warning" text="dark">{t("calculate.doublePoints")}</Badge>
 );
 
-
-
-/* ---------- helper select con logo ---------- */
+/**
+ * Helper to create driver option with logo
+ * @param {string} d - Driver name
+ * @returns {Object} Select option with logo
+ */
 const asDriverOpt = d => ({
   value: d,
   label: (
@@ -116,6 +72,11 @@ const asDriverOpt = d => ({
     </div>
   ),
 });
+/**
+ * Helper to create constructor option with logo
+ * @param {string} c - Constructor name
+ * @returns {Object} Select option with logo
+ */
 const asConstructorOpt = c => ({
   value: c,
   label: (
@@ -128,7 +89,12 @@ const asConstructorOpt = c => ({
 const driverOptions      = drivers.map(asDriverOpt);
 const constructorOptions = constructors.map(asConstructorOpt);
 
-/* ---------- logo + nome pilota ---------- */
+/**
+ * Component to display driver name with team logo
+ * @param {Object} props - Component props
+ * @param {string} props.name - Driver name
+ * @returns {JSX.Element} Driver name with logo
+ */
 const DriverWithLogo = ({ name }) => {
   if (!name) return <>—</>;
   const team = driverTeam[name];
@@ -146,78 +112,85 @@ const DriverWithLogo = ({ name }) => {
   );
 };
 
-/* ======================== MAIN ======================== */
-export default function CalculatePoints() {
+/**
+ * Main points calculation component with tabs for race and championship
+ * @returns {JSX.Element} Points calculation interface
+ */
+function CalculatePointsContent() {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("race");
 
-  /* ---------- stato gara ---------- */
+  // Race state
   const [races, setRaces] = useState([]);
   const [race,  setRace]  = useState(null);
   const [loadingRace, setLoadingRace] = useState(true);
   const [savingRace,  setSavingRace]  = useState(false);
   const [msgRace,     setMsgRace]     = useState(null);
+  const [fetchingResults, setFetchingResults] = useState(false);
 
   const [formRace, setFormRace] = useState({
     P1:null,P2:null,P3:null, SP1:null,SP2:null,SP3:null
   });
 
-  /* preview */
+  // Preview state
   const [official,  setOfficial]   = useState(null);
   const [subs,      setSubs]       = useState([]);
   const [loadingSubs, setLoadingSubs] = useState(true);
   const [rankingMap,setRankingMap] = useState({});
   const [errSubs,   setErrSubs]    = useState(null);
 
-  /* ---------- stato campionato ---------- */
+  // Championship state
   const [formChamp,setFormChamp]   = useState({
     CP1:null,CP2:null,CP3:null, CC1:null,CC2:null,CC3:null
   });
   const [savingChamp,setSavingChamp]=useState(false);
   const [msgChamp,setMsgChamp]     = useState(null);
 
-
-
-  /* ---------------- LOAD LISTA GARE ----------------- */
-  /* ========== LOAD GARE  (sceglie la 1ª ancora da calcolare) ========== */
+  /**
+   * Load race list (selects first race not yet calculated)
+   */
 useEffect(() => {
   (async () => {
     try {
-      // 1️⃣  carica tutte le gare ordinate per data
+      // Load all races ordered by date
       const snap = await getDocs(
         query(collection(db, "races"), orderBy("raceUTC", "asc"))
       );
 
-      // 2️⃣  lista completa
+      // Complete list
       const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setRaces(list);
 
-      // 3️⃣  default = prima gara della lista
+      // Default = first race in list
       if (list.length) setRace(list[0]);
     } catch (err) {
       console.error(err);
-      setMsgRace({ variant: "danger", msg: "Errore nel caricamento delle gare." });
+      setMsgRace({ variant: "danger", msg: t("calculate.errorLoadingRaces") });
     } finally {
       setLoadingRace(false);
     }
   })();
+// eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
 
-  /* ---------------- LOAD PREVIEW -------------------- */
+  /**
+   * Load preview data (submissions and official results)
+   */
   useEffect(()=>{
     if(!race) return;
     (async()=>{
       setLoadingSubs(true); setErrSubs(null);
       try{
-        /* mappa utenti una sola volta */
+        // Load user mapping once
         if(!Object.keys(rankingMap).length){
           const mapSnap = await getDocs(collection(db,"ranking"));
           const map={}; mapSnap.docs.forEach(d=>{map[d.id]=d.data().name;});
           setRankingMap(map);
         }
-        /* risultati ufficiali */
+        // Official results
         const rDoc = await getDoc(doc(db,"races",race.id));
         setOfficial(rDoc.data().officialResults ?? null);
-        /* submissions */
+        // Submissions
         const sSnap= await getDocs(collection(db,"races",race.id,"submissions"));
         const arr  = sSnap.docs.map(d=>({id:d.id,...d.data()}));
         arr.sort((a,b)=>(
@@ -226,13 +199,13 @@ useEffect(() => {
         ));
         setSubs(arr);
       // eslint-disable-next-line no-unused-vars
-      }catch(e){ setErrSubs("Impossibile caricare submissions."); }
+      }catch(e){ setErrSubs(t("calculate.errorLoadingSubmissions")); }
       finally   { setLoadingSubs(false); }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[race]);
 
-  /* ---------------- HANDLERS GARA ------------------- */
+  // Race submission validation helpers
   const nowMS = Date.now();
   const allowedRace = race && nowMS > race.raceUTC.seconds*1000 + 90*60*1000;
   const mainFilled  = formRace.P1&&formRace.P2&&formRace.P3;
@@ -242,21 +215,28 @@ useEffect(() => {
   const canSubmitRace = allowedRace && mainFilled && sprintFilled && !savingRace;
   const onSelRace = (sel,f)=>setFormRace(s=>({...s,[f]:sel}));
 
+/**
+ * Auto-fetch race results from F1 API when race changes
+ */
 useEffect(() => {
   if (!race) return;
 
   (async () => {
-    /* 1️⃣ leggi il documento della gara */
+    setFetchingResults(true);
+    setMsgRace(null);
+
+    // Read race document from database
     const snap = await getDoc(doc(db, "races", race.id));
     const off  = snap.exists() ? snap.data().officialResults ?? null : null;
     setOfficial(off);
 
-    /* 2️⃣ se ci sono risultati ufficiali, pre-compila il form */
+    // Helper to convert driver name to select option
     const toOpt = name =>
       name
         ? driverOptions.find(o => o.value === name) || { value: name, label: name }
         : null;
 
+    // If official results exist in DB, use them
     if (off) {
       setFormRace({
         P1 : toOpt(off.P1),
@@ -266,15 +246,60 @@ useEffect(() => {
         SP2: toOpt(off.SP2),
         SP3: toOpt(off.SP3),
       });
+      setFetchingResults(false);
     } else {
-      /* niente risultati → form vuoto */
-      setFormRace({
-        P1:null, P2:null, P3:null,
-        SP1:null, SP2:null, SP3:null
-      });
+      // No results in DB → try fetching from API
+      try {
+        // Extract season and round from race date
+        const raceDate = new Date(race.raceUTC.seconds * 1000);
+        const season = raceDate.getFullYear();
+        const round = race.round;
+
+        setMsgRace({variant:"info", msg: t("calculate.fetchingFromAPI", { race: race.name }).replace("{race}", race.name)});
+
+        const apiResults = await fetchRaceResults(season, round);
+
+        if (apiResults) {
+          // Pre-fill with API results
+          setFormRace({
+            P1 : toOpt(apiResults.main.P1),
+            P2 : toOpt(apiResults.main.P2),
+            P3 : toOpt(apiResults.main.P3),
+            SP1: apiResults.sprint ? toOpt(apiResults.sprint.SP1) : null,
+            SP2: apiResults.sprint ? toOpt(apiResults.sprint.SP2) : null,
+            SP3: apiResults.sprint ? toOpt(apiResults.sprint.SP3) : null,
+          });
+          setMsgRace({
+            variant:"success",
+            msg: t("calculate.apiResultsLoaded")
+          });
+        } else {
+          // No results available in DB or API
+          setFormRace({
+            P1:null, P2:null, P3:null,
+            SP1:null, SP2:null, SP3:null
+          });
+          setMsgRace({
+            variant:"warning",
+            msg: t("calculate.apiNoResults")
+          });
+        }
+      } catch (error) {
+        console.error("Errore fetch API:", error);
+        setFormRace({
+          P1:null, P2:null, P3:null,
+          SP1:null, SP2:null, SP3:null
+        });
+        setMsgRace({
+          variant:"warning",
+          msg: t("calculate.apiError")
+        });
+      } finally {
+        setFetchingResults(false);
+      }
     }
 
-    /* 3️⃣ carica submissions (come facevi già) */
+    // Load submissions
     const subSnap = await getDocs(
       collection(db, "races", race.id, "submissions")
     );
@@ -283,9 +308,11 @@ useEffect(() => {
     setLoadingSubs(false);
   })().catch(err => {
     console.error(err);
-    setErrSubs("Impossibile caricare submissions.");
+    setErrSubs(t("calculate.errorLoadingSubmissions"));
     setLoadingSubs(false);
+    setFetchingResults(false);
   });
+// eslint-disable-next-line react-hooks/exhaustive-deps
 }, [race]);
 
   const saveRace = async e=>{
@@ -298,13 +325,15 @@ useEffect(() => {
           SP1:formRace.SP1?.value||null,SP2:formRace.SP2?.value||null,SP3:formRace.SP3?.value||null,
           doublePoints:isLast,savedAt:Timestamp.now()
         }},{merge:true});
-      setMsgRace({variant:"info",msg:"Risultati salvati. Calcolo in corso…"});
+      setMsgRace({variant:"info",msg: t("calculate.resultsSaved")});
       const res = await calculatePointsForRace(race.id);
       await setDoc(
         doc(db, "races", race.id),
         { pointsCalculated: true },
         { merge: true }
       );
+      // Salva snapshot della classifica dopo il calcolo
+      await saveRankingSnapshot("race", race.id);
       setMsgRace({variant:"success",msg:res});
       setFormRace({P1:null,P2:null,P3:null,SP1:null,SP2:null,SP3:null});
       /* refresh preview */
@@ -314,7 +343,7 @@ useEffect(() => {
       setSubs(sSnap.docs.map(d=>({id:d.id,...d.data()})));
     }catch(err){
       console.error(err);
-      setMsgRace({variant:"danger",msg:"Errore nel salvataggio o calcolo."});
+      setMsgRace({variant:"danger",msg: t("calculate.saveError")});
     }finally{ setSavingRace(false); }
   };
 
@@ -333,15 +362,15 @@ useEffect(() => {
         C1:formChamp.CC1.value,C2:formChamp.CC2.value,C3:formChamp.CC3.value,
         savedAt:Timestamp.now()
       },{merge:true});
-      setMsgChamp({variant:"info",msg:"Risultati salvati. Calcolo in corso…"});
-      const res = await calculateChampionshipPoints(
-        [formChamp.CP1.value,formChamp.CP2.value,formChamp.CP3.value],
-        [formChamp.CC1.value,formChamp.CC2.value,formChamp.CC3.value]
-      );
+      setMsgChamp({variant:"info",msg: t("calculate.resultsSaved")});
+      // La funzione legge i risultati da Firestore (appena salvati sopra)
+      const res = await calculateChampionshipPoints();
+      // Salva snapshot della classifica dopo il calcolo del campionato
+      await saveRankingSnapshot("championship", null);
       setMsgChamp({variant:"success",msg:res});
     }catch(err){
       console.error(err);
-      setMsgChamp({variant:"danger",msg:"Errore nel salvataggio o calcolo."});
+      setMsgChamp({variant:"danger",msg: t("calculate.saveError")});
     }finally{ setSavingChamp(false); }
   };
 
@@ -380,8 +409,8 @@ useEffect(() => {
     <Container className="py-4">
       <Tab.Container activeKey={activeTab} onSelect={k=>setActiveTab(k)}>
         <Nav variant="tabs" className="justify-content-center mb-4">
-          <Nav.Item><Nav.Link eventKey="race">Calcolo Gara</Nav.Link></Nav.Item>
-          <Nav.Item><Nav.Link eventKey="champ">Calcolo Campionato</Nav.Link></Nav.Item>
+          <Nav.Item><Nav.Link eventKey="race">{t("calculate.raceTab")}</Nav.Link></Nav.Item>
+          <Nav.Item><Nav.Link eventKey="champ">{t("calculate.championshipTab")}</Nav.Link></Nav.Item>
         </Nav>
 
         <Tab.Content>
@@ -394,9 +423,9 @@ useEffect(() => {
                 <Card className="shadow">
                   <Card.Header className="bg-white d-flex justify-content-between">
                     <h5 className="mb-0">
-                      Calcola Punti Gara <DeadlineBadge open={allowedRace} />
+                      {t("calculate.calculateRacePoints")} <DeadlineBadge open={allowedRace} t={t} />
                     </h5>
-                    {isLast && <DoubleBadge />}
+                    {isLast && <DoubleBadge t={t} />}
                   </Card.Header>
                   <Card.Body>
                     {msgRace && (
@@ -407,7 +436,7 @@ useEffect(() => {
 
                     {/* selezione gara */}
                     <Form.Group className="mb-4">
-                      <Form.Label>Gara</Form.Label>
+                      <Form.Label>{t("calculate.race")}</Form.Label>
                       <Form.Select
                         value={race?.id||""}
                         onChange={e => {
@@ -424,7 +453,7 @@ useEffect(() => {
                     </Form.Group>
 
                     {/* podio principale */}
-                    <h6 className="fw-bold">Gara Principale</h6>
+                    <h6 className="fw-bold">{t("calculate.mainRace")}</h6>
                     {["P1","P2","P3"].map(f=>(
                       <Form.Group key={f} className="mb-3">
                         <Form.Label>{f}</Form.Label>
@@ -441,7 +470,7 @@ useEffect(() => {
                     {/* sprint */}
                     {race?.qualiSprintUTC && (
                       <>
-                        <h6 className="fw-bold mt-3">Sprint</h6>
+                        <h6 className="fw-bold mt-3">{t("calculate.sprint")}</h6>
                         {["SP1","SP2","SP3"].map(f=>(
                           <Form.Group key={f} className="mb-3">
                             <Form.Label>{f}</Form.Label>
@@ -461,122 +490,14 @@ useEffect(() => {
                       variant="danger" className="w-100 mt-3"
                       onClick={saveRace} disabled={!canSubmitRace}
                     >
-                      {savingRace ? "Salvataggio…" : "Calcola Punteggi"}
+                      {savingRace ? t("common.loading") : t("calculate.calculateAndSave")}
                     </Button>
                   </Card.Body>
                 </Card>
               </Col>
               {/* ---------- PREVIEW ---------- */}
               <Col xs={12} lg={10}>
-                <Card className="shadow border-danger">
-                  <Card.Body>
-                    {/* risultati ufficiali */}
-                    {official ? (
-                      <>
-                        <h6 className="fw-bold text-danger">Risultati ufficiali</h6>
-                        <Table size="sm" className="mb-3">
-                          <tbody>
-                            <tr><td>1°</td><td><DriverWithLogo name={official.P1}/></td></tr>
-                            <tr><td>2°</td><td><DriverWithLogo name={official.P2}/></td></tr>
-                            <tr><td>3°</td><td><DriverWithLogo name={official.P3}/></td></tr>
-                            {official.SP1 && (
-                              <>
-                                <tr className="table-light"><td colSpan={2} className="fw-bold">Sprint</td></tr>
-                                <tr><td>SP1°</td><td><DriverWithLogo name={official.SP1}/></td></tr>
-                                <tr><td>SP2°</td><td><DriverWithLogo name={official.SP2}/></td></tr>
-                                <tr><td>SP3°</td><td><DriverWithLogo name={official.SP3}/></td></tr>
-                              </>
-                            )}
-                          </tbody>
-                        </Table>
-                      </>
-                    ):(
-                      <Alert variant="warning">Risultati ufficiali non ancora salvati.</Alert>
-                    )}
-
-                    {/* submissions */}
-                    {loadingSubs ? (
-                      <div className="text-center"><Spinner animation="border"/></div>
-                    ) : errSubs ? (
-                      <Alert variant="danger">{errSubs}</Alert>
-                    ) : subs.length===0 ? (
-                      <Alert variant="info">Nessuna formazione inviata.</Alert>
-                    ) : (
-                      <>
-                        <h6 className="fw-bold text-danger">Submissions ({subs.length})</h6>
-                        <div className="table-responsive">
-                          <Table size="sm" striped bordered hover className="align-middle">
-                            <thead className="table-light">
-                              <tr>
-                                <th className="text-center">#</th>
-                                <th className="text-center">Utente</th>
-                                <th className="text-center">P1</th>
-                                <th className="text-center">P2</th>
-                                <th className="text-center">P3</th>
-                                <th className="text-center">Jolly</th>
-                                {official?.SP1 && (
-                                  <>
-                                    <th className="text-center">SP1</th>
-                                    <th className="text-center">SP2</th>
-                                    <th className="text-center">SP3</th>
-                                    <th className="text-center">Jolly SP</th>
-                                  </>
-                                )}
-                                <th className="text-center">Tot Main</th>
-                                {official?.SP1 && <th className="text-center">Tot Sprint</th>}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {subs.map((s,idx)=>{
-                                const uname = s.user||rankingMap[s.id]||s.id;
-                                const cell=(pick,pts)=>(
-                                  <td className="text-center">
-                                    {pick ? <>{pick} {badge(pts)}</> : "—"}
-                                  </td>
-                                );
-                                const mPts = official ? calcMainPts(s) : null;
-                                const spPts= official?.SP1 ? calcSprintPts(s) : null;
-
-                                return (
-                                  <tr key={s.id}>
-                                    <td className="text-center">{idx+1}</td>
-                                    <td className="text-center">{uname}</td>
-                                    {cell(s.mainP1, s.mainP1===official?.P1 ? PTS_MAIN[1] : 0)}
-                                    {cell(s.mainP2, s.mainP2===official?.P2 ? PTS_MAIN[2] : 0)}
-                                    {cell(s.mainP3, s.mainP3===official?.P3 ? PTS_MAIN[3] : 0)}
-                                    {cell(s.mainJolly,
-                                      s.mainJolly && [official?.P1,official?.P2,official?.P3]
-                                      .includes(s.mainJolly) ? BONUS_JOLLY_MAIN : 0)}
-                                    {official?.SP1 && (
-                                      <>
-                                        {cell(s.sprintP1, s.sprintP1===official?.SP1 ? PTS_SPRINT[1] : 0)}
-                                        {cell(s.sprintP2, s.sprintP2===official?.SP2 ? PTS_SPRINT[2] : 0)}
-                                        {cell(s.sprintP3, s.sprintP3===official?.SP3 ? PTS_SPRINT[3] : 0)}
-                                        {cell(s.sprintJolly,
-                                          s.sprintJolly && [official?.SP1,official?.SP2,official?.SP3]
-                                          .includes(s.sprintJolly) ? BONUS_JOLLY_SPRINT : 0)}
-                                      </>
-                                    )}
-                                    <td className="text-center fw-bold"
-                                        style={{color:mPts>0?"green":"red"}}>
-                                      {mPts ?? "—"}
-                                    </td>
-                                    {official?.SP1 && (
-                                      <td className="text-center fw-bold"
-                                          style={{color:spPts>0?"green":"red"}}>
-                                        {spPts ?? "—"}
-                                      </td>
-                                    )}
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </Table>
-                        </div>
-                      </>
-                    )}
-                  </Card.Body>
-                </Card>
+                {race && <RaceHistoryCard race={race} showPoints={true} />}
               </Col>
             </Row>
           </Tab.Pane>
@@ -589,12 +510,12 @@ useEffect(() => {
               <Col xs={12} lg={8}>
                 <Card className="shadow border-danger">
                   <Card.Header className="bg-white text-center">
-                    <h5 className="mb-0">Calcola Punti Campionato</h5>
+                    <h5 className="mb-0">{t("calculate.calculateChampionshipPoints")}</h5>
                   </Card.Header>
                   <Card.Body>
                     {!championshipOpen && (
                       <Alert variant="warning" className="text-center">
-                        ⚠️ Calcolo disponibile solo a campionato concluso.
+                        {t("calculate.championshipAvailableAfterEnd")}
                       </Alert>
                     )}
                     {msgChamp && (
@@ -604,7 +525,7 @@ useEffect(() => {
                     )}
 
                     <Form onSubmit={saveChamp}>
-                      <h6 className="fw-bold">Piloti</h6>
+                      <h6 className="fw-bold">{t("calculate.drivers")}</h6>
                       {["CP1","CP2","CP3"].map(f=>(
                         <Form.Group key={f} className="mb-3">
                           <Form.Label>{f.replace("CP","P")}</Form.Label>
@@ -618,7 +539,7 @@ useEffect(() => {
                         </Form.Group>
                       ))}
 
-                      <h6 className="fw-bold mt-3">Costruttori</h6>
+                      <h6 className="fw-bold mt-3">{t("calculate.constructors")}</h6>
                       {["CC1","CC2","CC3"].map(f=>(
                         <Form.Group key={f} className="mb-3">
                           <Form.Label>{f.replace("CC","C")}</Form.Label>
@@ -636,7 +557,7 @@ useEffect(() => {
                         variant="danger" type="submit" className="w-100 mt-3"
                         disabled={!champReady}
                       >
-                        {savingChamp ? "Salvataggio…" : "Calcola Punti Campionato"}
+                        {savingChamp ? t("common.loading") : t("calculate.calculateChampionshipPoints")}
                       </Button>
                     </Form>
                   </Card.Body>
@@ -648,4 +569,23 @@ useEffect(() => {
       </Tab.Container>
     </Container>
   );
+}
+
+/* ==================== WRAPPER CON PROTEZIONE ==================== */
+export default function CalculatePoints() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    // Controlla se già autenticato
+    const auth = localStorage.getItem("adminAuth");
+    if (auth === "true") {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  if (!isAuthenticated) {
+    return <AdminLogin onSuccess={() => setIsAuthenticated(true)} useLocalStorage={true} />;
+  }
+
+  return <CalculatePointsContent />;
 }

@@ -1,48 +1,28 @@
-// src/ChampionshipSubmissions.jsx
+/**
+ * @file ChampionshipSubmissions.jsx
+ * Displays championship lineup submissions from all users.
+ */
 import React, { useState, useEffect } from "react";
 import { Card, Table, Spinner, Alert, Image } from "react-bootstrap";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "./firebase";
+import { db } from "../services/firebase";
+import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
+import { useTheme } from "../contexts/ThemeContext";
+import { useLanguage } from "../contexts/LanguageContext";
 
-/* mapping driver → scuderia */
-const driverTeam = {
-  "Max Verstappen":        "Red Bull",
-  "Yuki Tsunoda":          "Red Bull",
-  "Charles Leclerc":       "Ferrari",
-  "Lewis Hamilton":        "Ferrari",
-  "George Russell":        "Mercedes",
-  "Andrea Kimi Antonelli": "Mercedes",
-  "Lando Norris":          "McLaren",
-  "Oscar Piastri":         "McLaren",
-  "Fernando Alonso":       "Aston Martin",
-  "Lance Stroll":          "Aston Martin",
-  "Pierre Gasly":          "Alpine",
-  "Franco Colapinto":      "Alpine",
-  "Oliver Bearman":        "Haas",
-  "Esteban Ocon":          "Haas",
-  "Nico Hülkenberg":       "Sauber",
-  "Gabriel Bortoleto":     "Sauber",
-  "Liam Lawson":           "Vcarb",
-  "Isack Hadjar":          "Vcarb",
-  "Alexander Albon":       "Williams",
-  "Carlos Sainz Jr.":      "Williams",
-};
+// Use centralized constants
+const driverTeam = DRIVER_TEAM;
+const teamLogos = TEAM_LOGOS;
 
-/* mapping scuderia → logo path in /public */
-const teamLogos = {
-  Ferrari:        "/ferrari.png",
-  Mercedes:       "/mercedes.png",
-  "Red Bull":     "/redbull.png",
-  McLaren:        "/mclaren.png",
-  "Aston Martin": "/aston.png",
-  Alpine:         "/alpine.png",
-  Haas:           "/haas.png",
-  Sauber:         "/sauber.png",
-  Vcarb:          "/vcarb.png",
-  Williams:       "/williams.png",
-};
-
+/**
+ * Shows all submitted championship lineups with top 3 drivers and constructors.
+ * @param {Object} props - Component props
+ * @param {number} props.refresh - Timestamp to trigger data refresh
+ * @returns {JSX.Element} Championship submissions table
+ */
 export default function ChampionshipSubmissions({ refresh }) {
+  const { isDark } = useTheme();
+  const { t } = useLanguage();
   const [subs, setSubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -73,7 +53,7 @@ export default function ChampionshipSubmissions({ refresh }) {
         setSubs(list);
       } catch (e) {
         console.error(e);
-        setError("Impossibile caricare le formazioni campionato.");
+        setError("Unable to load championship lineups.");
       } finally {
         setLoading(false);
       }
@@ -101,25 +81,34 @@ export default function ChampionshipSubmissions({ refresh }) {
   if (!subs.length) {
     return (
       <Alert variant="info" className="mt-4">
-        Nessuna formazione campionato inviata.
+        No championship lineups submitted yet.
       </Alert>
     );
   }
 
+  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
+  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
+
   return (
-    <Card className="mt-4 shadow h-100 border-danger">
+    <Card
+      className="mt-4 shadow h-100"
+      style={{
+        borderLeft: `4px solid ${accentColor}`,
+        backgroundColor: bgCard
+      }}
+    >
       <Card.Body>
         <Card.Title className="text-center mb-3">
-          Formazioni Campionato Inviate ({subs.length})
+          {t("history.formationsAndPoints")} ({subs.length})
         </Card.Title>
         <div className="table-responsive">
           <Table striped bordered hover size="sm" className="mb-0 align-middle">
             <thead>
               <tr>
                 <th>#</th>
-                <th>Utente</th>
-                <th>Piloti Top 3</th>
-                <th>Costruttori Top 3</th>
+                <th>{t("leaderboard.player")}</th>
+                <th>{t("history.topDrivers")}</th>
+                <th>{t("history.topConstructors")}</th>
               </tr>
             </thead>
             <tbody>

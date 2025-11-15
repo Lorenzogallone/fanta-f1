@@ -1,3 +1,8 @@
+/**
+ * @file main.jsx
+ * @description Application entry point - initializes React root and renders App component
+ */
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import React from "react";
 import ReactDOM from "react-dom/client";

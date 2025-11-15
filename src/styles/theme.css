@@ -1,0 +1,690 @@
+/* src/theme.css - Gestione Dark/Light Mode */
+
+:root {
+  /* Light Mode - Colori principali */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --text-muted: #adb5bd;
+  --border-color: #dee2e6;
+  --accent-red: #dc3545;
+  --accent-red-hover: #c82333;
+  --shadow: rgba(0, 0, 0, 0.1);
+  --shadow-hover: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] {
+  /* Dark Mode - Colori principali */
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #404040;
+  --text-primary: #f8f9fa;
+  --text-secondary: #adb5bd;
+  --text-muted: #6c757d;
+  --border-color: #404040;
+  --accent-red: #ff4d5a;
+  --accent-red-hover: #ff6b77;
+  --shadow: rgba(0, 0, 0, 0.3);
+  --shadow-hover: rgba(0, 0, 0, 0.4);
+}
+
+/* Applicazione globale dei colori */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Override Bootstrap per Dark Mode */
+[data-theme="dark"] .bg-white {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .bg-light {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .text-dark {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .text-muted {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .border {
+  border-color: var(--border-color) !important;
+}
+
+/* Cards */
+[data-theme="dark"] .card {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .card-header {
+  background-color: var(--bg-tertiary) !important;
+  border-color: var(--border-color);
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .card-body {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Tables */
+[data-theme="dark"] .table {
+  color: var(--text-primary) !important;
+  border-color: var(--border-color);
+  background-color: var(--bg-secondary);
+}
+
+[data-theme="dark"] .table tbody,
+[data-theme="dark"] .table thead,
+[data-theme="dark"] .table tfoot {
+  background-color: transparent;
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .table tbody tr {
+  background-color: transparent;
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .table-light {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .table-hover tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .table thead th {
+  border-color: var(--border-color);
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .table td,
+[data-theme="dark"] .table th {
+  border-color: var(--border-color);
+  background-color: transparent;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .table tbody td,
+[data-theme="dark"] .table tbody th {
+  color: var(--text-primary) !important;
+}
+
+/* Forms */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+  background-color: var(--bg-tertiary);
+  border-color: var(--accent-red);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-control::placeholder {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .form-label {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-text {
+  color: var(--text-secondary);
+}
+
+/* Alerts */
+[data-theme="dark"] .alert-info {
+  background-color: #1a3a52;
+  border-color: #2d5f7f;
+  color: #a3d5ff;
+}
+
+[data-theme="dark"] .alert-success {
+  background-color: #1a3d2e;
+  border-color: #2d6650;
+  color: #a3ffcf;
+}
+
+[data-theme="dark"] .alert-warning {
+  background-color: #4a3d1a;
+  border-color: #7f6a2d;
+  color: #ffd89a;
+}
+
+[data-theme="dark"] .alert-danger {
+  background-color: #4a1a1a;
+  border-color: #7f2d2d;
+  color: #ffb3b3;
+}
+
+[data-theme="dark"] .alert-light {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+/* Buttons */
+[data-theme="dark"] .btn-outline-secondary {
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .btn-outline-secondary:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .btn-outline-danger {
+  color: var(--accent-red);
+  border-color: var(--accent-red);
+}
+
+[data-theme="dark"] .btn-outline-danger:hover {
+  background-color: var(--accent-red);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .btn-light {
+  background-color: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .btn-light:hover {
+  background-color: var(--bg-primary) !important;
+  border-color: var(--accent-red) !important;
+  color: var(--accent-red) !important;
+}
+
+[data-theme="dark"] .btn-secondary {
+  background-color: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+  background-color: var(--bg-primary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .btn-success {
+  background-color: #198754 !important;
+  border-color: #198754 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .btn-success:hover {
+  background-color: #157347 !important;
+  border-color: #157347 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .btn-warning {
+  background-color: #ffc107 !important;
+  border-color: #ffc107 !important;
+  color: #000000 !important;
+}
+
+[data-theme="dark"] .btn-warning:hover {
+  background-color: #ffca2c !important;
+  border-color: #ffca2c !important;
+  color: #000000 !important;
+}
+
+[data-theme="dark"] .btn-danger {
+  background-color: var(--accent-red) !important;
+  border-color: var(--accent-red) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .btn-danger:hover {
+  background-color: var(--accent-red-hover) !important;
+  border-color: var(--accent-red-hover) !important;
+  color: #ffffff !important;
+}
+
+/* Modals */
+[data-theme="dark"] .modal-content {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .modal-header {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .modal-footer {
+  border-color: var(--border-color);
+}
+
+/* Badges */
+[data-theme="dark"] .badge {
+  background-color: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .badge.bg-secondary {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Links */
+[data-theme="dark"] a {
+  color: var(--accent-red);
+}
+
+[data-theme="dark"] a:hover {
+  color: var(--accent-red-hover);
+}
+
+/* Bootstrap text utilities override */
+[data-theme="dark"] .text-center,
+[data-theme="dark"] .text-start,
+[data-theme="dark"] .text-end {
+  color: inherit;
+}
+
+[data-theme="dark"] .fw-bold {
+  color: inherit;
+}
+
+/* Spinner */
+[data-theme="dark"] .spinner-border {
+  color: var(--accent-red);
+}
+
+/* React-Select Dark Mode */
+[data-theme="dark"] .react-select__control {
+  background-color: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .react-select__control:hover {
+  border-color: var(--accent-red) !important;
+}
+
+[data-theme="dark"] .react-select__menu {
+  background-color: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .react-select__option {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .react-select__option:hover {
+  background-color: var(--bg-tertiary) !important;
+}
+
+[data-theme="dark"] .react-select__option--is-selected {
+  background-color: var(--accent-red) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .react-select__single-value {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .react-select__placeholder {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .react-select__input {
+  color: var(--text-primary) !important;
+}
+
+/* Navbar migliorata */
+.navbar-modern {
+  box-shadow: 0 2px 8px var(--shadow);
+  transition: all 0.3s ease;
+}
+
+.navbar-modern .nav-link {
+  position: relative;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  color: var(--text-primary) !important;
+  font-size: 1rem;
+}
+
+/* Mobile: link più grandi e touch-friendly */
+@media (max-width: 991px) {
+  .navbar-modern .nav-link {
+    padding: 1rem 1.25rem;
+    font-size: 1.1rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .navbar-modern .nav-link:last-child {
+    border-bottom: none;
+  }
+}
+
+.navbar-modern .nav-link:hover {
+  color: var(--accent-red) !important;
+  transform: translateY(-1px);
+  background-color: var(--bg-tertiary);
+}
+
+.navbar-modern .nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background-color: var(--accent-red);
+  transition: width 0.3s ease;
+}
+
+/* Desktop: underline animation */
+@media (min-width: 992px) {
+  .navbar-modern .nav-link:hover::after,
+  .navbar-modern .nav-link.active::after {
+    width: 80%;
+  }
+}
+
+/* Mobile: highlight attivo */
+@media (max-width: 991px) {
+  .navbar-modern .nav-link.active {
+    background-color: var(--bg-tertiary);
+    color: var(--accent-red) !important;
+    font-weight: 700;
+  }
+
+  .navbar-modern .nav-link::after {
+    display: none;
+  }
+}
+
+/* Navbar Toggle (Hamburger) */
+.navbar-toggler {
+  padding: 0.5rem;
+  font-size: 1.5rem;
+}
+
+[data-theme="dark"] .navbar-toggler-icon {
+  filter: invert(1);
+}
+
+/* Collapse animation su mobile */
+@media (max-width: 991px) {
+  .navbar-collapse {
+    margin-top: 1rem;
+    border-top: 2px solid var(--accent-red);
+    padding-top: 0.5rem;
+  }
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+  position: relative;
+  width: 50px;
+  height: 28px;
+  background-color: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.theme-toggle:hover {
+  border-color: var(--accent-red);
+  box-shadow: 0 0 8px var(--shadow-hover);
+}
+
+.theme-toggle-slider {
+  width: 18px;
+  height: 18px;
+  background-color: var(--accent-red);
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+}
+
+[data-theme="dark"] .theme-toggle-slider {
+  transform: translateX(22px);
+}
+
+/* Logo hover effect */
+.logo-wrapper {
+  transition: transform 0.2s ease;
+}
+
+.logo-wrapper:hover {
+  transform: scale(1.05);
+}
+
+/* Admin link highlight */
+.admin-link {
+  font-weight: 700 !important;
+  color: var(--accent-red) !important;
+}
+
+.admin-link:hover {
+  color: var(--accent-red-hover) !important;
+}
+
+/* Nav Tabs */
+[data-theme="dark"] .nav-tabs {
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .nav-tabs .nav-link {
+  color: var(--text-secondary);
+  background-color: transparent;
+  border-color: transparent;
+}
+
+[data-theme="dark"] .nav-tabs .nav-link:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .nav-tabs .nav-link.active {
+  color: var(--text-primary) !important;
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-color) var(--border-color) var(--bg-secondary) !important;
+}
+
+[data-theme="dark"] .nav-tabs .nav-item {
+  color: var(--text-primary);
+}
+
+/* Tab Content */
+[data-theme="dark"] .tab-content {
+  background-color: transparent;
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .tab-pane {
+  color: var(--text-primary);
+}
+
+/* Headings in dark mode */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6 {
+  color: var(--text-primary);
+}
+
+/* Paragraphs and spans */
+[data-theme="dark"] p,
+[data-theme="dark"] span,
+[data-theme="dark"] div {
+  color: inherit;
+}
+
+/* Strong and bold text */
+[data-theme="dark"] strong,
+[data-theme="dark"] b {
+  color: var(--text-primary);
+}
+
+/* Lists */
+[data-theme="dark"] ul,
+[data-theme="dark"] ol,
+[data-theme="dark"] li {
+  color: var(--text-primary);
+}
+
+/* Small text */
+[data-theme="dark"] small,
+[data-theme="dark"] .small {
+  color: var(--text-secondary);
+}
+
+/* Card title */
+[data-theme="dark"] .card-title {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .card-text {
+  color: var(--text-primary);
+}
+
+/* Hover effect for clickable names */
+.hover-link {
+  cursor: pointer;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.hover-link:hover {
+  color: var(--accent-red) !important;
+  text-decoration: underline !important;
+}
+
+[data-theme="dark"] .hover-link:hover {
+  color: var(--accent-red-hover) !important;
+}
+
+/* Accordion Styles - Light Mode */
+.accordion-item {
+  background-color: var(--bg-secondary);
+  border-color: #dee2e6; /* Bordo visibile in light mode */
+  border-width: 1px;
+  margin-bottom: 8px; /* Spazio tra gli accordion items */
+  border-radius: 4px; /* Angoli arrotondati per miglior aspetto */
+}
+
+.accordion-item:last-child {
+  margin-bottom: 0; /* Rimuovi margine dall'ultimo item */
+}
+
+.accordion-button {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  border-color: #dee2e6;
+}
+
+.accordion-button:not(.collapsed) {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  box-shadow: none;
+  border-bottom-color: #dee2e6; /* Bordo visibile anche quando espanso */
+}
+
+.accordion-button:focus {
+  border-color: var(--accent-red);
+  box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+.accordion-body {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-top: 1px solid #dee2e6; /* Linea divisoria tra header e body */
+}
+
+.accordion-collapse {
+  background-color: var(--bg-secondary);
+  border-color: #dee2e6;
+}
+
+/* Accordion Styles - Dark Mode */
+[data-theme="dark"] .accordion-item {
+  background-color: var(--bg-secondary);
+  border-color: #555555; /* Bordo più chiaro e visibile */
+  border-width: 1px;
+  margin-bottom: 8px; /* Spazio tra gli accordion items */
+  border-radius: 4px; /* Angoli arrotondati per miglior aspetto */
+}
+
+[data-theme="dark"] .accordion-item:last-child {
+  margin-bottom: 0; /* Rimuovi margine dall'ultimo item */
+}
+
+[data-theme="dark"] .accordion-button {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  border-color: #555555;
+}
+
+[data-theme="dark"] .accordion-button:not(.collapsed) {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  box-shadow: none;
+  border-bottom-color: #555555; /* Bordo visibile anche quando espanso */
+}
+
+[data-theme="dark"] .accordion-button:focus {
+  border-color: var(--accent-red);
+  box-shadow: 0 0 0 0.25rem rgba(255, 77, 90, 0.25);
+}
+
+[data-theme="dark"] .accordion-button::after {
+  filter: invert(1);
+}
+
+[data-theme="dark"] .accordion-body {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-top: 1px solid #555555; /* Linea divisoria tra header e body */
+}
+
+[data-theme="dark"] .accordion-collapse {
+  background-color: var(--bg-secondary);
+  border-color: #555555;
+}
