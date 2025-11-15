@@ -73,23 +73,150 @@ export default function RaceResults() {
   const [selectedRaceId, setSelectedRaceId] = useState(null);
   const [selectedRace, setSelectedRace] = useState(null);
   const [sessions, setSessions] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingRaces, setLoadingRaces] = useState(true);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [error, setError] = useState(null);
   const [activeKeys, setActiveKeys] = useState([]);
   const [canSubmitFormation, setCanSubmitFormation] = useState(false);
+
+  // Lazy loading states for individual sessions
+  const [loadingSessionKeys, setLoadingSessionKeys] = useState({});
+  const [sessionsCache, setSessionsCache] = useState({});
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
   const bgHeader = isDark ? "var(--bg-tertiary)" : "#ffffff";
 
   /**
-   * Load all races from Firestore
+   * Renders session accordion body with loading state
+   * @param {Array|null} data - Session data
+   * @param {string} eventKey - Accordion event key for this session
+   * @returns {JSX.Element} Accordion body content
+   */
+  const renderSessionBody = (data, eventKey) => {
+    // Check if this accordion is currently open
+    const isOpen = activeKeys.includes(eventKey);
+
+    // If not open, don't render content yet (performance optimization)
+    if (!isOpen) {
+      return null;
+    }
+
+    // If data is not loaded yet, show spinner
+    if (!data || data.length === 0) {
+      return (
+        <div className="text-center py-4">
+          <Spinner animation="border" size="sm" />
+          <p className="mt-3 mb-0 text-muted">{t("common.loading")}</p>
+        </div>
+      );
+    }
+
+    // Render the data table
+    return (
+      <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
+        <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
+          <thead>
+            <tr>
+              <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
+              <th style={{ color: accentColor }}>{t("formations.driver")}</th>
+              <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((result, idx) => (
+              <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
+                <td className="text-center">
+                  {result.position} {result.fastestLap || ""}
+                </td>
+                <td>
+                  <DriverWithLogo name={result.driver} />
+                </td>
+                <td className="text-center text-muted font-monospace">{result.gap}</td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </div>
+    );
+  };
+
+  /**
+   * Renders qualifying accordion body with Q session badges and loading state
+   * @param {Array|null} data - Qualifying data
+   * @returns {JSX.Element} Accordion body content
+   */
+  const renderQualifyingBody = (data) => {
+    // Check if this accordion is currently open
+    const isOpen = activeKeys.includes("qualifying");
+
+    // If not open, don't render content yet (performance optimization)
+    if (!isOpen) {
+      return null;
+    }
+
+    // If data is not loaded yet, show spinner
+    if (!data || data.length === 0) {
+      return (
+        <div className="text-center py-4">
+          <Spinner animation="border" size="sm" />
+          <p className="mt-3 mb-0 text-muted">{t("common.loading")}</p>
+        </div>
+      );
+    }
+
+    // Render qualifying table with Q session badges
+    return (
+      <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
+        <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
+          <thead>
+            <tr>
+              <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
+              <th style={{ color: accentColor }}>{t("formations.driver")}</th>
+              <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
+              <th style={{ color: accentColor }} className="text-center">Q</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((result, idx) => {
+              const pos = parseInt(result.position);
+              let qSession = "Q1";
+              let qVariant = "danger";
+              if (pos <= 10) {
+                qSession = "Q3";
+                qVariant = "success";
+              } else if (pos <= 15) {
+                qSession = "Q2";
+                qVariant = "warning";
+              }
+              return (
+                <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
+                  <td>{result.position}</td>
+                  <td>
+                    <DriverWithLogo name={result.driver} />
+                  </td>
+                  <td className="text-muted font-monospace">{result.gap}</td>
+                  <td className="text-center">
+                    <Badge bg={qVariant} text={qVariant === "warning" ? "dark" : "light"}>
+                      {qSession}
+                    </Badge>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </Table>
+      </div>
+    );
+  };
+
+  /**
+   * Load all races from Firestore and last race sessions progressively
    */
   useEffect(() => {
-    (async () => {
+    // Load races list first (fast)
+    const loadRaces = async () => {
       try {
-        const now = Timestamp.now();
         const snap = await getDocs(
           query(
             collection(db, "races"),
@@ -101,18 +228,50 @@ export default function RaceResults() {
           ...d.data(),
         }));
         setRaces(raceList);
+        setLoadingRaces(false); // Show race selector immediately
 
-        // Load last race sessions automatically
+        // After races load, get last race info and start loading sessions
         const lastRaceData = await fetchLastRaceSessions();
         if (lastRaceData) {
-          setSessions(lastRaceData);
           // Find matching race in Firestore
           const matchingRace = raceList.find(
             (r) => r.round === lastRaceData.round
           );
           if (matchingRace) {
             setSelectedRaceId(matchingRace.id);
+            setSelectedRace(matchingRace);
           }
+
+          // Show sessions structure immediately
+          setSessions({
+            raceName: lastRaceData.raceName,
+            date: lastRaceData.date,
+            season: lastRaceData.season,
+            round: lastRaceData.round,
+            // Flags to show which accordions to render
+            hasFP1: lastRaceData.hasFP1,
+            hasFP2: lastRaceData.hasFP2,
+            hasFP3: lastRaceData.hasFP3,
+            hasSprintQualifying: lastRaceData.hasSprintQualifying,
+            hasQualifying: lastRaceData.hasQualifying,
+            hasSprint: lastRaceData.hasSprint,
+            hasRace: lastRaceData.hasRace,
+            // Data will be loaded lazily
+            fp1: lastRaceData.fp1,
+            fp2: lastRaceData.fp2,
+            fp3: lastRaceData.fp3,
+            sprintQualifying: lastRaceData.sprintQualifying,
+            qualifying: lastRaceData.qualifying,
+            sprint: lastRaceData.sprint,
+            race: lastRaceData.race,
+          });
+
+          // Cache the loaded sessions
+          const cacheKey = `${lastRaceData.season}-${lastRaceData.round}`;
+          setSessionsCache(prev => ({
+            ...prev,
+            [cacheKey]: lastRaceData
+          }));
 
           // Set default expanded keys based on session status
           const defaultKeys = [];
@@ -136,21 +295,20 @@ export default function RaceResults() {
       } catch (e) {
         console.error("Error loading races:", e);
         setError(t("errors.generic"));
-      } finally {
-        setLoading(false);
+        setLoadingRaces(false);
       }
-    })();
+    };
+
+    loadRaces();
   }, [t]);
 
   /**
-   * Load sessions when race changes
+   * Load sessions when race changes (with caching)
    */
   const handleRaceChange = async (raceId) => {
     if (!raceId) return;
 
     setSelectedRaceId(raceId);
-    setLoadingSessions(true);
-    setSessions(null);
     setError(null);
     setCanSubmitFormation(false);
 
@@ -165,6 +323,52 @@ export default function RaceResults() {
 
       const season = race.raceUTC.toDate().getFullYear();
       const round = race.round;
+      const cacheKey = `${season}-${round}`;
+
+      // Check cache first
+      if (sessionsCache[cacheKey]) {
+        console.log(`Using cached sessions for ${season} R${round}`);
+        const sessionData = sessionsCache[cacheKey];
+
+        setSessions({
+          raceName: race.name,
+          date: race.raceUTC.toDate().toLocaleDateString(),
+          season,
+          round,
+          ...sessionData,
+        });
+
+        // Set default expanded keys
+        const defaultKeys = [];
+        if (sessionData.hasRace) {
+          defaultKeys.push("race");
+        } else if (sessionData.hasSprint) {
+          defaultKeys.push("sprint");
+        } else if (sessionData.hasSprintQualifying) {
+          defaultKeys.push("sprintQualifying");
+        } else if (sessionData.hasQualifying) {
+          defaultKeys.push("qualifying");
+        } else if (sessionData.hasFP3) {
+          defaultKeys.push("fp3");
+        } else if (sessionData.hasFP2) {
+          defaultKeys.push("fp2");
+        } else if (sessionData.hasFP1) {
+          defaultKeys.push("fp1");
+        }
+        setActiveKeys(defaultKeys);
+
+        // Check if user can still submit formation
+        const now = Timestamp.now();
+        const deadlineHasPassed = race.raceUTC.toDate() < now.toDate();
+        const canSubmit = !deadlineHasPassed && (!sessionData.hasQualifying || !sessionData.hasSprintQualifying);
+        setCanSubmitFormation(canSubmit);
+
+        return;
+      }
+
+      // Not in cache - load from API
+      setLoadingSessions(true);
+      setSessions(null);
 
       const sessionData = await fetchAllSessions(season, round);
 
@@ -176,6 +380,12 @@ export default function RaceResults() {
         return;
       }
 
+      // Cache the sessions
+      setSessionsCache(prev => ({
+        ...prev,
+        [cacheKey]: sessionData
+      }));
+
       setSessions({
         raceName: race.name,
         date: race.raceUTC.toDate().toLocaleDateString(),
@@ -185,7 +395,6 @@ export default function RaceResults() {
       });
 
       // Check if user can still submit formation
-      // If qualifying or sprint qualifying hasn't happened yet and deadline hasn't passed
       const now = Timestamp.now();
       const deadlineHasPassed = race.raceUTC.toDate() < now.toDate();
       const canSubmit = !deadlineHasPassed && (!sessionData.hasQualifying || !sessionData.hasSprintQualifying);
@@ -201,8 +410,6 @@ export default function RaceResults() {
         defaultKeys.push("sprintQualifying");
       } else if (sessionData.hasQualifying) {
         defaultKeys.push("qualifying");
-      } else if (sessionData.hasFP3) {
-        defaultKeys.push("fp3");
       } else if (sessionData.hasFP2) {
         defaultKeys.push("fp2");
       } else if (sessionData.hasFP1) {
@@ -217,10 +424,12 @@ export default function RaceResults() {
     }
   };
 
-  if (loading) {
+  // Show loading only while loading races list
+  if (loadingRaces) {
     return (
       <Container className="py-5 text-center">
         <Spinner animation="border" />
+        <p className="mt-3">{t("common.loading")}</p>
       </Container>
     );
   }
@@ -296,8 +505,8 @@ export default function RaceResults() {
           </Card>
         </Col>
 
-        {/* Loading state */}
-        {loadingSessions && (
+        {/* Loading state - only when no sessions data at all */}
+        {loadingSessions && !sessions && (
           <Col xs={12} className="text-center">
             <Spinner animation="border" />
             <p className="mt-3 text-muted">{t("common.loading")}</p>
@@ -305,14 +514,14 @@ export default function RaceResults() {
         )}
 
         {/* Error state */}
-        {error && !loadingSessions && (
+        {error && !sessions && (
           <Col xs={12}>
             <Alert variant="warning">{error}</Alert>
           </Col>
         )}
 
-        {/* Sessions Display */}
-        {sessions && !loadingSessions && !error && (
+        {/* Sessions Display - show as soon as we have session metadata */}
+        {sessions && (
           <Col xs={12}>
             <Card
               className="shadow"
@@ -372,28 +581,7 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
-                          <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
-                            <thead>
-                              <tr>
-                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
-                                <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {sessions.fp1.map((result, idx) => (
-                                <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                  <td className="text-center">{result.position}</td>
-                                  <td>
-                                    <DriverWithLogo name={result.driver} />
-                                  </td>
-                                  <td className="text-center text-muted font-monospace">{result.gap}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </Table>
-                        </div>
+                        {renderSessionBody(sessions.fp1, "fp1")}
                       </Accordion.Body>
                     </Accordion.Item>
                   )}
@@ -407,28 +595,7 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
-                          <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
-                            <thead>
-                              <tr>
-                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
-                                <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {sessions.fp2.map((result, idx) => (
-                                <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                  <td className="text-center">{result.position}</td>
-                                  <td>
-                                    <DriverWithLogo name={result.driver} />
-                                  </td>
-                                  <td className="text-center text-muted font-monospace">{result.gap}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </Table>
-                        </div>
+                        {renderSessionBody(sessions.fp2, "fp2")}
                       </Accordion.Body>
                     </Accordion.Item>
                   )}
@@ -442,28 +609,7 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
-                          <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
-                            <thead>
-                              <tr>
-                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
-                                <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {sessions.fp3.map((result, idx) => (
-                                <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                  <td className="text-center">{result.position}</td>
-                                  <td>
-                                    <DriverWithLogo name={result.driver} />
-                                  </td>
-                                  <td className="text-center text-muted font-monospace">{result.gap}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </Table>
-                        </div>
+                        {renderSessionBody(sessions.fp3, "fp3")}
                       </Accordion.Body>
                     </Accordion.Item>
                   )}
@@ -477,28 +623,7 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
-                          <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
-                            <thead>
-                              <tr>
-                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
-                                <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {sessions.sprintQualifying.map((result, idx) => (
-                                <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                  <td className="text-center">{result.position}</td>
-                                  <td>
-                                    <DriverWithLogo name={result.driver} />
-                                  </td>
-                                  <td className="text-center text-muted font-monospace">{result.gap}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </Table>
-                        </div>
+                        {renderSessionBody(sessions.sprintQualifying, "sprintQualifying")}
                       </Accordion.Body>
                     </Accordion.Item>
                   )}
@@ -512,46 +637,7 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
-                          <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
-                            <thead>
-                              <tr>
-                                <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
-                                <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
-                                <th style={{ color: accentColor }} className="text-center">Q</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {sessions.qualifying.map((result, idx) => {
-                                const pos = parseInt(result.position);
-                                let qSession = "Q1";
-                                let qVariant = "danger";
-                                if (pos <= 10) {
-                                  qSession = "Q3";
-                                  qVariant = "success";
-                                } else if (pos <= 15) {
-                                  qSession = "Q2";
-                                  qVariant = "warning";
-                                }
-                                return (
-                                  <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                    <td>{result.position}</td>
-                                    <td>
-                                      <DriverWithLogo name={result.driver} />
-                                    </td>
-                                    <td className="text-muted font-monospace">{result.gap}</td>
-                                    <td className="text-center">
-                                      <Badge bg={qVariant} text={qVariant === "warning" ? "dark" : "light"}>
-                                        {qSession}
-                                      </Badge>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </Table>
-                        </div>
+                        {renderQualifyingBody(sessions.qualifying)}
                       </Accordion.Body>
                     </Accordion.Item>
                   )}
@@ -565,28 +651,7 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
-                          <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
-                            <thead>
-                              <tr>
-                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
-                                <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {sessions.sprint.map((result, idx) => (
-                                <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                  <td className="text-center">{result.position}</td>
-                                  <td>
-                                    <DriverWithLogo name={result.driver} />
-                                  </td>
-                                  <td className="text-center text-muted font-monospace">{result.gap}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </Table>
-                        </div>
+                        {renderSessionBody(sessions.sprint, "sprint")}
                       </Accordion.Body>
                     </Accordion.Item>
                   )}
@@ -600,30 +665,7 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
-                          <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
-                            <thead>
-                              <tr>
-                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
-                                <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                                <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {sessions.race.map((result, idx) => (
-                                <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                  <td>
-                                    {result.position} {result.fastestLap}
-                                  </td>
-                                  <td>
-                                    <DriverWithLogo name={result.driver} />
-                                  </td>
-                                  <td className="text-muted font-monospace">{result.gap}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </Table>
-                        </div>
+                        {renderSessionBody(sessions.race, "race")}
                       </Accordion.Body>
                     </Accordion.Item>
                   )}
