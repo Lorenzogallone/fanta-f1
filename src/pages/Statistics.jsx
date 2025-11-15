@@ -48,7 +48,8 @@ const CHART_COLORS = [
  * @returns {JSX.Element} Statistics page with charts and ranking table
  */
 export default function Statistics() {
-  const [loading, setLoading] = useState(true);
+  const [loadingRanking, setLoadingRanking] = useState(true);
+  const [loadingStatistics, setLoadingStatistics] = useState(true);
   const [error, setError] = useState(null);
   const [statistics, setStatistics] = useState(null);
   const [currentRanking, setCurrentRanking] = useState([]);
@@ -56,12 +57,9 @@ export default function Statistics() {
   const { t } = useLanguage();
 
   useEffect(() => {
-    (async () => {
+    // Load ranking and statistics in parallel for faster initial render
+    const loadRanking = async () => {
       try {
-        const data = await getChampionshipStatistics();
-        setStatistics(data);
-
-        // Get current ranking from database
         const rankingSnap = await getDocs(
           query(collection(db, "ranking"), orderBy("puntiTotali", "desc"))
         );
@@ -74,13 +72,29 @@ export default function Statistics() {
         }));
 
         setCurrentRanking(ranking);
+        setLoadingRanking(false); // Show ranking immediately
       } catch (err) {
-        console.error(err);
+        console.error("Error loading ranking:", err);
         setError(t("statistics.errorLoading"));
-      } finally {
-        setLoading(false);
+        setLoadingRanking(false);
       }
-    })();
+    };
+
+    const loadStatistics = async () => {
+      try {
+        const data = await getChampionshipStatistics();
+        setStatistics(data);
+        setLoadingStatistics(false); // Show charts when ready
+      } catch (err) {
+        console.error("Error loading statistics:", err);
+        // Don't set error here - ranking might still be visible
+        setLoadingStatistics(false);
+      }
+    };
+
+    // Execute both in parallel
+    loadRanking();
+    loadStatistics();
   }, [t]);
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
@@ -89,7 +103,8 @@ export default function Statistics() {
   const textColor = isDark ? "#e9ecef" : "#212529";
   const gridColor = isDark ? "#495057" : "#dee2e6";
 
-  if (loading) {
+  // Show loading only if ranking hasn't loaded yet
+  if (loadingRanking && currentRanking.length === 0) {
     return (
       <Container className="py-5 text-center">
         <Spinner animation="border" />
@@ -98,7 +113,7 @@ export default function Statistics() {
     );
   }
 
-  if (error) {
+  if (error && currentRanking.length === 0) {
     return (
       <Container className="py-5">
         <Alert variant="danger">{error}</Alert>
@@ -106,50 +121,46 @@ export default function Statistics() {
     );
   }
 
-  if (!statistics || !statistics.races.length) {
-    return (
-      <Container className="py-5">
-        <Alert variant="info">
-          {t("statistics.noRaces")}
-        </Alert>
-      </Container>
-    );
-  }
-
   // Show only top 5 players in charts to reduce visual clutter
   const topPlayers = currentRanking.slice(0, 5);
 
-  // Prepare data for cumulative points chart
-  const pointsChartData = statistics.races.map((race, raceIndex) => {
-    const dataPoint = {
-      name: `R${race.round}`,
-      fullName: race.name,
-    };
+  // Prepare chart data only if statistics are loaded
+  let pointsChartData = [];
+  let positionChartData = [];
 
-    topPlayers.forEach(player => {
-      const history = statistics.playersData[player.userId] || [];
-      const raceData = history[raceIndex];
-      dataPoint[player.name] = raceData ? raceData.cumulativePoints : 0;
+  if (statistics && statistics.races && statistics.races.length > 0) {
+    // Prepare data for cumulative points chart
+    pointsChartData = statistics.races.map((race, raceIndex) => {
+      const dataPoint = {
+        name: `R${race.round}`,
+        fullName: race.name,
+      };
+
+      topPlayers.forEach(player => {
+        const history = statistics.playersData[player.userId] || [];
+        const raceData = history[raceIndex];
+        dataPoint[player.name] = raceData ? raceData.cumulativePoints : 0;
+      });
+
+      return dataPoint;
     });
 
-    return dataPoint;
-  });
+    // Prepare data for position chart (inverted: 1st at top)
+    positionChartData = statistics.races.map((race, raceIndex) => {
+      const dataPoint = {
+        name: `R${race.round}`,
+        fullName: race.name,
+      };
 
-  // Prepare data for position chart (inverted: 1st at top)
-  const positionChartData = statistics.races.map((race, raceIndex) => {
-    const dataPoint = {
-      name: `R${race.round}`,
-      fullName: race.name,
-    };
+      topPlayers.forEach(player => {
+        const history = statistics.playersData[player.userId] || [];
+        const raceData = history[raceIndex];
+        dataPoint[player.name] = raceData ? raceData.position : null;
+      });
 
-    topPlayers.forEach(player => {
-      const history = statistics.playersData[player.userId] || [];
-      const raceData = history[raceIndex];
-      dataPoint[player.name] = raceData ? raceData.position : null;
+      return dataPoint;
     });
-
-    return dataPoint;
-  });
+  }
 
   /**
    * Custom tooltip to display full race name
@@ -299,131 +310,204 @@ export default function Statistics() {
 
         {/* Grafici */}
         <Col xs={12} lg={8}>
-          {/* Grafico punti cumulativi */}
-          <Card
-            className="shadow mb-4"
-            style={{
-              borderColor: accentColor,
-              backgroundColor: bgCard,
-            }}
-          >
-            <Card.Header
-              as="h6"
-              className="fw-semibold"
-              style={{
-                backgroundColor: bgHeader,
-                borderBottom: `2px solid ${accentColor}`,
-              }}
-            >
-              {t("statistics.pointsProgression")} ({t("statistics.topPlayers")})
-            </Card.Header>
-            <Card.Body>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart
-                  data={pointsChartData}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          {loadingStatistics ? (
+            // Show loading placeholders for charts
+            <>
+              <Card
+                className="shadow mb-4"
+                style={{
+                  borderColor: accentColor,
+                  backgroundColor: bgCard,
+                }}
+              >
+                <Card.Header
+                  as="h6"
+                  className="fw-semibold"
+                  style={{
+                    backgroundColor: bgHeader,
+                    borderBottom: `2px solid ${accentColor}`,
+                  }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                  <XAxis
-                    dataKey="name"
-                    stroke={textColor}
-                    style={{ fontSize: "0.85rem" }}
-                  />
-                  <YAxis
-                    stroke={textColor}
-                    style={{ fontSize: "0.85rem" }}
-                    label={{
-                      value: t("statistics.points"),
-                      angle: -90,
-                      position: "insideLeft",
-                      style: { fill: textColor, fontSize: "0.7rem" },
-                    }}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend
-                    wrapperStyle={{ fontSize: "0.85rem" }}
-                    iconType="line"
-                  />
-                  {topPlayers.map((player, idx) => (
-                    <Line
-                      key={player.userId}
-                      type="monotone"
-                      dataKey={player.name}
-                      stroke={CHART_COLORS[idx]}
-                      strokeWidth={3}
-                      dot={false}
-                    />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </Card.Body>
-          </Card>
+                  {t("statistics.pointsProgression")} ({t("statistics.topPlayers")})
+                </Card.Header>
+                <Card.Body className="text-center" style={{ height: 400, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div>
+                    <Spinner animation="border" size="sm" />
+                    <p className="mt-3 mb-0 text-muted">{t("statistics.loadingCharts") || "Loading charts..."}</p>
+                  </div>
+                </Card.Body>
+              </Card>
 
-          {/* Grafico posizioni */}
-          <Card
-            className="shadow"
-            style={{
-              borderColor: accentColor,
-              backgroundColor: bgCard,
-            }}
-          >
-            <Card.Header
-              as="h6"
-              className="fw-semibold"
+              <Card
+                className="shadow"
+                style={{
+                  borderColor: accentColor,
+                  backgroundColor: bgCard,
+                }}
+              >
+                <Card.Header
+                  as="h6"
+                  className="fw-semibold"
+                  style={{
+                    backgroundColor: bgHeader,
+                    borderBottom: `2px solid ${accentColor}`,
+                  }}
+                >
+                  {t("statistics.positionProgression")} ({t("statistics.topPlayers")})
+                </Card.Header>
+                <Card.Body className="text-center" style={{ height: 400, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div>
+                    <Spinner animation="border" size="sm" />
+                    <p className="mt-3 mb-0 text-muted">{t("statistics.loadingCharts") || "Loading charts..."}</p>
+                  </div>
+                </Card.Body>
+              </Card>
+            </>
+          ) : statistics && statistics.races && statistics.races.length > 0 ? (
+            // Show charts when statistics are loaded
+            <>
+              {/* Grafico punti cumulativi */}
+              <Card
+                className="shadow mb-4"
+                style={{
+                  borderColor: accentColor,
+                  backgroundColor: bgCard,
+                }}
+              >
+                <Card.Header
+                  as="h6"
+                  className="fw-semibold"
+                  style={{
+                    backgroundColor: bgHeader,
+                    borderBottom: `2px solid ${accentColor}`,
+                  }}
+                >
+                  {t("statistics.pointsProgression")} ({t("statistics.topPlayers")})
+                </Card.Header>
+                <Card.Body>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart
+                      data={pointsChartData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                      <XAxis
+                        dataKey="name"
+                        stroke={textColor}
+                        style={{ fontSize: "0.85rem" }}
+                      />
+                      <YAxis
+                        stroke={textColor}
+                        style={{ fontSize: "0.85rem" }}
+                        label={{
+                          value: t("statistics.points"),
+                          angle: -90,
+                          position: "insideLeft",
+                          style: { fill: textColor, fontSize: "0.7rem" },
+                        }}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend
+                        wrapperStyle={{ fontSize: "0.85rem" }}
+                        iconType="line"
+                      />
+                      {topPlayers.map((player, idx) => (
+                        <Line
+                          key={player.userId}
+                          type="monotone"
+                          dataKey={player.name}
+                          stroke={CHART_COLORS[idx]}
+                          strokeWidth={3}
+                          dot={false}
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Card.Body>
+              </Card>
+
+              {/* Grafico posizioni */}
+              <Card
+                className="shadow"
+                style={{
+                  borderColor: accentColor,
+                  backgroundColor: bgCard,
+                }}
+              >
+                <Card.Header
+                  as="h6"
+                  className="fw-semibold"
+                  style={{
+                    backgroundColor: bgHeader,
+                    borderBottom: `2px solid ${accentColor}`,
+                  }}
+                >
+                  {t("statistics.positionProgression")} ({t("statistics.topPlayers")})
+                </Card.Header>
+                <Card.Body>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart
+                      data={positionChartData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                      <XAxis
+                        dataKey="name"
+                        stroke={textColor}
+                        style={{ fontSize: "0.85rem" }}
+                      />
+                      <YAxis
+                        stroke={textColor}
+                        style={{ fontSize: "0.85rem" }}
+                        reversed
+                        domain={[1, currentRanking.length]}
+                        ticks={Array.from(
+                          { length: currentRanking.length },
+                          (_, i) => i + 1
+                        )}
+                        label={{
+                          value: t("statistics.position"),
+                          angle: -90,
+                          position: "insideLeft",
+                          style: { fill: textColor, fontSize: "0.7rem" },
+                        }}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend
+                        wrapperStyle={{ fontSize: "0.85rem" }}
+                        iconType="line"
+                      />
+                      {topPlayers.map((player, idx) => (
+                        <Line
+                          key={player.userId}
+                          type="monotone"
+                          dataKey={player.name}
+                          stroke={CHART_COLORS[idx]}
+                          strokeWidth={3}
+                          dot={false}
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Card.Body>
+              </Card>
+            </>
+          ) : (
+            // Show message if no race data available
+            <Card
+              className="shadow"
               style={{
-                backgroundColor: bgHeader,
-                borderBottom: `2px solid ${accentColor}`,
+                borderColor: accentColor,
+                backgroundColor: bgCard,
               }}
             >
-              {t("statistics.positionProgression")} ({t("statistics.topPlayers")})
-            </Card.Header>
-            <Card.Body>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart
-                  data={positionChartData}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                  <XAxis
-                    dataKey="name"
-                    stroke={textColor}
-                    style={{ fontSize: "0.85rem" }}
-                  />
-                  <YAxis
-                    stroke={textColor}
-                    style={{ fontSize: "0.85rem" }}
-                    reversed
-                    domain={[1, currentRanking.length]}
-                    ticks={Array.from(
-                      { length: currentRanking.length },
-                      (_, i) => i + 1
-                    )}
-                    label={{
-                      value: t("statistics.position"),
-                      angle: -90,
-                      position: "insideLeft",
-                      style: { fill: textColor, fontSize: "0.7rem" },
-                    }}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend
-                    wrapperStyle={{ fontSize: "0.85rem" }}
-                    iconType="line"
-                  />
-                  {topPlayers.map((player, idx) => (
-                    <Line
-                      key={player.userId}
-                      type="monotone"
-                      dataKey={player.name}
-                      stroke={CHART_COLORS[idx]}
-                      strokeWidth={3}
-                      dot={false}
-                    />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </Card.Body>
-          </Card>
+              <Card.Body className="text-center py-5">
+                <Alert variant="info" className="mb-0">
+                  {t("statistics.noRaces") || "No race data available yet"}
+                </Alert>
+              </Card.Body>
+            </Card>
+          )}
         </Col>
       </Row>
     </Container>
