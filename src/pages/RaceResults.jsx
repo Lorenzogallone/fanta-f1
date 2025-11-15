@@ -230,23 +230,44 @@ export default function RaceResults() {
         setRaces(raceList);
         setLoadingRaces(false); // Show race selector immediately
 
-        // Immediately select the most recent race from database
+        // Select either current race weekend or last completed race
         if (raceList.length > 0) {
-          const mostRecentRace = raceList[0]; // Already sorted by raceUTC desc
-          setSelectedRaceId(mostRecentRace.id);
-          setSelectedRace(mostRecentRace);
+          const now = new Date();
+
+          // Find the right race: either current weekend or last completed
+          let selectedRaceToLoad = null;
+
+          for (const race of raceList) {
+            const raceDate = race.raceUTC.toDate();
+            const fridayBeforeRace = new Date(raceDate);
+            fridayBeforeRace.setDate(raceDate.getDate() - 2); // 2 days before (Friday if race is Sunday)
+
+            // If we're in the race weekend (Friday to race day) or race is in the past
+            if (now >= fridayBeforeRace || now >= raceDate) {
+              selectedRaceToLoad = race;
+              break; // Found the right race
+            }
+          }
+
+          // Fallback to most recent race if no match found
+          if (!selectedRaceToLoad) {
+            selectedRaceToLoad = raceList[0];
+          }
+
+          setSelectedRaceId(selectedRaceToLoad.id);
+          setSelectedRace(selectedRaceToLoad);
           setLoadingSessions(true); // Start loading sessions
 
           // Load sessions for this race
-          const season = mostRecentRace.raceUTC.toDate().getFullYear();
-          const round = mostRecentRace.round;
+          const season = selectedRaceToLoad.raceUTC.toDate().getFullYear();
+          const round = selectedRaceToLoad.round;
 
           try {
             const sessionData = await fetchAllSessions(season, round);
 
             setSessions({
-              raceName: mostRecentRace.name,
-              date: mostRecentRace.raceUTC.toDate().toLocaleDateString(),
+              raceName: selectedRaceToLoad.name,
+              date: selectedRaceToLoad.raceUTC.toDate().toLocaleDateString(),
               season,
               round,
               ...sessionData,
