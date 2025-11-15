@@ -33,10 +33,11 @@ import { getChampionshipStatistics } from "../services/statisticsService";
 import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../contexts/LanguageContext";
+import "../styles/statistics.css";
 
 const medals = ["🥇", "🥈", "🥉"];
 
-// Distinct colors for players in charts
+// Distinct colors for up to 25 players in charts
 const CHART_COLORS = [
   "#dc3545", // red - 1st
   "#0d6efd", // blue - 2nd
@@ -48,6 +49,21 @@ const CHART_COLORS = [
   "#d63384", // pink - 8th
   "#17a2b8", // cyan - 9th
   "#6c757d", // gray - 10th
+  "#e83e8c", // hot pink - 11th
+  "#28a745", // success green - 12th
+  "#007bff", // primary blue - 13th
+  "#ff6b6b", // coral - 14th
+  "#4ecdc4", // turquoise - 15th
+  "#95e1d3", // mint - 16th
+  "#f38181", // light coral - 17th
+  "#aa96da", // lavender - 18th
+  "#fcbad3", // light pink - 19th
+  "#a8e6cf", // light green - 20th
+  "#ffd3b6", // peach - 21st
+  "#ffaaa5", // salmon - 22nd
+  "#ff8b94", // rose - 23rd
+  "#a8dadc", // powder blue - 24th
+  "#f1faee", // mint cream - 25th
 ];
 
 /**
@@ -586,21 +602,22 @@ export default function Statistics() {
                 >
                   {t("statistics.pointsProgression")} ({playersLabel})
                 </Card.Header>
-                <Card.Body>
-                  <ResponsiveContainer width="100%" height={400}>
+                <Card.Body className="chart-container-optimized">
+                  <ResponsiveContainer width="100%" height={450}>
                     <LineChart
                       data={pointsChartData}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                      margin={{ top: 10, right: 5, left: 0, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                       <XAxis
                         dataKey="name"
                         stroke={textColor}
-                        style={{ fontSize: "0.85rem" }}
+                        style={{ fontSize: "0.8rem" }}
                       />
                       <YAxis
                         stroke={textColor}
-                        style={{ fontSize: "0.85rem" }}
+                        style={{ fontSize: "0.8rem" }}
+                        width={50}
                         label={{
                           value: t("statistics.points"),
                           angle: -90,
@@ -610,19 +627,24 @@ export default function Statistics() {
                       />
                       <Tooltip content={<CustomTooltip />} />
                       <Legend
-                        wrapperStyle={{ fontSize: "0.85rem" }}
+                        wrapperStyle={{ fontSize: "0.75rem" }}
                         iconType="line"
+                        layout="horizontal"
+                        align="center"
+                        verticalAlign="bottom"
                       />
-                      {topPlayers.map((player, idx) => (
-                        <Line
-                          key={player.userId}
-                          type="monotone"
-                          dataKey={player.name}
-                          stroke={CHART_COLORS[idx % CHART_COLORS.length]}
-                          strokeWidth={3}
-                          dot={false}
-                        />
-                      ))}
+                      {topPlayers
+                        .sort((a, b) => a.position - b.position)
+                        .map((player, idx) => (
+                          <Line
+                            key={player.userId}
+                            type="monotone"
+                            dataKey={player.name}
+                            stroke={CHART_COLORS[(player.position - 1) % CHART_COLORS.length]}
+                            strokeWidth={2.5}
+                            dot={false}
+                          />
+                        ))}
                     </LineChart>
                   </ResponsiveContainer>
                 </Card.Body>
@@ -646,21 +668,22 @@ export default function Statistics() {
                 >
                   {t("statistics.positionProgression")} ({playersLabel})
                 </Card.Header>
-                <Card.Body>
-                  <ResponsiveContainer width="100%" height={400}>
+                <Card.Body className="chart-container-optimized">
+                  <ResponsiveContainer width="100%" height={450}>
                     <LineChart
                       data={positionChartData}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                      margin={{ top: 10, right: 5, left: 0, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                       <XAxis
                         dataKey="name"
                         stroke={textColor}
-                        style={{ fontSize: "0.85rem" }}
+                        style={{ fontSize: "0.8rem" }}
                       />
                       <YAxis
                         stroke={textColor}
-                        style={{ fontSize: "0.85rem" }}
+                        style={{ fontSize: "0.8rem" }}
+                        width={50}
                         reversed
                         domain={[1, currentRanking.length]}
                         ticks={Array.from(
@@ -676,19 +699,24 @@ export default function Statistics() {
                       />
                       <Tooltip content={<CustomTooltip />} />
                       <Legend
-                        wrapperStyle={{ fontSize: "0.85rem" }}
+                        wrapperStyle={{ fontSize: "0.75rem" }}
                         iconType="line"
+                        layout="horizontal"
+                        align="center"
+                        verticalAlign="bottom"
                       />
-                      {topPlayers.map((player, idx) => (
-                        <Line
-                          key={player.userId}
-                          type="monotone"
-                          dataKey={player.name}
-                          stroke={CHART_COLORS[idx % CHART_COLORS.length]}
-                          strokeWidth={3}
-                          dot={false}
-                        />
-                      ))}
+                      {topPlayers
+                        .sort((a, b) => a.position - b.position)
+                        .map((player, idx) => (
+                          <Line
+                            key={player.userId}
+                            type="monotone"
+                            dataKey={player.name}
+                            stroke={CHART_COLORS[(player.position - 1) % CHART_COLORS.length]}
+                            strokeWidth={2.5}
+                            dot={false}
+                          />
+                        ))}
                     </LineChart>
                   </ResponsiveContainer>
                 </Card.Body>
@@ -803,25 +831,26 @@ export default function Statistics() {
                       >
                         📈 Andamento Punti Cumulativi
                       </Card.Header>
-                      <Card.Body>
-                        <ResponsiveContainer width="100%" height={350}>
+                      <Card.Body className="chart-container-optimized">
+                        <ResponsiveContainer width="100%" height={400}>
                           <LineChart
                             data={playerStats.races.map((race, idx) => ({
                               name: `R${race.round}`,
                               fullName: race.name,
                               points: playerStats.history[idx]?.cumulativePoints || 0,
                             }))}
-                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                            margin={{ top: 10, right: 5, left: 0, bottom: 5 }}
                           >
                             <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                             <XAxis
                               dataKey="name"
                               stroke={textColor}
-                              style={{ fontSize: "0.85rem" }}
+                              style={{ fontSize: "0.8rem" }}
                             />
                             <YAxis
                               stroke={textColor}
-                              style={{ fontSize: "0.85rem" }}
+                              style={{ fontSize: "0.8rem" }}
+                              width={50}
                               label={{
                                 value: "Punti",
                                 angle: -90,
@@ -861,25 +890,26 @@ export default function Statistics() {
                       >
                         📊 Andamento Posizione
                       </Card.Header>
-                      <Card.Body>
-                        <ResponsiveContainer width="100%" height={350}>
+                      <Card.Body className="chart-container-optimized">
+                        <ResponsiveContainer width="100%" height={400}>
                           <LineChart
                             data={playerStats.races.map((race, idx) => ({
                               name: `R${race.round}`,
                               fullName: race.name,
                               position: playerStats.history[idx]?.position || null,
                             }))}
-                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                            margin={{ top: 10, right: 5, left: 0, bottom: 5 }}
                           >
                             <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                             <XAxis
                               dataKey="name"
                               stroke={textColor}
-                              style={{ fontSize: "0.85rem" }}
+                              style={{ fontSize: "0.8rem" }}
                             />
                             <YAxis
                               stroke={textColor}
-                              style={{ fontSize: "0.85rem" }}
+                              style={{ fontSize: "0.8rem" }}
+                              width={50}
                               reversed
                               domain={[1, currentRanking.length]}
                               ticks={Array.from(
