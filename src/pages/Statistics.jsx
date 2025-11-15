@@ -33,6 +33,7 @@ import { getChampionshipStatistics } from "../services/statisticsService";
 import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../contexts/LanguageContext";
+import PlayerStatsView from "../components/PlayerStatsView";
 import "../styles/statistics.css";
 
 const medals = ["🥇", "🥈", "🥉"];
@@ -761,7 +762,7 @@ export default function Statistics() {
                   borderBottom: `2px solid ${accentColor}`,
                 }}
               >
-                👤 Seleziona Giocatore
+                👤 {t("statistics.selectPlayer") || "Seleziona Giocatore"}
               </Card.Header>
               <Card.Body>
                 <Form.Select
@@ -773,7 +774,7 @@ export default function Statistics() {
                     borderColor: accentColor,
                   }}
                 >
-                  <option value="">-- Seleziona un giocatore --</option>
+                  <option value="">{t("statistics.choosePlayer") || "-- Seleziona un giocatore --"}</option>
                   {currentRanking.map((player) => (
                     <option key={player.userId} value={player.userId}>
                       {player.position}. {player.name} ({player.points} pt)
@@ -785,246 +786,31 @@ export default function Statistics() {
                 {loadingPlayerStats && (
                   <div className="text-center mt-4">
                     <Spinner animation="border" size="sm" style={{ color: accentColor }} />
-                    <p className="mt-2 text-muted">Caricamento statistiche giocatore...</p>
+                    <p className="mt-2 text-muted">{t("statistics.loadingPlayer") || "Caricamento statistiche giocatore..."}</p>
                   </div>
                 )}
 
-                {/* Player stats charts */}
+                {/* Player stats view using unified component */}
                 {!loadingPlayerStats && playerStats && (
                   <div className="mt-4">
-                    {/* Player info header */}
-                    <div className="text-center mb-4 p-3" style={{
-                      backgroundColor: isDark ? "var(--bg-tertiary)" : "#f8f9fa",
-                      borderRadius: "8px",
-                      borderLeft: `4px solid ${accentColor}`,
-                    }}>
-                      <h4 className="mb-2" style={{ color: accentColor }}>
-                        {playerStats.name}
-                      </h4>
-                      <div className="d-flex justify-content-center gap-4">
-                        <div>
-                          <strong>Posizione:</strong>{" "}
-                          <Badge bg="primary">{playerStats.position}°</Badge>
-                        </div>
-                        <div>
-                          <strong>Punti Totali:</strong>{" "}
-                          <Badge bg="success">{playerStats.totalPoints}</Badge>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Points progression chart */}
-                    <Card
-                      className="shadow mb-4"
-                      style={{
-                        borderColor: accentColor,
-                        backgroundColor: bgCard,
+                    <PlayerStatsView
+                      playerData={{
+                        name: playerStats.name,
+                        position: playerStats.position,
+                        totalPoints: playerStats.totalPoints,
                       }}
-                    >
-                      <Card.Header
-                        as="h6"
-                        className="fw-semibold"
-                        style={{
-                          backgroundColor: bgHeader,
-                          borderBottom: `2px solid ${accentColor}`,
-                        }}
-                      >
-                        📈 Andamento Punti Cumulativi
-                      </Card.Header>
-                      <Card.Body className="chart-container-optimized">
-                        <ResponsiveContainer width="100%" height={400}>
-                          <LineChart
-                            data={playerStats.races.map((race, idx) => ({
-                              name: `R${race.round}`,
-                              fullName: race.name,
-                              points: playerStats.history[idx]?.cumulativePoints || 0,
-                            }))}
-                            margin={{ top: 10, right: 5, left: 0, bottom: 5 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                            <XAxis
-                              dataKey="name"
-                              stroke={textColor}
-                              style={{ fontSize: "0.8rem" }}
-                            />
-                            <YAxis
-                              stroke={textColor}
-                              style={{ fontSize: "0.8rem" }}
-                              width={50}
-                              label={{
-                                value: "Punti",
-                                angle: -90,
-                                position: "insideLeft",
-                                style: { fill: textColor, fontSize: "0.7rem" },
-                              }}
-                            />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Line
-                              type="monotone"
-                              dataKey="points"
-                              stroke={accentColor}
-                              strokeWidth={3}
-                              dot={{ fill: accentColor, r: 4 }}
-                              activeDot={{ r: 6 }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </Card.Body>
-                    </Card>
-
-                    {/* Position progression chart */}
-                    <Card
-                      className="shadow mb-4"
-                      style={{
-                        borderColor: accentColor,
-                        backgroundColor: bgCard,
-                      }}
-                    >
-                      <Card.Header
-                        as="h6"
-                        className="fw-semibold"
-                        style={{
-                          backgroundColor: bgHeader,
-                          borderBottom: `2px solid ${accentColor}`,
-                        }}
-                      >
-                        📊 Andamento Posizione
-                      </Card.Header>
-                      <Card.Body className="chart-container-optimized">
-                        <ResponsiveContainer width="100%" height={400}>
-                          <LineChart
-                            data={playerStats.races.map((race, idx) => ({
-                              name: `R${race.round}`,
-                              fullName: race.name,
-                              position: playerStats.history[idx]?.position || null,
-                            }))}
-                            margin={{ top: 10, right: 5, left: 0, bottom: 5 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                            <XAxis
-                              dataKey="name"
-                              stroke={textColor}
-                              style={{ fontSize: "0.8rem" }}
-                            />
-                            <YAxis
-                              stroke={textColor}
-                              style={{ fontSize: "0.8rem" }}
-                              width={50}
-                              reversed
-                              domain={[1, currentRanking.length]}
-                              ticks={Array.from(
-                                { length: Math.min(currentRanking.length, 10) },
-                                (_, i) => i + 1
-                              )}
-                              label={{
-                                value: "Posizione",
-                                angle: -90,
-                                position: "insideLeft",
-                                style: { fill: textColor, fontSize: "0.7rem" },
-                              }}
-                            />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Line
-                              type="monotone"
-                              dataKey="position"
-                              stroke={accentColor}
-                              strokeWidth={3}
-                              dot={{ fill: accentColor, r: 4 }}
-                              activeDot={{ r: 6 }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </Card.Body>
-                    </Card>
-
-                    {/* Race-by-race breakdown table */}
-                    <Card
-                      className="shadow"
-                      style={{
-                        borderColor: accentColor,
-                        backgroundColor: bgCard,
-                      }}
-                    >
-                      <Card.Header
-                        as="h6"
-                        className="fw-semibold"
-                        style={{
-                          backgroundColor: bgHeader,
-                          borderBottom: `2px solid ${accentColor}`,
-                        }}
-                      >
-                        🏁 Dettaglio Gare
-                      </Card.Header>
-                      <Card.Body className="p-0">
-                        <div className="table-responsive">
-                          <Table
-                            hover
-                            striped
-                            className="mb-0 align-middle"
-                            style={{ borderTop: `1px solid ${accentColor}` }}
-                          >
-                            <thead>
-                              <tr>
-                                <th className="text-center">Round</th>
-                                <th>Gara</th>
-                                <th className="text-center">Posizione</th>
-                                <th className="text-center">Punti Gara</th>
-                                <th className="text-center">Punti Totali</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {playerStats.races.map((race, idx) => {
-                                const raceData = playerStats.history[idx];
-                                if (!raceData) return null;
-
-                                return (
-                                  <tr key={race.id}>
-                                    <td className="text-center">
-                                      <Badge bg="secondary">{race.round}</Badge>
-                                    </td>
-                                    <td>{race.name}</td>
-                                    <td className="text-center">
-                                      <Badge
-                                        bg={
-                                          raceData.position === 1
-                                            ? "warning"
-                                            : raceData.position === 2
-                                            ? "info"
-                                            : raceData.position === 3
-                                            ? "success"
-                                            : "secondary"
-                                        }
-                                      >
-                                        {raceData.position}°
-                                      </Badge>
-                                    </td>
-                                    <td className="text-center">
-                                      {raceData.racePoints > 0 ? (
-                                        <span className="text-success fw-bold">
-                                          +{raceData.racePoints}
-                                        </span>
-                                      ) : (
-                                        <span className="text-muted">0</span>
-                                      )}
-                                    </td>
-                                    <td className="text-center">
-                                      <Badge bg="primary">{raceData.cumulativePoints}</Badge>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </Table>
-                        </div>
-                      </Card.Body>
-                    </Card>
+                      races={playerStats.races}
+                      history={playerStats.history}
+                      totalCompletedRaces={statistics?.races?.length || 0}
+                      showCharts={true}
+                    />
                   </div>
                 )}
 
                 {/* No player selected message */}
                 {!loadingPlayerStats && !playerStats && selectedPlayerId === null && (
                   <Alert variant="info" className="mt-4 text-center">
-                    Seleziona un giocatore dal menu a tendina per visualizzare le sue statistiche dettagliate
+                    {t("statistics.selectPlayerPrompt") || "Seleziona un giocatore dal menu a tendina per visualizzare le sue statistiche dettagliate"}
                   </Alert>
                 )}
               </Card.Body>
