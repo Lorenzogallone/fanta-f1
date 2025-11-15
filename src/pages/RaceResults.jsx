@@ -775,8 +775,8 @@ export default function RaceResults() {
             </Card>
           </Col>
         )}
-                </>
-              )}
+              </>
+            )}
 
               {/* Standings Tab */}
               {activeTab === "standings" && (
