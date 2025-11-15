@@ -23,7 +23,7 @@ import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../const
 import RaceHistoryCard from "../components/RaceHistoryCard";
 import AdminLogin from "../components/AdminLogin";
 import Select from "react-select";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "../hooks/useLanguage";
 import "../styles/customSelect.css";
 
 // Constants imported from centralized file

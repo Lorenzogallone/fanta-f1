@@ -35,7 +35,7 @@ import { db } from "../services/firebase";
 import { DRIVERS } from "../constants/racing";
 import Select from "react-select";
 import { useTheme } from "../contexts/ThemeContext";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "../hooks/useLanguage";
 import AdminLogin from "../components/AdminLogin";
 import {
   createAndSaveBackup,

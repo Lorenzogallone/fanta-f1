@@ -12,7 +12,7 @@ import {
 import { db } from "../services/firebase";
 import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "../hooks/useLanguage";
 
 // Use centralized constants
 const driverTeam = DRIVER_TEAM;

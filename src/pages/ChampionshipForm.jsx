@@ -21,7 +21,7 @@ import { db } from "../services/firebase";
 import ChampionshipSubmissions from "../components/ChampionshipSubmissions";
 import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "../hooks/useLanguage";
 import "../styles/customSelect.css";
 
 // Constants imported from centralized file

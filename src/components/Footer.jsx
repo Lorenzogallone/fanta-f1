@@ -6,7 +6,7 @@
 import React from "react";
 import { Container } from "react-bootstrap";
 import { useTheme } from "../contexts/ThemeContext";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "../hooks/useLanguage";
 
 /**
  * Footer component displaying F1 disclaimer and copyright
