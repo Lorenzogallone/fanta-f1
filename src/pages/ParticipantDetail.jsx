@@ -464,7 +464,7 @@ export default function ParticipantDetail() {
                         <th>{t("raceResults.race") || "Gara"}</th>
                         <th className="text-center" style={{ width: "70px" }}>Main</th>
                         <th className="text-center" style={{ width: "70px" }}>Sprint</th>
-                        <th className="text-center" style={{ width: "70px" }}>{t("leaderboard.total") || "Totale"}</th>
+                        <th className="text-center" style={{ width: "70px" }}>Tot</th>
                       </tr>
                     </thead>
                     <tbody>
