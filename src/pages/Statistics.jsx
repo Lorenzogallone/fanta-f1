@@ -492,10 +492,11 @@ export default function Statistics() {
           </Card>
         </Col>
 
-        {/* Filtri per i grafici */}
-        <Col xs={12}>
+        {/* Grafici e Filtri */}
+        <Col xs={12} lg={8}>
+          {/* Filtri per i grafici */}
           <Card
-            className="shadow"
+            className="shadow mb-4"
             style={{
               borderColor: accentColor,
               backgroundColor: bgCard,
@@ -593,10 +594,8 @@ export default function Statistics() {
               </div>
             </Card.Body>
           </Card>
-        </Col>
 
-        {/* Grafici */}
-        <Col xs={12} lg={8}>
+          {/* Grafici */}
           {loadingStatistics ? (
             // Show loading placeholders for charts
             <>

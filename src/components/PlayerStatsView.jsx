@@ -220,11 +220,12 @@ export default function PlayerStatsView({
 
   if (showCharts && raceHistory.length > 0) {
     // Build chart data from race history
+    // Reverse the array to show races chronologically (oldest to newest)
     let cumulativePoints = 0;
     chartRaces = [];
     chartHistory = [];
 
-    raceHistory.forEach((race) => {
+    raceHistory.slice().reverse().forEach((race) => {
       const points = calculateRacePoints(race.submission, race.officialResults, race.cancelledSprint);
       cumulativePoints += points.total;
 

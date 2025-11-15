@@ -538,7 +538,7 @@ export default function RaceResults() {
                         borderColor: accentColor,
                       }}
                     >
-                      📊 Sessioni
+                      📊 {t("raceResults.sessionsTab")}
                     </Nav.Link>
                   </Nav.Item>
                   <Nav.Item>
@@ -550,7 +550,7 @@ export default function RaceResults() {
                         borderColor: accentColor,
                       }}
                     >
-                      🏆 Campionato
+                      🏆 {t("raceResults.standingsTab")}
                     </Nav.Link>
                   </Nav.Item>
                 </Nav>
@@ -649,7 +649,7 @@ export default function RaceResults() {
                             borderColor: standingsFilter === "all" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
                           }}
                         >
-                          Tutti
+                          {t("raceResults.allFilter")}
                         </Button>
                       </div>
 
@@ -657,7 +657,7 @@ export default function RaceResults() {
                         {/* Driver Standings */}
                         <Col xs={12} lg={6}>
                           <h5 className="mb-3" style={{ color: accentColor }}>
-                            🏎️ Classifica Piloti
+                            🏎️ {t("raceResults.driverStandings")}
                           </h5>
                           {driverStandings && driverStandings.length > 0 ? (
                             <>
@@ -785,14 +785,14 @@ export default function RaceResults() {
                             </div>
                           </>
                         ) : (
-                          <Alert variant="info">Classifica piloti non disponibile</Alert>
+                          <Alert variant="info">{t("raceResults.driverStandingsNotAvailable")}</Alert>
                         )}
                       </Col>
 
                       {/* Constructor Standings */}
                       <Col xs={12} lg={6}>
                         <h5 className="mb-3" style={{ color: accentColor }}>
-                          🏁 Classifica Costruttori
+                          🏁 {t("raceResults.constructorStandings")}
                         </h5>
                         {constructorStandings && constructorStandings.length > 0 ? (
                           <>
@@ -920,7 +920,7 @@ export default function RaceResults() {
                             </div>
                           </>
                         ) : (
-                          <Alert variant="info">Classifica costruttori non disponibile</Alert>
+                          <Alert variant="info">{t("raceResults.constructorStandingsNotAvailable")}</Alert>
                         )}
                       </Col>
                     </Row>

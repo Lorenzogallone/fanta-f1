@@ -166,6 +166,13 @@ export const en = {
     canStillSubmit: "You can still submit your lineup!",
     qualifyingNotStarted: "Qualifying hasn't started yet",
     goToFormation: "Go to Lineup",
+    sessionsTab: "Sessions",
+    standingsTab: "Standings",
+    allFilter: "All",
+    driverStandings: "Driver Standings",
+    constructorStandings: "Constructor Standings",
+    driverStandingsNotAvailable: "Driver standings not available",
+    constructorStandingsNotAvailable: "Constructor standings not available",
   },
 
   // Statistics
