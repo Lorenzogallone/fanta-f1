@@ -18,6 +18,7 @@ import { isLastRace, calculatePointsForRace } from "../services/pointsCalculator
 import { calculateChampionshipPoints } from "../services/championshipPointsCalculator";
 import { saveRankingSnapshot } from "../services/rankingSnapshot";
 import { fetchRaceResults } from "../services/f1ResultsFetcher";
+import { createAndSaveBackup } from "../services/backupService";
 import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
 import RaceHistoryCard from "../components/RaceHistoryCard";
 import AdminLogin from "../components/AdminLogin";
@@ -319,6 +320,15 @@ useEffect(() => {
     e.preventDefault(); if(!canSubmitRace) return;
     setSavingRace(true); setMsgRace(null);
     try{
+      // Create automatic backup before calculating points
+      setMsgRace({variant:"info",msg: "🔄 Creazione backup automatico..."});
+      await createAndSaveBackup("auto_race", {
+        raceName: race.name,
+        raceId: race.id,
+        round: race.round,
+        createdBy: "auto_calculation"
+      });
+
       await setDoc(doc(db,"races",race.id),{
         officialResults:{
           P1:formRace.P1.value,P2:formRace.P2.value,P3:formRace.P3.value,
@@ -357,6 +367,13 @@ useEffect(() => {
     e.preventDefault(); if(!champReady) return;
     setSavingChamp(true); setMsgChamp(null);
     try{
+      // Create automatic backup before calculating championship points
+      setMsgChamp({variant:"info",msg: "🔄 Creazione backup automatico..."});
+      await createAndSaveBackup("auto_championship", {
+        createdBy: "auto_calculation",
+        description: "Backup automatico prima del calcolo campionato"
+      });
+
       await setDoc(doc(db,"championship","results"),{
         P1:formChamp.CP1.value,P2:formChamp.CP2.value,P3:formChamp.CP3.value,
         C1:formChamp.CC1.value,C2:formChamp.CC2.value,C3:formChamp.CC3.value,

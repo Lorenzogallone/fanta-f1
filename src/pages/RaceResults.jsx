@@ -924,9 +924,11 @@ export default function RaceResults() {
                         )}
                       </Col>
                     </Row>
-                  )}
                 </>
               )}
+            </>
+          )}
+
             </Card.Body>
           </Card>
         </Col>
