@@ -59,6 +59,7 @@ export default function Statistics() {
   const [statistics, setStatistics] = useState(null);
   const [currentRanking, setCurrentRanking] = useState([]);
   const [playersFilter, setPlayersFilter] = useState("5"); // "5", "10", "all"
+  const [racesFilter, setRacesFilter] = useState("all"); // "5", "10", "all"
   const { isDark } = useTheme();
   const { t } = useLanguage();
 
@@ -127,20 +128,26 @@ export default function Statistics() {
     );
   }
 
-  // Apply filter to determine how many players to show in charts
+  // Apply players filter to determine how many players to show in charts
   const numPlayers = playersFilter === "5" ? 5 : playersFilter === "10" ? 10 : currentRanking.length;
   const topPlayers = currentRanking.slice(0, numPlayers);
 
-  // Get label for chart headers based on filter
-  const playersLabel = playersFilter === "5" ? "Top 5" : playersFilter === "10" ? "Top 10" : t("statistics.allPlayers") || "Tutti i giocatori";
+  // Get label for chart headers based on players filter
+  const playersLabel = playersFilter === "5" ? "Top 5 Giocatori" : playersFilter === "10" ? "Top 10 Giocatori" : "Tutti i Giocatori";
 
   // Prepare chart data only if statistics are loaded
   let pointsChartData = [];
   let positionChartData = [];
 
   if (statistics && statistics.races && statistics.races.length > 0) {
+    // Apply races filter to determine how many races to show
+    const numRaces = racesFilter === "5" ? 5 : racesFilter === "10" ? 10 : statistics.races.length;
+    const filteredRaces = statistics.races.slice(-numRaces); // Get last N races
+    const startIndex = statistics.races.length - numRaces; // Starting index in original array
+
     // Prepare data for cumulative points chart
-    pointsChartData = statistics.races.map((race, raceIndex) => {
+    pointsChartData = filteredRaces.map((race, idx) => {
+      const raceIndex = startIndex + idx; // Actual index in original array
       const dataPoint = {
         name: `R${race.round}`,
         fullName: race.name,
@@ -156,7 +163,8 @@ export default function Statistics() {
     });
 
     // Prepare data for position chart (inverted: 1st at top)
-    positionChartData = statistics.races.map((race, raceIndex) => {
+    positionChartData = filteredRaces.map((race, idx) => {
+      const raceIndex = startIndex + idx; // Actual index in original array
       const dataPoint = {
         name: `R${race.round}`,
         fullName: race.name,
@@ -220,50 +228,6 @@ export default function Statistics() {
           <h2 className="mb-4" style={{ color: accentColor }}>
             {t("statistics.title")}
           </h2>
-        </Col>
-      </Row>
-
-      {/* Filter Buttons */}
-      <Row className="mb-4">
-        <Col xs={12}>
-          <div className="d-flex justify-content-center gap-2 flex-wrap">
-            <Button
-              size="sm"
-              variant={playersFilter === "5" ? "danger" : "outline-secondary"}
-              onClick={() => setPlayersFilter("5")}
-              style={{
-                backgroundColor: playersFilter === "5" ? accentColor : "transparent",
-                borderColor: playersFilter === "5" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
-                color: playersFilter === "5" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
-              }}
-            >
-              Top 5
-            </Button>
-            <Button
-              size="sm"
-              variant={playersFilter === "10" ? "danger" : "outline-secondary"}
-              onClick={() => setPlayersFilter("10")}
-              style={{
-                backgroundColor: playersFilter === "10" ? accentColor : "transparent",
-                borderColor: playersFilter === "10" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
-                color: playersFilter === "10" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
-              }}
-            >
-              Top 10
-            </Button>
-            <Button
-              size="sm"
-              variant={playersFilter === "all" ? "danger" : "outline-secondary"}
-              onClick={() => setPlayersFilter("all")}
-              style={{
-                backgroundColor: playersFilter === "all" ? accentColor : "transparent",
-                borderColor: playersFilter === "all" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
-                color: playersFilter === "all" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
-              }}
-            >
-              Tutti
-            </Button>
-          </div>
         </Col>
       </Row>
 
@@ -357,6 +321,109 @@ export default function Statistics() {
                     })}
                   </tbody>
                 </Table>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        {/* Filtri per i grafici */}
+        <Col xs={12}>
+          <Card
+            className="shadow"
+            style={{
+              borderColor: accentColor,
+              backgroundColor: bgCard,
+            }}
+          >
+            <Card.Body>
+              {/* Filtro Giocatori */}
+              <div className="mb-3">
+                <h6 className="mb-2 fw-semibold" style={{ color: accentColor }}>
+                  👥 Giocatori da visualizzare:
+                </h6>
+                <div className="d-flex justify-content-center gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant={playersFilter === "5" ? "danger" : "outline-secondary"}
+                    onClick={() => setPlayersFilter("5")}
+                    style={{
+                      backgroundColor: playersFilter === "5" ? accentColor : "transparent",
+                      borderColor: playersFilter === "5" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                      color: playersFilter === "5" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
+                    }}
+                  >
+                    Top 5
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={playersFilter === "10" ? "danger" : "outline-secondary"}
+                    onClick={() => setPlayersFilter("10")}
+                    style={{
+                      backgroundColor: playersFilter === "10" ? accentColor : "transparent",
+                      borderColor: playersFilter === "10" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                      color: playersFilter === "10" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
+                    }}
+                  >
+                    Top 10
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={playersFilter === "all" ? "danger" : "outline-secondary"}
+                    onClick={() => setPlayersFilter("all")}
+                    style={{
+                      backgroundColor: playersFilter === "all" ? accentColor : "transparent",
+                      borderColor: playersFilter === "all" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                      color: playersFilter === "all" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
+                    }}
+                  >
+                    Tutti
+                  </Button>
+                </div>
+              </div>
+
+              {/* Filtro Gare */}
+              <div>
+                <h6 className="mb-2 fw-semibold" style={{ color: accentColor }}>
+                  🏁 Gare da visualizzare:
+                </h6>
+                <div className="d-flex justify-content-center gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant={racesFilter === "5" ? "danger" : "outline-secondary"}
+                    onClick={() => setRacesFilter("5")}
+                    style={{
+                      backgroundColor: racesFilter === "5" ? accentColor : "transparent",
+                      borderColor: racesFilter === "5" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                      color: racesFilter === "5" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
+                    }}
+                  >
+                    Ultime 5
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={racesFilter === "10" ? "danger" : "outline-secondary"}
+                    onClick={() => setRacesFilter("10")}
+                    style={{
+                      backgroundColor: racesFilter === "10" ? accentColor : "transparent",
+                      borderColor: racesFilter === "10" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                      color: racesFilter === "10" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
+                    }}
+                  >
+                    Ultime 10
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={racesFilter === "all" ? "danger" : "outline-secondary"}
+                    onClick={() => setRacesFilter("all")}
+                    style={{
+                      backgroundColor: racesFilter === "all" ? accentColor : "transparent",
+                      borderColor: racesFilter === "all" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                      color: racesFilter === "all" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
+                    }}
+                  >
+                    Tutte
+                  </Button>
+                </div>
               </div>
             </Card.Body>
           </Card>
