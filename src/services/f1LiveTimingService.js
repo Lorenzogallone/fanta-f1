@@ -42,7 +42,7 @@ class F1LiveTimingService {
     try {
       if (this.isConnected) {
         console.log("Already connected to F1 Live Timing");
-        return;
+        return { success: true };
       }
 
       // Build connection
@@ -62,10 +62,24 @@ class F1LiveTimingService {
 
       // Subscribe to hub
       await this.subscribeToHub();
+      return { success: true };
     } catch (error) {
       console.error("❌ Error connecting to F1 Live Timing:", error);
       this.isConnected = false;
-      throw error;
+
+      // Check if it's a CORS error
+      const isCorsError = error.message?.includes("Failed to complete negotiation") ||
+                          error.message?.includes("Load failed") ||
+                          error.message?.includes("CORS");
+
+      return {
+        success: false,
+        error: error,
+        isCorsError: isCorsError,
+        message: isCorsError
+          ? "CORS_ERROR"
+          : error.message || "CONNECTION_FAILED"
+      };
     }
   }
 

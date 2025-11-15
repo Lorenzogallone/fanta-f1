@@ -127,7 +127,13 @@ export default function RaceResults() {
     async function checkLive() {
       try {
         // Connect to SignalR to check for live session
-        await f1LiveTimingService.connect();
+        const result = await f1LiveTimingService.connect();
+
+        if (!result.success) {
+          // CORS error or connection failed - don't auto-switch to live tab
+          console.log("Live timing unavailable:", result.message);
+          return;
+        }
 
         // Set up a callback to check when session info is received
         const checkTimer = setTimeout(() => {
@@ -579,7 +585,14 @@ export default function RaceResults() {
                           }}
                         />
                       )}
-                      🔴 {t("raceResults.liveTab")}
+                      🔴 {t("raceResults.liveTab")}{" "}
+                      <Badge
+                        bg="warning"
+                        text="dark"
+                        style={{ fontSize: "0.6rem", verticalAlign: "super" }}
+                      >
+                        BETA
+                      </Badge>
                     </Nav.Link>
                   </Nav.Item>
                   <Nav.Item>
