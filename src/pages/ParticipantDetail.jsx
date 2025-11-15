@@ -151,30 +151,37 @@ export default function ParticipantDetail() {
         // OPTIMIZED: Load submissions for all races IN PARALLEL
         const submissionsPromises = racesSnap.docs.map(async (raceDoc) => {
           const raceData = raceDoc.data();
+
+          // Only include races with official results
+          if (!raceData.officialResults) {
+            return null;
+          }
+
           try {
             const submissionDoc = await getDoc(
               doc(db, "races", raceDoc.id, "submissions", userId)
             );
 
-            if (submissionDoc.exists()) {
-              return {
-                raceId: raceDoc.id,
-                raceName: raceData.name,
-                round: raceData.round,
-                raceUTC: raceData.raceUTC,
-                submission: submissionDoc.data(),
-                officialResults: raceData.officialResults,
-              };
-            }
+            // Include race even if no submission (to show missing submissions)
+            return {
+              raceId: raceDoc.id,
+              raceName: raceData.name,
+              round: raceData.round,
+              raceUTC: raceData.raceUTC,
+              submission: submissionDoc.exists() ? submissionDoc.data() : null,
+              officialResults: raceData.officialResults,
+              cancelledSprint: raceData.cancelledSprint || false,
+              cancelledMain: raceData.cancelledMain || false,
+            };
           } catch (err) {
             console.error(`Error fetching submission for race ${raceDoc.id}:`, err);
+            return null;
           }
-          return null;
         });
 
         // Wait for all submissions to load in parallel
         const allSubmissions = await Promise.all(submissionsPromises);
-        const history = allSubmissions.filter(Boolean); // Remove null entries
+        const history = allSubmissions.filter(Boolean); // Remove null entries (races without official results)
 
         setRaceHistory(history);
       } catch (e) {
@@ -185,6 +192,76 @@ export default function ParticipantDetail() {
       }
     })();
   }, [userId, t]);
+
+  /**
+   * Calculate points for a race submission
+   * @param {Object|null} submission - Submission data (null if not submitted)
+   * @param {Object} official - Official results
+   * @param {boolean} cancelledSprint - Whether sprint was cancelled
+   * @returns {Object} Points breakdown { mainPoints, sprintPoints, total }
+   */
+  const calculateRacePoints = (submission, official, cancelledSprint = false) => {
+    if (!official) {
+      return { mainPoints: null, sprintPoints: null, total: 0 };
+    }
+
+    // If no submission at all, mark as not submitted
+    if (!submission) {
+      const mainPoints = -3;
+      const sprintPoints = official.SP1 && !cancelledSprint ? -3 : null;
+      return {
+        mainPoints,
+        sprintPoints,
+        total: mainPoints + (sprintPoints || 0)
+      };
+    }
+
+    // Calculate main race points
+    let mainPoints = 0;
+    if (!submission.mainP1 && !submission.mainP2 && !submission.mainP3) {
+      mainPoints = -3; // Not submitted
+    } else {
+      if (submission.mainP1 === official.P1) mainPoints += POINTS.MAIN[1];
+      if (submission.mainP2 === official.P2) mainPoints += POINTS.MAIN[2];
+      if (submission.mainP3 === official.P3) mainPoints += POINTS.MAIN[3];
+
+      // Joker 1 bonus
+      if (submission.mainJolly && [official.P1, official.P2, official.P3].includes(submission.mainJolly)) {
+        mainPoints += POINTS.BONUS_JOLLY_MAIN;
+      }
+
+      // Joker 2 bonus
+      if (submission.mainJolly2 && [official.P1, official.P2, official.P3].includes(submission.mainJolly2)) {
+        mainPoints += POINTS.BONUS_JOLLY_MAIN;
+      }
+
+      // Late submission penalty
+      if (submission.isLate) {
+        mainPoints += (submission.latePenalty || -3);
+      }
+    }
+
+    // Calculate sprint points if present and not cancelled
+    let sprintPoints = null;
+    if (official.SP1 && !cancelledSprint) {
+      if (!submission.sprintP1 && !submission.sprintP2 && !submission.sprintP3) {
+        sprintPoints = -3; // Not submitted
+      } else {
+        sprintPoints = 0;
+        if (submission.sprintP1 === official.SP1) sprintPoints += POINTS.SPRINT[1];
+        if (submission.sprintP2 === official.SP2) sprintPoints += POINTS.SPRINT[2];
+        if (submission.sprintP3 === official.SP3) sprintPoints += POINTS.SPRINT[3];
+
+        // Sprint joker bonus
+        if (submission.sprintJolly && [official.SP1, official.SP2, official.SP3].includes(submission.sprintJolly)) {
+          sprintPoints += POINTS.BONUS_JOLLY_SPRINT;
+        }
+      }
+    }
+
+    const total = mainPoints + (sprintPoints || 0);
+    return { mainPoints, sprintPoints, total };
+  };
 
   // Calculate statistics
   const totalRaces = raceHistory.length;
@@ -380,24 +457,59 @@ export default function ParticipantDetail() {
               </Card.Header>
               <Card.Body className="p-0">
                 <div className="table-responsive">
-                  <Table hover className="mb-0">
+                  <Table hover className="mb-0" size="sm">
                     <thead>
                       <tr>
-                        <th>{t("common.round") || "Round"}</th>
-                        <th>{t("common.race") || "Race"}</th>
-                        <th className="text-center">{t("participantDetail.submitted") || "Submitted"}</th>
+                        <th className="text-center">{t("history.round") || "Round"}</th>
+                        <th>{t("history.race") || "Race"}</th>
+                        <th className="text-center">{t("history.mainPoints") || "Main"}</th>
+                        <th className="text-center">{t("history.sprintPoints") || "Sprint"}</th>
+                        <th className="text-center">{t("common.total") || "Total"}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {raceHistory.map((race) => (
-                        <tr key={race.raceId}>
-                          <td>{race.round}</td>
-                          <td>{race.raceName}</td>
-                          <td className="text-center">
-                            <Badge bg="success">✓</Badge>
-                          </td>
-                        </tr>
-                      ))}
+                      {raceHistory.map((race) => {
+                        const points = calculateRacePoints(race.submission, race.officialResults, race.cancelledSprint);
+
+                        return (
+                          <tr key={race.raceId}>
+                            <td className="text-center fw-semibold">{race.round}</td>
+                            <td>{race.raceName}</td>
+                            <td className="text-center">
+                              {points.mainPoints !== null ? (
+                                <Badge
+                                  bg={points.mainPoints < 0 ? "danger" : points.mainPoints === 0 ? "secondary" : "success"}
+                                  text={points.mainPoints < 0 ? "light" : undefined}
+                                >
+                                  {points.mainPoints > 0 ? `+${points.mainPoints}` : points.mainPoints}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted">—</span>
+                              )}
+                            </td>
+                            <td className="text-center">
+                              {points.sprintPoints !== null ? (
+                                <Badge
+                                  bg={points.sprintPoints < 0 ? "danger" : points.sprintPoints === 0 ? "secondary" : "info"}
+                                  text={points.sprintPoints < 0 ? "light" : undefined}
+                                >
+                                  {points.sprintPoints > 0 ? `+${points.sprintPoints}` : points.sprintPoints}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted">—</span>
+                              )}
+                            </td>
+                            <td className="text-center">
+                              <Badge
+                                bg={points.total < 0 ? "danger" : points.total === 0 ? "secondary" : "primary"}
+                                text={points.total < 0 ? "light" : undefined}
+                              >
+                                {points.total > 0 ? `+${points.total}` : points.total}
+                              </Badge>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </Table>
                 </div>
