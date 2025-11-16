@@ -3,7 +3,7 @@
  * @description Main application component with routing and lazy-loaded pages
  */
 
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -15,6 +15,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import Navigation from "./components/Navigation";
 import Footer from "./components/Footer";
+import { syncFromAPI } from "./services/f1DataResolver.js";
 import "./styles/theme.css";
 
 // Lazy loading pages for code splitting
@@ -45,6 +46,14 @@ const PageLoader = () => (
  * @returns {JSX.Element} App with navigation and routes
  */
 export default function App() {
+  // Sincronizza dati piloti/team da API all'avvio (background)
+  useEffect(() => {
+    syncFromAPI().catch(err => {
+      console.warn('Background sync failed:', err);
+      // Non bloccare l'app se il sync fallisce
+    });
+  }, []);
+
   return (
     <LanguageProvider>
       <ThemeProvider>

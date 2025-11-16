@@ -3,77 +3,22 @@
  * Automatically fetches F1 race results using Jolpica F1 API (official Ergast replacement)
  */
 
+import { resolveDriver } from './f1DataResolver.js';
+
 const API_BASE_URL = "http://api.jolpi.ca/ergast/f1";
 
 /**
- * Mapping of driver names from API to app format
- * Common API formats: "Verstappen", "Leclerc", "Norris", etc.
- */
-const DRIVER_NAME_MAPPING = {
-  // Red Bull Racing
-  "Verstappen": "Max Verstappen",
-  "Perez": "Sergio Perez",
-  "Pérez": "Sergio Perez",
-
-  // Ferrari
-  "Leclerc": "Charles Leclerc",
-  "Sainz": "Carlos Sainz",
-  "Hamilton": "Lewis Hamilton",
-
-  // McLaren
-  "Norris": "Lando Norris",
-  "Piastri": "Oscar Piastri",
-
-  // Mercedes
-  "Russell": "George Russell",
-  "Antonelli": "Andrea Kimi Antonelli",
-
-  // Aston Martin
-  "Alonso": "Fernando Alonso",
-  "Stroll": "Lance Stroll",
-
-  // Alpine
-  "Gasly": "Pierre Gasly",
-  "Doohan": "Jack Doohan",
-
-  // Williams
-  "Albon": "Alexander Albon",
-  "Sainz Jr.": "Carlos Sainz",
-
-  // RB (Racing Bulls)
-  "Tsunoda": "Yuki Tsunoda",
-  "Hadjar": "Isack Hadjar",
-
-  // Kick Sauber
-  "Hulkenberg": "Nico Hulkenberg",
-  "Bortoleto": "Gabriel Bortoleto",
-  "Hülkenberg": "Nico Hulkenberg",
-
-  // Haas
-  "Ocon": "Esteban Ocon",
-  "Bearman": "Oliver Bearman",
-};
-
-/**
  * Normalizes driver name from API format to app format
+ * Uses the new f1DataResolver with cascading fallback system
  * @param {Object} driver - Driver object from API
+ * @param {Object} constructor - Constructor object from API (optional)
  * @returns {string|null} Full driver name or null if not found
  */
-function normalizeDriverName(driver) {
+function normalizeDriverName(driver, constructor = null) {
   if (!driver) return null;
 
-  const familyName = driver.familyName;
-
-  // Check mapping first
-  if (DRIVER_NAME_MAPPING[familyName]) {
-    return DRIVER_NAME_MAPPING[familyName];
-  }
-
-  // Fallback: construct full name
-  const fullName = `${driver.givenName} ${driver.familyName}`;
-  console.warn(`⚠️ Pilota non mappato: ${fullName}. Usare mapping manuale.`);
-
-  return fullName;
+  const resolved = resolveDriver(driver, constructor);
+  return resolved?.displayName || null;
 }
 
 /**
@@ -110,11 +55,11 @@ export async function fetchRaceResults(season, round) {
       return null;
     }
 
-    // Extract top 3
+    // Extract top 3 (pass Constructor for team inference)
     const mainResults = {
-      P1: normalizeDriverName(results[0]?.Driver),
-      P2: normalizeDriverName(results[1]?.Driver),
-      P3: normalizeDriverName(results[2]?.Driver),
+      P1: normalizeDriverName(results[0]?.Driver, results[0]?.Constructor),
+      P2: normalizeDriverName(results[1]?.Driver, results[1]?.Constructor),
+      P3: normalizeDriverName(results[2]?.Driver, results[2]?.Constructor),
     };
 
     // Fetch sprint results (if available)
@@ -133,9 +78,9 @@ export async function fetchRaceResults(season, round) {
 
           if (sprintResultsList && sprintResultsList.length >= 3) {
             sprintResults = {
-              SP1: normalizeDriverName(sprintResultsList[0]?.Driver),
-              SP2: normalizeDriverName(sprintResultsList[1]?.Driver),
-              SP3: normalizeDriverName(sprintResultsList[2]?.Driver),
+              SP1: normalizeDriverName(sprintResultsList[0]?.Driver, sprintResultsList[0]?.Constructor),
+              SP2: normalizeDriverName(sprintResultsList[1]?.Driver, sprintResultsList[1]?.Constructor),
+              SP3: normalizeDriverName(sprintResultsList[2]?.Driver, sprintResultsList[2]?.Constructor),
             };
             console.log(`✅ Sprint trovata per Round ${round}`);
           }

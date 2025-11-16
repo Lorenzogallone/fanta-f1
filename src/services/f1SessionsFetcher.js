@@ -4,6 +4,8 @@
  * Uses OpenF1 API for practice sessions and Jolpica/Ergast API for qualifying, sprint, race
  */
 
+import { resolveDriver, resolveTeam } from './f1DataResolver.js';
+
 const ERGAST_API_BASE_URL = "https://api.jolpi.ca/ergast/f1";
 const OPENF1_API_BASE_URL = "https://api.openf1.org/v1";
 
@@ -62,33 +64,7 @@ async function rateLimitedFetch(url, retryCount = 0) {
   }
 }
 
-/**
- * Mapping of driver names from API to app format
- */
-const DRIVER_NAME_MAPPING = {
-  "Verstappen": "Max Verstappen",
-  "Perez": "Sergio Perez",
-  "Pérez": "Sergio Perez",
-  "Leclerc": "Charles Leclerc",
-  "Sainz": "Carlos Sainz Jr.",
-  "Hamilton": "Lewis Hamilton",
-  "Norris": "Lando Norris",
-  "Piastri": "Oscar Piastri",
-  "Russell": "George Russell",
-  "Antonelli": "Andrea Kimi Antonelli",
-  "Alonso": "Fernando Alonso",
-  "Stroll": "Lance Stroll",
-  "Gasly": "Pierre Gasly",
-  "Doohan": "Jack Doohan",
-  "Albon": "Alexander Albon",
-  "Tsunoda": "Yuki Tsunoda",
-  "Hadjar": "Isack Hadjar",
-  "Hulkenberg": "Nico Hülkenberg",
-  "Bortoleto": "Gabriel Bortoleto",
-  "Hülkenberg": "Nico Hülkenberg",
-  "Ocon": "Esteban Ocon",
-  "Bearman": "Oliver Bearman",
-};
+// Note: DRIVER_NAME_MAPPING removed - now using f1DataResolver for all driver/team resolution
 
 /**
  * Mapping of driver numbers to names (2024-2025 season)
@@ -126,16 +102,16 @@ const DRIVER_NUMBER_MAPPING = {
 
 /**
  * Normalizes driver name from API format to app format
+ * Uses the new f1DataResolver with cascading fallback system
  * @param {Object} driver - Driver object from API
+ * @param {Object} constructor - Constructor object from API (optional)
  * @returns {string|null} Full driver name or null if not found
  */
-function normalizeDriverName(driver) {
+function normalizeDriverName(driver, constructor = null) {
   if (!driver) return null;
-  const familyName = driver.familyName;
-  if (DRIVER_NAME_MAPPING[familyName]) {
-    return DRIVER_NAME_MAPPING[familyName];
-  }
-  return `${driver.givenName} ${driver.familyName}`;
+
+  const resolved = resolveDriver(driver, constructor);
+  return resolved?.displayName || null;
 }
 
 /**
@@ -276,7 +252,10 @@ export async function fetchPracticeSession(season, round, sessionName) {
       drivers.forEach(d => {
         const fullName = `${d.first_name} ${d.last_name}`;
         driverInfo[d.driver_number] = {
-          name: normalizeDriverName({ givenName: d.first_name, familyName: d.last_name }),
+          name: normalizeDriverName(
+            { givenName: d.first_name, familyName: d.last_name, permanentNumber: d.driver_number },
+            { name: d.team_name }
+          ),
           team: d.team_name,
         };
       });
@@ -361,7 +340,7 @@ export async function fetchQualifying(season, round) {
 
       return {
         position: result.position,
-        driver: normalizeDriverName(result.Driver),
+        driver: normalizeDriverName(result.Driver, result.Constructor),
         constructor: result.Constructor?.name,
         q1: result.Q1 || "—",
         q2: result.Q2 || "—",
@@ -440,7 +419,7 @@ export async function fetchSprint(season, round) {
 
       return {
         position: result.position,
-        driver: normalizeDriverName(result.Driver),
+        driver: normalizeDriverName(result.Driver, result.Constructor),
         constructor: result.Constructor?.name,
         time: result.Time?.time || "—",
         gap,
@@ -487,7 +466,7 @@ export async function fetchRace(season, round) {
 
       return {
         position: result.position,
-        driver: normalizeDriverName(result.Driver),
+        driver: normalizeDriverName(result.Driver, result.Constructor),
         constructor: result.Constructor?.name,
         time: result.Time?.time || "—",
         gap: result.position === "1" ? "—" : calculateGap(leaderTimeMs, driverTimeMs),
@@ -675,7 +654,7 @@ export async function fetchDriverStandings(season = "current") {
       position: standing.position,
       points: standing.points,
       wins: standing.wins,
-      driver: normalizeDriverName(standing.Driver),
+      driver: normalizeDriverName(standing.Driver, standing.Constructors?.[0]),
       constructor: standing.Constructors?.[0]?.name || "—",
     }));
   } catch (error) {
@@ -685,31 +664,16 @@ export async function fetchDriverStandings(season = "current") {
 }
 
 /**
- * Normalizes constructor/team names from Ergast API to match our app's team names
- * @param {string} teamName - Team name from Ergast API
- * @returns {string} Normalized team name matching TEAM_LOGOS keys
+ * Normalizes constructor/team names from API to match our app's team names
+ * Uses the new f1DataResolver with cascading fallback system
+ * @param {string} teamName - Team name from API
+ * @returns {string} Normalized team name
  */
 function normalizeTeamName(teamName) {
   if (!teamName) return "—";
 
-  const name = teamName.trim();
-
-  // Direct mappings for teams that need normalization
-  const teamMappings = {
-    "Alpine F1 Team": "Alpine",
-    "Haas F1 Team": "Haas",
-    "Kick Sauber": "Sauber",
-    "Sauber Motorsport": "Sauber",
-    "RB F1 Team": "Vcarb",
-    "RB": "Vcarb",
-    "Racing Bulls": "Vcarb",
-    "AlphaTauri": "Vcarb",
-    "Red Bull Racing": "Red Bull",
-    "Aston Martin F1 Team": "Aston Martin",
-  };
-
-  // Return mapped name or original if no mapping found
-  return teamMappings[name] || name;
+  const resolved = resolveTeam(teamName);
+  return resolved?.displayName || teamName;
 }
 
 /**
