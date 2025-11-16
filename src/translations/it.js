@@ -166,6 +166,13 @@ export const it = {
     canStillSubmit: "Puoi ancora schierare la formazione!",
     qualifyingNotStarted: "Le qualifiche non sono ancora iniziate",
     goToFormation: "Vai allo Schieramento",
+    sessionsTab: "Sessioni",
+    championshipTab: "Campionato",
+    allFilter: "Tutti",
+    driverStandings: "Classifica Piloti",
+    constructorStandings: "Classifica Costruttori",
+    driverStandingsUnavailable: "Classifica piloti non disponibile",
+    constructorStandingsUnavailable: "Classifica costruttori non disponibile",
   },
 
   // Statistics
