@@ -29,11 +29,10 @@ export default function NotificationSettings({ userId }) {
 
   if (!isSupported) {
     return (
-      <Alert variant="warning" className="mb-3">
-        <strong>⚠️ Notifications not supported</strong>
+      <Alert variant="info" className="mb-3">
+        <strong>ℹ️ Notifications not available</strong>
         <p className="mb-0 small">
-          Your browser doesn&apos;t support push notifications.
-          Try using Chrome, Firefox, or Edge.
+          Push notifications are not configured yet. The app works perfectly without them!
         </p>
       </Alert>
     );

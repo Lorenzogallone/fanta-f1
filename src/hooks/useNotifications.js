@@ -11,7 +11,8 @@ import { log, error as logError } from '../utils/logger';
 import { useToast } from './useToast';
 
 // VAPID key - Get this from Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
-const VAPID_KEY = 'YOUR_VAPID_KEY_HERE'; // TODO: Replace with actual VAPID key
+// Leave empty to disable notifications (app will work without it)
+const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || '';
 
 /**
  * Hook to handle push notifications
@@ -26,14 +27,18 @@ export const useNotifications = (userId) => {
   const toast = useToast();
 
   /**
-   * Check if notifications are supported
+   * Check if notifications are supported and configured
    */
   useEffect(() => {
-    if ('Notification' in window && 'serviceWorker' in navigator) {
+    if ('Notification' in window && 'serviceWorker' in navigator && VAPID_KEY) {
       setIsSupported(true);
     } else {
       setIsSupported(false);
-      log('Push notifications not supported in this browser');
+      if (!VAPID_KEY) {
+        log('Push notifications not configured (missing VAPID key)');
+      } else {
+        log('Push notifications not supported in this browser');
+      }
     }
   }, []);
 
@@ -76,6 +81,11 @@ export const useNotifications = (userId) => {
   const registerToken = async () => {
     if (!userId) {
       log('No user ID provided, skipping token registration');
+      return;
+    }
+
+    if (!VAPID_KEY) {
+      log('VAPID key not configured, skipping token registration');
       return;
     }
 
