@@ -162,8 +162,11 @@ useEffect(() => {
       const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setRaces(list);
 
-      // Default = first race in list
-      if (list.length) setRace(list[0]);
+      // Default = first race without points calculated, otherwise first race
+      if (list.length) {
+        const firstWithoutPoints = list.find(r => !r.pointsCalculated);
+        setRace(firstWithoutPoints || list[0]);
+      }
     } catch (err) {
       console.error(err);
       setMsgRace({ variant: "danger", msg: t("calculate.errorLoadingRaces") });
