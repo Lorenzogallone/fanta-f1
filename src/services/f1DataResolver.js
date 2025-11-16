@@ -1,7 +1,6 @@
 /**
  * @file f1DataResolver.js
- * @description Sistema di risoluzione dati F1 con cascading fallback
- * Priorità: API Live → JSON Manuale → Inferenza da API response → Fallback
+ * @description F1 data resolution system with cascading fallback
  */
 
 import f1DataManual from '../data/f1-data.json';
@@ -14,18 +13,16 @@ class F1DataResolver {
   constructor() {
     this.manualData = f1DataManual;
     this.apiCache = this.loadCache();
-    this.unknownDrivers = new Map(); // Runtime cache per piloti non mappati
-    this.unknownTeams = new Map(); // Runtime cache per team non mappati
+    this.unknownDrivers = new Map();
+    this.unknownTeams = new Map();
     this.syncInProgress = false;
   }
 
   /**
-   * 🔍 FUNZIONE PRINCIPALE: Risolve un pilota da API response
-   * Priorità: API Cache → JSON Manuale → Inferenza da apiConstructor → Fallback nome
-   *
-   * @param {Object} apiDriver - Driver object da API (es: {givenName, familyName, permanentNumber})
-   * @param {Object|string} apiConstructor - Constructor object o nome team da API (opzionale)
-   * @returns {Object|null} Driver completo con team e logo
+   * Resolves driver from API response with cascading fallback
+   * @param {Object} apiDriver - Driver object from API
+   * @param {Object|string} [apiConstructor] - Constructor object or team name from API
+   * @returns {Object|null} Resolved driver with team and logo
    */
   resolveDriver(apiDriver, apiConstructor = null) {
     if (!apiDriver) return null;
@@ -33,32 +30,28 @@ class F1DataResolver {
     const fullName = `${apiDriver.givenName} ${apiDriver.familyName}`;
     const familyName = apiDriver.familyName;
 
-    // 🔍 LIVELLO 1: Cerca in cache API (PRIORITÀ MASSIMA se preferApiData = true)
     if (this.manualData.config.preferApiData && this.apiCache?.drivers) {
       const fromApi = this.findDriverInApiCache(familyName, fullName);
       if (fromApi) {
-        console.log(`✅ [API Cache] Driver "${fullName}" trovato in cache API`);
+        console.log(`✅ [API Cache] Driver "${fullName}" found in API cache`);
         return fromApi;
       }
     }
 
-    // 🔍 LIVELLO 2: Cerca in database manuale (nostro JSON)
     const fromManual = this.findDriverInManualData(familyName, fullName);
     if (fromManual) {
-      console.log(`✅ [Manual DB] Driver "${fullName}" trovato in database manuale`);
+      console.log(`✅ [Manual DB] Driver "${fullName}" found in manual database`);
       return fromManual;
     }
 
-    // 🔍 LIVELLO 3: Se NON preferApiData, prova cache API come fallback
     if (!this.manualData.config.preferApiData && this.apiCache?.drivers) {
       const fromApi = this.findDriverInApiCache(familyName, fullName);
       if (fromApi) {
-        console.log(`✅ [API Cache Fallback] Driver "${fullName}" trovato in cache API`);
+        console.log(`✅ [API Cache Fallback] Driver "${fullName}" found in API cache`);
         return fromApi;
       }
     }
 
-    // 🔍 LIVELLO 4: Inferenza da apiConstructor (se fornito nella risposta API)
     if (apiConstructor) {
       const constructorName = typeof apiConstructor === 'string'
         ? apiConstructor
@@ -68,7 +61,7 @@ class F1DataResolver {
         const inferredTeam = this.resolveTeam(constructorName);
 
         if (inferredTeam) {
-          console.warn(`⚠️ [Inferred] Driver "${fullName}" NON mappato, ma team inferito da API: ${inferredTeam.displayName}`);
+          console.warn(`⚠️ [Inferred] Driver "${fullName}" not mapped, but team inferred from API: ${inferredTeam.displayName}`);
 
           const inferred = {
             id: `${apiDriver.givenName}-${apiDriver.familyName}`.toLowerCase().replace(/\s+/g, '-'),
@@ -82,7 +75,6 @@ class F1DataResolver {
             source: 'inferred'
           };
 
-          // Memorizza in cache runtime
           this.unknownDrivers.set(fullName, inferred);
 
           return inferred;
@@ -90,8 +82,7 @@ class F1DataResolver {
       }
     }
 
-    // 🔍 LIVELLO 5: Fallback finale - pilota sconosciuto senza team
-    console.error(`❌ [Fallback] Driver "${fullName}" completamente sconosciuto. Mostro solo nome e cognome.`);
+    console.error(`❌ [Fallback] Driver "${fullName}" completely unknown. Showing name only.`);
 
     const fallback = {
       id: `${apiDriver.givenName}-${apiDriver.familyName}`.toLowerCase().replace(/\s+/g, '-'),
@@ -111,7 +102,10 @@ class F1DataResolver {
   }
 
   /**
-   * Cerca driver in cache API
+   * Finds driver in API cache
+   * @param {string} familyName - Driver family name
+   * @param {string} fullName - Driver full name
+   * @returns {Object|null} Driver data or null
    */
   findDriverInApiCache(familyName, fullName) {
     if (!this.apiCache?.drivers) return null;
@@ -131,7 +125,10 @@ class F1DataResolver {
   }
 
   /**
-   * Cerca driver in database manuale
+   * Finds driver in manual database
+   * @param {string} familyName - Driver family name
+   * @param {string} fullName - Driver full name
+   * @returns {Object|null} Driver data or null
    */
   findDriverInManualData(familyName, fullName) {
     for (const driver of Object.values(this.manualData.drivers)) {
@@ -152,11 +149,9 @@ class F1DataResolver {
   }
 
   /**
-   * 🏁 Risolve un team da nome API
-   * Priorità: API Cache → JSON Manuale → Fallback
-   *
-   * @param {string} apiTeamName - Nome team da API
-   * @returns {Object|null} Team completo con logo
+   * Resolves team from API name with cascading fallback
+   * @param {string} apiTeamName - Team name from API
+   * @returns {Object|null} Resolved team with logo
    */
   resolveTeam(apiTeamName) {
     if (!apiTeamName) return null;
@@ -204,7 +199,9 @@ class F1DataResolver {
   }
 
   /**
-   * Cerca team in cache API
+   * Finds team in API cache
+   * @param {string} teamName - Team name
+   * @returns {Object|null} Team data or null
    */
   findTeamInApiCache(teamName) {
     if (!this.apiCache?.teams) return null;
@@ -218,7 +215,9 @@ class F1DataResolver {
   }
 
   /**
-   * Cerca team in database manuale
+   * Finds team in manual database
+   * @param {string} teamName - Team name
+   * @returns {Object|null} Team data or null
    */
   findTeamInManualData(teamName) {
     for (const team of Object.values(this.manualData.teams)) {
@@ -230,10 +229,8 @@ class F1DataResolver {
   }
 
   /**
-   * 🔄 AUTOMAZIONE: Sincronizza dati da API Ergast
-   * Chiamata automaticamente all'avvio app o manualmente da admin panel
-   *
-   * @returns {Promise<Object|null>} Cache aggiornata o null se errore
+   * Synchronizes driver and team data from Ergast API
+   * @returns {Promise<Object|null>} Updated cache or null on error
    */
   async syncFromAPI() {
     if (!this.manualData.config.enableApiSync) {
@@ -349,7 +346,8 @@ class F1DataResolver {
   }
 
   /**
-   * 💾 Carica cache da localStorage
+   * Loads cache from localStorage
+   * @returns {Object|null} Cache data or null
    */
   loadCache() {
     try {
@@ -389,7 +387,7 @@ class F1DataResolver {
   }
 
   /**
-   * 💾 Salva cache in localStorage
+   * Saves cache to localStorage
    */
   saveCache() {
     try {
@@ -415,7 +413,7 @@ class F1DataResolver {
   }
 
   /**
-   * 🗑️ Pulisce cache (utile per debug)
+   * Clears cache from localStorage
    */
   clearCache() {
     localStorage.removeItem(CACHE_KEY_DRIVERS);
@@ -427,7 +425,8 @@ class F1DataResolver {
   }
 
   /**
-   * 📋 Esporta piloti sconosciuti trovati (per aggiungerli manualmente al JSON)
+   * Exports unknown drivers found during runtime
+   * @returns {Object|null} JSON object with unknown drivers or null
    */
   exportUnknownDrivers() {
     const unknowns = Array.from(this.unknownDrivers.values());
@@ -464,7 +463,8 @@ class F1DataResolver {
   }
 
   /**
-   * 📋 Esporta team sconosciuti trovati
+   * Exports unknown teams found during runtime
+   * @returns {Array|null} Array of unknown teams or null
    */
   exportUnknownTeams() {
     const unknowns = Array.from(this.unknownTeams.values());
@@ -481,7 +481,8 @@ class F1DataResolver {
   }
 
   /**
-   * 📊 Helper: Ottieni tutti i piloti (manuale + cache API + unknown)
+   * Gets all drivers from all sources
+   * @returns {Array} Array of all drivers
    */
   getAllDrivers() {
     const drivers = [];
@@ -516,7 +517,8 @@ class F1DataResolver {
   }
 
   /**
-   * 📊 Helper: Ottieni tutti i team
+   * Gets all teams from all sources
+   * @returns {Array} Array of all teams
    */
   getAllTeams() {
     const teams = [];
@@ -550,9 +552,9 @@ class F1DataResolver {
   }
 
   /**
-   * 🔧 Helper: Ottieni team di un pilota per nome
-   * @param {string} driverName - Nome pilota
-   * @returns {Object|null} Team object
+   * Gets team for a driver by name
+   * @param {string} driverName - Driver name
+   * @returns {Object|null} Team object or null
    */
   getDriverTeam(driverName) {
     const driver = this.getAllDrivers().find(
@@ -568,9 +570,9 @@ class F1DataResolver {
   }
 
   /**
-   * 🔧 Helper: Ottieni logo team
-   * @param {string} teamIdOrName - ID o nome team
-   * @returns {string|null} Path logo
+   * Gets team logo path
+   * @param {string} teamIdOrName - Team ID or name
+   * @returns {string|null} Logo path or null
    */
   getTeamLogo(teamIdOrName) {
     const team = this.manualData.teams[teamIdOrName] ||

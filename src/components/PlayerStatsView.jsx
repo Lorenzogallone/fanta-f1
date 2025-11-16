@@ -219,12 +219,11 @@ export default function PlayerStatsView({
   let chartHistory = [];
 
   if (showCharts && raceHistory.length > 0) {
-    // Build chart data from race history
     let cumulativePoints = 0;
     chartRaces = [];
     chartHistory = [];
 
-    raceHistory.forEach((race) => {
+    [...raceHistory].reverse().forEach((race) => {
       const points = calculateRacePoints(race.submission, race.officialResults, race.cancelledSprint);
       cumulativePoints += points.total;
 

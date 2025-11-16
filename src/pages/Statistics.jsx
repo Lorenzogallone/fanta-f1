@@ -395,208 +395,205 @@ export default function Statistics() {
       {/* General Tab Content */}
       {activeTab === "general" && (
         <Row className="g-4">
-          {/* Classifica attuale */}
+          {/* Current Ranking (left sidebar on desktop) */}
           <Col xs={12} lg={4}>
-          <Card
-            className="shadow h-100"
-            style={{
-              borderColor: accentColor,
-              backgroundColor: bgCard,
-            }}
-          >
-            <Card.Header
-              as="h5"
-              className="text-center fw-semibold"
+            <Card
+              className="shadow h-100"
               style={{
-                backgroundColor: bgHeader,
-                borderBottom: `2px solid ${accentColor}`,
+                borderColor: accentColor,
+                backgroundColor: bgCard,
               }}
             >
-              {t("statistics.currentRanking")}
-            </Card.Header>
-            <Card.Body className="p-0">
-              <div className="table-responsive">
-                <Table
-                  hover
-                  striped
-                  className="mb-0 align-middle"
-                  style={{ borderTop: `1px solid ${accentColor}` }}
-                >
-                  <thead>
-                    <tr>
-                      <th style={{ width: 60 }} className="text-center">
-                        #
-                      </th>
-                      <th>{t("statistics.player")}</th>
-                      <th className="text-center">{t("statistics.points")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentRanking.map((player, idx) => {
-                      const medal = medals[idx] ?? idx + 1;
-                      const isTop3 = idx < 3;
+              <Card.Header
+                as="h5"
+                className="text-center fw-semibold"
+                style={{
+                  backgroundColor: bgHeader,
+                  borderBottom: `2px solid ${accentColor}`,
+                }}
+              >
+                {t("statistics.currentRanking")}
+              </Card.Header>
+              <Card.Body className="p-0">
+                <div className="table-responsive">
+                  <Table
+                    hover
+                    striped
+                    className="mb-0 align-middle"
+                    style={{ borderTop: `1px solid ${accentColor}` }}
+                  >
+                    <thead>
+                      <tr>
+                        <th style={{ width: 60 }} className="text-center">
+                          #
+                        </th>
+                        <th>{t("statistics.player")}</th>
+                        <th className="text-center">{t("statistics.points")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentRanking.map((player, idx) => {
+                        const medal = medals[idx] ?? idx + 1;
+                        const isTop3 = idx < 3;
 
-                      return (
-                        <tr
-                          key={player.userId}
-                          className={isTop3 ? "fw-bold" : ""}
-                          style={{
-                            cursor: "pointer",
-                            transition: "background-color 0.2s",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = isDark ? "#2d3238" : "#f8f9fa";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "";
-                          }}
-                          onClick={() => {
-                            // Navigate to participant page when clicking on row
-                            window.location.href = `/participant/${player.userId}`;
-                          }}
-                        >
-                          <td className="text-center">{medal}</td>
-                          <td>
-                            <div className="d-flex align-items-center justify-content-between">
-                              <span style={{ flex: 1, color: "inherit" }}>
-                                {player.name}
-                              </span>
-                              <span
-                                style={{
-                                  color: accentColor,
-                                  fontSize: "0.9rem",
-                                  fontWeight: "bold",
-                                  marginLeft: "8px",
-                                }}
-                                title="Clicca per vedere dettagli"
-                              >
-                                👁️
-                              </span>
-                            </div>
-                          </td>
-                          <td className="text-center">
-                            <Badge bg="success">{player.points}</Badge>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </Table>
-              </div>
-              <div className="px-3 pb-2 text-center">
-                <small className="text-muted">
-                  💡 {t("statistics.clickPlayerHint")}
-                </small>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        {/* Filtri per i grafici */}
-        <Col xs={12}>
-          <Card
-            className="shadow"
-            style={{
-              borderColor: accentColor,
-              backgroundColor: bgCard,
-            }}
-          >
-            <Card.Body>
-              {/* Filtro Giocatori */}
-              <div className="mb-3">
-                <h6 className="mb-2 fw-semibold" style={{ color: accentColor }}>
-                  👥 {t("statistics.playersToShow")}
-                </h6>
-                <div className="d-flex justify-content-center gap-2 flex-wrap">
-                  <Button
-                    size="sm"
-                    variant={playersFilter === "5" ? "danger" : "outline-secondary"}
-                    onClick={() => setPlayersFilter("5")}
-                    style={{
-                      backgroundColor: playersFilter === "5" ? accentColor : "transparent",
-                      borderColor: playersFilter === "5" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
-                      color: playersFilter === "5" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
-                    }}
-                  >
-                    Top 5
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={playersFilter === "10" ? "danger" : "outline-secondary"}
-                    onClick={() => setPlayersFilter("10")}
-                    style={{
-                      backgroundColor: playersFilter === "10" ? accentColor : "transparent",
-                      borderColor: playersFilter === "10" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
-                      color: playersFilter === "10" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
-                    }}
-                  >
-                    Top 10
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={playersFilter === "all" ? "danger" : "outline-secondary"}
-                    onClick={() => setPlayersFilter("all")}
-                    style={{
-                      backgroundColor: playersFilter === "all" ? accentColor : "transparent",
-                      borderColor: playersFilter === "all" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
-                      color: playersFilter === "all" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
-                    }}
-                  >
-                    {t("statistics.all")}
-                  </Button>
+                        return (
+                          <tr
+                            key={player.userId}
+                            className={isTop3 ? "fw-bold" : ""}
+                            style={{
+                              cursor: "pointer",
+                              transition: "background-color 0.2s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = isDark ? "#2d3238" : "#f8f9fa";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "";
+                            }}
+                            onClick={() => {
+                              window.location.href = `/participant/${player.userId}`;
+                            }}
+                          >
+                            <td className="text-center">{medal}</td>
+                            <td>
+                              <div className="d-flex align-items-center justify-content-between">
+                                <span style={{ flex: 1, color: "inherit" }}>
+                                  {player.name}
+                                </span>
+                                <span
+                                  style={{
+                                    color: accentColor,
+                                    fontSize: "0.9rem",
+                                    fontWeight: "bold",
+                                    marginLeft: "8px",
+                                  }}
+                                >
+                                  👁️
+                                </span>
+                              </div>
+                            </td>
+                            <td className="text-center">
+                              <Badge bg="success">{player.points}</Badge>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </Table>
                 </div>
-              </div>
-
-              {/* Filtro Gare */}
-              <div>
-                <h6 className="mb-2 fw-semibold" style={{ color: accentColor }}>
-                  🏁 {t("statistics.racesToShow")}
-                </h6>
-                <div className="d-flex justify-content-center gap-2 flex-wrap">
-                  <Button
-                    size="sm"
-                    variant={racesFilter === "5" ? "danger" : "outline-secondary"}
-                    onClick={() => setRacesFilter("5")}
-                    style={{
-                      backgroundColor: racesFilter === "5" ? accentColor : "transparent",
-                      borderColor: racesFilter === "5" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
-                      color: racesFilter === "5" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
-                    }}
-                  >
-                    {t("statistics.last")} 5
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={racesFilter === "10" ? "danger" : "outline-secondary"}
-                    onClick={() => setRacesFilter("10")}
-                    style={{
-                      backgroundColor: racesFilter === "10" ? accentColor : "transparent",
-                      borderColor: racesFilter === "10" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
-                      color: racesFilter === "10" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
-                    }}
-                  >
-                    {t("statistics.last")} 10
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={racesFilter === "all" ? "danger" : "outline-secondary"}
-                    onClick={() => setRacesFilter("all")}
-                    style={{
-                      backgroundColor: racesFilter === "all" ? accentColor : "transparent",
-                      borderColor: racesFilter === "all" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
-                      color: racesFilter === "all" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
-                    }}
-                  >
-                    {t("statistics.allFeminine")}
-                  </Button>
+                <div className="px-3 pb-2 text-center">
+                  <small className="text-muted">
+                    💡 {t("statistics.clickPlayerHint")}
+                  </small>
                 </div>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
+              </Card.Body>
+            </Card>
+          </Col>
 
-        {/* Grafici */}
-        <Col xs={12} lg={8}>
+          {/* Charts Section (right side on desktop) */}
+          <Col xs={12} lg={8}>
+            {/* Filters */}
+            <Card
+              className="shadow mb-4"
+              style={{
+                borderColor: accentColor,
+                backgroundColor: bgCard,
+              }}
+            >
+              <Card.Body>
+                <Row className="g-3">
+                  <Col xs={12} md={6}>
+                    <h6 className="mb-2 fw-semibold" style={{ color: accentColor }}>
+                      👥 {t("statistics.playersToShow")}
+                    </h6>
+                    <div className="d-flex gap-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant={playersFilter === "5" ? "danger" : "outline-secondary"}
+                        onClick={() => setPlayersFilter("5")}
+                        style={{
+                          backgroundColor: playersFilter === "5" ? accentColor : "transparent",
+                          borderColor: playersFilter === "5" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                          color: playersFilter === "5" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
+                        }}
+                      >
+                        Top 5
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={playersFilter === "10" ? "danger" : "outline-secondary"}
+                        onClick={() => setPlayersFilter("10")}
+                        style={{
+                          backgroundColor: playersFilter === "10" ? accentColor : "transparent",
+                          borderColor: playersFilter === "10" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                          color: playersFilter === "10" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
+                        }}
+                      >
+                        Top 10
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={playersFilter === "all" ? "danger" : "outline-secondary"}
+                        onClick={() => setPlayersFilter("all")}
+                        style={{
+                          backgroundColor: playersFilter === "all" ? accentColor : "transparent",
+                          borderColor: playersFilter === "all" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                          color: playersFilter === "all" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
+                        }}
+                      >
+                        {t("statistics.all")}
+                      </Button>
+                    </div>
+                  </Col>
+
+                  <Col xs={12} md={6}>
+                    <h6 className="mb-2 fw-semibold" style={{ color: accentColor }}>
+                      🏁 {t("statistics.racesToShow")}
+                    </h6>
+                    <div className="d-flex gap-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant={racesFilter === "5" ? "danger" : "outline-secondary"}
+                        onClick={() => setRacesFilter("5")}
+                        style={{
+                          backgroundColor: racesFilter === "5" ? accentColor : "transparent",
+                          borderColor: racesFilter === "5" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                          color: racesFilter === "5" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
+                        }}
+                      >
+                        {t("statistics.last")} 5
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={racesFilter === "10" ? "danger" : "outline-secondary"}
+                        onClick={() => setRacesFilter("10")}
+                        style={{
+                          backgroundColor: racesFilter === "10" ? accentColor : "transparent",
+                          borderColor: racesFilter === "10" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                          color: racesFilter === "10" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
+                        }}
+                      >
+                        {t("statistics.last")} 10
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={racesFilter === "all" ? "danger" : "outline-secondary"}
+                        onClick={() => setRacesFilter("all")}
+                        style={{
+                          backgroundColor: racesFilter === "all" ? accentColor : "transparent",
+                          borderColor: racesFilter === "all" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
+                          color: racesFilter === "all" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
+                        }}
+                      >
+                        {t("statistics.allFeminine")}
+                      </Button>
+                    </div>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
+
+            {/* Charts */}
           {loadingStatistics ? (
             // Show loading placeholders for charts
             <>
