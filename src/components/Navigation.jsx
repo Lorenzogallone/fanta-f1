@@ -15,7 +15,7 @@ import { useLanguage } from "../hooks/useLanguage";
 export default function Navigation() {
   const location = useLocation();
   const [expanded, setExpanded] = useState(false);
-  const { toggleTheme, isDark } = useTheme();
+  const { toggleTheme, isDark, themeMode } = useTheme();
   const { currentLanguage, changeLanguage, availableLanguages, t } = useLanguage();
 
   /**
@@ -122,13 +122,19 @@ export default function Navigation() {
             onClick={toggleTheme}
             className="theme-toggle"
             aria-label={t("nav.toggleTheme")}
-            title={`Switch to ${isDark ? "light" : "dark"} theme`}
+            title={
+              themeMode === "auto"
+                ? "Theme: Auto (follows system)"
+                : themeMode === "light"
+                ? "Theme: Light"
+                : "Theme: Dark"
+            }
             style={{
               transform: "scale(0.85)",
             }}
           >
             <div className="theme-toggle-slider">
-              {isDark ? "🌙" : "☀️"}
+              {themeMode === "auto" ? "🔄" : isDark ? "🌙" : "☀️"}
             </div>
           </button>
         </div>

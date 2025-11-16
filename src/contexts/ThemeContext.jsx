@@ -1,6 +1,7 @@
 /**
  * @file ThemeContext.jsx
  * Provides theme context for dark/light mode with system preference detection.
+ * Supports 3 modes: "auto" (follow system), "light", "dark"
  */
 import React, { createContext, useContext, useState, useEffect } from "react";
 import PropTypes from "prop-types";
@@ -38,14 +39,23 @@ export function ThemeProvider({ children }) {
     return "light";
   };
 
-  // Read preference: priority to localStorage, then system, finally default "light"
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem("fanta-f1-theme");
-    if (saved) return saved;
+  // Theme mode: "auto", "light", or "dark"
+  const [themeMode, setThemeMode] = useState(() => {
+    const saved = localStorage.getItem("fanta-f1-theme-mode");
+    return saved || "auto"; // Default to "auto" (follow system)
+  });
+
+  // Actual applied theme: "light" or "dark"
+  const [appliedTheme, setAppliedTheme] = useState(() => {
+    const saved = localStorage.getItem("fanta-f1-theme-mode");
+    if (saved === "light" || saved === "dark") {
+      return saved;
+    }
+    // Default to system theme
     return getSystemTheme();
   });
 
-  // Listen for system theme changes
+  // Listen for system theme changes when in "auto" mode
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
@@ -54,10 +64,9 @@ export function ThemeProvider({ children }) {
      * @param {MediaQueryListEvent} e - Media query event
      */
     const handleChange = (e) => {
-      // Only change if user hasn't manually set a theme
-      const saved = localStorage.getItem("fanta-f1-theme");
-      if (!saved) {
-        setTheme(e.matches ? "dark" : "light");
+      // Only update if in "auto" mode
+      if (themeMode === "auto") {
+        setAppliedTheme(e.matches ? "dark" : "light");
       }
     };
 
@@ -70,36 +79,49 @@ export function ThemeProvider({ children }) {
       mediaQuery.addListener(handleChange);
       return () => mediaQuery.removeListener(handleChange);
     }
-  }, []);
+  }, [themeMode]);
 
-  // Apply theme to body (do NOT auto-save to localStorage)
+  // Update applied theme when mode changes
   useEffect(() => {
-    document.body.setAttribute("data-theme", theme);
-  }, [theme]);
+    if (themeMode === "auto") {
+      setAppliedTheme(getSystemTheme());
+    } else {
+      setAppliedTheme(themeMode);
+    }
+  }, [themeMode]);
+
+  // Apply theme to body
+  useEffect(() => {
+    document.body.setAttribute("data-theme", appliedTheme);
+  }, [appliedTheme]);
 
   /**
-   * Toggles between light and dark theme.
+   * Cycles through theme modes: auto → light → dark → auto
    */
   const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    // Save only when user manually chooses
-    localStorage.setItem("fanta-f1-theme", newTheme);
+    const modes = ["auto", "light", "dark"];
+    const currentIndex = modes.indexOf(themeMode);
+    const nextMode = modes[(currentIndex + 1) % modes.length];
+
+    setThemeMode(nextMode);
+    localStorage.setItem("fanta-f1-theme-mode", nextMode);
   };
 
   /**
-   * Resets theme to system preference.
+   * Resets theme to system preference (auto mode).
    */
   const resetToSystem = () => {
-    localStorage.removeItem("fanta-f1-theme");
-    setTheme(getSystemTheme());
+    setThemeMode("auto");
+    localStorage.setItem("fanta-f1-theme-mode", "auto");
   };
 
   const value = {
-    theme,
+    theme: appliedTheme, // Backward compatibility
+    themeMode, // New: "auto", "light", or "dark"
     toggleTheme,
     resetToSystem,
-    isDark: theme === "dark",
+    isDark: appliedTheme === "dark",
+    isAuto: themeMode === "auto",
   };
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
