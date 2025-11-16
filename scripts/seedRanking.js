@@ -1,4 +1,4 @@
-// scripts_calendar/seedRanking.js
+// scripts/seedRanking.js
 
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);

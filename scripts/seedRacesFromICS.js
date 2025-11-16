@@ -1,4 +1,4 @@
-// scripts_calendar/seedRacesFromICS.js
+// scripts/seedRacesFromICS.js
 
 import fs from "fs/promises";
 import ical from "node-ical";
@@ -10,7 +10,7 @@ import { initializeApp, cert } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
 // 📁 Percorso relativo al file .ics scaricato
-const ICS_PATH = "./scripts_calendar/f1_2025.ics";
+const ICS_PATH = "./scripts/f1_2025.ics";
 
 // Inizializza Firebase Admin (usa il tuo serviceAccount.json)
 initializeApp({

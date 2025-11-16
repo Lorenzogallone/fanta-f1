@@ -169,7 +169,7 @@ fanta-f1/
 │   │   └── customSelect.css  # React-select styles
 │   ├── App.jsx               # Main component + routing
 │   └── main.jsx              # Application entry point
-├── scripts_calendar/         # Scripts to import race calendar
+├── scripts/                  # Scripts to import race calendar
 └── README.md
 ```
 
