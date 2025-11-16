@@ -162,9 +162,9 @@ useEffect(() => {
       const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setRaces(list);
 
-      // Default = first race without points calculated, otherwise first race
+      // Default = first race without official results (not yet calculated), otherwise first race
       if (list.length) {
-        const firstWithoutPoints = list.find(r => !r.pointsCalculated);
+        const firstWithoutPoints = list.find(r => !r.officialResults);
         setRace(firstWithoutPoints || list[0]);
       }
     } catch (err) {
