@@ -8,15 +8,15 @@ importScripts('https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging-compat.js');
 
 // Initialize Firebase in service worker
-// Note: Use same config as main app
+// Note: Use same config as main app (from src/services/firebase.js)
 firebase.initializeApp({
   apiKey: "AIzaSyD4BZQbEEpfc1YFmZbsKAx_yCTbYsmOSZ0",
   authDomain: "fantaf1-b5410.firebaseapp.com",
   projectId: "fantaf1-b5410",
   storageBucket: "fantaf1-b5410.firebasestorage.app",
-  messagingSenderId: "876542464166",
-  appId: "1:876542464166:web:49a8c7fbd3b10e4fc86ab8",
-  measurementId: "G-04JN5VY4HP"
+  messagingSenderId: "933486998039",
+  appId: "1:933486998039:web:cd31c0ce29f92e2feca252",
+  measurementId: "G-6YG7VS4EFQ"
 });
 
 // Initialize Firebase Messaging
