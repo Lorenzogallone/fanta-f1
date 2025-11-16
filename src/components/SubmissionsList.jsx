@@ -3,6 +3,7 @@
  * Displays race lineup submissions with team logos and responsive layout.
  */
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import {
   Card, Table, Spinner, Alert, Badge,
 } from "react-bootstrap";
@@ -13,6 +14,7 @@ import { db } from "../services/firebase";
 import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { error } from "../utils/logger";
 
 // Use centralized constants
 const driverTeam = DRIVER_TEAM;
@@ -41,6 +43,10 @@ function DriverCell({ driverName }) {
     </span>
   );
 }
+
+DriverCell.propTypes = {
+  driverName: PropTypes.string,
+};
 
 /**
  * Displays submitted race lineups with responsive mobile/desktop layouts.
@@ -76,7 +82,7 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
         const snap = await getDocs(q);
         setSubs(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       } catch (e) {
-        console.error(e);
+        error(e);
         setErr("Unable to load lineups.");
       } finally {
         setLoad(false);
@@ -248,5 +254,11 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
     </Card>
   );
 }
+
+SubmissionsList.propTypes = {
+  raceId: PropTypes.string,
+  hasSprint: PropTypes.bool,
+  refresh: PropTypes.number,
+};
 
 export default React.memo(SubmissionsList);

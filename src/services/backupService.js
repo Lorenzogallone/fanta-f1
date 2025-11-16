@@ -16,6 +16,7 @@ import {
   limit,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { log, error } from "../utils/logger";
 
 /**
  * Creates a complete backup of the database
@@ -25,7 +26,7 @@ import { db } from "./firebase";
  */
 export async function createBackup(type = "manual", metadata = {}) {
   try {
-    console.log(`[Backup] Creating ${type} backup...`);
+    log(`[Backup] Creating ${type} backup...`);
 
     // Fetch all data
     const [racesSnap, rankingSnap] = await Promise.all([
@@ -72,11 +73,11 @@ export async function createBackup(type = "manual", metadata = {}) {
       },
     };
 
-    console.log(`[Backup] Backup created: ${races.length} races, ${ranking.length} participants`);
+    log(`[Backup] Backup created: ${races.length} races, ${ranking.length} participants`);
     return backupData;
-  } catch (error) {
-    console.error("[Backup] Error creating backup:", error);
-    throw error;
+  } catch (err) {
+    error("[Backup] Error creating backup:", err);
+    throw err;
   }
 }
 
@@ -91,11 +92,11 @@ export async function saveBackupToDatabase(backupData) {
 
     await setDoc(doc(db, "backups", backupId), backupData);
 
-    console.log(`[Backup] Saved to database: ${backupId}`);
+    log(`[Backup] Saved to database: ${backupId}`);
     return backupId;
-  } catch (error) {
-    console.error("[Backup] Error saving backup to database:", error);
-    throw error;
+  } catch (err) {
+    error("[Backup] Error saving backup to database:", err);
+    throw err;
   }
 }
 
@@ -125,8 +126,8 @@ export async function getAllBackups() {
       id: d.id,
       ...d.data(),
     }));
-  } catch (error) {
-    console.error("[Backup] Error fetching backups:", error);
+  } catch (err) {
+    error("[Backup] Error fetching backups:", err);
     return [];
   }
 }
@@ -139,10 +140,10 @@ export async function getAllBackups() {
 export async function deleteBackup(backupId) {
   try {
     await deleteDoc(doc(db, "backups", backupId));
-    console.log(`[Backup] Deleted backup: ${backupId}`);
-  } catch (error) {
-    console.error("[Backup] Error deleting backup:", error);
-    throw error;
+    log(`[Backup] Deleted backup: ${backupId}`);
+  } catch (err) {
+    error("[Backup] Error deleting backup:", err);
+    throw err;
   }
 }
 
@@ -153,10 +154,10 @@ export async function deleteBackup(backupId) {
  */
 export async function restoreFromBackup(backupData) {
   try {
-    console.log("[Restore] Starting database restore...");
+    log("[Restore] Starting database restore...");
 
     // Step 1: Clear existing data
-    console.log("[Restore] Clearing existing data...");
+    log("[Restore] Clearing existing data...");
 
     // Clear ranking
     const rankingSnap = await getDocs(collection(db, "ranking"));
@@ -183,10 +184,10 @@ export async function restoreFromBackup(backupData) {
       await deleteDoc(raceDoc.ref);
     }
 
-    console.log("[Restore] Existing data cleared");
+    log("[Restore] Existing data cleared");
 
     // Step 2: Restore ranking
-    console.log("[Restore] Restoring ranking...");
+    log("[Restore] Restoring ranking...");
     const rankingBatch = writeBatch(db);
     backupData.ranking.forEach((participant) => {
       const { id, ...data } = participant;
@@ -195,7 +196,7 @@ export async function restoreFromBackup(backupData) {
     await rankingBatch.commit();
 
     // Step 3: Restore races and submissions
-    console.log("[Restore] Restoring races...");
+    log("[Restore] Restoring races...");
     for (const race of backupData.races) {
       const { id, submissions, ...raceData } = race;
 
@@ -215,10 +216,10 @@ export async function restoreFromBackup(backupData) {
       }
     }
 
-    console.log("[Restore] Database restore completed successfully");
-  } catch (error) {
-    console.error("[Restore] Error restoring database:", error);
-    throw error;
+    log("[Restore] Database restore completed successfully");
+  } catch (err) {
+    error("[Restore] Error restoring database:", err);
+    throw err;
   }
 }
 

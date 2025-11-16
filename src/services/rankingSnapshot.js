@@ -5,6 +5,7 @@
 
 import { collection, getDocs, setDoc, doc, query, orderBy, limit, Timestamp } from "firebase/firestore";
 import { db } from "./firebase";
+import { log, error } from "../utils/logger";
 
 /**
  * Saves current ranking snapshot to history
@@ -38,11 +39,11 @@ export async function saveRankingSnapshot(type = "race", raceId = null) {
       raceId: raceId || null,
     });
 
-    console.log(`✅ Ranking snapshot saved: ${snapshotId}`);
+    log(`✅ Ranking snapshot saved: ${snapshotId}`);
     return snapshotId;
-  } catch (error) {
-    console.error("❌ Error saving ranking snapshot:", error);
-    throw error;
+  } catch (err) {
+    error("❌ Error saving ranking snapshot:", err);
+    throw err;
   }
 }
 
@@ -68,8 +69,8 @@ export async function getLastRankingSnapshot() {
       id: lastDoc.id,
       ...lastDoc.data(),
     };
-  } catch (error) {
-    console.error("❌ Error fetching last snapshot:", error);
+  } catch (err) {
+    error("❌ Error fetching last snapshot:", err);
     return null;
   }
 }

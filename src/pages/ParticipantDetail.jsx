@@ -24,6 +24,7 @@ import {
 import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { error as logError } from "../utils/logger";
 import PlayerStatsView from "../components/PlayerStatsView";
 
 /**
@@ -123,7 +124,7 @@ export default function ParticipantDetail() {
               cancelledMain: raceData.cancelledMain || false,
             };
           } catch (err) {
-            console.error(`Error fetching submission for race ${raceDoc.id}:`, err);
+            logError(`Error fetching submission for race ${raceDoc.id}:`, err);
             return null;
           }
         });
@@ -134,7 +135,7 @@ export default function ParticipantDetail() {
 
         setRaceHistory(history);
       } catch (e) {
-        console.error("Error loading participant:", e);
+        logError("Error loading participant:", e);
         setError(t("errors.generic"));
       } finally {
         setLoadingHistory(false);

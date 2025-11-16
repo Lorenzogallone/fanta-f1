@@ -22,6 +22,7 @@ import ChampionshipSubmissions from "../components/ChampionshipSubmissions";
 import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { error } from "../utils/logger";
 import "../styles/customSelect.css";
 
 // Constants imported from centralized file
@@ -129,7 +130,7 @@ export default function ChampionshipForm() {
         }));
         setRankingOptions(options);
       } catch (e) {
-        console.error("Errore caricamento utenti:", e);
+        error("Errore caricamento utenti:", e);
         setMessage({
           variant: "danger",
           text: t("errors.generic"),
@@ -185,7 +186,7 @@ export default function ChampionshipForm() {
           setDeadlineText("07/09 ore 23:59");
         }
       } catch (e) {
-        console.error("Errore calcolo deadline:", e);
+        error("Errore calcolo deadline:", e);
         // Fallback on error
         setDeadlineMs(new Date("2025-09-07T23:59:00").getTime());
         setDeadlineText("07/09 ore 23:59");
@@ -253,7 +254,7 @@ export default function ChampionshipForm() {
           }
         }
       } catch (err) {
-        console.error("Errore recupero formazione esistente:", err);
+        error("Errore recupero formazione esistente:", err);
         setIsEdit(false);
       }
     })();
@@ -300,7 +301,7 @@ export default function ChampionshipForm() {
       // forza il refresh della card di destra
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
-      console.error("Errore salvataggio:", err);
+      error("Errore salvataggio:", err);
       setMessage({
         variant: "danger",
         text: t("errors.generic"),

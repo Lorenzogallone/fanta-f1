@@ -3,6 +3,7 @@
  * Provides theme context for dark/light mode with system preference detection.
  */
 import React, { createContext, useContext, useState, useEffect } from "react";
+import PropTypes from "prop-types";
 
 const ThemeContext = createContext();
 
@@ -103,3 +104,7 @@ export function ThemeProvider({ children }) {
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
+
+ThemeProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};

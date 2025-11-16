@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import {
   Container,
   Row,
@@ -33,6 +34,7 @@ import RaceHistoryCard from "../components/RaceHistoryCard";
 import { DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { error } from "../utils/logger";
 
 /**
  * Component to display driver name with team logo
@@ -63,6 +65,10 @@ function DriverWithLogo({ name }) {
   );
 }
 
+DriverWithLogo.propTypes = {
+  name: PropTypes.string,
+};
+
 /**
  * Component to display team name with logo
  * @param {Object} props - Component props
@@ -90,6 +96,10 @@ function TeamWithLogo({ name }) {
     </span>
   );
 }
+
+TeamWithLogo.propTypes = {
+  name: PropTypes.string,
+};
 
 /**
  * History page displaying past races and championship results
@@ -129,7 +139,7 @@ export default function History() {
           setSelectedRaceId(races[0].id);
         }
       } catch (e) {
-        console.error(e);
+        error(e);
         setError(t("errors.generic"));
       } finally {
         setLoading(false);
@@ -174,7 +184,7 @@ export default function History() {
           setChampionshipSubmissions(submissions);
         }
       } catch (e) {
-        console.error("Errore caricamento campionato:", e);
+        error("Errore caricamento campionato:", e);
       } finally {
         setLoadingChampionship(false);
       }

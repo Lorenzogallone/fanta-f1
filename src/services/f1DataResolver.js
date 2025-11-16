@@ -4,6 +4,7 @@
  */
 
 import f1DataManual from '../data/f1-data.json';
+import { log, error, warn, info } from '../utils/logger';
 
 const ERGAST_API_BASE_URL = "https://api.jolpi.ca/ergast/f1";
 const CACHE_KEY_DRIVERS = "fanta-f1-drivers-cache";
@@ -33,21 +34,21 @@ class F1DataResolver {
     if (this.manualData.config.preferApiData && this.apiCache?.drivers) {
       const fromApi = this.findDriverInApiCache(familyName, fullName);
       if (fromApi) {
-        console.log(`✅ [API Cache] Driver "${fullName}" found in API cache`);
+        log(`✅ [API Cache] Driver "${fullName}" found in API cache`);
         return fromApi;
       }
     }
 
     const fromManual = this.findDriverInManualData(familyName, fullName);
     if (fromManual) {
-      console.log(`✅ [Manual DB] Driver "${fullName}" found in manual database`);
+      log(`✅ [Manual DB] Driver "${fullName}" found in manual database`);
       return fromManual;
     }
 
     if (!this.manualData.config.preferApiData && this.apiCache?.drivers) {
       const fromApi = this.findDriverInApiCache(familyName, fullName);
       if (fromApi) {
-        console.log(`✅ [API Cache Fallback] Driver "${fullName}" found in API cache`);
+        log(`✅ [API Cache Fallback] Driver "${fullName}" found in API cache`);
         return fromApi;
       }
     }
@@ -61,7 +62,7 @@ class F1DataResolver {
         const inferredTeam = this.resolveTeam(constructorName);
 
         if (inferredTeam) {
-          console.warn(`⚠️ [Inferred] Driver "${fullName}" not mapped, but team inferred from API: ${inferredTeam.displayName}`);
+          warn(`⚠️ [Inferred] Driver "${fullName}" not mapped, but team inferred from API: ${inferredTeam.displayName}`);
 
           const inferred = {
             id: `${apiDriver.givenName}-${apiDriver.familyName}`.toLowerCase().replace(/\s+/g, '-'),
@@ -82,7 +83,7 @@ class F1DataResolver {
       }
     }
 
-    console.error(`❌ [Fallback] Driver "${fullName}" completely unknown. Showing name only.`);
+    error(`❌ [Fallback] Driver "${fullName}" completely unknown. Showing name only.`);
 
     const fallback = {
       id: `${apiDriver.givenName}-${apiDriver.familyName}`.toLowerCase().replace(/\s+/g, '-'),
@@ -162,7 +163,7 @@ class F1DataResolver {
     if (this.manualData.config.preferApiData && this.apiCache?.teams) {
       const fromApi = this.findTeamInApiCache(teamName);
       if (fromApi) {
-        console.log(`✅ [API Cache] Team "${teamName}" trovato in cache API`);
+        log(`✅ [API Cache] Team "${teamName}" trovato in cache API`);
         return fromApi;
       }
     }
@@ -177,13 +178,13 @@ class F1DataResolver {
     if (!this.manualData.config.preferApiData && this.apiCache?.teams) {
       const fromApi = this.findTeamInApiCache(teamName);
       if (fromApi) {
-        console.log(`✅ [API Cache Fallback] Team "${teamName}" trovato in cache API`);
+        log(`✅ [API Cache Fallback] Team "${teamName}" trovato in cache API`);
         return fromApi;
       }
     }
 
     // 🔍 LIVELLO 4: Fallback - team sconosciuto
-    console.warn(`⚠️ [Unknown Team] Team "${teamName}" non mappato in nessuna fonte`);
+    warn(`⚠️ [Unknown Team] Team "${teamName}" non mappato in nessuna fonte`);
 
     const unknownTeam = {
       id: teamName.toLowerCase().replace(/\s+/g, '-'),
@@ -234,18 +235,18 @@ class F1DataResolver {
    */
   async syncFromAPI() {
     if (!this.manualData.config.enableApiSync) {
-      console.log('⏭️ Sync API disabilitato in config');
+      log('⏭️ Sync API disabilitato in config');
       return null;
     }
 
     if (this.syncInProgress) {
-      console.log('⏳ Sync già in corso, skip...');
+      log('⏳ Sync già in corso, skip...');
       return null;
     }
 
     try {
       this.syncInProgress = true;
-      console.log('🔄 Sincronizzazione dati da Ergast API...');
+      log('🔄 Sincronizzazione dati da Ergast API...');
 
       // Fetch driver standings (include team corrente)
       const response = await fetch(
@@ -261,7 +262,7 @@ class F1DataResolver {
       const standings = data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings;
 
       if (!standings || standings.length === 0) {
-        console.warn('⚠️ Nessun dato standings disponibile da API');
+        warn('⚠️ Nessun dato standings disponibile da API');
         return null;
       }
 
@@ -329,16 +330,16 @@ class F1DataResolver {
 
       this.saveCache();
 
-      console.log(`✅ Sincronizzati ${Object.keys(apiDrivers).length} piloti da API`);
+      log(`✅ Sincronizzati ${Object.keys(apiDrivers).length} piloti da API`);
 
       if (Object.keys(apiTeams).length > 0) {
-        console.warn(`⚠️ Trovati ${Object.keys(apiTeams).length} team non mappati:`, Object.keys(apiTeams));
+        warn(`⚠️ Trovati ${Object.keys(apiTeams).length} team non mappati:`, Object.keys(apiTeams));
       }
 
       return this.apiCache;
 
-    } catch (error) {
-      console.error('❌ Errore durante sync API:', error);
+    } catch (err) {
+      error('❌ Errore durante sync API:', err);
       return null;
     } finally {
       this.syncInProgress = false;
@@ -365,12 +366,12 @@ class F1DataResolver {
         const maxAge = this.manualData.config.cacheExpirationHours * 60 * 60 * 1000;
 
         if (cacheAge > maxAge) {
-          console.log('⏰ Cache piloti scaduta');
+          log('⏰ Cache piloti scaduta');
           localStorage.removeItem(CACHE_KEY_DRIVERS);
           return null;
         }
 
-        console.log(`📦 Cache piloti caricata (age: ${Math.round(cacheAge / 1000 / 60)} min)`);
+        log(`📦 Cache piloti caricata (age: ${Math.round(cacheAge / 1000 / 60)} min)`);
 
         return {
           drivers: driversData.drivers,
@@ -380,8 +381,8 @@ class F1DataResolver {
       }
 
       return null;
-    } catch (error) {
-      console.error('❌ Errore caricamento cache:', error);
+    } catch (err) {
+      error('❌ Errore caricamento cache:', err);
       return null;
     }
   }
@@ -406,9 +407,9 @@ class F1DataResolver {
         }));
       }
 
-      console.log('💾 Cache salvata in localStorage');
-    } catch (error) {
-      console.error('❌ Errore salvataggio cache:', error);
+      log('💾 Cache salvata in localStorage');
+    } catch (err) {
+      error('❌ Errore salvataggio cache:', err);
     }
   }
 
@@ -421,7 +422,7 @@ class F1DataResolver {
     this.apiCache = null;
     this.unknownDrivers.clear();
     this.unknownTeams.clear();
-    console.log('🗑️ Cache pulita');
+    log('🗑️ Cache pulita');
   }
 
   /**
@@ -432,12 +433,12 @@ class F1DataResolver {
     const unknowns = Array.from(this.unknownDrivers.values());
 
     if (unknowns.length === 0) {
-      console.log('✅ Nessun pilota sconosciuto trovato');
+      log('✅ Nessun pilota sconosciuto trovato');
       return null;
     }
 
-    console.log('📋 Piloti non mappati trovati:');
-    console.table(unknowns);
+    log('📋 Piloti non mappati trovati:');
+    log(unknowns);
 
     // Genera JSON da copiare in f1-data.json
     const jsonToAdd = {};
@@ -456,8 +457,8 @@ class F1DataResolver {
       };
     });
 
-    console.log('📝 JSON da aggiungere a f1-data.json:');
-    console.log(JSON.stringify(jsonToAdd, null, 2));
+    log('📝 JSON da aggiungere a f1-data.json:');
+    log(JSON.stringify(jsonToAdd, null, 2));
 
     return jsonToAdd;
   }
@@ -470,12 +471,12 @@ class F1DataResolver {
     const unknowns = Array.from(this.unknownTeams.values());
 
     if (unknowns.length === 0) {
-      console.log('✅ Nessun team sconosciuto trovato');
+      log('✅ Nessun team sconosciuto trovato');
       return null;
     }
 
-    console.log('📋 Team non mappati trovati:');
-    console.table(unknowns);
+    log('📋 Team non mappati trovati:');
+    log(unknowns);
 
     return Array.from(this.unknownTeams.values());
   }

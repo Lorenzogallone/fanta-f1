@@ -4,6 +4,7 @@
  * Supports main race, sprint races, double jolly, double points, and dark/light themes.
  */
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import {
   Card,
   Table,
@@ -16,6 +17,7 @@ import { db } from "../services/firebase";
 import { DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { error } from "../utils/logger";
 
 /**
  * Formats driver name to first initial + surname
@@ -48,7 +50,7 @@ function DriverWithLogo({ name, short = false }) {
       {logoSrc && (
         <img
           src={logoSrc}
-          alt={team}
+          alt={`${team} team logo`}
           style={{
             height: 20,
             width: 20,
@@ -61,6 +63,11 @@ function DriverWithLogo({ name, short = false }) {
     </span>
   );
 }
+
+DriverWithLogo.propTypes = {
+  name: PropTypes.string,
+  short: PropTypes.bool,
+};
 
 /**
  * Displays race history card with official results, lineups and scores.
@@ -95,7 +102,7 @@ function RaceHistoryCard({
         });
         setRankingMap(map);
       } catch (e) {
-        console.error("Error loading ranking:", e);
+        error("Error loading ranking:", e);
       }
     })();
   }, []);
@@ -118,7 +125,7 @@ function RaceHistoryCard({
 
         setSubs(list);
       } catch (e) {
-        console.error(e);
+        error(e);
         setErrorSub("Unable to load lineups.");
       } finally {
         setLoadingSub(false);
@@ -586,5 +593,30 @@ function RaceHistoryCard({
     </Card>
   );
 }
+
+RaceHistoryCard.propTypes = {
+  race: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    round: PropTypes.number.isRequired,
+    raceUTC: PropTypes.shape({
+      seconds: PropTypes.number.isRequired,
+    }).isRequired,
+    officialResults: PropTypes.shape({
+      P1: PropTypes.string,
+      P2: PropTypes.string,
+      P3: PropTypes.string,
+      SP1: PropTypes.string,
+      SP2: PropTypes.string,
+      SP3: PropTypes.string,
+      doublePoints: PropTypes.bool,
+    }),
+    cancelledMain: PropTypes.bool,
+    cancelledSprint: PropTypes.bool,
+  }).isRequired,
+  showOfficialResults: PropTypes.bool,
+  showPoints: PropTypes.bool,
+  compact: PropTypes.bool,
+};
 
 export default React.memo(RaceHistoryCard);

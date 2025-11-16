@@ -4,6 +4,7 @@
  */
 
 import { resolveDriver } from './f1DataResolver.js';
+import { log, error, warn } from '../utils/logger';
 
 const API_BASE_URL = "http://api.jolpi.ca/ergast/f1";
 
@@ -29,7 +30,7 @@ function normalizeDriverName(driver, constructor = null) {
  */
 export async function fetchRaceResults(season, round) {
   try {
-    console.log(`🔄 Fetching risultati per ${season} Round ${round}...`);
+    log(`🔄 Fetching risultati per ${season} Round ${round}...`);
 
     // Fetch main race results
     const raceUrl = `${API_BASE_URL}/${season}/${round}/results.json`;
@@ -43,7 +44,7 @@ export async function fetchRaceResults(season, round) {
     const races = raceData.MRData?.RaceTable?.Races;
 
     if (!races || races.length === 0) {
-      console.warn(`⚠️ Nessun risultato trovato per ${season} Round ${round}`);
+      warn(`⚠️ Nessun risultato trovato per ${season} Round ${round}`);
       return null;
     }
 
@@ -51,7 +52,7 @@ export async function fetchRaceResults(season, round) {
     const results = race.Results;
 
     if (!results || results.length < 3) {
-      console.warn(`⚠️ Risultati incompleti (meno di 3 piloti)`);
+      warn(`⚠️ Risultati incompleti (meno di 3 piloti)`);
       return null;
     }
 
@@ -82,12 +83,12 @@ export async function fetchRaceResults(season, round) {
               SP2: normalizeDriverName(sprintResultsList[1]?.Driver, sprintResultsList[1]?.Constructor),
               SP3: normalizeDriverName(sprintResultsList[2]?.Driver, sprintResultsList[2]?.Constructor),
             };
-            console.log(`✅ Sprint trovata per Round ${round}`);
+            log(`✅ Sprint trovata per Round ${round}`);
           }
         }
       }
     } catch (err) {
-      console.log(`ℹ️ Nessuna sprint per Round ${round}`);
+      log(`ℹ️ Nessuna sprint per Round ${round}`);
     }
 
     const result = {
@@ -98,12 +99,12 @@ export async function fetchRaceResults(season, round) {
       sprint: sprintResults,
     };
 
-    console.log(`✅ Risultati fetchati con successo:`, result);
+    log(`✅ Risultati fetchati con successo:`, result);
     return result;
 
-  } catch (error) {
-    console.error(`❌ Errore durante il fetch dei risultati:`, error);
-    throw new Error(`Impossibile caricare i risultati: ${error.message}`);
+  } catch (err) {
+    error(`❌ Errore durante il fetch dei risultati:`, err);
+    throw new Error(`Impossibile caricare i risultati: ${err.message}`);
   }
 }
 
@@ -134,9 +135,9 @@ export async function fetchLastRaceResults() {
     // Use main function to get all details
     return await fetchRaceResults(season, round);
 
-  } catch (error) {
-    console.error(`❌ Errore durante il fetch dell'ultima gara:`, error);
-    throw error;
+  } catch (err) {
+    error(`❌ Errore durante il fetch dell'ultima gara:`, err);
+    throw err;
   }
 }
 

@@ -42,6 +42,7 @@ import { getChampionshipStatistics } from "../services/statisticsService";
 import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { error } from "../utils/logger";
 import PlayerStatsView from "../components/PlayerStatsView";
 import "../styles/statistics.css";
 
@@ -116,7 +117,7 @@ export default function Statistics() {
         setCurrentRanking(ranking);
         setLoadingRanking(false); // Show ranking immediately
       } catch (err) {
-        console.error("Error loading ranking:", err);
+        error("Error loading ranking:", err);
         setError(t("statistics.errorLoading"));
         setLoadingRanking(false);
       }
@@ -128,7 +129,7 @@ export default function Statistics() {
         setStatistics(data);
         setLoadingStatistics(false); // Show charts when ready
       } catch (err) {
-        console.error("Error loading statistics:", err);
+        error("Error loading statistics:", err);
         // Don't set error here - ranking might still be visible
         setLoadingStatistics(false);
       }
@@ -193,7 +194,7 @@ export default function Statistics() {
               cancelledMain: raceData.cancelledMain || false,
             };
           } catch (err) {
-            console.error(`Error fetching submission for race ${raceDoc.id}:`, err);
+            error(`Error fetching submission for race ${raceDoc.id}:`, err);
             return null;
           }
         });
@@ -215,7 +216,7 @@ export default function Statistics() {
           totalCompletedRaces: totalCompleted,
         });
       } catch (err) {
-        console.error("Error loading player statistics:", err);
+        error("Error loading player statistics:", err);
       } finally {
         setLoadingPlayerStats(false);
       }
@@ -516,6 +517,7 @@ export default function Statistics() {
                           borderColor: playersFilter === "5" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
                           color: playersFilter === "5" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
                         }}
+                        aria-label="Show top 5 players in charts"
                       >
                         Top 5
                       </Button>
@@ -528,6 +530,7 @@ export default function Statistics() {
                           borderColor: playersFilter === "10" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
                           color: playersFilter === "10" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
                         }}
+                        aria-label="Show top 10 players in charts"
                       >
                         Top 10
                       </Button>
@@ -540,6 +543,7 @@ export default function Statistics() {
                           borderColor: playersFilter === "all" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
                           color: playersFilter === "all" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
                         }}
+                        aria-label="Show all players in charts"
                       >
                         {t("statistics.all")}
                       </Button>
@@ -560,6 +564,7 @@ export default function Statistics() {
                           borderColor: racesFilter === "5" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
                           color: racesFilter === "5" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
                         }}
+                        aria-label="Show last 5 races in charts"
                       >
                         {t("statistics.last")} 5
                       </Button>
@@ -572,6 +577,7 @@ export default function Statistics() {
                           borderColor: racesFilter === "10" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
                           color: racesFilter === "10" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
                         }}
+                        aria-label="Show last 10 races in charts"
                       >
                         {t("statistics.last")} 10
                       </Button>
@@ -584,6 +590,7 @@ export default function Statistics() {
                           borderColor: racesFilter === "all" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
                           color: racesFilter === "all" ? "#fff" : (isDark ? "#e9ecef" : "#212529"),
                         }}
+                        aria-label="Show all races in charts"
                       >
                         {t("statistics.allFeminine")}
                       </Button>
@@ -838,6 +845,7 @@ export default function Statistics() {
                     color: textColor,
                     borderColor: accentColor,
                   }}
+                  aria-label="Select player to view detailed statistics"
                 >
                   <option value="">{t("statistics.choosePlayer") || "-- Seleziona un giocatore --"}</option>
                   {currentRanking.map((player) => (

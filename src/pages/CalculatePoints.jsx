@@ -24,6 +24,7 @@ import RaceHistoryCard from "../components/RaceHistoryCard";
 import AdminLogin from "../components/AdminLogin";
 import Select from "react-select";
 import { useLanguage } from "../hooks/useLanguage";
+import { error } from "../utils/logger";
 import "../styles/customSelect.css";
 
 // Constants imported from centralized file
@@ -68,7 +69,7 @@ const asDriverOpt = d => ({
   value: d,
   label: (
     <div className="select-option">
-      <img src={teamLogos[driverTeam[d]]} className="option-logo" alt={driverTeam[d]} />
+      <img src={teamLogos[driverTeam[d]]} className="option-logo" alt={`${driverTeam[d]} team logo`} />
       <span className="option-text">{d}</span>
     </div>
   ),
@@ -82,7 +83,7 @@ const asConstructorOpt = c => ({
   value: c,
   label: (
     <div className="select-option">
-      <img src={teamLogos[c]} className="option-logo" alt={c} />
+      <img src={teamLogos[c]} className="option-logo" alt={`${c} team logo`} />
       <span className="option-text">{c}</span>
     </div>
   ),
@@ -104,7 +105,7 @@ const DriverWithLogo = ({ name }) => {
       {team && (
         <img
           src={teamLogos[team]}
-          alt={team}
+          alt={`${team} team logo`}
           style={{ height: 18, width: 18, objectFit: "contain", marginRight: 4 }}
         />
       )}
@@ -168,7 +169,7 @@ useEffect(() => {
         setRace(firstWithoutPoints || list[0]);
       }
     } catch (err) {
-      console.error(err);
+      error(err);
       setMsgRace({ variant: "danger", msg: t("calculate.errorLoadingRaces") });
     } finally {
       setLoadingRace(false);
@@ -288,8 +289,8 @@ useEffect(() => {
             msg: t("calculate.apiNoResults")
           });
         }
-      } catch (error) {
-        console.error("Errore fetch API:", error);
+      } catch (err) {
+        error("Errore fetch API:", err);
         setFormRace({
           P1:null, P2:null, P3:null,
           SP1:null, SP2:null, SP3:null
@@ -311,7 +312,7 @@ useEffect(() => {
     setSubs(arr);
     setLoadingSubs(false);
   })().catch(err => {
-    console.error(err);
+    error(err);
     setErrSubs(t("calculate.errorLoadingSubmissions"));
     setLoadingSubs(false);
     setFetchingResults(false);
@@ -355,7 +356,7 @@ useEffect(() => {
       const sSnap= await getDocs(collection(db,"races",race.id,"submissions"));
       setSubs(sSnap.docs.map(d=>({id:d.id,...d.data()})));
     }catch(err){
-      console.error(err);
+      error(err);
       setMsgRace({variant:"danger",msg: t("calculate.saveError")});
     }finally{ setSavingRace(false); }
   };
@@ -389,7 +390,7 @@ useEffect(() => {
       await saveRankingSnapshot("championship", null);
       setMsgChamp({variant:"success",msg:res});
     }catch(err){
-      console.error(err);
+      error(err);
       setMsgChamp({variant:"danger",msg: t("calculate.saveError")});
     }finally{ setSavingChamp(false); }
   };
@@ -463,6 +464,7 @@ useEffect(() => {
                              const r = races.find(x => x.id === e.target.value);
                              setRace(r);            // il nuovo effect imposterà il form
                            }}
+                        aria-label={t("calculate.race")}
                       >
                         {races.map(r=>(
                           <option key={r.id} value={r.id}>
@@ -483,6 +485,7 @@ useEffect(() => {
                           onChange={sel=>onSelRace(sel,f)}
                           isDisabled={!allowedRace}
                           classNamePrefix="react-select"
+                          aria-label={`Select driver for position ${f}`}
                         />
                       </Form.Group>
                     ))}
@@ -500,6 +503,7 @@ useEffect(() => {
                               onChange={sel=>onSelRace(sel,f)}
                               isDisabled={!allowedRace}
                               classNamePrefix="react-select"
+                              aria-label={`Select driver for sprint position ${f}`}
                             />
                           </Form.Group>
                         ))}
@@ -509,6 +513,7 @@ useEffect(() => {
                     <Button
                       variant="danger" className="w-100 mt-3"
                       onClick={saveRace} disabled={!canSubmitRace}
+                      aria-label={savingRace ? t("common.loading") : "Calculate and save race points"}
                     >
                       {savingRace ? t("common.loading") : t("calculate.calculateAndSave")}
                     </Button>
@@ -555,6 +560,7 @@ useEffect(() => {
                             onChange={sel=>onSelChamp(sel,f)}
                             isDisabled={!championshipOpen}
                             classNamePrefix="react-select"
+                            aria-label={`Select driver for championship position ${f.replace("CP","P")}`}
                           />
                         </Form.Group>
                       ))}
@@ -569,6 +575,7 @@ useEffect(() => {
                             onChange={sel=>onSelChamp(sel,f)}
                             isDisabled={!championshipOpen}
                             classNamePrefix="react-select"
+                            aria-label={`Select constructor for championship position ${f.replace("CC","C")}`}
                           />
                         </Form.Group>
                       ))}
@@ -576,6 +583,7 @@ useEffect(() => {
                       <Button
                         variant="danger" type="submit" className="w-100 mt-3"
                         disabled={!champReady}
+                        aria-label={savingChamp ? t("common.loading") : "Calculate and save championship points"}
                       >
                         {savingChamp ? t("common.loading") : t("calculate.calculateChampionshipPoints")}
                       </Button>
