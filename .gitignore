@@ -161,3 +161,16 @@ dist-ssr
 *.sw?
 
 **/serviceAccount.json
+
+# Firebase Functions
+functions/node_modules/
+functions/.env
+functions/lib/
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+.runtimeconfig.json
+
+# Environment backups
+.env.backup*
+*.env.backup
