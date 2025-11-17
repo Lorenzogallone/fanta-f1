@@ -158,7 +158,11 @@ if [ "$HAS_JQ" = true ]; then
     # Check if numbers are healthy
     HEALTH_OK=true
 
-    if [ "$TOTAL_TOKENS" -gt 1000 ]; then
+    # Verifica se i dati sono disponibili
+    if [ "$TOTAL_TOKENS" = "N/A" ] || [ -z "$TOTAL_TOKENS" ]; then
+        echo -e "  ${INFO} Dati non disponibili (Cloud Functions non attive)"
+        HEALTH_OK=false
+    elif [ "$TOTAL_TOKENS" -gt 1000 ]; then
         echo -e "  ${WARNING} Attenzione: Troppi token registrati ($TOTAL_TOKENS)"
         echo -e "      Verifica che non ci siano duplicati o bot."
         HEALTH_OK=false
