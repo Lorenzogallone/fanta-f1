@@ -28,19 +28,36 @@ jobs:
           cat /tmp/cost-report.txt >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          # Estrai info chiave per subject
-          TOTAL_TOKENS=$(curl -s https://europe-west1-fantaf1-b5410.cloudfunctions.net/getNotificationStats | grep -o '"totalTokens":[0-9]*' | cut -d':' -f2 || echo "N/A")
+          # Genera timestamp
+          TIMESTAMP=$(date '+%d/%m/%Y alle %H:%M')
+          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_OUTPUT
+
+          # Estrai info chiave per subject (con fallback)
+          STATS=$(curl -s https://europe-west1-fantaf1-b5410.cloudfunctions.net/getNotificationStats 2>/dev/null || echo '{"totalTokens":0,"totalNotificationsSent":0}')
+
+          TOTAL_TOKENS=$(echo "$STATS" | grep -o '"totalTokens":[0-9]*' | cut -d':' -f2 || echo "0")
+          if [ -z "$TOTAL_TOKENS" ] || [ "$TOTAL_TOKENS" = "null" ]; then
+            TOTAL_TOKENS="N/A (functions non deployate)"
+          fi
           echo "TOTAL_TOKENS=$TOTAL_TOKENS" >> $GITHUB_OUTPUT
 
-          TOTAL_NOTIFICATIONS=$(curl -s https://europe-west1-fantaf1-b5410.cloudfunctions.net/getNotificationStats | grep -o '"totalNotificationsSent":[0-9]*' | cut -d':' -f2 || echo "N/A")
+          TOTAL_NOTIFICATIONS=$(echo "$STATS" | grep -o '"totalNotificationsSent":[0-9]*' | cut -d':' -f2 || echo "0")
+          if [ -z "$TOTAL_NOTIFICATIONS" ] || [ "$TOTAL_NOTIFICATIONS" = "null" ]; then
+            TOTAL_NOTIFICATIONS="N/A (functions non deployate)"
+          fi
           echo "TOTAL_NOTIFICATIONS=$TOTAL_NOTIFICATIONS" >> $GITHUB_OUTPUT
 
       - name: 📊 Fetch detailed stats
         id: stats
         run: |
-          STATS=$(curl -s https://europe-west1-fantaf1-b5410.cloudfunctions.net/getNotificationStats)
+          STATS=$(curl -s https://europe-west1-fantaf1-b5410.cloudfunctions.net/getNotificationStats 2>/dev/null || echo '{"error":"Cloud Functions non ancora deployate","totalTokens":0,"totalNotificationsSent":0,"message":"Completa il setup seguendo NOTIFICATIONS_SETUP.md"}')
+
           echo "STATS<<EOF" >> $GITHUB_OUTPUT
-          echo "$STATS" | jq '.' || echo "$STATS" >> $GITHUB_OUTPUT
+          if command -v jq &> /dev/null; then
+            echo "$STATS" | jq '.' 2>/dev/null || echo "$STATS"
+          else
+            echo "$STATS"
+          fi
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: 📧 Send email report
@@ -50,7 +67,7 @@ jobs:
           server_port: 587
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "🔔 FantaF1 - Report Mensile Costi (${{ steps.cost_check.outputs.TOTAL_TOKENS }} dispositivi, €0.00)"
+          subject: "🔔 FantaF1 - Report Mensile Costi (€0.00)"
           to: ${{ secrets.EMAIL_TO }}
           from: FantaF1 Cost Monitor
           body: |
@@ -116,7 +133,7 @@ jobs:
               <div class="container">
                 <div class="header">
                   <h1>🔔 FantaF1 - Report Mensile Costi</h1>
-                  <p>Report automatico generato il {{ "now" | date: "%d/%m/%Y alle %H:%M" }}</p>
+                  <p>Report automatico generato il ${{ steps.cost_check.outputs.TIMESTAMP }}</p>
                 </div>
 
                 <div class="content">
@@ -135,6 +152,8 @@ jobs:
                       <div class="metric-value">${{ steps.cost_check.outputs.TOTAL_NOTIFICATIONS }}</div>
                     </div>
                   </div>
+
+                  ${{ steps.cost_check.outputs.TOTAL_TOKENS == 'N/A (functions non deployate)' && '<div class="section" style="border-left-color: #ffc107; background-color: #fff3cd;"><h2>⚠️ Setup Richiesto</h2><p>Le Cloud Functions non sono ancora deployate. Il sistema di notifiche non è ancora attivo.</p><p><strong>Prossimi passi:</strong></p><ol><li>Segui la guida: <code>NOTIFICATIONS_SETUP.md</code></li><li>Deploy Cloud Functions: <code>firebase deploy --only functions</code></li><li>Il prossimo report mostrerà dati reali</li></ol></div>' || '' }}
 
                   <div class="section">
                     <h2>💰 Costo Mensile Stimato</h2>
