@@ -47,12 +47,29 @@ echo -e "${INFO} Recupero statistiche da Cloud Functions..."
 echo ""
 
 # Fetch stats
-RESPONSE=$(curl -s "$STATS_URL")
+HTTP_CODE=$(curl -s -o /tmp/stats_response.txt -w "%{http_code}" "$STATS_URL")
+RESPONSE=$(cat /tmp/stats_response.txt 2>/dev/null || echo '{}')
 
-if [ $? -ne 0 ]; then
-    echo -e "${ERROR} Errore nel recupero delle statistiche!"
-    echo -e "${INFO} Verifica che le Cloud Functions siano deployate."
-    exit 1
+if [ "$HTTP_CODE" != "200" ]; then
+    echo -e "${WARNING} Endpoint non raggiungibile (HTTP $HTTP_CODE)"
+    echo -e "${INFO} Le Cloud Functions potrebbero non essere ancora deployate."
+    echo ""
+    echo "╔════════════════════════════════════════════════════╗"
+    echo "║              ⚠️  SETUP RICHIESTO                   ║"
+    echo "╚════════════════════════════════════════════════════╝"
+    echo ""
+    echo "Il sistema di notifiche non è ancora attivo."
+    echo ""
+    echo "📋 Prossimi passi:"
+    echo "  1. Completa setup Firebase Blaze"
+    echo "  2. Deploy Cloud Functions:"
+    echo "     cd functions && npm install"
+    echo "     firebase deploy --only functions"
+    echo "  3. Riesegui questo script per verificare"
+    echo ""
+    echo "📖 Guida completa: NOTIFICATIONS_SETUP.md"
+    echo ""
+    exit 0
 fi
 
 # Parse response
@@ -141,7 +158,11 @@ if [ "$HAS_JQ" = true ]; then
     # Check if numbers are healthy
     HEALTH_OK=true
 
-    if [ "$TOTAL_TOKENS" -gt 1000 ]; then
+    # Verifica se i dati sono disponibili
+    if [ "$TOTAL_TOKENS" = "N/A" ] || [ -z "$TOTAL_TOKENS" ]; then
+        echo -e "  ${INFO} Dati non disponibili (Cloud Functions non attive)"
+        HEALTH_OK=false
+    elif [ "$TOTAL_TOKENS" -gt 1000 ]; then
         echo -e "  ${WARNING} Attenzione: Troppi token registrati ($TOTAL_TOKENS)"
         echo -e "      Verifica che non ci siano duplicati o bot."
         HEALTH_OK=false
