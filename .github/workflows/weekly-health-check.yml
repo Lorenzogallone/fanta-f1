@@ -95,12 +95,17 @@ jobs:
             FantaF1 Weekly Health Check
 
       - name: 💬 Send Telegram notification (optional)
-        if: steps.anomaly_check.outputs.HAS_ANOMALY == 'true' && secrets.TELEGRAM_BOT_TOKEN != ''
+        if: steps.anomaly_check.outputs.HAS_ANOMALY == 'true'
+        continue-on-error: true
         run: |
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d text="⚠️ *FantaF1 Alert*%0A%0AAnomalia rilevata:%0ADispositivi: ${{ steps.stats.outputs.TOTAL_TOKENS }}%0A%0AVedi GitHub Actions per dettagli." \
-            -d parse_mode="Markdown" || true
+          if [ -n "${{ secrets.TELEGRAM_BOT_TOKEN }}" ]; then
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+              -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+              -d text="⚠️ *FantaF1 Alert*%0A%0AAnomalia rilevata:%0ADispositivi: ${{ steps.stats.outputs.TOTAL_TOKENS }}%0A%0AVedi GitHub Actions per dettagli." \
+              -d parse_mode="Markdown"
+          else
+            echo "ℹ️ Telegram non configurato (opzionale)"
+          fi
 
       - name: ✅ Success summary
         if: steps.anomaly_check.outputs.HAS_ANOMALY == 'false'
