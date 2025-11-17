@@ -4,6 +4,9 @@
  * Uses OpenF1 API for practice sessions and Jolpica/Ergast API for qualifying, sprint, race
  */
 
+import { resolveDriver, resolveTeam } from './f1DataResolver.js';
+import { log, error, warn, info } from '../utils/logger';
+
 const ERGAST_API_BASE_URL = "https://api.jolpi.ca/ergast/f1";
 const OPENF1_API_BASE_URL = "https://api.openf1.org/v1";
 
@@ -44,51 +47,25 @@ async function rateLimitedFetch(url, retryCount = 0) {
     // Handle 429 Too Many Requests
     if (response.status === 429 && retryCount < MAX_RETRIES) {
       const retryDelay = RETRY_BASE_DELAY * Math.pow(2, retryCount);
-      console.warn(`Rate limit hit (429) for ${url}. Retrying in ${retryDelay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+      warn(`Rate limit hit (429) for ${url}. Retrying in ${retryDelay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
       await sleep(retryDelay);
       return rateLimitedFetch(url, retryCount + 1);
     }
 
     return response;
-  } catch (error) {
+  } catch (err) {
     // Network error - retry with backoff
     if (retryCount < MAX_RETRIES) {
       const retryDelay = RETRY_BASE_DELAY * Math.pow(2, retryCount);
-      console.warn(`Network error for ${url}. Retrying in ${retryDelay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+      warn(`Network error for ${url}. Retrying in ${retryDelay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
       await sleep(retryDelay);
       return rateLimitedFetch(url, retryCount + 1);
     }
-    throw error;
+    throw err;
   }
 }
 
-/**
- * Mapping of driver names from API to app format
- */
-const DRIVER_NAME_MAPPING = {
-  "Verstappen": "Max Verstappen",
-  "Perez": "Sergio Perez",
-  "Pérez": "Sergio Perez",
-  "Leclerc": "Charles Leclerc",
-  "Sainz": "Carlos Sainz Jr.",
-  "Hamilton": "Lewis Hamilton",
-  "Norris": "Lando Norris",
-  "Piastri": "Oscar Piastri",
-  "Russell": "George Russell",
-  "Antonelli": "Andrea Kimi Antonelli",
-  "Alonso": "Fernando Alonso",
-  "Stroll": "Lance Stroll",
-  "Gasly": "Pierre Gasly",
-  "Doohan": "Jack Doohan",
-  "Albon": "Alexander Albon",
-  "Tsunoda": "Yuki Tsunoda",
-  "Hadjar": "Isack Hadjar",
-  "Hulkenberg": "Nico Hülkenberg",
-  "Bortoleto": "Gabriel Bortoleto",
-  "Hülkenberg": "Nico Hülkenberg",
-  "Ocon": "Esteban Ocon",
-  "Bearman": "Oliver Bearman",
-};
+// Note: DRIVER_NAME_MAPPING removed - now using f1DataResolver for all driver/team resolution
 
 /**
  * Mapping of driver numbers to names (2024-2025 season)
@@ -126,16 +103,16 @@ const DRIVER_NUMBER_MAPPING = {
 
 /**
  * Normalizes driver name from API format to app format
+ * Uses the new f1DataResolver with cascading fallback system
  * @param {Object} driver - Driver object from API
+ * @param {Object} constructor - Constructor object from API (optional)
  * @returns {string|null} Full driver name or null if not found
  */
-function normalizeDriverName(driver) {
+function normalizeDriverName(driver, constructor = null) {
   if (!driver) return null;
-  const familyName = driver.familyName;
-  if (DRIVER_NAME_MAPPING[familyName]) {
-    return DRIVER_NAME_MAPPING[familyName];
-  }
-  return `${driver.givenName} ${driver.familyName}`;
+
+  const resolved = resolveDriver(driver, constructor);
+  return resolved?.displayName || null;
 }
 
 /**
@@ -180,7 +157,7 @@ export async function fetchPracticeSession(season, round, sessionName) {
     const sessionsResponse = await rateLimitedFetch(sessionsUrl);
 
     if (!sessionsResponse.ok) {
-      console.warn(`Failed to fetch sessions list for ${season}: ${sessionsResponse.status}`);
+      warn(`Failed to fetch sessions list for ${season}: ${sessionsResponse.status}`);
       return null;
     }
 
@@ -206,7 +183,7 @@ export async function fetchPracticeSession(season, round, sessionName) {
     // Get the meeting for this round (rounds start from 1, array from 0)
     const targetMeeting = sortedMeetings[round - 1];
     if (!targetMeeting) {
-      console.warn(`No meeting found for ${season} R${round}. Total meetings: ${sortedMeetings.length}`);
+      warn(`No meeting found for ${season} R${round}. Total meetings: ${sortedMeetings.length}`);
       return null;
     }
 
@@ -223,19 +200,19 @@ export async function fetchPracticeSession(season, round, sessionName) {
         s => s.session_name === "Sprint" && s.session_type === "Qualifying"
       );
       if (targetSession) {
-        console.info(`[OpenF1] Found sprint qualifying as session_name="Sprint" + session_type="Qualifying" for ${season} R${round}`);
+        info(`[OpenF1] Found sprint qualifying as session_name="Sprint" + session_type="Qualifying" for ${season} R${round}`);
       }
     }
 
     if (!targetSession) {
       // Log available sessions for debugging when target session not found
       const availableSessions = targetMeeting.sessions.map(s => `${s.session_name} (${s.session_type})`).join(', ');
-      console.info(`[OpenF1] Session "${sessionName}" not found for ${season} R${round}.`);
-      console.info(`[OpenF1] Available sessions: ${availableSessions}`);
+      info(`[OpenF1] Session "${sessionName}" not found for ${season} R${round}.`);
+      info(`[OpenF1] Available sessions: ${availableSessions}`);
       return null;
     }
 
-    console.debug(`[OpenF1] Found session "${sessionName}" for ${season} R${round} with key ${targetSession.session_key}`);
+    log(`[OpenF1] Found session "${sessionName}" for ${season} R${round} with key ${targetSession.session_key}`);
 
     const sessionKey = targetSession.session_key;
 
@@ -276,7 +253,10 @@ export async function fetchPracticeSession(season, round, sessionName) {
       drivers.forEach(d => {
         const fullName = `${d.first_name} ${d.last_name}`;
         driverInfo[d.driver_number] = {
-          name: normalizeDriverName({ givenName: d.first_name, familyName: d.last_name }),
+          name: normalizeDriverName(
+            { givenName: d.first_name, familyName: d.last_name, permanentNumber: d.driver_number },
+            { name: d.team_name }
+          ),
           team: d.team_name,
         };
       });
@@ -310,8 +290,8 @@ export async function fetchPracticeSession(season, round, sessionName) {
     });
 
     return results;
-  } catch (error) {
-    console.error(`Error fetching ${sessionName} for ${season} R${round}:`, error);
+  } catch (err) {
+    error(`Error fetching ${sessionName} for ${season} R${round}:`, err);
     return null;
   }
 }
@@ -361,7 +341,7 @@ export async function fetchQualifying(season, round) {
 
       return {
         position: result.position,
-        driver: normalizeDriverName(result.Driver),
+        driver: normalizeDriverName(result.Driver, result.Constructor),
         constructor: result.Constructor?.name,
         q1: result.Q1 || "—",
         q2: result.Q2 || "—",
@@ -370,8 +350,8 @@ export async function fetchQualifying(season, round) {
         gap: calculateGap(leaderTimeMs, bestTimeMs),
       };
     });
-  } catch (error) {
-    console.error(`Error fetching qualifying for ${season} R${round}:`, error);
+  } catch (err) {
+    error(`Error fetching qualifying for ${season} R${round}:`, err);
     return null;
   }
 }
@@ -440,7 +420,7 @@ export async function fetchSprint(season, round) {
 
       return {
         position: result.position,
-        driver: normalizeDriverName(result.Driver),
+        driver: normalizeDriverName(result.Driver, result.Constructor),
         constructor: result.Constructor?.name,
         time: result.Time?.time || "—",
         gap,
@@ -448,8 +428,8 @@ export async function fetchSprint(season, round) {
         status: result.status,
       };
     });
-  } catch (error) {
-    console.error(`Error fetching sprint for ${season} R${round}:`, error);
+  } catch (err) {
+    error(`Error fetching sprint for ${season} R${round}:`, err);
     return null;
   }
 }
@@ -487,7 +467,7 @@ export async function fetchRace(season, round) {
 
       return {
         position: result.position,
-        driver: normalizeDriverName(result.Driver),
+        driver: normalizeDriverName(result.Driver, result.Constructor),
         constructor: result.Constructor?.name,
         time: result.Time?.time || "—",
         gap: result.position === "1" ? "—" : calculateGap(leaderTimeMs, driverTimeMs),
@@ -496,8 +476,8 @@ export async function fetchRace(season, round) {
         fastestLap: result.FastestLap?.rank === "1" ? "⚡" : "",
       };
     });
-  } catch (error) {
-    console.error(`Error fetching race for ${season} R${round}:`, error);
+  } catch (err) {
+    error(`Error fetching race for ${season} R${round}:`, err);
     return null;
   }
 }
@@ -525,7 +505,7 @@ export async function fetchAllSessions(season, round) {
     // Step 2: Based on weekend type, fetch additional sessions
     if (sprint !== null) {
       // Sprint weekend: has Sprint Qualifying/Shootout, NO FP2/FP3
-      console.info(`[Sprint Weekend] Detected sprint for ${season} R${round}. Searching for sprint qualifying...`);
+      info(`[Sprint Weekend] Detected sprint for ${season} R${round}. Searching for sprint qualifying...`);
 
       // Try all possible names for sprint qualifying (varies by season and API naming)
       const sprintQualifyingNames = [
@@ -537,19 +517,19 @@ export async function fetchAllSessions(season, round) {
       ];
 
       for (const name of sprintQualifyingNames) {
-        console.debug(`[Sprint Weekend] Trying sprint qualifying name: "${name}"`);
+        log(`[Sprint Weekend] Trying sprint qualifying name: "${name}"`);
         sprintQualifying = await fetchPracticeSession(season, round, name);
         if (sprintQualifying !== null) {
-          console.info(`✅ [Sprint Weekend] Found sprint qualifying as: "${name}" for ${season} R${round}`);
+          info(`✅ [Sprint Weekend] Found sprint qualifying as: "${name}" for ${season} R${round}`);
           break;
         }
       }
 
       // If still not found, log detailed warning
       if (!sprintQualifying) {
-        console.warn(`❌ [Sprint Weekend] Sprint qualifying NOT FOUND for ${season} R${round}.`);
-        console.warn(`[Sprint Weekend] Tried all variants: ${sprintQualifyingNames.join(', ')}`);
-        console.warn(`[Sprint Weekend] Check console logs above for available session names from OpenF1 API`);
+        warn(`❌ [Sprint Weekend] Sprint qualifying NOT FOUND for ${season} R${round}.`);
+        warn(`[Sprint Weekend] Tried all variants: ${sprintQualifyingNames.join(', ')}`);
+        warn(`[Sprint Weekend] Check console logs above for available session names from OpenF1 API`);
       }
     } else {
       // Normal weekend: has FP2 and FP3, NO Sprint Qualifying
@@ -575,8 +555,8 @@ export async function fetchAllSessions(season, round) {
       hasSprint: sprint !== null,
       hasRace: race !== null,
     };
-  } catch (error) {
-    console.error(`Error fetching sessions for ${season} R${round}:`, error);
+  } catch (err) {
+    error(`Error fetching sessions for ${season} R${round}:`, err);
     return {
       fp1: null,
       fp2: null,
@@ -625,8 +605,8 @@ export async function fetchLastRaceSessions() {
       round,
       ...sessions,
     };
-  } catch (error) {
-    console.error("Error fetching last race sessions:", error);
+  } catch (err) {
+    error("Error fetching last race sessions:", err);
     return null;
   }
 }
@@ -675,41 +655,26 @@ export async function fetchDriverStandings(season = "current") {
       position: standing.position,
       points: standing.points,
       wins: standing.wins,
-      driver: normalizeDriverName(standing.Driver),
+      driver: normalizeDriverName(standing.Driver, standing.Constructors?.[0]),
       constructor: standing.Constructors?.[0]?.name || "—",
     }));
-  } catch (error) {
-    console.error(`Error fetching driver standings for ${season}:`, error);
+  } catch (err) {
+    error(`Error fetching driver standings for ${season}:`, err);
     return null;
   }
 }
 
 /**
- * Normalizes constructor/team names from Ergast API to match our app's team names
- * @param {string} teamName - Team name from Ergast API
- * @returns {string} Normalized team name matching TEAM_LOGOS keys
+ * Normalizes constructor/team names from API to match our app's team names
+ * Uses the new f1DataResolver with cascading fallback system
+ * @param {string} teamName - Team name from API
+ * @returns {string} Normalized team name
  */
 function normalizeTeamName(teamName) {
   if (!teamName) return "—";
 
-  const name = teamName.trim();
-
-  // Direct mappings for teams that need normalization
-  const teamMappings = {
-    "Alpine F1 Team": "Alpine",
-    "Haas F1 Team": "Haas",
-    "Kick Sauber": "Sauber",
-    "Sauber Motorsport": "Sauber",
-    "RB F1 Team": "Vcarb",
-    "RB": "Vcarb",
-    "Racing Bulls": "Vcarb",
-    "AlphaTauri": "Vcarb",
-    "Red Bull Racing": "Red Bull",
-    "Aston Martin F1 Team": "Aston Martin",
-  };
-
-  // Return mapped name or original if no mapping found
-  return teamMappings[name] || name;
+  const resolved = resolveTeam(teamName);
+  return resolved?.displayName || teamName;
 }
 
 /**
@@ -735,8 +700,8 @@ export async function fetchConstructorStandings(season = "current") {
       wins: standing.wins,
       constructor: normalizeTeamName(standing.Constructor?.name) || "—",
     }));
-  } catch (error) {
-    console.error(`Error fetching constructor standings for ${season}:`, error);
+  } catch (err) {
+    error(`Error fetching constructor standings for ${season}:`, err);
     return null;
   }
 }

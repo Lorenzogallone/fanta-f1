@@ -2,7 +2,12 @@
  * @file racing.js
  * @description Centralized constants for drivers, teams, and scoring
  * Avoids duplication across multiple components
+ *
+ * NOTE: This file now uses f1DataResolver for dynamic driver/team resolution
+ * Static constants are kept for backward compatibility
  */
+
+import f1DataResolver from '../services/f1DataResolver.js';
 
 /* ==================== DRIVERS ==================== */
 export const DRIVERS = [
@@ -119,3 +124,77 @@ export const TIME_CONSTANTS = {
   // Late submission penalty
   LATE_SUBMISSION_PENALTY: -3,
 };
+
+/* ==================== DYNAMIC HELPER FUNCTIONS ==================== */
+/**
+ * Ottiene il team di un pilota (con fallback dinamico da API)
+ * @param {string} driverName - Nome del pilota
+ * @returns {string|null} Nome del team o null
+ */
+export function getDriverTeamDynamic(driverName) {
+  // Prima prova con il mapping statico (più veloce)
+  if (DRIVER_TEAM[driverName]) {
+    return DRIVER_TEAM[driverName];
+  }
+
+  // Fallback: usa il resolver (include API cache e unknowns)
+  const team = f1DataResolver.getDriverTeam(driverName);
+  return team?.displayName || null;
+}
+
+/**
+ * Ottiene il logo di un team (con fallback dinamico)
+ * @param {string} teamName - Nome del team
+ * @returns {string|null} Path del logo o null
+ */
+export function getTeamLogoDynamic(teamName) {
+  // Prima prova con il mapping statico
+  if (TEAM_LOGOS[teamName]) {
+    return TEAM_LOGOS[teamName];
+  }
+
+  // Fallback: usa il resolver
+  return f1DataResolver.getTeamLogo(teamName);
+}
+
+/**
+ * Ottiene tutti i piloti (statici + da API cache)
+ * @returns {Array<string>} Lista nomi piloti
+ */
+export function getAllDriversDynamic() {
+  const allDrivers = f1DataResolver.getAllDrivers();
+  return allDrivers.map(d => d.displayName);
+}
+
+/**
+ * Ottiene tutti i team (statici + da API cache)
+ * @returns {Array<string>} Lista nomi team
+ */
+export function getAllTeamsDynamic() {
+  const allTeams = f1DataResolver.getAllTeams();
+  return allTeams.map(t => t.displayName);
+}
+
+/**
+ * Verifica se un pilota esiste (statico o dinamico)
+ * @param {string} driverName - Nome del pilota
+ * @returns {boolean}
+ */
+export function isDriverValid(driverName) {
+  if (DRIVERS.includes(driverName)) return true;
+
+  const allDrivers = getAllDriversDynamic();
+  return allDrivers.includes(driverName);
+}
+
+/**
+ * Verifica se un team esiste (statico o dinamico)
+ * @param {string} teamName - Nome del team
+ * @returns {boolean}
+ */
+export function isTeamValid(teamName) {
+  if (CONSTRUCTORS.includes(teamName)) return true;
+
+  const allTeams = getAllTeamsDynamic();
+  return allTeams.includes(teamName);
+}

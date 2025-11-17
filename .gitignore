@@ -159,3 +159,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+**/serviceAccount.json

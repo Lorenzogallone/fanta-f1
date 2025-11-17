@@ -3,12 +3,14 @@
  * Displays championship lineup submissions from all users.
  */
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { Card, Table, Spinner, Alert, Image } from "react-bootstrap";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { error as logError } from "../utils/logger";
 
 // Use centralized constants
 const driverTeam = DRIVER_TEAM;
@@ -52,7 +54,7 @@ export default function ChampionshipSubmissions({ refresh }) {
           .filter(Boolean);
         setSubs(list);
       } catch (e) {
-        console.error(e);
+        logError(e);
         setError("Unable to load championship lineups.");
       } finally {
         setLoading(false);
@@ -172,3 +174,7 @@ export default function ChampionshipSubmissions({ refresh }) {
     </Card>
   );
 }
+
+ChampionshipSubmissions.propTypes = {
+  refresh: PropTypes.number,
+};

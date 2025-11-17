@@ -37,7 +37,7 @@ export const it = {
     leaderboard: "Classifica",
     formations: "Schiera",
     history: "Storico",
-    raceResults: "Risultati Gare",
+    raceResults: "F1 Hub",
     statistics: "Statistiche",
     admin: "Admin",
     calculatePoints: "Calcola Punteggi",
@@ -143,10 +143,10 @@ export const it = {
     completed: "Completata",
   },
 
-  // Race Results
+  // F1 Hub
   raceResults: {
-    title: "Risultati Sessioni F1",
-    description: "Risultati di tutte le sessioni (Prove Libere, Qualifiche, Sprint, Gara)",
+    title: "F1 Hub",
+    description: "Risultati delle sessioni: Prove Libere, Qualifiche, Sprint e Gara",
     betaNotice: "Questa funzionalità è in BETA. Alcuni dati potrebbero essere incompleti o non ancora disponibili.",
     selectRace: "Seleziona Gara",
     chooseRace: "Scegli una gara...",
@@ -166,6 +166,13 @@ export const it = {
     canStillSubmit: "Puoi ancora schierare la formazione!",
     qualifyingNotStarted: "Le qualifiche non sono ancora iniziate",
     goToFormation: "Vai allo Schieramento",
+    sessionsTab: "Sessioni",
+    championshipTab: "Campionato",
+    allFilter: "Tutti",
+    driverStandings: "Classifica Piloti",
+    constructorStandings: "Classifica Costruttori",
+    driverStandingsUnavailable: "Classifica piloti non disponibile",
+    constructorStandingsUnavailable: "Classifica costruttori non disponibile",
   },
 
   // Statistics

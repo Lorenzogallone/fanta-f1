@@ -5,7 +5,9 @@
  */
 
 import React, { createContext, useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { translations, DEFAULT_LANGUAGE, supportedLanguages } from "../translations";
+import { warn } from "../utils/logger";
 
 /**
  * Language context
@@ -41,7 +43,7 @@ export const LanguageProvider = ({ children }) => {
       setCurrentLanguage(languageCode);
       localStorage.setItem("fanta-f1-language", languageCode);
     } else {
-      console.warn(`Language '${languageCode}' not supported, falling back to ${DEFAULT_LANGUAGE}`);
+      warn(`Language '${languageCode}' not supported, falling back to ${DEFAULT_LANGUAGE}`);
     }
   };
 
@@ -61,7 +63,7 @@ export const LanguageProvider = ({ children }) => {
         translation = translation[k];
       } else {
         // Fallback to key if translation not found
-        console.warn(`Translation key '${key}' not found for language '${currentLanguage}'`);
+        warn(`Translation key '${key}' not found for language '${currentLanguage}'`);
         return key;
       }
     }
@@ -82,4 +84,8 @@ export const LanguageProvider = ({ children }) => {
   };
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+};
+
+LanguageProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };

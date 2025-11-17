@@ -3,18 +3,22 @@
  * @description Main application component with routing and lazy-loaded pages
  */
 
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
 } from "react-router-dom";
 import { Container as BContainer, Spinner } from "react-bootstrap";
+import { Toaster } from 'react-hot-toast';
 
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Navigation from "./components/Navigation";
 import Footer from "./components/Footer";
+import { syncFromAPI } from "./services/f1DataResolver.js";
+import { warn } from "./utils/logger";
 import "./styles/theme.css";
 
 // Lazy loading pages for code splitting
@@ -45,42 +49,53 @@ const PageLoader = () => (
  * @returns {JSX.Element} App with navigation and routes
  */
 export default function App() {
+  // Sincronizza dati piloti/team da API all'avvio (background)
+  useEffect(() => {
+    syncFromAPI().catch(err => {
+      warn('Background sync failed:', err);
+      // Non bloccare l'app se il sync fallisce
+    });
+  }, []);
+
   return (
-    <LanguageProvider>
-      <ThemeProvider>
-        <Router>
-          <Navigation />
+    <ErrorBoundary>
+      <LanguageProvider>
+        <ThemeProvider>
+          <Router>
+            <Navigation />
+            <Toaster />
 
-          <BContainer className="py-4">
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/"           element={<Home />} />
-                <Route path="/leaderboard" element={<Home />} />
-                <Route path="/participant/:userId" element={<ParticipantDetail />} />
-                <Route path="/lineup"     element={<Formations />} />
-                <Route path="/calculate"  element={<CalculatePoints />} />
-                <Route path="/history"    element={<History />} />
-                <Route path="/results"    element={<RaceResults />} />
-                <Route path="/statistics" element={<Statistics />} />
-                <Route path="/admin"      element={<AdminPanel />} />
-                {/* Legacy routes for compatibility */}
-                <Route path="/formations/races" element={<FormationApp />} />
-                <Route path="/formations/championship" element={<ChampionshipForm />} />
-                {/* Italian routes redirects for backward compatibility */}
-                <Route path="/classifica" element={<Home />} />
-                <Route path="/partecipante/:userId" element={<ParticipantDetail />} />
-                <Route path="/schiera" element={<Formations />} />
-                <Route path="/calcola" element={<CalculatePoints />} />
-                <Route path="/storico" element={<History />} />
-                <Route path="/risultati" element={<RaceResults />} />
-                <Route path="/statistiche" element={<Statistics />} />
-              </Routes>
-            </Suspense>
-          </BContainer>
+            <BContainer className="py-4">
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/"           element={<Home />} />
+                  <Route path="/leaderboard" element={<Home />} />
+                  <Route path="/participant/:userId" element={<ParticipantDetail />} />
+                  <Route path="/lineup"     element={<Formations />} />
+                  <Route path="/calculate"  element={<CalculatePoints />} />
+                  <Route path="/history"    element={<History />} />
+                  <Route path="/results"    element={<RaceResults />} />
+                  <Route path="/statistics" element={<Statistics />} />
+                  <Route path="/admin"      element={<AdminPanel />} />
+                  {/* Legacy routes for compatibility */}
+                  <Route path="/formations/races" element={<FormationApp />} />
+                  <Route path="/formations/championship" element={<ChampionshipForm />} />
+                  {/* Italian routes redirects for backward compatibility */}
+                  <Route path="/classifica" element={<Home />} />
+                  <Route path="/partecipante/:userId" element={<ParticipantDetail />} />
+                  <Route path="/schiera" element={<Formations />} />
+                  <Route path="/calcola" element={<CalculatePoints />} />
+                  <Route path="/storico" element={<History />} />
+                  <Route path="/risultati" element={<RaceResults />} />
+                  <Route path="/statistiche" element={<Statistics />} />
+                </Routes>
+              </Suspense>
+            </BContainer>
 
-          <Footer />
-        </Router>
-      </ThemeProvider>
-    </LanguageProvider>
+            <Footer />
+          </Router>
+        </ThemeProvider>
+      </LanguageProvider>
+    </ErrorBoundary>
   );
 }

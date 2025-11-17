@@ -38,6 +38,7 @@ import RaceHistoryCard from "../components/RaceHistoryCard";
 import { DRIVERS, DRIVER_TEAM, TEAM_LOGOS, TIME_CONSTANTS } from "../constants/racing";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { useLanguage } from "../hooks/useLanguage";
+import { error } from "../utils/logger";
 import { getLateWindowInfo } from "../utils/lateSubmissionHelper";
 import "../styles/customSelect.css";
 
@@ -51,7 +52,7 @@ const driverOpts = drivers.map((d) => ({
   value: d,
   label: (
     <div className="select-option">
-      <img src={teamLogos[driverTeam[d]]} className="option-logo" alt={driverTeam[d]} />
+      <img src={teamLogos[driverTeam[d]]} className="option-logo" alt={`${driverTeam[d]} team logo`} />
       <span className="option-text">{d}</span>
     </div>
   ),
@@ -127,7 +128,7 @@ export default function FormationApp() {
         }
         return () => unSub();
       } catch (e) {
-        console.error(e);
+        error(e);
         if (e.code === "permission-denied") setPermError(true);
       } finally {
         setBusy(false);
@@ -269,7 +270,7 @@ export default function FormationApp() {
         sprintJolly: opt(d.sprintJolly),
       }));
       setIsEditMode(true);
-    })().catch(console.error);
+    })().catch(error);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.userId, form.raceId]);
 
@@ -434,7 +435,7 @@ export default function FormationApp() {
       setTouched(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
-      console.error(err);
+      error(err);
       setFlash({ type: "danger", msg: `❌ ${t("common.error")}: ${err.message}` });
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -487,7 +488,7 @@ export default function FormationApp() {
                 {/* Utente */}
                 <Form.Group className="mb-3">
                   <Form.Label>{t("formations.selectUser")} *</Form.Label>
-                  <Form.Select name="userId" value={form.userId} onChange={onChangeSimple} required>
+                  <Form.Select name="userId" value={form.userId} onChange={onChangeSimple} required aria-label="Select user to submit formation for">
                     <option value="">{t("formations.selectUser")}</option>
                     {ranking.map((u) => (
                       <option key={u.id} value={u.id}>
@@ -505,7 +506,7 @@ export default function FormationApp() {
                 {/* Gara */}
                 <Form.Group className="mb-3">
                   <Form.Label>{t("formations.selectRace")} *</Form.Label>
-                  <Form.Select name="raceId" value={form.raceId} onChange={onChangeSimple} required>
+                  <Form.Select name="raceId" value={form.raceId} onChange={onChangeSimple} required aria-label="Select race to submit formation for">
                     <option value="">{t("formations.selectRace")}</option>
                     {races.map((r) => (
                       <option key={r.id} value={r.id}>
@@ -602,6 +603,7 @@ export default function FormationApp() {
                       formNoValidate
                       disabled={disabledMain || hasMainDuplicates}
                       onClick={() => setSavingMode("main")}
+                      aria-label={isEditMode ? "Edit main race formation" : "Save main race formation"}
                     >
                       {isEditMode ? `✏️ ${t("formations.editFormation")}` : `💾 ${t("formations.save")}`}
                     </Button>
@@ -615,6 +617,7 @@ export default function FormationApp() {
                         formNoValidate
                         disabled={disabledSprint || hasSprintDuplicates}
                         onClick={() => setSavingMode("sprint")}
+                        aria-label={isEditMode ? "Edit sprint formation" : "Save sprint formation"}
                       >
                         {isEditMode ? `✏️ ${t("formations.editFormation")}` : `💾 ${t("formations.save")}`}
                       </Button>
@@ -655,10 +658,10 @@ export default function FormationApp() {
             setShowLateModal(false);
             setSavingMode(null);
             setCurrentLateMode(null);
-          }}>
+          }} aria-label="Cancel late submission">
             {t("common.cancel")}
           </Button>
-          <Button variant="warning" onClick={handleConfirmLateSubmission}>
+          <Button variant="warning" onClick={handleConfirmLateSubmission} aria-label="Confirm late submission with penalty">
             {t("formations.lateConfirm")}
           </Button>
         </Modal.Footer>
@@ -721,6 +724,7 @@ export default function FormationApp() {
               placeholder={`Seleziona ${label}`}
               classNamePrefix="react-select"
               isClearable={clearable}
+              aria-label={`Select driver for ${label}`}
               styles={
                 isEmpty
                   ? {
@@ -740,6 +744,7 @@ export default function FormationApp() {
               size="sm"
               onClick={() => onSelectChange(null, field)}
               title="Cancella selezione"
+              aria-label={`Clear ${label} selection`}
             >
               ✕
             </Button>

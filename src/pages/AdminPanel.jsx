@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import {
   Container,
   Row,
@@ -36,6 +37,7 @@ import { DRIVERS } from "../constants/racing";
 import Select from "react-select";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { error } from "../utils/logger";
 import AdminLogin from "../components/AdminLogin";
 import {
   createAndSaveBackup,
@@ -93,7 +95,7 @@ export default function AdminPanel() {
       const racesList = racesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
       setSharedRaces(racesList.sort((a, b) => a.round - b.round));
     } catch (err) {
-      console.error("Errore caricamento dati condivisi:", err);
+      error("Errore caricamento dati condivisi:", err);
     } finally {
       setLoadingShared(false);
     }
@@ -246,7 +248,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
       onDataChange();
       setTimeout(() => setShowAddDialog(false), 1500);
     } catch (err) {
-      console.error(err);
+      error(err);
       setMessage({ type: "danger", text: t("common.error") });
     } finally {
       setSaving(false);
@@ -271,7 +273,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
       onDataChange();
       setTimeout(() => setShowEditDialog(false), 1500);
     } catch (err) {
-      console.error(err);
+      error(err);
       setMessage({ type: "danger", text: t("common.error") });
     } finally {
       setSaving(false);
@@ -291,7 +293,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
       onDataChange();
       setTimeout(() => setShowEditDialog(false), 1500);
     } catch (err) {
-      console.error(err);
+      error(err);
       setMessage({ type: "danger", text: t("common.error") });
     } finally {
       setSaving(false);
@@ -312,7 +314,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
         <Col>
           <div className="d-flex justify-content-between align-items-center">
             <h5 className="mb-0">{t("admin.participants")} ({participants.length})</h5>
-            <Button variant="danger" onClick={openAddDialog}>
+            <Button variant="danger" onClick={openAddDialog} aria-label="Add new participant">
               ➕ {t("admin.addParticipant")}
             </Button>
           </div>
@@ -365,6 +367,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
                               size="sm"
                               variant="outline-primary"
                               onClick={() => openEditDialog(p)}
+                              aria-label={`Edit participant ${p.name}`}
                             >
                               ✏️ {t("common.edit")}
                             </Button>
@@ -506,7 +509,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
                 <hr />
 
                 <div className="d-grid">
-                  <Button variant="outline-danger" onClick={handleDelete} disabled={saving}>
+                  <Button variant="outline-danger" onClick={handleDelete} disabled={saving} aria-label={`Delete participant ${currentParticipant?.name}`}>
                     🗑️ {t("admin.deleteParticipant")}
                   </Button>
                   <Form.Text className="text-muted text-center mt-2">
@@ -529,6 +532,12 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
     </>
   );
 }
+
+ParticipantsManager.propTypes = {
+  participants: PropTypes.arrayOf(PropTypes.object).isRequired,
+  loading: PropTypes.bool.isRequired,
+  onDataChange: PropTypes.func.isRequired,
+};
 
 /**
  * Formations management component for admin editing
@@ -646,7 +655,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
         resetForm();
       }
     } catch (err) {
-      console.error(err);
+      error(err);
     }
   };
 
@@ -829,7 +838,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
       // Scroll verso l'alto per vedere il messaggio di successo
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
-      console.error(err);
+      error(err);
       setMessage({ type: "danger", text: `${t("common.error")}: ${err.message}` });
     } finally {
       setSaving(false);
@@ -934,6 +943,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                   value={selectedUser}
                   onChange={(e) => setSelectedUser(e.target.value)}
                   required
+                  aria-label="Select user to manage formation for"
                 >
                   <option value="">{t("formations.selectUser")}</option>
                   {participants.map((p) => (
@@ -954,6 +964,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                     setSelectedRace(race || null);
                   }}
                   required
+                  aria-label="Select race to manage formation for"
                 >
                   <option value="">{t("formations.selectRace")}</option>
                   {races.map((r) => {
@@ -994,6 +1005,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                       placeholder={t("formations.selectUser")}
                       styles={isFieldInvalid('mainP1') ? invalidSelectStyles : selectStyles}
                       noOptionsMessage={() => t("errors.duplicateDriver")}
+                      aria-label="Select driver for position P1"
                     />
                   </Form.Group>
 
@@ -1006,6 +1018,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                       placeholder={t("formations.selectUser")}
                       styles={isFieldInvalid('mainP2') ? invalidSelectStyles : selectStyles}
                       noOptionsMessage={() => t("errors.duplicateDriver")}
+                      aria-label="Select driver for position P2"
                     />
                   </Form.Group>
 
@@ -1018,6 +1031,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                       placeholder={t("formations.selectUser")}
                       styles={isFieldInvalid('mainP3') ? invalidSelectStyles : selectStyles}
                       noOptionsMessage={() => t("errors.duplicateDriver")}
+                      aria-label="Select driver for position P3"
                     />
                   </Form.Group>
 
@@ -1030,6 +1044,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                       placeholder={t("formations.selectUser")}
                       styles={isFieldInvalid('mainJolly') ? invalidSelectStyles : selectStyles}
                       noOptionsMessage={() => t("errors.duplicateDriver")}
+                      aria-label="Select driver for joker"
                     />
                   </Form.Group>
 
@@ -1043,6 +1058,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                       styles={selectStyles}
                       isClearable
                       noOptionsMessage={() => t("errors.duplicateDriver")}
+                      aria-label="Select driver for second joker (optional)"
                     />
                   </Form.Group>
 
@@ -1073,6 +1089,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                           styles={selectStyles}
                           isClearable
                           noOptionsMessage={() => t("errors.duplicateDriver")}
+                          aria-label="Select driver for sprint position SP1"
                         />
                       </Form.Group>
 
@@ -1086,6 +1103,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                           styles={selectStyles}
                           isClearable
                           noOptionsMessage={() => t("errors.duplicateDriver")}
+                          aria-label="Select driver for sprint position SP2"
                         />
                       </Form.Group>
 
@@ -1099,6 +1117,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                           styles={selectStyles}
                           isClearable
                           noOptionsMessage={() => t("errors.duplicateDriver")}
+                          aria-label="Select driver for sprint position SP3"
                         />
                       </Form.Group>
 
@@ -1112,12 +1131,13 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                           styles={selectStyles}
                           isClearable
                           noOptionsMessage={() => t("errors.duplicateDriver")}
+                          aria-label="Select driver for sprint joker"
                         />
                       </Form.Group>
                     </>
                   )}
 
-                  <Button variant="danger" type="submit" disabled={saving} className="w-100">
+                  <Button variant="danger" type="submit" disabled={saving} className="w-100" aria-label={existingFormation ? "Update formation" : "Save new formation"}>
                     {saving ? t("common.loading") : existingFormation ? t("common.update") : t("common.save")}
                   </Button>
                 </>
@@ -1130,6 +1150,13 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
     </Row>
   );
 }
+
+FormationsManager.propTypes = {
+  participants: PropTypes.arrayOf(PropTypes.object).isRequired,
+  races: PropTypes.arrayOf(PropTypes.object).isRequired,
+  loading: PropTypes.bool.isRequired,
+  onDataChange: PropTypes.func.isRequired,
+};
 
 /**
  * Calendar management component with ICS import support
@@ -1193,7 +1220,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
         text: `${t("common.success")}: ${parsed.length} ${t("history.pastRaces")}`,
       });
     } catch (err) {
-      console.error(err);
+      error(err);
       setMessage({ type: "danger", text: `${t("common.error")}: ${err.message}` });
       setParsedRaces([]);
     } finally {
@@ -1240,7 +1267,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
       setIcsFile(null);
       await onDataChange();
     } catch (err) {
-      console.error(err);
+      error(err);
       setMessage({ type: "danger", text: `${t("common.error")}: ${err.message}` });
     } finally {
       setImporting(false);
@@ -1301,7 +1328,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
         ...(cancelType === "main" ? { cancelledMain: true } : { cancelledSprint: true })
       }));
     } catch (err) {
-      console.error(err);
+      error(err);
       setMessage({ type: "danger", text: `${t("common.error")}: ${err.message}` });
     } finally {
       setUploading(false);
@@ -1344,7 +1371,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
       setEditingRace(null);
       await onDataChange();
     } catch (err) {
-      console.error(err);
+      error(err);
       setMessage({ type: "danger", text: `${t("common.error")}: ${err.message}` });
     } finally {
       setUploading(false);
@@ -1385,6 +1412,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
                 accept=".ics"
                 onChange={handleIcsFileSelect}
                 disabled={loadingIcs || importing}
+                aria-label="Select ICS calendar file to import races"
               />
             </Form.Group>
 
@@ -1438,6 +1466,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
                   className="w-100 mt-3"
                   onClick={handleIcsImport}
                   disabled={importing}
+                  aria-label={`Import ${parsedRaces.length} races from calendar file`}
                 >
                   {importing ? (
                     <>
@@ -1458,7 +1487,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
         <Card className="shadow">
           <Card.Header className="bg-white d-flex justify-content-between align-items-center">
             <h5 className="mb-0">{t("admin.raceCalendar")} ({races.length})</h5>
-            <Button size="sm" variant="outline-primary" onClick={onDataChange}>
+            <Button size="sm" variant="outline-primary" onClick={onDataChange} aria-label="Refresh race calendar">
               🔄
             </Button>
           </Card.Header>
@@ -1533,6 +1562,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
                             size="sm"
                             variant="outline-primary"
                             onClick={() => handleEditRace(r)}
+                            aria-label={`Edit race ${r.name}`}
                           >
                             ✏️
                           </Button>
@@ -1668,6 +1698,12 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
   );
 }
 
+CalendarManager.propTypes = {
+  races: PropTypes.arrayOf(PropTypes.object).isRequired,
+  loading: PropTypes.bool.isRequired,
+  onDataChange: PropTypes.func.isRequired,
+};
+
 /**
  * Database reset and backup component
  * @param {Object} props - Component props
@@ -1702,7 +1738,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
       const allBackups = await getAllBackups();
       setBackups(allBackups);
     } catch (err) {
-      console.error("Error loading backups:", err);
+      error("Error loading backups:", err);
       setMessage({ type: "danger", text: `Errore caricamento backup: ${err.message}` });
     } finally {
       setLoadingBackups(false);
@@ -1743,7 +1779,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
       // Reload backups list
       await loadBackups();
     } catch (err) {
-      console.error(err);
+      error(err);
       setMessage({ type: "danger", text: `Errore: ${err.message}` });
     } finally {
       setBackingUp(false);
@@ -1763,7 +1799,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
       setMessage({ type: "success", text: "Backup eliminato" });
       await loadBackups();
     } catch (err) {
-      console.error(err);
+      error(err);
       setMessage({ type: "danger", text: `Errore: ${err.message}` });
     }
   };
@@ -1803,7 +1839,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
         onDataChange();
       }
     } catch (err) {
-      console.error(err);
+      error(err);
       setMessage({ type: "danger", text: `Errore ripristino: ${err.message}` });
     } finally {
       setRestoring(false);
@@ -1877,7 +1913,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
       setShowModal(false);
       setConfirmText("");
     } catch (err) {
-      console.error(err);
+      error(err);
       setMessage({ type: "danger", text: t("common.error") });
     } finally {
       setResetting(false);
@@ -1900,6 +1936,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
                 onClick={handleCreateBackup}
                 disabled={backingUp}
                 className="w-100"
+                aria-label="Create manual database backup"
               >
                 {backingUp ? (
                   <>
@@ -1930,6 +1967,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
                 variant="light"
                 onClick={loadBackups}
                 disabled={loadingBackups}
+                aria-label="Refresh backups list"
               >
                 {loadingBackups ? (
                   <Spinner animation="border" size="sm" />
@@ -1978,6 +2016,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
                                 variant="outline-primary"
                                 className="me-2"
                                 onClick={() => downloadBackupAsJSON(backup, backup.id)}
+                                aria-label={`Download backup from ${timestamp.toLocaleDateString()}`}
                               >
                                 📥
                               </Button>
@@ -1986,6 +2025,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
                                 variant="outline-warning"
                                 className="me-2"
                                 onClick={() => handleShowRestorePreview(backup)}
+                                aria-label={`Restore backup from ${timestamp.toLocaleDateString()}`}
                               >
                                 ⚡ Ripristina
                               </Button>
@@ -1993,6 +2033,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
                                 size="sm"
                                 variant="outline-danger"
                                 onClick={() => handleDeleteBackup(backup.id)}
+                                aria-label={`Delete backup from ${timestamp.toLocaleDateString()}`}
                               >
                                 🗑️
                               </Button>
@@ -2019,6 +2060,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
                   setResetType("all");
                   setShowModal(true);
                 }}
+                aria-label="Reset all database data"
               >
                 {t("admin.resetAll")}
               </Button>
@@ -2171,4 +2213,10 @@ function DatabaseReset({ participants, races, onDataChange }) {
     </>
   );
 }
+
+DatabaseReset.propTypes = {
+  participants: PropTypes.arrayOf(PropTypes.object).isRequired,
+  races: PropTypes.arrayOf(PropTypes.object).isRequired,
+  onDataChange: PropTypes.func.isRequired,
+};
 

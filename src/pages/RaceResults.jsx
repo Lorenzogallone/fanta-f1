@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import {
   Container,
   Row,
@@ -38,6 +39,7 @@ import {
 import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { log, error } from "../utils/logger";
 
 /**
  * Component to display driver with team logo
@@ -51,7 +53,7 @@ function DriverWithLogo({ name }) {
       {logoSrc && (
         <img
           src={logoSrc}
-          alt={team}
+          alt={`${team} team logo`}
           style={{
             height: 20,
             width: 20,
@@ -65,6 +67,10 @@ function DriverWithLogo({ name }) {
   );
 }
 
+DriverWithLogo.propTypes = {
+  name: PropTypes.string,
+};
+
 /**
  * Component to display team with logo
  */
@@ -76,7 +82,7 @@ function TeamWithLogo({ name }) {
       {logoSrc && (
         <img
           src={logoSrc}
-          alt={name}
+          alt={`${name} team logo`}
           style={{
             height: 20,
             width: 20,
@@ -89,6 +95,10 @@ function TeamWithLogo({ name }) {
     </span>
   );
 }
+
+TeamWithLogo.propTypes = {
+  name: PropTypes.string,
+};
 
 /**
  * RaceResults page component
@@ -336,12 +346,12 @@ export default function RaceResults() {
             setActiveKeys(defaultKeys);
             setLoadingSessions(false); // Sessions loaded
           } catch (err) {
-            console.error("Error loading race sessions:", err);
+            error("Error loading race sessions:", err);
             setLoadingSessions(false); // Stop loading even on error
           }
         }
       } catch (e) {
-        console.error("Error loading races:", e);
+        error("Error loading races:", e);
         setError(t("errors.generic"));
         setLoadingRaces(false);
         setLoadingSessions(false);
@@ -366,7 +376,7 @@ export default function RaceResults() {
           setDriverStandings(drivers);
           setConstructorStandings(constructors);
         } catch (error) {
-          console.error("Error loading standings:", error);
+          error("Error loading standings:", error);
         } finally {
           setLoadingStandings(false);
         }
@@ -399,7 +409,7 @@ export default function RaceResults() {
 
       // Check cache first
       if (sessionsCache[cacheKey]) {
-        console.log(`Using cached sessions for ${season} R${round}`);
+        log(`Using cached sessions for ${season} R${round}`);
         const sessionData = sessionsCache[cacheKey];
 
         setSessions({
@@ -489,7 +499,7 @@ export default function RaceResults() {
       }
       setActiveKeys(defaultKeys);
     } catch (e) {
-      console.error("Error loading sessions:", e);
+      error("Error loading sessions:", e);
       setError(t("errors.generic"));
     } finally {
       setLoadingSessions(false);
@@ -538,7 +548,7 @@ export default function RaceResults() {
                         borderColor: accentColor,
                       }}
                     >
-                      📊 Sessioni
+                      📊 {t("raceResults.sessionsTab")}
                     </Nav.Link>
                   </Nav.Item>
                   <Nav.Item>
@@ -550,7 +560,7 @@ export default function RaceResults() {
                         borderColor: accentColor,
                       }}
                     >
-                      🏆 Campionato
+                      🏆 {t("raceResults.championshipTab")}
                     </Nav.Link>
                   </Nav.Item>
                 </Nav>
@@ -570,6 +580,7 @@ export default function RaceResults() {
                   style={{
                     borderColor: accentColor,
                   }}
+                  aria-label="Select race to view session results"
                 >
                   <option value="">{t("raceResults.chooseRace")}</option>
                   {races.map((race) => (
@@ -597,6 +608,7 @@ export default function RaceResults() {
                         borderColor: accentColor,
                         whiteSpace: "nowrap",
                       }}
+                      aria-label="Go to formation page to submit lineup"
                     >
                       🏎️ {t("raceResults.goToFormation")}
                     </Button>
@@ -626,6 +638,7 @@ export default function RaceResults() {
                             backgroundColor: standingsFilter === "5" ? accentColor : "transparent",
                             borderColor: standingsFilter === "5" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
                           }}
+                          aria-label="Show top 5 in standings"
                         >
                           Top 5
                         </Button>
@@ -637,6 +650,7 @@ export default function RaceResults() {
                             backgroundColor: standingsFilter === "10" ? accentColor : "transparent",
                             borderColor: standingsFilter === "10" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
                           }}
+                          aria-label="Show top 10 in standings"
                         >
                           Top 10
                         </Button>
@@ -648,8 +662,9 @@ export default function RaceResults() {
                             backgroundColor: standingsFilter === "all" ? accentColor : "transparent",
                             borderColor: standingsFilter === "all" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
                           }}
+                          aria-label="Show all positions in standings"
                         >
-                          Tutti
+                          {t("raceResults.allFilter")}
                         </Button>
                       </div>
 
@@ -657,7 +672,7 @@ export default function RaceResults() {
                         {/* Driver Standings */}
                         <Col xs={12} lg={6}>
                           <h5 className="mb-3" style={{ color: accentColor }}>
-                            🏎️ Classifica Piloti
+                            🏎️ {t("raceResults.driverStandings")}
                           </h5>
                           {driverStandings && driverStandings.length > 0 ? (
                             <>
@@ -760,7 +775,7 @@ export default function RaceResults() {
                                 <thead>
                                   <tr>
                                     <th style={{ color: accentColor, width: '10%', padding: '0.5rem 0.25rem' }}>#</th>
-                                    <th style={{ color: accentColor, padding: '0.5rem 0.25rem' }}>Pilota</th>
+                                    <th style={{ color: accentColor, padding: '0.5rem 0.25rem' }}>{t("formations.driver")}</th>
                                     <th className="text-end" style={{ color: accentColor, width: '20%', padding: '0.5rem 0.25rem' }}>Pt</th>
                                     <th className="text-end d-none d-md-table-cell" style={{ color: accentColor, width: '15%', padding: '0.5rem 0.25rem' }}>Win</th>
                                   </tr>
@@ -785,14 +800,14 @@ export default function RaceResults() {
                             </div>
                           </>
                         ) : (
-                          <Alert variant="info">Classifica piloti non disponibile</Alert>
+                          <Alert variant="info">{t("raceResults.driverStandingsUnavailable")}</Alert>
                         )}
                       </Col>
 
                       {/* Constructor Standings */}
                       <Col xs={12} lg={6}>
                         <h5 className="mb-3" style={{ color: accentColor }}>
-                          🏁 Classifica Costruttori
+                          🏁 {t("raceResults.constructorStandings")}
                         </h5>
                         {constructorStandings && constructorStandings.length > 0 ? (
                           <>
@@ -920,7 +935,7 @@ export default function RaceResults() {
                             </div>
                           </>
                         ) : (
-                          <Alert variant="info">Classifica costruttori non disponibile</Alert>
+                          <Alert variant="info">{t("raceResults.constructorStandingsUnavailable")}</Alert>
                         )}
                       </Col>
                     </Row>

@@ -6,6 +6,7 @@
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "./firebase";
 import { POINTS } from "../constants/racing";
+import { error } from "../utils/logger";
 
 /**
  * Retrieves historical race data with cumulative points and positions for each player
@@ -48,7 +49,7 @@ export async function getChampionshipStatistics() {
         getDocs(collection(db, "races", race.id, "submissions"))
           .then(snap => ({ raceId: race.id, snapshot: snap }))
           .catch(err => {
-            console.error(`Error fetching submissions for ${race.id}:`, err);
+            error(`Error fetching submissions for ${race.id}:`, err);
             return { raceId: race.id, snapshot: null };
           })
       );
@@ -199,8 +200,8 @@ export async function getChampionshipStatistics() {
       playersData,
       playerNames,
     };
-  } catch (error) {
-    console.error("Error fetching championship statistics:", error);
-    throw error;
+  } catch (err) {
+    error("Error fetching championship statistics:", err);
+    throw err;
   }
 }

@@ -3,6 +3,7 @@
  * Provides admin authentication via password prompt.
  */
 import React, { useState } from "react";
+import PropTypes from "prop-types";
 import { Container, Row, Col, Card, Form, Button } from "react-bootstrap";
 import { useLanguage } from "../hooks/useLanguage";
 
@@ -70,3 +71,8 @@ export default function AdminLogin({ onSuccess, useLocalStorage = false }) {
     </Container>
   );
 }
+
+AdminLogin.propTypes = {
+  onSuccess: PropTypes.func.isRequired,
+  useLocalStorage: PropTypes.bool,
+};

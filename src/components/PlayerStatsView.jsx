@@ -5,6 +5,7 @@
  */
 
 import React from "react";
+import PropTypes from "prop-types";
 import {
   Row,
   Col,
@@ -40,7 +41,7 @@ function DriverWithLogo({ name }) {
       {logoSrc && (
         <img
           src={logoSrc}
-          alt={team}
+          alt={`${team} team logo`}
           style={{
             height: 20,
             width: 20,
@@ -54,6 +55,10 @@ function DriverWithLogo({ name }) {
   );
 }
 
+DriverWithLogo.propTypes = {
+  name: PropTypes.string,
+};
+
 /**
  * Displays team name with logo
  */
@@ -65,7 +70,7 @@ function TeamWithLogo({ name }) {
       {logoSrc && (
         <img
           src={logoSrc}
-          alt={name}
+          alt={`${name} team logo`}
           style={{
             height: 20,
             width: 20,
@@ -78,6 +83,10 @@ function TeamWithLogo({ name }) {
     </span>
   );
 }
+
+TeamWithLogo.propTypes = {
+  name: PropTypes.string,
+};
 
 /**
  * Custom tooltip for charts
@@ -114,6 +123,14 @@ function CustomTooltip({ active, payload, label, isDark, accentColor }) {
   }
   return null;
 }
+
+CustomTooltip.propTypes = {
+  active: PropTypes.bool,
+  payload: PropTypes.arrayOf(PropTypes.object),
+  label: PropTypes.string,
+  isDark: PropTypes.bool.isRequired,
+  accentColor: PropTypes.string.isRequired,
+};
 
 /**
  * Calculate points for a race submission
@@ -219,12 +236,11 @@ export default function PlayerStatsView({
   let chartHistory = [];
 
   if (showCharts && raceHistory.length > 0) {
-    // Build chart data from race history
     let cumulativePoints = 0;
     chartRaces = [];
     chartHistory = [];
 
-    raceHistory.forEach((race) => {
+    [...raceHistory].reverse().forEach((race) => {
       const points = calculateRacePoints(race.submission, race.officialResults, race.cancelledSprint);
       cumulativePoints += points.total;
 
@@ -249,6 +265,7 @@ export default function PlayerStatsView({
           className="mb-3 p-0"
           onClick={() => navigate(-1)}
           style={{ color: accentColor }}
+          aria-label="Go back to previous page"
         >
           ← {t("common.back")}
         </Button>
@@ -540,3 +557,26 @@ export default function PlayerStatsView({
     </>
   );
 }
+
+PlayerStatsView.propTypes = {
+  playerData: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    totalPoints: PropTypes.number.isRequired,
+    position: PropTypes.number,
+    jolly: PropTypes.number,
+    championshipPiloti: PropTypes.arrayOf(PropTypes.string),
+    championshipCostruttori: PropTypes.arrayOf(PropTypes.string),
+    championshipPts: PropTypes.number,
+  }).isRequired,
+  raceHistory: PropTypes.arrayOf(PropTypes.shape({
+    raceId: PropTypes.string.isRequired,
+    raceName: PropTypes.string.isRequired,
+    round: PropTypes.number.isRequired,
+    submission: PropTypes.object,
+    officialResults: PropTypes.object,
+    cancelledSprint: PropTypes.bool,
+  })),
+  totalCompletedRaces: PropTypes.number,
+  showCharts: PropTypes.bool,
+  showBackButton: PropTypes.bool,
+};

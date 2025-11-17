@@ -3,77 +3,23 @@
  * Automatically fetches F1 race results using Jolpica F1 API (official Ergast replacement)
  */
 
+import { resolveDriver } from './f1DataResolver.js';
+import { log, error, warn } from '../utils/logger';
+
 const API_BASE_URL = "http://api.jolpi.ca/ergast/f1";
 
 /**
- * Mapping of driver names from API to app format
- * Common API formats: "Verstappen", "Leclerc", "Norris", etc.
- */
-const DRIVER_NAME_MAPPING = {
-  // Red Bull Racing
-  "Verstappen": "Max Verstappen",
-  "Perez": "Sergio Perez",
-  "Pérez": "Sergio Perez",
-
-  // Ferrari
-  "Leclerc": "Charles Leclerc",
-  "Sainz": "Carlos Sainz",
-  "Hamilton": "Lewis Hamilton",
-
-  // McLaren
-  "Norris": "Lando Norris",
-  "Piastri": "Oscar Piastri",
-
-  // Mercedes
-  "Russell": "George Russell",
-  "Antonelli": "Andrea Kimi Antonelli",
-
-  // Aston Martin
-  "Alonso": "Fernando Alonso",
-  "Stroll": "Lance Stroll",
-
-  // Alpine
-  "Gasly": "Pierre Gasly",
-  "Doohan": "Jack Doohan",
-
-  // Williams
-  "Albon": "Alexander Albon",
-  "Sainz Jr.": "Carlos Sainz",
-
-  // RB (Racing Bulls)
-  "Tsunoda": "Yuki Tsunoda",
-  "Hadjar": "Isack Hadjar",
-
-  // Kick Sauber
-  "Hulkenberg": "Nico Hulkenberg",
-  "Bortoleto": "Gabriel Bortoleto",
-  "Hülkenberg": "Nico Hulkenberg",
-
-  // Haas
-  "Ocon": "Esteban Ocon",
-  "Bearman": "Oliver Bearman",
-};
-
-/**
  * Normalizes driver name from API format to app format
+ * Uses the new f1DataResolver with cascading fallback system
  * @param {Object} driver - Driver object from API
+ * @param {Object} constructor - Constructor object from API (optional)
  * @returns {string|null} Full driver name or null if not found
  */
-function normalizeDriverName(driver) {
+function normalizeDriverName(driver, constructor = null) {
   if (!driver) return null;
 
-  const familyName = driver.familyName;
-
-  // Check mapping first
-  if (DRIVER_NAME_MAPPING[familyName]) {
-    return DRIVER_NAME_MAPPING[familyName];
-  }
-
-  // Fallback: construct full name
-  const fullName = `${driver.givenName} ${driver.familyName}`;
-  console.warn(`⚠️ Pilota non mappato: ${fullName}. Usare mapping manuale.`);
-
-  return fullName;
+  const resolved = resolveDriver(driver, constructor);
+  return resolved?.displayName || null;
 }
 
 /**
@@ -84,7 +30,7 @@ function normalizeDriverName(driver) {
  */
 export async function fetchRaceResults(season, round) {
   try {
-    console.log(`🔄 Fetching risultati per ${season} Round ${round}...`);
+    log(`🔄 Fetching risultati per ${season} Round ${round}...`);
 
     // Fetch main race results
     const raceUrl = `${API_BASE_URL}/${season}/${round}/results.json`;
@@ -98,7 +44,7 @@ export async function fetchRaceResults(season, round) {
     const races = raceData.MRData?.RaceTable?.Races;
 
     if (!races || races.length === 0) {
-      console.warn(`⚠️ Nessun risultato trovato per ${season} Round ${round}`);
+      warn(`⚠️ Nessun risultato trovato per ${season} Round ${round}`);
       return null;
     }
 
@@ -106,15 +52,15 @@ export async function fetchRaceResults(season, round) {
     const results = race.Results;
 
     if (!results || results.length < 3) {
-      console.warn(`⚠️ Risultati incompleti (meno di 3 piloti)`);
+      warn(`⚠️ Risultati incompleti (meno di 3 piloti)`);
       return null;
     }
 
-    // Extract top 3
+    // Extract top 3 (pass Constructor for team inference)
     const mainResults = {
-      P1: normalizeDriverName(results[0]?.Driver),
-      P2: normalizeDriverName(results[1]?.Driver),
-      P3: normalizeDriverName(results[2]?.Driver),
+      P1: normalizeDriverName(results[0]?.Driver, results[0]?.Constructor),
+      P2: normalizeDriverName(results[1]?.Driver, results[1]?.Constructor),
+      P3: normalizeDriverName(results[2]?.Driver, results[2]?.Constructor),
     };
 
     // Fetch sprint results (if available)
@@ -133,16 +79,16 @@ export async function fetchRaceResults(season, round) {
 
           if (sprintResultsList && sprintResultsList.length >= 3) {
             sprintResults = {
-              SP1: normalizeDriverName(sprintResultsList[0]?.Driver),
-              SP2: normalizeDriverName(sprintResultsList[1]?.Driver),
-              SP3: normalizeDriverName(sprintResultsList[2]?.Driver),
+              SP1: normalizeDriverName(sprintResultsList[0]?.Driver, sprintResultsList[0]?.Constructor),
+              SP2: normalizeDriverName(sprintResultsList[1]?.Driver, sprintResultsList[1]?.Constructor),
+              SP3: normalizeDriverName(sprintResultsList[2]?.Driver, sprintResultsList[2]?.Constructor),
             };
-            console.log(`✅ Sprint trovata per Round ${round}`);
+            log(`✅ Sprint trovata per Round ${round}`);
           }
         }
       }
     } catch (err) {
-      console.log(`ℹ️ Nessuna sprint per Round ${round}`);
+      log(`ℹ️ Nessuna sprint per Round ${round}`);
     }
 
     const result = {
@@ -153,12 +99,12 @@ export async function fetchRaceResults(season, round) {
       sprint: sprintResults,
     };
 
-    console.log(`✅ Risultati fetchati con successo:`, result);
+    log(`✅ Risultati fetchati con successo:`, result);
     return result;
 
-  } catch (error) {
-    console.error(`❌ Errore durante il fetch dei risultati:`, error);
-    throw new Error(`Impossibile caricare i risultati: ${error.message}`);
+  } catch (err) {
+    error(`❌ Errore durante il fetch dei risultati:`, err);
+    throw new Error(`Impossibile caricare i risultati: ${err.message}`);
   }
 }
 
@@ -189,9 +135,9 @@ export async function fetchLastRaceResults() {
     // Use main function to get all details
     return await fetchRaceResults(season, round);
 
-  } catch (error) {
-    console.error(`❌ Errore durante il fetch dell'ultima gara:`, error);
-    throw error;
+  } catch (err) {
+    error(`❌ Errore durante il fetch dell'ultima gara:`, err);
+    throw err;
   }
 }
 

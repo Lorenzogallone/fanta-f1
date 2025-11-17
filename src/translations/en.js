@@ -37,7 +37,7 @@ export const en = {
     leaderboard: "Leaderboard",
     formations: "Lineup",
     history: "History",
-    raceResults: "Race Results",
+    raceResults: "F1 Hub",
     statistics: "Statistics",
     admin: "Admin",
     calculatePoints: "Calculate Points",
@@ -143,10 +143,10 @@ export const en = {
     completed: "Completed",
   },
 
-  // Race Results
+  // F1 Hub
   raceResults: {
-    title: "F1 Session Results",
-    description: "Results from all sessions (Free Practice, Qualifying, Sprint, Race)",
+    title: "F1 Hub",
+    description: "Session results from Free Practice, Qualifying, Sprint, and Race",
     betaNotice: "This feature is in BETA. Some data may be incomplete or not yet available.",
     selectRace: "Select Race",
     chooseRace: "Choose a race...",
@@ -166,6 +166,13 @@ export const en = {
     canStillSubmit: "You can still submit your lineup!",
     qualifyingNotStarted: "Qualifying hasn't started yet",
     goToFormation: "Go to Lineup",
+    sessionsTab: "Sessions",
+    championshipTab: "Championship",
+    allFilter: "All",
+    driverStandings: "Driver Standings",
+    constructorStandings: "Constructor Standings",
+    driverStandingsUnavailable: "Driver standings not available",
+    constructorStandingsUnavailable: "Constructor standings not available",
   },
 
   // Statistics

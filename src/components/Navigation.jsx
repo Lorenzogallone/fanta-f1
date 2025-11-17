@@ -15,7 +15,7 @@ import { useLanguage } from "../hooks/useLanguage";
 export default function Navigation() {
   const location = useLocation();
   const [expanded, setExpanded] = useState(false);
-  const { toggleTheme, isDark } = useTheme();
+  const { toggleTheme, isDark, themeMode } = useTheme();
   const { currentLanguage, changeLanguage, availableLanguages, t } = useLanguage();
 
   /**
@@ -43,6 +43,7 @@ export default function Navigation() {
         {/* Hamburger menu - mobile only, left side */}
         <Navbar.Toggle
           aria-controls="main-navbar-nav"
+          aria-label="Toggle navigation menu"
           className="border-0 me-2 order-0"
           style={{ transform: "scale(0.85)" }}
         />
@@ -53,10 +54,11 @@ export default function Navigation() {
           onClick={() => setExpanded(false)}
           className="navbar-brand logo-wrapper d-flex align-items-center mx-auto mx-lg-0 order-1 order-lg-1"
           style={{ textDecoration: "none" }}
+          aria-label="Fanta F1 home page"
         >
           <img
             src={isDark ? "/FantaF1_Logo_dark.png" : "/FantaF1_Logo.png"}
-            alt="Fanta F1"
+            alt="Fanta F1 Fantasy Formula 1 logo"
             height="45"
             style={{ objectFit: "contain" }}
           />
@@ -75,6 +77,7 @@ export default function Navigation() {
                 color: "inherit",
               }}
               title={t("nav.changeLanguage")}
+              aria-label={t("nav.changeLanguage")}
             >
               {availableLanguages.find((lang) => lang.code === currentLanguage)?.flag || "🌐"}
             </Dropdown.Toggle>
@@ -119,13 +122,19 @@ export default function Navigation() {
             onClick={toggleTheme}
             className="theme-toggle"
             aria-label={t("nav.toggleTheme")}
-            title={`Switch to ${isDark ? "light" : "dark"} theme`}
+            title={
+              themeMode === "auto"
+                ? "Theme: Auto (follows system)"
+                : themeMode === "light"
+                ? "Theme: Light"
+                : "Theme: Dark"
+            }
             style={{
               transform: "scale(0.85)",
             }}
           >
             <div className="theme-toggle-slider">
-              {isDark ? "🌙" : "☀️"}
+              {themeMode === "auto" ? "🔄" : isDark ? "🌙" : "☀️"}
             </div>
           </button>
         </div>
