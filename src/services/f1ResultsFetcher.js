@@ -30,21 +30,21 @@ function normalizeDriverName(driver, constructor = null) {
  */
 export async function fetchRaceResults(season, round) {
   try {
-    log(`🔄 Fetching risultati per ${season} Round ${round}...`);
+    log(`🔄 Fetching results for ${season} Round ${round}...`);
 
     // Fetch main race results
     const raceUrl = `${API_BASE_URL}/${season}/${round}/results.json`;
     const raceResponse = await fetch(raceUrl);
 
     if (!raceResponse.ok) {
-      throw new Error(`Errore HTTP: ${raceResponse.status}`);
+      throw new Error(`HTTP Error: ${raceResponse.status}`);
     }
 
     const raceData = await raceResponse.json();
     const races = raceData.MRData?.RaceTable?.Races;
 
     if (!races || races.length === 0) {
-      warn(`⚠️ Nessun risultato trovato per ${season} Round ${round}`);
+      warn(`⚠️ No results found for ${season} Round ${round}`);
       return null;
     }
 
@@ -52,7 +52,7 @@ export async function fetchRaceResults(season, round) {
     const results = race.Results;
 
     if (!results || results.length < 3) {
-      warn(`⚠️ Risultati incompleti (meno di 3 piloti)`);
+      warn(`⚠️ Incomplete results (less than 3 drivers)`);
       return null;
     }
 
@@ -83,12 +83,12 @@ export async function fetchRaceResults(season, round) {
               SP2: normalizeDriverName(sprintResultsList[1]?.Driver, sprintResultsList[1]?.Constructor),
               SP3: normalizeDriverName(sprintResultsList[2]?.Driver, sprintResultsList[2]?.Constructor),
             };
-            log(`✅ Sprint trovata per Round ${round}`);
+            log(`✅ Sprint found for Round ${round}`);
           }
         }
       }
     } catch (err) {
-      log(`ℹ️ Nessuna sprint per Round ${round}`);
+      log(`ℹ️ No sprint for Round ${round}`);
     }
 
     const result = {
@@ -99,12 +99,12 @@ export async function fetchRaceResults(season, round) {
       sprint: sprintResults,
     };
 
-    log(`✅ Risultati fetchati con successo:`, result);
+    log(`✅ Results fetched successfully:`, result);
     return result;
 
   } catch (err) {
-    error(`❌ Errore durante il fetch dei risultati:`, err);
-    throw new Error(`Impossibile caricare i risultati: ${err.message}`);
+    error(`❌ Error during fetching results:`, err);
+    throw new Error(`Unable to load results: ${err.message}`);
   }
 }
 
@@ -136,7 +136,7 @@ export async function fetchLastRaceResults() {
     return await fetchRaceResults(season, round);
 
   } catch (err) {
-    error(`❌ Errore durante il fetch dell'ultima gara:`, err);
+    error(`❌ Error during fetching the last race:`, err);
     throw err;
   }
 }

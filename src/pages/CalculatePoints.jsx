@@ -346,7 +346,7 @@ useEffect(() => {
         { pointsCalculated: true },
         { merge: true }
       );
-      // Salva snapshot della classifica dopo il calcolo
+      // Save ranking snapshot after calculation
       await saveRankingSnapshot("race", race.id);
       setMsgRace({variant:"success",msg:res});
       setFormRace({P1:null,P2:null,P3:null,SP1:null,SP2:null,SP3:null});
@@ -361,7 +361,7 @@ useEffect(() => {
     }finally{ setSavingRace(false); }
   };
 
-  /* ---------------- HANDLERS CAMPIONATO -------------- */
+  /* ---------------- CHAMPIONSHIP HANDLERS -------------- */
   const onSelChamp = (sel,f)=>setFormChamp(s=>({...s,[f]:sel}));
   const lastRaceUTCms = races.length ? Math.max(...races.map(r=>r.raceUTC.seconds*1000)) : 0;
   const championshipOpen = nowMS > lastRaceUTCms;
@@ -384,9 +384,9 @@ useEffect(() => {
         savedAt:Timestamp.now()
       },{merge:true});
       setMsgChamp({variant:"info",msg: t("calculate.resultsSaved")});
-      // La funzione legge i risultati da Firestore (appena salvati sopra)
+      // The function reads the results from Firestore (just saved above)
       const res = await calculateChampionshipPoints();
-      // Salva snapshot della classifica dopo il calcolo del campionato
+      // Save ranking snapshot after championship calculation
       await saveRankingSnapshot("championship", null);
       setMsgChamp({variant:"success",msg:res});
     }catch(err){
@@ -395,7 +395,7 @@ useEffect(() => {
     }finally{ setSavingChamp(false); }
   };
 
-  /* ---------------- FUNZIONI PUNTI ------------------- */
+  /* ---------------- POINTS FUNCTIONS ------------------- */
   const calcMainPts = s=>{
     if(!official) return null;
     let pts=0;
@@ -435,11 +435,11 @@ useEffect(() => {
         </Nav>
 
         <Tab.Content>
-          {/* --------- TAB GARA --------- */}
+          {/* --------- RACE TAB --------- */}
           <Tab.Pane eventKey="race">
             <Row className="justify-content-center g-4">
               {/* ---------- FORM ---------- */}
-              {/* … (form identico a prima – vedi sopra) … */}
+              {/* … (form identical to above – see above) … */}
 <Col xs={12} lg={8}>
                 <Card className="shadow">
                   <Card.Header className="bg-white d-flex justify-content-between">
@@ -455,7 +455,7 @@ useEffect(() => {
                       </Alert>
                     )}
 
-                    {/* selezione gara */}
+                    {/* race selection */}
                     <Form.Group className="mb-4">
                       <Form.Label>{t("calculate.race")}</Form.Label>
                       <Form.Select
@@ -474,7 +474,7 @@ useEffect(() => {
                       </Form.Select>
                     </Form.Group>
 
-                    {/* podio principale */}
+                    {/* main podium */}
                     <h6 className="fw-bold">{t("calculate.mainRace")}</h6>
                     {["P1","P2","P3"].map(f=>(
                       <Form.Group key={f} className="mb-3">
@@ -527,9 +527,9 @@ useEffect(() => {
             </Row>
           </Tab.Pane>
 
-          {/* --------- TAB CAMPIONATO (identico) --------- */}
+          {/* --------- CHAMPIONSHIP TAB (identical) --------- */}
           <Tab.Pane eventKey="champ">
-            {/* sezione campionato invariata */}
+            {/* championship section unchanged */}
             {/* … usa formChamp / saveChamp / msgChamp … */}
             <Row className="justify-content-center">
               <Col xs={12} lg={8}>
@@ -599,12 +599,12 @@ useEffect(() => {
   );
 }
 
-/* ==================== WRAPPER CON PROTEZIONE ==================== */
+/* ==================== WRAPPER WITH PROTECTION ==================== */
 export default function CalculatePoints() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Controlla se già autenticato
+    // Check if already authenticated
     const auth = localStorage.getItem("adminAuth");
     if (auth === "true") {
       setIsAuthenticated(true);

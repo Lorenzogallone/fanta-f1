@@ -113,7 +113,7 @@ class F1DataResolver {
 
     for (const driver of Object.values(this.apiCache.drivers)) {
       if (driver.lastName === familyName || driver.displayName === fullName) {
-        // Aggiungi dati team
+        // Add team data
         const team = this.manualData.teams[driver.currentTeam];
         return {
           ...driver,
@@ -133,7 +133,7 @@ class F1DataResolver {
    */
   findDriverInManualData(familyName, fullName) {
     for (const driver of Object.values(this.manualData.drivers)) {
-      // Cerca per alias
+      // Search by alias
       if (driver.apiAliases.includes(familyName) ||
           driver.apiAliases.includes(fullName)) {
 
@@ -159,7 +159,7 @@ class F1DataResolver {
 
     const teamName = apiTeamName.trim();
 
-    // 🔍 LIVELLO 1: Cerca in cache API (se preferApiData)
+    // 🔍 LEVEL 1: Search in API cache (if preferApiData)
     if (this.manualData.config.preferApiData && this.apiCache?.teams) {
       const fromApi = this.findTeamInApiCache(teamName);
       if (fromApi) {
@@ -168,13 +168,13 @@ class F1DataResolver {
       }
     }
 
-    // 🔍 LIVELLO 2: Cerca in database manuale
+    // 🔍 LEVEL 2: Search in manual database
     const fromManual = this.findTeamInManualData(teamName);
     if (fromManual) {
       return fromManual;
     }
 
-    // 🔍 LIVELLO 3: Cache API come fallback
+    // 🔍 LEVEL 3: API cache as fallback
     if (!this.manualData.config.preferApiData && this.apiCache?.teams) {
       const fromApi = this.findTeamInApiCache(teamName);
       if (fromApi) {
@@ -183,7 +183,7 @@ class F1DataResolver {
       }
     }
 
-    // 🔍 LIVELLO 4: Fallback - team sconosciuto
+    // 🔍 LEVEL 4: Fallback - unknown team
     warn(`⚠️ [Unknown Team] Team "${teamName}" non mappato in nessuna fonte`);
 
     const unknownTeam = {
@@ -248,7 +248,7 @@ class F1DataResolver {
       this.syncInProgress = true;
       log('🔄 Sincronizzazione dati da Ergast API...');
 
-      // Fetch driver standings (include team corrente)
+      // Fetch driver standings (includes current team)
       const response = await fetch(
         `${ERGAST_API_BASE_URL}/current/driverStandings.json`
       );
@@ -282,16 +282,16 @@ class F1DataResolver {
           .replace(/ö/g, 'o')
           .replace(/ä/g, 'a');
 
-        // Trova team corrispondente nel nostro database manuale
+        // Find corresponding team in our manual database
         let teamId = null;
         const manualTeam = this.findTeamInManualData(constructor.name);
         if (manualTeam) {
           teamId = manualTeam.id;
         } else {
-          // Team non trovato, usa constructorId da API
+          // Team not found, use constructorId from API
           teamId = constructor.constructorId;
 
-          // Aggiungi team sconosciuto alla cache
+          // Add unknown team to cache
           if (!apiTeams[teamId]) {
             apiTeams[teamId] = {
               id: teamId,
@@ -321,7 +321,7 @@ class F1DataResolver {
         };
       });
 
-      // Salva in cache
+      // Save to cache
       this.apiCache = {
         drivers: apiDrivers,
         teams: apiTeams,
@@ -360,7 +360,7 @@ class F1DataResolver {
       const driversData = cachedDrivers ? JSON.parse(cachedDrivers) : null;
       const teamsData = cachedTeams ? JSON.parse(cachedTeams) : null;
 
-      // Verifica scadenza cache drivers
+      // Check drivers cache expiration
       if (driversData) {
         const cacheAge = Date.now() - new Date(driversData.lastSync).getTime();
         const maxAge = this.manualData.config.cacheExpirationHours * 60 * 60 * 1000;
@@ -394,7 +394,7 @@ class F1DataResolver {
     try {
       if (!this.apiCache) return;
 
-      // Salva drivers e teams separatamente
+      // Save drivers and teams separately
       localStorage.setItem(CACHE_KEY_DRIVERS, JSON.stringify({
         drivers: this.apiCache.drivers,
         lastSync: this.apiCache.lastSync
@@ -440,7 +440,7 @@ class F1DataResolver {
     log('📋 Piloti non mappati trovati:');
     log(unknowns);
 
-    // Genera JSON da copiare in f1-data.json
+    // Generate JSON to copy to f1-data.json
     const jsonToAdd = {};
     unknowns.forEach(driver => {
       jsonToAdd[driver.id] = {
@@ -489,13 +489,13 @@ class F1DataResolver {
     const drivers = [];
     const seen = new Set();
 
-    // Da manuale (priorità)
+    // From manual (priority)
     Object.values(this.manualData.drivers).forEach(d => {
       drivers.push({ ...d, source: 'manual' });
       seen.add(d.displayName);
     });
 
-    // Da cache API (solo quelli non già nel manuale)
+    // From API cache (only those not already in manual)
     if (this.apiCache?.drivers) {
       Object.values(this.apiCache.drivers).forEach(d => {
         if (!seen.has(d.displayName)) {
@@ -506,7 +506,7 @@ class F1DataResolver {
       });
     }
 
-    // Unknown trovati a runtime
+    // Unknown found at runtime
     this.unknownDrivers.forEach(d => {
       if (!seen.has(d.displayName)) {
         drivers.push(d);
@@ -525,13 +525,13 @@ class F1DataResolver {
     const teams = [];
     const seen = new Set();
 
-    // Da manuale
+    // From manual
     Object.values(this.manualData.teams).forEach(t => {
       teams.push({ ...t, source: 'manual' });
       seen.add(t.displayName);
     });
 
-    // Da cache API
+    // From API cache
     if (this.apiCache?.teams) {
       Object.values(this.apiCache.teams).forEach(t => {
         if (!seen.has(t.displayName)) {
@@ -541,7 +541,7 @@ class F1DataResolver {
       });
     }
 
-    // Unknown
+    // Unknown teams
     this.unknownTeams.forEach(t => {
       if (!seen.has(t.displayName)) {
         teams.push(t);

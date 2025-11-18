@@ -127,39 +127,39 @@ export const TIME_CONSTANTS = {
 
 /* ==================== DYNAMIC HELPER FUNCTIONS ==================== */
 /**
- * Ottiene il team di un pilota (con fallback dinamico da API)
- * @param {string} driverName - Nome del pilota
- * @returns {string|null} Nome del team o null
+ * Gets a driver's team (with dynamic fallback from API)
+ * @param {string} driverName - Driver name
+ * @returns {string|null} Team name or null
  */
 export function getDriverTeamDynamic(driverName) {
-  // Prima prova con il mapping statico (più veloce)
+  // First try with static mapping (faster)
   if (DRIVER_TEAM[driverName]) {
     return DRIVER_TEAM[driverName];
   }
 
-  // Fallback: usa il resolver (include API cache e unknowns)
+  // Fallback: use resolver (includes API cache and unknowns)
   const team = f1DataResolver.getDriverTeam(driverName);
   return team?.displayName || null;
 }
 
 /**
- * Ottiene il logo di un team (con fallback dinamico)
- * @param {string} teamName - Nome del team
- * @returns {string|null} Path del logo o null
+ * Gets a team's logo (with dynamic fallback)
+ * @param {string} teamName - Team name
+ * @returns {string|null} Logo path or null
  */
 export function getTeamLogoDynamic(teamName) {
-  // Prima prova con il mapping statico
+  // First try with static mapping
   if (TEAM_LOGOS[teamName]) {
     return TEAM_LOGOS[teamName];
   }
 
-  // Fallback: usa il resolver
+  // Fallback: use resolver
   return f1DataResolver.getTeamLogo(teamName);
 }
 
 /**
- * Ottiene tutti i piloti (statici + da API cache)
- * @returns {Array<string>} Lista nomi piloti
+ * Gets all drivers (static + from API cache)
+ * @returns {Array<string>} List of driver names
  */
 export function getAllDriversDynamic() {
   const allDrivers = f1DataResolver.getAllDrivers();
@@ -167,8 +167,8 @@ export function getAllDriversDynamic() {
 }
 
 /**
- * Ottiene tutti i team (statici + da API cache)
- * @returns {Array<string>} Lista nomi team
+ * Gets all teams (static + from API cache)
+ * @returns {Array<string>} List of team names
  */
 export function getAllTeamsDynamic() {
   const allTeams = f1DataResolver.getAllTeams();
@@ -176,8 +176,8 @@ export function getAllTeamsDynamic() {
 }
 
 /**
- * Verifica se un pilota esiste (statico o dinamico)
- * @param {string} driverName - Nome del pilota
+ * Checks if a driver exists (static or dynamic)
+ * @param {string} driverName - Driver name
  * @returns {boolean}
  */
 export function isDriverValid(driverName) {
@@ -188,8 +188,8 @@ export function isDriverValid(driverName) {
 }
 
 /**
- * Verifica se un team esiste (statico o dinamico)
- * @param {string} teamName - Nome del team
+ * Checks if a team exists (static or dynamic)
+ * @param {string} teamName - Team name
  * @returns {boolean}
  */
 export function isTeamValid(teamName) {

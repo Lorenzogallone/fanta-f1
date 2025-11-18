@@ -255,7 +255,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
     }
   };
 
-  // Modifica partecipante
+  // Edit participant
   const handleUpdate = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -280,7 +280,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
     }
   };
 
-  // Elimina partecipante
+  // Delete participant
   const handleDelete = async () => {
     if (!window.confirm(`${t("admin.deleteParticipant")} ${currentParticipant.name}?\n\n${t("admin.deleteWarning")}`)) return;
 
@@ -383,7 +383,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
         </Col>
       </Row>
 
-      {/* Dialog Aggiunta Partecipante */}
+      {/* Add Participant Dialog */}
       <Modal show={showAddDialog} onHide={() => setShowAddDialog(false)} centered>
         <Modal.Header closeButton style={{ borderBottomColor: accentColor }}>
           <Modal.Title>➕ {t("admin.addParticipant")}</Modal.Title>
@@ -449,7 +449,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
         </Form>
       </Modal>
 
-      {/* Dialog Modifica Partecipante */}
+      {/* Edit Participant Dialog */}
       <Modal show={showEditDialog} onHide={() => setShowEditDialog(false)} centered>
         <Modal.Header closeButton style={{ borderBottomColor: accentColor }}>
           <Modal.Title>✏️ {t("admin.editParticipant")}</Modal.Title>
@@ -588,7 +588,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
       const racesWithForms = new Set();
       let firstRaceWithoutForm = null;
 
-      // Controlla tutte le gare per vedere quali hanno formazioni
+      // Check all races to see which have formations
       for (const race of races) {
         const formDoc = await getDoc(
           doc(db, "races", race.id, "submissions", selectedUser)
@@ -602,7 +602,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
 
       setRacesWithFormations(racesWithForms);
 
-      // Seleziona automaticamente la prima gara senza formazione, o la prima se tutte hanno formazioni
+      // Automatically select the first race without formation, or the first if all have formations
       if (firstRaceWithoutForm) {
         setSelectedRace(firstRaceWithoutForm);
       } else if (races.length > 0 && !selectedRace) {
@@ -637,7 +637,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
         const data = formDoc.data();
         setExistingFormation(data);
 
-        // Pre-compila il form
+        // Pre-fill the form
         setFormData({
           mainP1: findDriverOption(data.mainP1),
           mainP2: findDriverOption(data.mainP2),
@@ -679,7 +679,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
     return driverOptions.find((opt) => opt.value === name) || null;
   };
 
-  // Ottiene i piloti già selezionati nella gara principale
+  // Gets drivers already selected in the main race
   const getSelectedMainDrivers = () => {
     const selected = [];
     if (formData.mainP1) selected.push(formData.mainP1.value);
@@ -690,7 +690,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
     return selected;
   };
 
-  // Ottiene i piloti già selezionati nella sprint
+  // Gets drivers already selected in the sprint
   const getSelectedSprintDrivers = () => {
     const selected = [];
     if (formData.sprintP1) selected.push(formData.sprintP1.value);
@@ -700,7 +700,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
     return selected;
   };
 
-  // Filtra le opzioni disponibili per un campo main (esclude piloti già selezionati)
+  // Filter available options for a main field (excludes already selected drivers)
   const getAvailableMainOptions = (currentField) => {
     const selectedDrivers = getSelectedMainDrivers();
     const currentValue = formData[currentField]?.value;
@@ -710,7 +710,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
     );
   };
 
-  // Filtra le opzioni disponibili per un campo sprint (esclude piloti già selezionati)
+  // Filter available options for a sprint field (excludes already selected drivers)
   const getAvailableSprintOptions = (currentField) => {
     const selectedDrivers = getSelectedSprintDrivers();
     const currentValue = formData[currentField]?.value;
@@ -720,21 +720,21 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
     );
   };
 
-  // Validazione completa del form
+  // Complete form validation
   const validateForm = () => {
     const errors = [];
 
-    // Controlli di base
+    // Basic checks
     if (!selectedUser) errors.push(t("admin.selectUser"));
     if (!selectedRace) errors.push(t("admin.selectRace"));
 
-    // Campi obbligatori gara principale
+    // Required fields for main race
     if (!formData.mainP1) errors.push(`P1 ${t("formations.required")}`);
     if (!formData.mainP2) errors.push(`P2 ${t("formations.required")}`);
     if (!formData.mainP3) errors.push(`P3 ${t("formations.required")}`);
     if (!formData.mainJolly) errors.push(`${t("formations.joker")} ${t("formations.required")}`);
 
-    // Verifica duplicati nella gara principale
+    // Check for duplicates in the main race
     const mainDrivers = [
       formData.mainP1?.value,
       formData.mainP2?.value,
@@ -747,7 +747,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
       errors.push(t("errors.duplicateDriver"));
     }
 
-    // Verifica duplicati nella sprint (se presenti selezioni)
+    // Check for duplicates in the sprint (if selections are present)
     if (hasSprint) {
       const sprintDrivers = [
         formData.sprintP1?.value,
@@ -764,7 +764,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
     return errors;
   };
 
-  // Controlla se un campo obbligatorio è vuoto (per feedback visivo)
+  // Check if a required field is empty (for visual feedback)
   const isFieldInvalid = (fieldName) => {
     if (!touched || !selectedUser || !selectedRace) return false;
 
@@ -782,7 +782,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
     const errors = validateForm();
     if (errors.length > 0) {
       setMessage({ type: "danger", text: errors.join(". ") + "." });
-      // Scroll verso l'alto per vedere il messaggio
+      // Scroll to top to see the message
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -808,12 +808,12 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
         submittedAt: Timestamp.now(),
       };
 
-      // Aggiungi flag late se marcato
+      // Add late flag if marked
       if (isLateSubmission) {
         payload.isLate = true;
         payload.latePenalty = -3;
 
-        // Marca utente come "ha usato late submission"
+        // Mark user as "used late submission"
         await updateDoc(doc(db, "ranking", selectedUser), {
           usedLateSubmission: true
         });
@@ -829,13 +829,13 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
       });
       setTouched(false);
 
-      // Aggiorna il set delle gare con formazioni
+      // Update the set of races with formations
       setRacesWithFormations(prev => new Set([...prev, selectedRace.id]));
 
-      // Ricarica la formazione
+      // Reload the formation
       await loadFormation();
 
-      // Scroll verso l'alto per vedere il messaggio di successo
+      // Scroll to top to see the success message
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       error(err);
@@ -936,7 +936,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
           </Card.Header>
           <Card.Body>
             <Form onSubmit={handleSave}>
-              {/* Selezione Utente */}
+              {/* User Selection */}
               <Form.Group className="mb-3">
                 <Form.Label>{t("formations.selectUser")} *</Form.Label>
                 <Form.Select
@@ -954,7 +954,7 @@ function FormationsManager({ participants: propParticipants, races: propRaces, l
                 </Form.Select>
               </Form.Group>
 
-              {/* Selezione Gara */}
+              {/* Race Selection */}
               <Form.Group className="mb-3">
                 <Form.Label>{t("formations.selectRace")} *</Form.Label>
                 <Form.Select
@@ -1277,7 +1277,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
   const handleEditRace = (race) => {
     setEditingRace(race);
 
-    // Estrai solo l'ora dal timestamp
+    // Extract only the time from the timestamp
     const formatTime = (firestoreTimestamp) => {
       if (!firestoreTimestamp) return "";
       const date = new Date(firestoreTimestamp.seconds * 1000);
@@ -1322,7 +1322,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
       setCancelType("");
       await onDataChange();
 
-      // Aggiorna anche i dati nel modal di edit
+      // Also update the data in the edit modal
       setEditingRace(prev => ({
         ...prev,
         ...(cancelType === "main" ? { cancelledMain: true } : { cancelledSprint: true })
@@ -1342,7 +1342,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
     setMessage(null);
 
     try {
-      // Aggiorna solo l'ora mantenendo la data originale
+      // Update only the time while keeping the original date
       const updateTime = (originalTimestamp, newTime) => {
         if (!originalTimestamp || !newTime) return null;
         const originalDate = new Date(originalTimestamp.seconds * 1000);
@@ -1355,7 +1355,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
         qualiUTC: updateTime(editingRace.qualiUTC, editFormData.qualiTime),
       };
 
-      // Aggiorna sprint solo se la gara ha sprint
+      // Update sprint only if the race has sprint
       if (editingRace.qualiSprintUTC && editFormData.sprintTime) {
         updates.qualiSprintUTC = updateTime(editingRace.qualiSprintUTC, editFormData.sprintTime);
       }
@@ -1577,14 +1577,14 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
         </Card>
       </Col>
 
-      {/* Modal per modificare date gara */}
+      {/* Modal to edit race dates */}
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>✏️ {t("admin.editRace")} - {editingRace?.name}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
-            {/* Data Gara (solo visualizzazione) */}
+            {/* Race Date (display only) */}
             <Alert variant="light" className="mb-4">
               <strong>{t("admin.raceDate")}:</strong>{" "}
               {editingRace?.raceUTC && new Date(editingRace.raceUTC.seconds * 1000).toLocaleDateString("it-IT", {
@@ -1595,7 +1595,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
               })}
             </Alert>
 
-            {/* Orario Deadline Gara Principale */}
+            {/* Main Race Deadline Time */}
             <h6>⏰ {t("formations.deadline")} {t("formations.mainRace")}</h6>
             <Form.Group className="mb-3">
               <Form.Label>{t("formations.deadline")}</Form.Label>
@@ -1608,7 +1608,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
               />
             </Form.Group>
 
-            {/* Bottone Cancella Gara */}
+            {/* Cancel Race Button */}
             {!editingRace?.cancelledMain ? (
               <Button
                 variant="danger"
@@ -1624,7 +1624,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
               </Alert>
             )}
 
-            {/* Sezione Sprint - mostrata solo se la gara ha sprint */}
+            {/* Sprint Section - shown only if the race has sprint */}
             {editingRace?.qualiSprintUTC && (
               <>
                 <hr />
@@ -1640,7 +1640,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
                   />
                 </Form.Group>
 
-                {/* Bottone Cancella Sprint */}
+                {/* Cancel Sprint Button */}
                 {!editingRace?.cancelledSprint ? (
                   <Button
                     variant="warning"
@@ -1668,7 +1668,7 @@ function CalendarManager({ races: propRaces, loading: propLoading, onDataChange 
         </Modal.Footer>
       </Modal>
 
-      {/* Modal conferma cancellazione */}
+      {/* Cancellation confirmation modal */}
       <Modal show={showCancelModal} onHide={() => setShowCancelModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>⚠️ {t("common.confirm")}</Modal.Title>
@@ -1859,7 +1859,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
       const batch = writeBatch(db);
 
       if (resetType === "submissions") {
-        // Elimina tutte le submissions di tutte le gare
+        // Delete all submissions from all races
         const racesSnap = await getDocs(collection(db, "races"));
         for (const raceDoc of racesSnap.docs) {
           const subsSnap = await getDocs(collection(db, "races", raceDoc.id, "submissions"));
@@ -1870,7 +1870,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
         await batch.commit();
         setMessage({ type: "success", text: t("success.deleted") });
       } else if (resetType === "ranking") {
-        // Reset punteggi di tutti i partecipanti
+        // Reset scores of all participants
         const rankSnap = await getDocs(collection(db, "ranking"));
         rankSnap.docs.forEach((userDoc) => {
           batch.update(userDoc.ref, {
@@ -1885,7 +1885,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
         await batch.commit();
         setMessage({ type: "success", text: t("success.updated") });
       } else if (resetType === "all") {
-        // Reset completo (solo punteggi, mantiene partecipanti e gare)
+        // Complete reset (only scores, keeps participants and races)
         const rankSnap = await getDocs(collection(db, "ranking"));
         rankSnap.docs.forEach((userDoc) => {
           batch.update(userDoc.ref, {
@@ -2069,7 +2069,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
         </Col>
       </Row>
 
-      {/* Modal di conferma Reset */}
+      {/* Reset confirmation modal */}
       <Modal show={showModal} onHide={() => !resetting && setShowModal(false)} centered>
         <Modal.Header closeButton={!resetting}>
           <Modal.Title>⚠️ {t("common.confirm")}</Modal.Title>
@@ -2103,7 +2103,7 @@ function DatabaseReset({ participants, races, onDataChange }) {
         </Modal.Footer>
       </Modal>
 
-      {/* Modal Ripristino Backup */}
+      {/* Backup Restore Modal */}
       <Modal
         show={showRestoreModal}
         onHide={() => !restoring && setShowRestoreModal(false)}
