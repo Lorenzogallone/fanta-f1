@@ -1,0 +1,17 @@
+/* src/customSelect.css */
+
+.select-option {
+  display: flex;
+  align-items: center;
+}
+
+.option-logo {
+  height: 20px;
+  width: 20px;
+  margin-right: 8px;
+  object-fit: contain;
+}
+
+.option-text {
+  white-space: nowrap;
+}

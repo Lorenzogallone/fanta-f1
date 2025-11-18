@@ -1,0 +1,66 @@
+/**
+ * Statistics Page - Chart Optimizations
+ * Reduces margins and padding to maximize chart display area
+ */
+
+/* Reduce card body padding for charts */
+.chart-container-optimized {
+  padding: 0.5rem !important;
+}
+
+/* Override Recharts default legend styles for better spacing */
+.recharts-legend-wrapper {
+  margin-top: 10px !important;
+  padding: 0 10px !important;
+}
+
+/* Make legend items smaller and more compact */
+.recharts-legend-item {
+  margin-right: 8px !important;
+  font-size: 0.75rem !important;
+}
+
+/* Reduce spacing around legend text */
+.recharts-legend-item-text {
+  margin-left: 4px !important;
+  font-size: 0.75rem !important;
+  vertical-align: middle !important;
+}
+
+/* Optimize responsive container */
+.recharts-responsive-container {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Reduce Y-axis label spacing */
+.recharts-yAxis .recharts-label {
+  transform: translateX(-5px) !important;
+}
+
+/* Make tooltip more compact */
+.recharts-tooltip-wrapper {
+  z-index: 100 !important;
+}
+
+/* Optimize chart surface for maximum data visibility */
+.recharts-surface {
+  overflow: visible !important;
+}
+
+/* Compact legend layout for many players */
+.recharts-default-legend {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 8px 4px !important;
+  max-height: 120px !important;
+  overflow-y: auto !important;
+}
+
+/* Smaller legend icons */
+.recharts-legend-item .recharts-surface {
+  width: 14px !important;
+  height: 14px !important;
+}

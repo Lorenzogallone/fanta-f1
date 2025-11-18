@@ -1,0 +1,178 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ========================================================================
+     * ⚠️ ATTENZIONE: REGOLE TEMPORANEE NON SICURE
+     * ========================================================================
+     * Queste regole permettono accesso completo senza autenticazione.
+     * TODO: Implementare Firebase Authentication prima del deploy in produzione!
+     *
+     * PIANO DI IMPLEMENTAZIONE:
+     * 1. Attivare Firebase Auth (Email/Password o Google Sign-In)
+     * 2. Aggiungere campo customClaims per ruolo admin
+     * 3. Sostituire "if true" con le regole commentate sotto
+     * 4. Testare con utenti autenticati e non autenticati
+     * ======================================================================== */
+
+    // Helper functions per autenticazione (pronte all'uso futuro)
+    // function isAuthenticated() {
+    //   return request.auth != null;
+    // }
+    //
+    // function isOwner(userId) {
+    //   return request.auth.uid == userId;
+    // }
+    //
+    // function isAdmin() {
+    //   return request.auth != null &&
+    //          request.auth.token.get('admin', false) == true;
+    // }
+    //
+    // function isBeforeDeadline(deadlineTimestamp) {
+    //   return request.time < deadlineTimestamp;
+    // }
+
+    /* ===================== CLASSIFICA (RANKING) ========================
+     * Collezione: /ranking/{userId}
+     *
+     * Struttura documento:
+     * - name: string (nome giocatore)
+     * - puntiTotali: number (somma totale punti)
+     * - jolly: number (jolly accumulati)
+     * - pointsByRace: map (punteggi per gara)
+     * - championshipPiloti: array (scelte campionato piloti)
+     * - championshipCostruttori: array (scelte campionato costruttori)
+     * - championshipPts: number (punti campionato)
+     *
+     * REGOLE FUTURE (da abilitare con Auth):
+     * - Read: tutti possono leggere la classifica
+     * - Create/Update: solo l'utente proprietario può modificare i suoi dati
+     * - Update points: solo admin può modificare puntiTotali (via calcolo)
+     * ==================================================================== */
+    match /ranking/{userId} {
+      // TEMPORANEO - Accesso completo
+      allow read, write: if true;
+
+      // FUTURO CON AUTH:
+      // allow read: if true;
+      // allow create, update: if isOwner(userId);
+      // allow update: if isAdmin(); // solo admin può aggiornare punti
+    }
+
+    /* ===================== GARE (RACES) =================================
+     * Collezione: /races/{raceId}
+     *
+     * Struttura documento:
+     * - name: string (nome gara)
+     * - round: number (numero round)
+     * - qualiUTC: timestamp (deadline formazione principale)
+     * - raceUTC: timestamp (data gara)
+     * - qualiSprintUTC: timestamp | null (deadline sprint)
+     * - sprintUTC: timestamp | null (data sprint)
+     * - officialResults: object | null (risultati ufficiali)
+     *   - P1, P2, P3: string (piloti podio)
+     *   - SP1, SP2, SP3: string | null (piloti sprint)
+     *   - doublePoints: boolean (ultima gara)
+     *   - savedAt: timestamp
+     *
+     * REGOLE FUTURE:
+     * - Read: tutti possono leggere info gare
+     * - Write: solo admin può modificare dati gara e risultati
+     * ==================================================================== */
+    match /races/{raceId} {
+      // TEMPORANEO - Accesso completo
+      allow read, write: if true;
+
+      // FUTURO CON AUTH:
+      // allow read: if true;
+      // allow write: if isAdmin();
+
+      /* ================= FORMAZIONI (SUBMISSIONS) ======================
+       * Subcollection: /races/{raceId}/submissions/{userId}
+       *
+       * Struttura documento:
+       * - user: string (nome utente)
+       * - mainP1, mainP2, mainP3: string (podio principale)
+       * - mainJolly: string (jolly principale)
+       * - mainJolly2: string | null (secondo jolly opzionale)
+       * - sprintP1, sprintP2, sprintP3: string | null (podio sprint)
+       * - sprintJolly: string | null (jolly sprint)
+       * - pointsEarned: number (punti gara - calcolato da admin)
+       * - pointsEarnedSprint: number (punti sprint - calcolato da admin)
+       * - submittedAt: timestamp
+       *
+       * REGOLE FUTURE:
+       * - Read: tutti possono vedere le formazioni
+       * - Create/Update: solo proprietario, solo prima della deadline
+       * - Update points: solo admin (calcolo punteggi)
+       * ================================================================= */
+      match /submissions/{userId} {
+        // TEMPORANEO - Accesso completo
+        allow read, write: if true;
+
+        // FUTURO CON AUTH:
+        // allow read: if true;
+        // allow create, update: if isOwner(userId) &&
+        //                         isBeforeDeadline(get(/databases/$(database)/documents/races/$(raceId)).data.qualiUTC);
+        // allow update: if isAdmin(); // solo admin per calcolo punti
+      }
+    }
+
+    /* ===================== CAMPIONATO (CHAMPIONSHIP) ====================
+     * Collezione: /championship/{docId}
+     *
+     * Documento "results":
+     * - P1, P2, P3: string (top 3 piloti)
+     * - C1, C2, C3: string (top 3 costruttori)
+     * - savedAt: timestamp
+     *
+     * REGOLE FUTURE:
+     * - Read: tutti possono leggere i risultati
+     * - Write: solo admin può salvare risultati finali
+     * ==================================================================== */
+    match /championship/{docId} {
+      // TEMPORANEO - Accesso completo
+      allow read, write: if true;
+
+      // FUTURO CON AUTH:
+      // allow read: if true;
+      // allow write: if isAdmin();
+    }
+
+    /* ===================== BACKUP DATABASE ==============================
+     * Collezione: /backups/{backupId}
+     *
+     * Struttura documento:
+     * - races: array (snapshot gare e submissions)
+     * - ranking: array (snapshot classifica)
+     * - metadata: object
+     *   - type: string (manual, auto_race, auto_championship)
+     *   - timestamp: timestamp
+     *   - totalRaces: number
+     *   - totalParticipants: number
+     *   - raceName: string (per auto_race)
+     *   - raceId: string (per auto_race)
+     *   - description: string
+     *
+     * REGOLE FUTURE:
+     * - Read: tutti possono leggere i backup
+     * - Write: solo admin può creare/modificare/eliminare backup
+     * ==================================================================== */
+    match /backups/{backupId} {
+      // TEMPORANEO - Accesso completo
+      allow read, write: if true;
+
+      // FUTURO CON AUTH:
+      // allow read: if true;
+      // allow write: if isAdmin();
+    }
+
+    /* ===================== FALLBACK ====================================
+     * Blocca accesso a qualsiasi altra collezione non definita sopra
+     * ==================================================================== */
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

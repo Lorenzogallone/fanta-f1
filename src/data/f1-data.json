@@ -1,0 +1,413 @@
+{
+  "version": "2025.1",
+  "lastUpdated": "2025-01-15",
+  "config": {
+    "enableApiSync": true,
+    "cacheExpirationHours": 24,
+    "preferApiData": true
+  },
+  "teams": {
+    "red-bull": {
+      "id": "red-bull",
+      "displayName": "Red Bull",
+      "logo": "/redbull.png",
+      "apiAliases": [
+        "Red Bull Racing",
+        "Red Bull",
+        "Oracle Red Bull Racing",
+        "red_bull"
+      ]
+    },
+    "ferrari": {
+      "id": "ferrari",
+      "displayName": "Ferrari",
+      "logo": "/ferrari.png",
+      "apiAliases": [
+        "Ferrari",
+        "Scuderia Ferrari",
+        "Scuderia Ferrari HP",
+        "ferrari"
+      ]
+    },
+    "mercedes": {
+      "id": "mercedes",
+      "displayName": "Mercedes",
+      "logo": "/mercedes.png",
+      "apiAliases": [
+        "Mercedes",
+        "Mercedes-AMG Petronas F1 Team",
+        "Mercedes-Benz",
+        "mercedes"
+      ]
+    },
+    "mclaren": {
+      "id": "mclaren",
+      "displayName": "McLaren",
+      "logo": "/mclaren.png",
+      "apiAliases": [
+        "McLaren",
+        "McLaren F1 Team",
+        "McLaren Racing",
+        "mclaren"
+      ]
+    },
+    "aston-martin": {
+      "id": "aston-martin",
+      "displayName": "Aston Martin",
+      "logo": "/aston.png",
+      "apiAliases": [
+        "Aston Martin",
+        "Aston Martin F1 Team",
+        "Aston Martin Aramco",
+        "aston_martin"
+      ]
+    },
+    "alpine": {
+      "id": "alpine",
+      "displayName": "Alpine",
+      "logo": "/alpine.png",
+      "apiAliases": [
+        "Alpine",
+        "Alpine F1 Team",
+        "BWT Alpine F1 Team",
+        "alpine"
+      ]
+    },
+    "haas": {
+      "id": "haas",
+      "displayName": "Haas",
+      "logo": "/haas.png",
+      "apiAliases": [
+        "Haas",
+        "Haas F1 Team",
+        "MoneyGram Haas F1 Team",
+        "haas"
+      ]
+    },
+    "sauber": {
+      "id": "sauber",
+      "displayName": "Sauber",
+      "logo": "/sauber.png",
+      "apiAliases": [
+        "Sauber",
+        "Kick Sauber",
+        "Sauber Motorsport",
+        "Alfa Romeo",
+        "sauber"
+      ]
+    },
+    "vcarb": {
+      "id": "vcarb",
+      "displayName": "Vcarb",
+      "logo": "/vcarb.png",
+      "apiAliases": [
+        "Vcarb",
+        "VCARB",
+        "RB F1 Team",
+        "RB",
+        "Racing Bulls",
+        "AlphaTauri",
+        "Visa Cash App RB",
+        "alphatauri",
+        "rb"
+      ]
+    },
+    "williams": {
+      "id": "williams",
+      "displayName": "Williams",
+      "logo": "/williams.png",
+      "apiAliases": [
+        "Williams",
+        "Williams Racing",
+        "Williams F1",
+        "williams"
+      ]
+    }
+  },
+  "drivers": {
+    "max-verstappen": {
+      "id": "max-verstappen",
+      "displayName": "Max Verstappen",
+      "firstName": "Max",
+      "lastName": "Verstappen",
+      "number": 1,
+      "currentTeam": "red-bull",
+      "apiAliases": [
+        "Verstappen",
+        "Max Verstappen",
+        "M. Verstappen",
+        "VER"
+      ]
+    },
+    "yuki-tsunoda": {
+      "id": "yuki-tsunoda",
+      "displayName": "Yuki Tsunoda",
+      "firstName": "Yuki",
+      "lastName": "Tsunoda",
+      "number": 22,
+      "currentTeam": "red-bull",
+      "apiAliases": [
+        "Tsunoda",
+        "Yuki Tsunoda",
+        "Y. Tsunoda",
+        "TSU"
+      ]
+    },
+    "charles-leclerc": {
+      "id": "charles-leclerc",
+      "displayName": "Charles Leclerc",
+      "firstName": "Charles",
+      "lastName": "Leclerc",
+      "number": 16,
+      "currentTeam": "ferrari",
+      "apiAliases": [
+        "Leclerc",
+        "Charles Leclerc",
+        "C. Leclerc",
+        "LEC"
+      ]
+    },
+    "lewis-hamilton": {
+      "id": "lewis-hamilton",
+      "displayName": "Lewis Hamilton",
+      "firstName": "Lewis",
+      "lastName": "Hamilton",
+      "number": 44,
+      "currentTeam": "ferrari",
+      "apiAliases": [
+        "Hamilton",
+        "Lewis Hamilton",
+        "L. Hamilton",
+        "HAM"
+      ]
+    },
+    "george-russell": {
+      "id": "george-russell",
+      "displayName": "George Russell",
+      "firstName": "George",
+      "lastName": "Russell",
+      "number": 63,
+      "currentTeam": "mercedes",
+      "apiAliases": [
+        "Russell",
+        "George Russell",
+        "G. Russell",
+        "RUS"
+      ]
+    },
+    "andrea-kimi-antonelli": {
+      "id": "andrea-kimi-antonelli",
+      "displayName": "Andrea Kimi Antonelli",
+      "firstName": "Andrea Kimi",
+      "lastName": "Antonelli",
+      "number": 12,
+      "currentTeam": "mercedes",
+      "apiAliases": [
+        "Antonelli",
+        "Andrea Kimi Antonelli",
+        "Kimi Antonelli",
+        "A. Antonelli",
+        "ANT"
+      ]
+    },
+    "lando-norris": {
+      "id": "lando-norris",
+      "displayName": "Lando Norris",
+      "firstName": "Lando",
+      "lastName": "Norris",
+      "number": 4,
+      "currentTeam": "mclaren",
+      "apiAliases": [
+        "Norris",
+        "Lando Norris",
+        "L. Norris",
+        "NOR"
+      ]
+    },
+    "oscar-piastri": {
+      "id": "oscar-piastri",
+      "displayName": "Oscar Piastri",
+      "firstName": "Oscar",
+      "lastName": "Piastri",
+      "number": 81,
+      "currentTeam": "mclaren",
+      "apiAliases": [
+        "Piastri",
+        "Oscar Piastri",
+        "O. Piastri",
+        "PIA"
+      ]
+    },
+    "fernando-alonso": {
+      "id": "fernando-alonso",
+      "displayName": "Fernando Alonso",
+      "firstName": "Fernando",
+      "lastName": "Alonso",
+      "number": 14,
+      "currentTeam": "aston-martin",
+      "apiAliases": [
+        "Alonso",
+        "Fernando Alonso",
+        "F. Alonso",
+        "ALO"
+      ]
+    },
+    "lance-stroll": {
+      "id": "lance-stroll",
+      "displayName": "Lance Stroll",
+      "firstName": "Lance",
+      "lastName": "Stroll",
+      "number": 18,
+      "currentTeam": "aston-martin",
+      "apiAliases": [
+        "Stroll",
+        "Lance Stroll",
+        "L. Stroll",
+        "STR"
+      ]
+    },
+    "pierre-gasly": {
+      "id": "pierre-gasly",
+      "displayName": "Pierre Gasly",
+      "firstName": "Pierre",
+      "lastName": "Gasly",
+      "number": 10,
+      "currentTeam": "alpine",
+      "apiAliases": [
+        "Gasly",
+        "Pierre Gasly",
+        "P. Gasly",
+        "GAS"
+      ]
+    },
+    "franco-colapinto": {
+      "id": "franco-colapinto",
+      "displayName": "Franco Colapinto",
+      "firstName": "Franco",
+      "lastName": "Colapinto",
+      "number": 43,
+      "currentTeam": "alpine",
+      "apiAliases": [
+        "Colapinto",
+        "Franco Colapinto",
+        "F. Colapinto",
+        "COL"
+      ]
+    },
+    "oliver-bearman": {
+      "id": "oliver-bearman",
+      "displayName": "Oliver Bearman",
+      "firstName": "Oliver",
+      "lastName": "Bearman",
+      "number": 38,
+      "currentTeam": "haas",
+      "apiAliases": [
+        "Bearman",
+        "Oliver Bearman",
+        "O. Bearman",
+        "BEA"
+      ]
+    },
+    "esteban-ocon": {
+      "id": "esteban-ocon",
+      "displayName": "Esteban Ocon",
+      "firstName": "Esteban",
+      "lastName": "Ocon",
+      "number": 31,
+      "currentTeam": "haas",
+      "apiAliases": [
+        "Ocon",
+        "Esteban Ocon",
+        "E. Ocon",
+        "OCO"
+      ]
+    },
+    "nico-hulkenberg": {
+      "id": "nico-hulkenberg",
+      "displayName": "Nico Hülkenberg",
+      "firstName": "Nico",
+      "lastName": "Hülkenberg",
+      "number": 27,
+      "currentTeam": "sauber",
+      "apiAliases": [
+        "Hulkenberg",
+        "Hülkenberg",
+        "Nico Hulkenberg",
+        "Nico Hülkenberg",
+        "N. Hülkenberg",
+        "HUL"
+      ]
+    },
+    "gabriel-bortoleto": {
+      "id": "gabriel-bortoleto",
+      "displayName": "Gabriel Bortoleto",
+      "firstName": "Gabriel",
+      "lastName": "Bortoleto",
+      "number": 50,
+      "currentTeam": "sauber",
+      "apiAliases": [
+        "Bortoleto",
+        "Gabriel Bortoleto",
+        "G. Bortoleto",
+        "BOR"
+      ]
+    },
+    "liam-lawson": {
+      "id": "liam-lawson",
+      "displayName": "Liam Lawson",
+      "firstName": "Liam",
+      "lastName": "Lawson",
+      "number": 30,
+      "currentTeam": "vcarb",
+      "apiAliases": [
+        "Lawson",
+        "Liam Lawson",
+        "L. Lawson",
+        "LAW"
+      ]
+    },
+    "isack-hadjar": {
+      "id": "isack-hadjar",
+      "displayName": "Isack Hadjar",
+      "firstName": "Isack",
+      "lastName": "Hadjar",
+      "number": 25,
+      "currentTeam": "vcarb",
+      "apiAliases": [
+        "Hadjar",
+        "Isack Hadjar",
+        "I. Hadjar",
+        "HAD"
+      ]
+    },
+    "alexander-albon": {
+      "id": "alexander-albon",
+      "displayName": "Alexander Albon",
+      "firstName": "Alexander",
+      "lastName": "Albon",
+      "number": 23,
+      "currentTeam": "williams",
+      "apiAliases": [
+        "Albon",
+        "Alexander Albon",
+        "A. Albon",
+        "ALB"
+      ]
+    },
+    "carlos-sainz-jr": {
+      "id": "carlos-sainz-jr",
+      "displayName": "Carlos Sainz Jr.",
+      "firstName": "Carlos",
+      "lastName": "Sainz",
+      "number": 55,
+      "currentTeam": "williams",
+      "apiAliases": [
+        "Sainz",
+        "Carlos Sainz",
+        "Carlos Sainz Jr.",
+        "C. Sainz",
+        "SAI"
+      ]
+    }
+  }
+}
