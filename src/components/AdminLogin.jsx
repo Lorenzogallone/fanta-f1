@@ -7,7 +7,7 @@ import PropTypes from "prop-types";
 import { Container, Row, Col, Card, Form, Button } from "react-bootstrap";
 import { useLanguage } from "../hooks/useLanguage";
 
-export const ADMIN_PASSWORD = "SUCASOLERA";
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 
 /**
  * Admin login form component with password validation.
