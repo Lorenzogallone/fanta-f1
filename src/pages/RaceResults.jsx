@@ -1029,6 +1029,17 @@ export default function RaceResults() {
                   }
                   return null;
                 })()}
+
+                {/* Beta notice for practice sessions */}
+                {(sessions.hasFP1 || sessions.hasFP2 || sessions.hasFP3) && (
+                  <Alert variant="info" className="mb-3">
+                    <div className="d-flex align-items-center">
+                      <span className="me-2">🧪</span>
+                      <small><strong>BETA:</strong> {t("raceResults.practiceBetaNotice")}</small>
+                    </div>
+                  </Alert>
+                )}
+
                 <Accordion
                   activeKey={activeKeys}
                   onSelect={(keys) => setActiveKeys(Array.isArray(keys) ? keys : [keys])}

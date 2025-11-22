@@ -148,6 +148,7 @@ export const en = {
     title: "F1 Hub",
     description: "Session results from Free Practice, Qualifying, Sprint, and Race",
     betaNotice: "This feature is in BETA. Some data may be incomplete or not yet available.",
+    practiceBetaNotice: "Free Practice sessions use a beta API that may not always work correctly",
     selectRace: "Select Race",
     chooseRace: "Choose a race...",
     round: "Round",
