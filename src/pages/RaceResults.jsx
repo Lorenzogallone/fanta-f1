@@ -137,9 +137,10 @@ export default function RaceResults() {
    * Renders session accordion body with loading state
    * @param {Array|null} data - Session data
    * @param {string} eventKey - Accordion event key for this session
+   * @param {boolean} isPracticeSession - Whether this is a practice session (FP1/FP2/FP3)
    * @returns {JSX.Element} Accordion body content
    */
-  const renderSessionBody = (data, eventKey) => {
+  const renderSessionBody = (data, eventKey, isPracticeSession = false) => {
     // Check if this accordion is currently open
     const isOpen = activeKeys.includes(eventKey);
 
@@ -148,8 +149,26 @@ export default function RaceResults() {
       return null;
     }
 
-    // If data is not loaded yet, show spinner
+    // If data is not loaded yet, show appropriate message
     if (!data || data.length === 0) {
+      // For practice sessions, show a friendly message instead of infinite loading
+      if (isPracticeSession && !loadingSessions) {
+        return (
+          <Alert variant="info" className="mb-0">
+            <div className="d-flex align-items-center">
+              <span className="me-2">ℹ️</span>
+              <div>
+                <strong>{t("raceResults.practiceDataUnavailable")}</strong>
+                <div className="small mt-1">
+                  {t("raceResults.practiceDataUnavailableDescription")}
+                </div>
+              </div>
+            </div>
+          </Alert>
+        );
+      }
+
+      // For other sessions or during initial loading, show spinner
       return (
         <div className="text-center py-4">
           <Spinner animation="border" size="sm" />
@@ -1024,7 +1043,7 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        {renderSessionBody(sessions.fp1, "fp1")}
+                        {renderSessionBody(sessions.fp1, "fp1", true)}
                       </Accordion.Body>
                     </Accordion.Item>
                   )}
@@ -1038,7 +1057,7 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        {renderSessionBody(sessions.fp2, "fp2")}
+                        {renderSessionBody(sessions.fp2, "fp2", true)}
                       </Accordion.Body>
                     </Accordion.Item>
                   )}
@@ -1052,7 +1071,7 @@ export default function RaceResults() {
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        {renderSessionBody(sessions.fp3, "fp3")}
+                        {renderSessionBody(sessions.fp3, "fp3", true)}
                       </Accordion.Body>
                     </Accordion.Item>
                   )}

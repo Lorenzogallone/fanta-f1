@@ -490,19 +490,33 @@ export async function fetchRace(season, round) {
  */
 export async function fetchAllSessions(season, round) {
   try {
-    // Step 1: Fetch FP1, Sprint, Qualifying, Race first to determine weekend type
-    const [fp1, sprint, qualifying, race] = await Promise.all([
-      fetchPracticeSession(season, round, "Practice 1"),
+    // Step 1: Fetch critical sessions first (Sprint, Qualifying, Race)
+    // These use Ergast API which is more reliable
+    // Practice sessions are fetched separately with individual error handling
+    const [sprint, qualifying, race] = await Promise.all([
       fetchSprint(season, round),
       fetchQualifying(season, round),
       fetchRace(season, round),
     ]);
 
+    // Step 2: Fetch practice sessions with individual error handling
+    // Each practice session can fail independently without affecting others
+    let fp1 = null;
     let fp2 = null;
     let fp3 = null;
     let sprintQualifying = null;
 
-    // Step 2: Based on weekend type, fetch additional sessions
+    // Fetch FP1 (always present, except sprint weekends without FP1)
+    try {
+      fp1 = await fetchPracticeSession(season, round, "Practice 1");
+      if (fp1) {
+        log(`✅ [Practice Sessions] FP1 loaded for ${season} R${round}`);
+      }
+    } catch (err) {
+      warn(`⚠️ [Practice Sessions] FP1 failed for ${season} R${round}:`, err.message);
+    }
+
+    // Step 3: Based on weekend type, fetch additional sessions
     if (sprint !== null) {
       // Sprint weekend: has Sprint Qualifying/Shootout, NO FP2/FP3
       info(`[Sprint Weekend] Detected sprint for ${season} R${round}. Searching for sprint qualifying...`);
@@ -517,11 +531,15 @@ export async function fetchAllSessions(season, round) {
       ];
 
       for (const name of sprintQualifyingNames) {
-        log(`[Sprint Weekend] Trying sprint qualifying name: "${name}"`);
-        sprintQualifying = await fetchPracticeSession(season, round, name);
-        if (sprintQualifying !== null) {
-          info(`✅ [Sprint Weekend] Found sprint qualifying as: "${name}" for ${season} R${round}`);
-          break;
+        try {
+          log(`[Sprint Weekend] Trying sprint qualifying name: "${name}"`);
+          sprintQualifying = await fetchPracticeSession(season, round, name);
+          if (sprintQualifying !== null) {
+            info(`✅ [Sprint Weekend] Found sprint qualifying as: "${name}" for ${season} R${round}`);
+            break;
+          }
+        } catch (err) {
+          warn(`⚠️ [Sprint Weekend] Failed to fetch "${name}":`, err.message);
         }
       }
 
@@ -529,14 +547,28 @@ export async function fetchAllSessions(season, round) {
       if (!sprintQualifying) {
         warn(`❌ [Sprint Weekend] Sprint qualifying NOT FOUND for ${season} R${round}.`);
         warn(`[Sprint Weekend] Tried all variants: ${sprintQualifyingNames.join(', ')}`);
-        warn(`[Sprint Weekend] Check console logs above for available session names from OpenF1 API`);
       }
     } else {
       // Normal weekend: has FP2 and FP3, NO Sprint Qualifying
-      [fp2, fp3] = await Promise.all([
-        fetchPracticeSession(season, round, "Practice 2"),
-        fetchPracticeSession(season, round, "Practice 3"),
-      ]);
+      // Fetch FP2
+      try {
+        fp2 = await fetchPracticeSession(season, round, "Practice 2");
+        if (fp2) {
+          log(`✅ [Practice Sessions] FP2 loaded for ${season} R${round}`);
+        }
+      } catch (err) {
+        warn(`⚠️ [Practice Sessions] FP2 failed for ${season} R${round}:`, err.message);
+      }
+
+      // Fetch FP3
+      try {
+        fp3 = await fetchPracticeSession(season, round, "Practice 3");
+        if (fp3) {
+          log(`✅ [Practice Sessions] FP3 loaded for ${season} R${round}`);
+        }
+      } catch (err) {
+        warn(`⚠️ [Practice Sessions] FP3 failed for ${season} R${round}:`, err.message);
+      }
     }
 
     return {

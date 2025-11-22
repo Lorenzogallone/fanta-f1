@@ -173,6 +173,8 @@ export const en = {
     constructorStandings: "Constructor Standings",
     driverStandingsUnavailable: "Driver standings not available",
     constructorStandingsUnavailable: "Constructor standings not available",
+    practiceDataUnavailable: "Practice data unavailable",
+    practiceDataUnavailableDescription: "Practice session data may not be available yet or the session has not been completed.",
   },
 
   // Statistics

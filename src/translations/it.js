@@ -173,6 +173,8 @@ export const it = {
     constructorStandings: "Classifica Costruttori",
     driverStandingsUnavailable: "Classifica piloti non disponibile",
     constructorStandingsUnavailable: "Classifica costruttori non disponibile",
+    practiceDataUnavailable: "Dati prove libere non disponibili",
+    practiceDataUnavailableDescription: "I dati delle prove libere potrebbero non essere ancora disponibili o la sessione non è stata completata.",
   },
 
   // Statistics
