@@ -161,6 +161,7 @@ dist-ssr
 *.sw?
 
 **/serviceAccount.json
+**/serviceaccount.json
 
 # Firebase Functions
 functions/node_modules/
