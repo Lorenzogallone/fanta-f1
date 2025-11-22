@@ -144,7 +144,7 @@ function calculateGap(leaderTimeMs, driverTimeMs) {
 }
 
 /**
- * Fetches practice session results from OpenF1 API using session_result endpoint (beta)
+ * Fetches practice session results from OpenF1 API using laps endpoint (reliable method)
  * @param {number} season - Season year
  * @param {number} round - Race round number (used to match with Ergast data)
  * @param {string} sessionName - Session name: "Practice 1", "Practice 2", "Practice 3", "Sprint Qualifying", "Sprint Shootout"
@@ -216,25 +216,50 @@ export async function fetchPracticeSession(season, round, sessionName) {
 
     const sessionKey = targetSession.session_key;
 
-    // Step 2: Fetch session results using the BETA endpoint
-    const resultsUrl = `${OPENF1_API_BASE_URL}/session_result?session_key=${sessionKey}`;
-    const resultsResponse = await rateLimitedFetch(resultsUrl);
+    // Step 2: Fetch all laps for this session (using reliable laps endpoint)
+    const lapsUrl = `${OPENF1_API_BASE_URL}/laps?session_key=${sessionKey}`;
+    const lapsResponse = await rateLimitedFetch(lapsUrl);
 
-    if (!resultsResponse.ok) {
-      warn(`[OpenF1 Beta] Session results not available for ${sessionName} ${season} R${round}: ${resultsResponse.status}`);
+    if (!lapsResponse.ok) {
+      warn(`[OpenF1] Laps not available for ${sessionName} ${season} R${round}: ${lapsResponse.status}`);
       return null;
     }
 
-    const sessionResults = await resultsResponse.json();
+    const laps = await lapsResponse.json();
 
-    if (!sessionResults || sessionResults.length === 0) {
-      info(`[OpenF1 Beta] No session results data for ${sessionName} ${season} R${round}`);
+    if (!laps || laps.length === 0) {
+      info(`[OpenF1] No laps data for ${sessionName} ${season} R${round}`);
       return null;
     }
 
-    log(`[OpenF1 Beta] ✅ Got ${sessionResults.length} results for ${sessionName} ${season} R${round}`);
+    log(`[OpenF1] ✅ Got ${laps.length} laps for ${sessionName} ${season} R${round}`);
 
-    // Step 3: Get driver info to map numbers to names
+    // Step 3: Process laps to find best lap for each driver
+    // Filter out invalid laps and prioritize accurate ones
+    const driverBestLaps = {};
+
+    laps.forEach((lap) => {
+      // Skip invalid laps: pit laps, or laps without duration
+      if (!lap.lap_duration || lap.is_pit_out_lap) return;
+
+      const driverNumber = lap.driver_number;
+      const lapTime = lap.lap_duration;
+
+      // Update if this is the driver's first lap or a faster lap
+      if (!driverBestLaps[driverNumber] || lapTime < driverBestLaps[driverNumber].time) {
+        driverBestLaps[driverNumber] = {
+          time: lapTime,
+          lapNumber: lap.lap_number,
+        };
+      }
+    });
+
+    if (Object.keys(driverBestLaps).length === 0) {
+      info(`[OpenF1] No valid laps found for ${sessionName} ${season} R${round}`);
+      return null;
+    }
+
+    // Step 4: Get driver info to map numbers to names
     const driversUrl = `${OPENF1_API_BASE_URL}/drivers?session_key=${sessionKey}`;
     const driversResponse = await rateLimitedFetch(driversUrl);
 
@@ -252,36 +277,33 @@ export async function fetchPracticeSession(season, round, sessionName) {
       });
     }
 
-    // Step 4: Map session results to our format
-    const results = sessionResults.map(result => {
-      const driverNum = result.driver_number;
-      const driverName = driverInfo[driverNum]?.name
-        || DRIVER_NUMBER_MAPPING[driverNum]
-        || `Driver #${driverNum}`;
+    // Step 5: Create sorted results array with fallback driver mapping
+    const results = Object.entries(driverBestLaps)
+      .map(([driverNumber, data]) => {
+        const driverNum = parseInt(driverNumber);
+        const driverName = driverInfo[driverNumber]?.name
+          || DRIVER_NUMBER_MAPPING[driverNum]
+          || `Driver #${driverNumber}`;
 
-      // Format gap
-      let gap = "—";
-      if (result.position === 1) {
-        gap = "—";
-      } else if (typeof result.gap_to_leader === 'number') {
-        gap = `+${result.gap_to_leader.toFixed(3)}`;
-      } else if (typeof result.gap_to_leader === 'string') {
-        gap = result.gap_to_leader; // Already formatted (e.g., "+1 LAP(S)")
-      }
+        return {
+          driverNumber: driverNum,
+          driver: driverName,
+          constructor: driverInfo[driverNumber]?.team || "—",
+          bestTime: data.time,
+          bestTimeFormatted: formatLapTime(data.time),
+          lapNumber: data.lapNumber,
+        };
+      })
+      .sort((a, b) => a.bestTime - b.bestTime);
 
-      return {
-        position: result.position,
-        driver: driverName,
-        constructor: driverInfo[driverNum]?.team || "—",
-        gap: gap,
-        dnf: result.dnf,
-        dns: result.dns,
-        dsq: result.dsq,
-      };
+    // Add position and gap
+    const leaderTime = results[0]?.bestTime || 0;
+    results.forEach((result, idx) => {
+      result.position = idx + 1;
+      result.gap = idx === 0 ? "—" : `+${(result.bestTime - leaderTime).toFixed(3)}`;
     });
 
-    // Sort by position
-    results.sort((a, b) => a.position - b.position);
+    log(`[OpenF1] ✅ Processed ${results.length} drivers for ${sessionName} ${season} R${round}`);
 
     return results;
   } catch (err) {

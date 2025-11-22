@@ -148,7 +148,7 @@ export const it = {
     title: "F1 Hub",
     description: "Risultati delle sessioni: Prove Libere, Qualifiche, Sprint e Gara",
     betaNotice: "Questa funzionalità è in BETA. Alcuni dati potrebbero essere incompleti o non ancora disponibili.",
-    practiceBetaNotice: "Le Prove Libere utilizzano un'API beta che potrebbe non funzionare sempre correttamente",
+    practiceBetaNotice: "I dati delle Prove Libere potrebbero richiedere tempo per essere disponibili dopo la sessione",
     selectRace: "Seleziona Gara",
     chooseRace: "Scegli una gara...",
     round: "Round",

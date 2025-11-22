@@ -1008,34 +1008,12 @@ export default function RaceResults() {
               </Card.Header>
 
               <Card.Body>
-                {/* Warning for ongoing/recent races */}
-                {(() => {
-                  const raceDate = selectedRace?.raceUTC?.toDate();
-                  const now = new Date();
-                  const daysSinceRace = raceDate ? (now - raceDate) / (1000 * 60 * 60 * 24) : 999;
-                  const daysUntilRace = raceDate ? (raceDate - now) / (1000 * 60 * 60 * 24) : 999;
-
-                  // Show warning if race is recent (within 2 days after) or upcoming (within 3 days before)
-                  // AND if the race session is not available yet
-                  const isRecentOrUpcoming = daysSinceRace < 2 || (daysUntilRace >= 0 && daysUntilRace < 3);
-                  const raceNotAvailable = !sessions.hasRace;
-
-                  if (isRecentOrUpcoming && raceNotAvailable) {
-                    return (
-                      <Alert variant="warning" className="mb-3">
-                        <strong>⚠️ {t("common.warning")}:</strong> {t("raceResults.sessionNotFinished")}
-                      </Alert>
-                    );
-                  }
-                  return null;
-                })()}
-
-                {/* Beta notice for practice sessions */}
+                {/* Info notice for practice sessions */}
                 {(sessions.hasFP1 || sessions.hasFP2 || sessions.hasFP3) && (
                   <Alert variant="info" className="mb-3">
                     <div className="d-flex align-items-center">
-                      <span className="me-2">🧪</span>
-                      <small><strong>BETA:</strong> {t("raceResults.practiceBetaNotice")}</small>
+                      <span className="me-2">ℹ️</span>
+                      <small>{t("raceResults.practiceBetaNotice")}</small>
                     </div>
                   </Alert>
                 )}
