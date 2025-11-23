@@ -36,7 +36,7 @@ import {
   fetchDriverStandings,
   fetchConstructorStandings,
 } from "../services/f1SessionsFetcher";
-import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
+import { DRIVER_TEAM, TEAM_LOGOS, getDriverTeamDynamic, getTeamLogoDynamic } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { log, error } from "../utils/logger";
@@ -46,8 +46,8 @@ import { log, error } from "../utils/logger";
  */
 function DriverWithLogo({ name }) {
   if (!name) return <>—</>;
-  const team = DRIVER_TEAM[name];
-  const logoSrc = team ? TEAM_LOGOS[team] : null;
+  const team = getDriverTeamDynamic(name);
+  const logoSrc = team ? getTeamLogoDynamic(team) : null;
   return (
     <span className="d-flex align-items-center">
       {logoSrc && (

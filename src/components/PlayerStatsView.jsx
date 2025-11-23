@@ -24,7 +24,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useNavigate } from "react-router-dom";
-import { DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
+import { DRIVER_TEAM, TEAM_LOGOS, POINTS, getDriverTeamDynamic, getTeamLogoDynamic } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import "../styles/statistics.css";
@@ -34,8 +34,8 @@ import "../styles/statistics.css";
  */
 function DriverWithLogo({ name }) {
   if (!name) return <>—</>;
-  const team = DRIVER_TEAM[name];
-  const logoSrc = team ? TEAM_LOGOS[team] : null;
+  const team = getDriverTeamDynamic(name);
+  const logoSrc = team ? getTeamLogoDynamic(team) : null;
   return (
     <span className="d-flex align-items-center">
       {logoSrc && (

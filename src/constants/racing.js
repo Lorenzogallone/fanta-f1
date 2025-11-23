@@ -69,6 +69,7 @@ export const DRIVER_TEAM = {
   "Isack Hadjar": "Vcarb",
   "Alexander Albon": "Williams",
   "Carlos Sainz Jr.": "Williams",
+  "Carlos Sainz": "Williams", // Alias without Jr for API compatibility
 };
 
 /* ==================== TEAM LOGOS (paths in /public) ==================== */
