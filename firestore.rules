@@ -168,6 +168,33 @@ service cloud.firestore {
       // allow write: if isAdmin();
     }
 
+    /* ===================== STORICO CLASSIFICA ===========================
+     * Collezione: /rankingHistory/{snapshotId}
+     *
+     * Struttura documento:
+     * - snapshot: array (snapshot della classifica al momento)
+     *   - userId: string
+     *   - name: string
+     *   - position: number
+     *   - points: number
+     *   - jolly: number
+     * - createdAt: timestamp
+     * - type: string (race | championship)
+     * - raceId: string | null (ID gara se type="race")
+     *
+     * REGOLE FUTURE:
+     * - Read: tutti possono leggere lo storico
+     * - Write: solo admin può salvare snapshot (automatico dopo calcolo)
+     * ==================================================================== */
+    match /rankingHistory/{snapshotId} {
+      // TEMPORANEO - Accesso completo
+      allow read, write: if true;
+
+      // FUTURO CON AUTH:
+      // allow read: if true;
+      // allow write: if isAdmin();
+    }
+
     /* ===================== FALLBACK ====================================
      * Blocca accesso a qualsiasi altra collezione non definita sopra
      * ==================================================================== */

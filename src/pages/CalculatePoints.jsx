@@ -324,15 +324,6 @@ useEffect(() => {
     e.preventDefault(); if(!canSubmitRace) return;
     setSavingRace(true); setMsgRace(null);
     try{
-      // Create automatic backup before calculating points
-      setMsgRace({variant:"info",msg: "🔄 Creazione backup automatico..."});
-      await createAndSaveBackup("auto_race", {
-        raceName: race.name,
-        raceId: race.id,
-        round: race.round,
-        createdBy: "auto_calculation"
-      });
-
       await setDoc(doc(db,"races",race.id),{
         officialResults:{
           P1:formRace.P1.value,P2:formRace.P2.value,P3:formRace.P3.value,
@@ -355,6 +346,17 @@ useEffect(() => {
       setOfficial(rDoc.data().officialResults ?? null);
       const sSnap= await getDocs(collection(db,"races",race.id,"submissions"));
       setSubs(sSnap.docs.map(d=>({id:d.id,...d.data()})));
+
+      // Create automatic backup after successful calculation (non-blocking)
+      createAndSaveBackup("auto_race", {
+        raceName: race.name,
+        raceId: race.id,
+        round: race.round,
+        createdBy: "auto_calculation"
+      }).catch(err => {
+        // Silent error handling - backup failures don't affect points calculation
+        error("[Backup] Failed to create automatic backup:", err);
+      });
     }catch(err){
       error(err);
       setMsgRace({variant:"danger",msg: t("calculate.saveError")});
@@ -371,13 +373,6 @@ useEffect(() => {
     e.preventDefault(); if(!champReady) return;
     setSavingChamp(true); setMsgChamp(null);
     try{
-      // Create automatic backup before calculating championship points
-      setMsgChamp({variant:"info",msg: "🔄 Creazione backup automatico..."});
-      await createAndSaveBackup("auto_championship", {
-        createdBy: "auto_calculation",
-        description: "Backup automatico prima del calcolo campionato"
-      });
-
       await setDoc(doc(db,"championship","results"),{
         P1:formChamp.CP1.value,P2:formChamp.CP2.value,P3:formChamp.CP3.value,
         C1:formChamp.CC1.value,C2:formChamp.CC2.value,C3:formChamp.CC3.value,
@@ -389,6 +384,15 @@ useEffect(() => {
       // Save ranking snapshot after championship calculation
       await saveRankingSnapshot("championship", null);
       setMsgChamp({variant:"success",msg:res});
+
+      // Create automatic backup after successful calculation (non-blocking)
+      createAndSaveBackup("auto_championship", {
+        createdBy: "auto_calculation",
+        description: "Backup automatico dopo il calcolo campionato"
+      }).catch(err => {
+        // Silent error handling - backup failures don't affect points calculation
+        error("[Backup] Failed to create automatic backup:", err);
+      });
     }catch(err){
       error(err);
       setMsgChamp({variant:"danger",msg: t("calculate.saveError")});
