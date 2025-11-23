@@ -34,26 +34,27 @@ export async function createBackup(type = "manual", metadata = {}) {
       getDocs(collection(db, "ranking")),
     ]);
 
-    // Build races data with submissions
-    const races = [];
-    for (const raceDoc of racesSnap.docs) {
-      const raceData = { id: raceDoc.id, ...raceDoc.data() };
+    // Build races data with submissions (parallelized for better performance)
+    const races = await Promise.all(
+      racesSnap.docs.map(async (raceDoc) => {
+        const raceData = { id: raceDoc.id, ...raceDoc.data() };
 
-      // Get submissions for this race
-      const submissionsSnap = await getDocs(
-        collection(db, "races", raceDoc.id, "submissions")
-      );
+        // Get submissions for this race
+        const submissionsSnap = await getDocs(
+          collection(db, "races", raceDoc.id, "submissions")
+        );
 
-      const submissions = {};
-      submissionsSnap.docs.forEach((subDoc) => {
-        submissions[subDoc.id] = subDoc.data();
-      });
+        const submissions = {};
+        submissionsSnap.docs.forEach((subDoc) => {
+          submissions[subDoc.id] = subDoc.data();
+        });
 
-      races.push({
-        ...raceData,
-        submissions,
-      });
-    }
+        return {
+          ...raceData,
+          submissions,
+        };
+      })
+    );
 
     // Build ranking data
     const ranking = rankingSnap.docs.map((d) => ({
