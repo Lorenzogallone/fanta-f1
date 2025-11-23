@@ -1,9 +1,11 @@
 /**
  * @file F1 race results fetcher service
  * Automatically fetches F1 race results using Jolpica F1 API (official Ergast replacement)
+ * Falls back to OpenF1 API for recent races
  */
 
 import { resolveDriver } from './f1DataResolver.js';
+import { fetchRace } from './f1SessionsFetcher.js';
 import { log, error, warn } from '../utils/logger';
 
 const API_BASE_URL = "http://api.jolpi.ca/ergast/f1";
@@ -24,6 +26,7 @@ function normalizeDriverName(driver, constructor = null) {
 
 /**
  * Fetches results for a specific race
+ * First tries Jolpica/Ergast API, then falls back to OpenF1 for recent races
  * @param {number} season - Season year (e.g., 2025)
  * @param {number} round - Race round number
  * @returns {Promise<Object|null>} Object with race and sprint results, or null if unavailable
@@ -32,75 +35,95 @@ export async function fetchRaceResults(season, round) {
   try {
     log(`🔄 Fetching results for ${season} Round ${round}...`);
 
-    // Fetch main race results
+    // STEP 1: Try Jolpica/Ergast API first (more reliable for historical data)
     const raceUrl = `${API_BASE_URL}/${season}/${round}/results.json`;
     const raceResponse = await fetch(raceUrl);
 
-    if (!raceResponse.ok) {
-      throw new Error(`HTTP Error: ${raceResponse.status}`);
-    }
+    if (raceResponse.ok) {
+      const raceData = await raceResponse.json();
+      const races = raceData.MRData?.RaceTable?.Races;
 
-    const raceData = await raceResponse.json();
-    const races = raceData.MRData?.RaceTable?.Races;
+      if (races && races.length > 0) {
+        const race = races[0];
+        const results = race.Results;
 
-    if (!races || races.length === 0) {
-      warn(`⚠️ No results found for ${season} Round ${round}`);
-      return null;
-    }
+        if (results && results.length >= 3) {
+          // Extract top 3 (pass Constructor for team inference)
+          const mainResults = {
+            P1: normalizeDriverName(results[0]?.Driver, results[0]?.Constructor),
+            P2: normalizeDriverName(results[1]?.Driver, results[1]?.Constructor),
+            P3: normalizeDriverName(results[2]?.Driver, results[2]?.Constructor),
+          };
 
-    const race = races[0];
-    const results = race.Results;
+          // Fetch sprint results (if available)
+          let sprintResults = null;
+          try {
+            const sprintUrl = `${API_BASE_URL}/${season}/${round}/sprint.json`;
+            const sprintResponse = await fetch(sprintUrl);
 
-    if (!results || results.length < 3) {
-      warn(`⚠️ Incomplete results (less than 3 drivers)`);
-      return null;
-    }
+            if (sprintResponse.ok) {
+              const sprintData = await sprintResponse.json();
+              const sprints = sprintData.MRData?.RaceTable?.Races;
 
-    // Extract top 3 (pass Constructor for team inference)
-    const mainResults = {
-      P1: normalizeDriverName(results[0]?.Driver, results[0]?.Constructor),
-      P2: normalizeDriverName(results[1]?.Driver, results[1]?.Constructor),
-      P3: normalizeDriverName(results[2]?.Driver, results[2]?.Constructor),
-    };
+              if (sprints && sprints.length > 0) {
+                const sprint = sprints[0];
+                const sprintResultsList = sprint.SprintResults;
 
-    // Fetch sprint results (if available)
-    let sprintResults = null;
-    try {
-      const sprintUrl = `${API_BASE_URL}/${season}/${round}/sprint.json`;
-      const sprintResponse = await fetch(sprintUrl);
-
-      if (sprintResponse.ok) {
-        const sprintData = await sprintResponse.json();
-        const sprints = sprintData.MRData?.RaceTable?.Races;
-
-        if (sprints && sprints.length > 0) {
-          const sprint = sprints[0];
-          const sprintResultsList = sprint.SprintResults;
-
-          if (sprintResultsList && sprintResultsList.length >= 3) {
-            sprintResults = {
-              SP1: normalizeDriverName(sprintResultsList[0]?.Driver, sprintResultsList[0]?.Constructor),
-              SP2: normalizeDriverName(sprintResultsList[1]?.Driver, sprintResultsList[1]?.Constructor),
-              SP3: normalizeDriverName(sprintResultsList[2]?.Driver, sprintResultsList[2]?.Constructor),
-            };
-            log(`✅ Sprint found for Round ${round}`);
+                if (sprintResultsList && sprintResultsList.length >= 3) {
+                  sprintResults = {
+                    SP1: normalizeDriverName(sprintResultsList[0]?.Driver, sprintResultsList[0]?.Constructor),
+                    SP2: normalizeDriverName(sprintResultsList[1]?.Driver, sprintResultsList[1]?.Constructor),
+                    SP3: normalizeDriverName(sprintResultsList[2]?.Driver, sprintResultsList[2]?.Constructor),
+                  };
+                  log(`✅ Sprint found for Round ${round}`);
+                }
+              }
+            }
+          } catch (err) {
+            log(`ℹ️ No sprint for Round ${round}`);
           }
+
+          const result = {
+            raceName: race.raceName,
+            date: race.date,
+            round: race.round,
+            main: mainResults,
+            sprint: sprintResults,
+          };
+
+          log(`✅ Results fetched from Jolpica/Ergast:`, result);
+          return result;
         }
       }
-    } catch (err) {
-      log(`ℹ️ No sprint for Round ${round}`);
     }
 
-    const result = {
-      raceName: race.raceName,
-      date: race.date,
-      round: race.round,
-      main: mainResults,
-      sprint: sprintResults,
-    };
+    // STEP 2: Fallback to OpenF1 API (faster updates for recent races)
+    warn(`⚠️ No results from Jolpica/Ergast, trying OpenF1 API fallback...`);
 
-    log(`✅ Results fetched successfully:`, result);
-    return result;
+    const openF1Results = await fetchRace(season, round);
+
+    if (openF1Results && openF1Results.length >= 3) {
+      const mainResults = {
+        P1: openF1Results[0]?.driver || null,
+        P2: openF1Results[1]?.driver || null,
+        P3: openF1Results[2]?.driver || null,
+      };
+
+      const result = {
+        raceName: `Round ${round}`, // OpenF1 doesn't provide race name in results
+        date: null,
+        round: round,
+        main: mainResults,
+        sprint: null, // Sprint handled separately if needed
+      };
+
+      log(`✅ Results fetched from OpenF1 fallback:`, result);
+      return result;
+    }
+
+    // No results available from either API
+    warn(`⚠️ No results found for ${season} Round ${round} from any source`);
+    return null;
 
   } catch (err) {
     error(`❌ Error during fetching results:`, err);
