@@ -36,7 +36,7 @@ import {
   fetchDriverStandings,
   fetchConstructorStandings,
 } from "../services/f1SessionsFetcher";
-import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
+import { DRIVER_TEAM, TEAM_LOGOS, getDriverTeamDynamic, getTeamLogoDynamic } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { log, error } from "../utils/logger";
@@ -46,8 +46,8 @@ import { log, error } from "../utils/logger";
  */
 function DriverWithLogo({ name }) {
   if (!name) return <>—</>;
-  const team = DRIVER_TEAM[name];
-  const logoSrc = team ? TEAM_LOGOS[team] : null;
+  const team = getDriverTeamDynamic(name);
+  const logoSrc = team ? getTeamLogoDynamic(team) : null;
   return (
     <span className="d-flex align-items-center">
       {logoSrc && (
@@ -336,12 +336,6 @@ export default function RaceResults() {
               defaultKeys.push("sprintQualifying");
             } else if (sessionData.hasQualifying) {
               defaultKeys.push("qualifying");
-            } else if (sessionData.hasFP3) {
-              defaultKeys.push("fp3");
-            } else if (sessionData.hasFP2) {
-              defaultKeys.push("fp2");
-            } else if (sessionData.hasFP1) {
-              defaultKeys.push("fp1");
             }
             setActiveKeys(defaultKeys);
             setLoadingSessions(false); // Sessions loaded
@@ -430,19 +424,13 @@ export default function RaceResults() {
           defaultKeys.push("sprintQualifying");
         } else if (sessionData.hasQualifying) {
           defaultKeys.push("qualifying");
-        } else if (sessionData.hasFP3) {
-          defaultKeys.push("fp3");
-        } else if (sessionData.hasFP2) {
-          defaultKeys.push("fp2");
-        } else if (sessionData.hasFP1) {
-          defaultKeys.push("fp1");
         }
         setActiveKeys(defaultKeys);
 
         // Check if user can still submit formation
         const now = Timestamp.now();
         const deadlineHasPassed = race.raceUTC.toDate() < now.toDate();
-        const canSubmit = !deadlineHasPassed && (!sessionData.hasQualifying || !sessionData.hasSprintQualifying);
+        const canSubmit = !deadlineHasPassed && !sessionData.hasQualifying;
         setCanSubmitFormation(canSubmit);
 
         return;
@@ -454,9 +442,7 @@ export default function RaceResults() {
 
       const sessionData = await fetchAllSessions(season, round);
 
-      if (!sessionData.hasFP1 && !sessionData.hasFP2 && !sessionData.hasFP3 &&
-          !sessionData.hasSprintQualifying && !sessionData.hasQualifying &&
-          !sessionData.hasSprint && !sessionData.hasRace) {
+      if (!sessionData.hasQualifying && !sessionData.hasSprint && !sessionData.hasRace) {
         setError(t("raceResults.noDataAvailable"));
         setSessions(null);
         return;
@@ -479,7 +465,7 @@ export default function RaceResults() {
       // Check if user can still submit formation
       const now = Timestamp.now();
       const deadlineHasPassed = race.raceUTC.toDate() < now.toDate();
-      const canSubmit = !deadlineHasPassed && (!sessionData.hasQualifying || !sessionData.hasSprintQualifying);
+      const canSubmit = !deadlineHasPassed && !sessionData.hasQualifying;
       setCanSubmitFormation(canSubmit);
 
       // Set default expanded keys
@@ -492,10 +478,6 @@ export default function RaceResults() {
         defaultKeys.push("sprintQualifying");
       } else if (sessionData.hasQualifying) {
         defaultKeys.push("qualifying");
-      } else if (sessionData.hasFP2) {
-        defaultKeys.push("fp2");
-      } else if (sessionData.hasFP1) {
-        defaultKeys.push("fp1");
       }
       setActiveKeys(defaultKeys);
     } catch (e) {
@@ -989,70 +971,21 @@ export default function RaceResults() {
               </Card.Header>
 
               <Card.Body>
-                {/* Warning for ongoing/recent races */}
-                {(() => {
-                  const raceDate = selectedRace?.raceUTC?.toDate();
-                  const now = new Date();
-                  const daysSinceRace = raceDate ? (now - raceDate) / (1000 * 60 * 60 * 24) : 999;
-                  const daysUntilRace = raceDate ? (raceDate - now) / (1000 * 60 * 60 * 24) : 999;
-
-                  // Show warning if race is recent (within 2 days after) or upcoming (within 3 days before)
-                  // AND if the race session is not available yet
-                  const isRecentOrUpcoming = daysSinceRace < 2 || (daysUntilRace >= 0 && daysUntilRace < 3);
-                  const raceNotAvailable = !sessions.hasRace;
-
-                  if (isRecentOrUpcoming && raceNotAvailable) {
-                    return (
-                      <Alert variant="warning" className="mb-3">
-                        <strong>⚠️ {t("common.warning")}:</strong> {t("raceResults.sessionNotFinished")}
-                      </Alert>
-                    );
-                  }
-                  return null;
-                })()}
                 <Accordion
                   activeKey={activeKeys}
                   onSelect={(keys) => setActiveKeys(Array.isArray(keys) ? keys : [keys])}
                   alwaysOpen
                 >
-                  {/* FP1 */}
-                  {sessions.hasFP1 && (
-                    <Accordion.Item eventKey="fp1">
+                  {/* Qualifying */}
+                  {sessions.hasQualifying && (
+                    <Accordion.Item eventKey="qualifying">
                       <Accordion.Header>
                         <strong style={{ color: accentColor }}>
-                          🔧 {t("raceResults.fp1")}
+                          🏎️ {t("raceResults.qualifying")}
                         </strong>
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
-                        {renderSessionBody(sessions.fp1, "fp1")}
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  )}
-
-                  {/* FP2 */}
-                  {sessions.hasFP2 && (
-                    <Accordion.Item eventKey="fp2">
-                      <Accordion.Header>
-                        <strong style={{ color: accentColor }}>
-                          🔧 {t("raceResults.fp2")}
-                        </strong>
-                      </Accordion.Header>
-                      <Accordion.Body className="p-2 p-md-3">
-                        {renderSessionBody(sessions.fp2, "fp2")}
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  )}
-
-                  {/* FP3 */}
-                  {sessions.hasFP3 && (
-                    <Accordion.Item eventKey="fp3">
-                      <Accordion.Header>
-                        <strong style={{ color: accentColor }}>
-                          🔧 {t("raceResults.fp3")}
-                        </strong>
-                      </Accordion.Header>
-                      <Accordion.Body className="p-2 p-md-3">
-                        {renderSessionBody(sessions.fp3, "fp3")}
+                        {renderQualifyingBody(sessions.qualifying)}
                       </Accordion.Body>
                     </Accordion.Item>
                   )}
@@ -1067,20 +1000,6 @@ export default function RaceResults() {
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
                         {renderSessionBody(sessions.sprintQualifying, "sprintQualifying")}
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  )}
-
-                  {/* Qualifying */}
-                  {sessions.hasQualifying && (
-                    <Accordion.Item eventKey="qualifying">
-                      <Accordion.Header>
-                        <strong style={{ color: accentColor }}>
-                          🏎️ {t("raceResults.qualifying")}
-                        </strong>
-                      </Accordion.Header>
-                      <Accordion.Body className="p-2 p-md-3">
-                        {renderQualifyingBody(sessions.qualifying)}
                       </Accordion.Body>
                     </Accordion.Item>
                   )}

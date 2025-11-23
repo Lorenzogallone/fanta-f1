@@ -14,7 +14,7 @@ import {
 } from "react-bootstrap";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
-import { DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
+import { DRIVER_TEAM, TEAM_LOGOS, POINTS, getDriverTeamDynamic, getTeamLogoDynamic } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { error } from "../utils/logger";
@@ -42,8 +42,8 @@ function formatDriverName(name) {
  */
 function DriverWithLogo({ name, short = false }) {
   if (!name) return <>—</>;
-  const team = DRIVER_TEAM[name];
-  const logoSrc = team ? TEAM_LOGOS[team] : null;
+  const team = getDriverTeamDynamic(name);
+  const logoSrc = team ? getTeamLogoDynamic(team) : null;
   const displayName = short ? formatDriverName(name) : name;
   return (
     <span className="d-flex align-items-center">

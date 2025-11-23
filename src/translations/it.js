@@ -148,6 +148,7 @@ export const it = {
     title: "F1 Hub",
     description: "Risultati delle sessioni: Prove Libere, Qualifiche, Sprint e Gara",
     betaNotice: "Questa funzionalità è in BETA. Alcuni dati potrebbero essere incompleti o non ancora disponibili.",
+    practiceBetaNotice: "I dati delle Prove Libere potrebbero richiedere tempo per essere disponibili dopo la sessione",
     selectRace: "Seleziona Gara",
     chooseRace: "Scegli una gara...",
     round: "Round",
@@ -173,6 +174,8 @@ export const it = {
     constructorStandings: "Classifica Costruttori",
     driverStandingsUnavailable: "Classifica piloti non disponibile",
     constructorStandingsUnavailable: "Classifica costruttori non disponibile",
+    practiceDataUnavailable: "Dati prove libere non disponibili",
+    practiceDataUnavailableDescription: "I dati delle prove libere potrebbero non essere ancora disponibili o la sessione non è stata completata.",
   },
 
   // Statistics
@@ -294,7 +297,7 @@ export const it = {
     errorLoadingRaces: "Errore nel caricamento delle gare.",
     errorLoadingSubmissions: "Impossibile caricare submissions.",
     fetchingFromAPI: "🔄 Caricamento risultati da API per {race}...",
-    apiResultsLoaded: "✅ Risultati caricati automaticamente da API! Verifica e modifica se necessario.",
+    apiResultsLoaded: "✅ Risultati caricati. Controlla e conferma.",
     apiNoResults: "⚠️ Risultati non ancora disponibili per questa gara. Inserisci manualmente.",
     apiError: "⚠️ Impossibile caricare risultati da API. Inserisci manualmente.",
     resultsSaved: "Risultati salvati. Calcolo in corso…",

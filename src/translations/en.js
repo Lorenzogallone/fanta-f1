@@ -148,6 +148,7 @@ export const en = {
     title: "F1 Hub",
     description: "Session results from Free Practice, Qualifying, Sprint, and Race",
     betaNotice: "This feature is in BETA. Some data may be incomplete or not yet available.",
+    practiceBetaNotice: "Free Practice data may take time to become available after the session",
     selectRace: "Select Race",
     chooseRace: "Choose a race...",
     round: "Round",
@@ -173,6 +174,8 @@ export const en = {
     constructorStandings: "Constructor Standings",
     driverStandingsUnavailable: "Driver standings not available",
     constructorStandingsUnavailable: "Constructor standings not available",
+    practiceDataUnavailable: "Practice data unavailable",
+    practiceDataUnavailableDescription: "Practice session data may not be available yet or the session has not been completed.",
   },
 
   // Statistics
@@ -294,7 +297,7 @@ export const en = {
     errorLoadingRaces: "Error loading races.",
     errorLoadingSubmissions: "Unable to load submissions.",
     fetchingFromAPI: "🔄 Loading results from API for {race}...",
-    apiResultsLoaded: "✅ Results loaded automatically from API! Verify and edit if necessary.",
+    apiResultsLoaded: "✅ Results loaded. Please review and confirm.",
     apiNoResults: "⚠️ Results not yet available for this race. Enter manually.",
     apiError: "⚠️ Unable to load results from API. Enter manually.",
     resultsSaved: "Results saved. Calculating…",
