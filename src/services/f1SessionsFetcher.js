@@ -281,7 +281,10 @@ export async function fetchSprintQualifying(season, round) {
     const sessionsUrl = `${OPENF1_API_BASE_URL}/sessions?year=${season}`;
     const sessionsResponse = await rateLimitedFetch(sessionsUrl);
 
-    if (!sessionsResponse.ok) return null;
+    if (!sessionsResponse.ok) {
+      warn(`[Sprint Quali] Failed to fetch sessions for ${season}: ${sessionsResponse.status}`);
+      return null;
+    }
 
     const sessions = await sessionsResponse.json();
 
@@ -302,7 +305,16 @@ export async function fetchSprintQualifying(season, round) {
       .map(([key, data]) => ({ meeting_key: key, ...data }));
 
     const targetMeeting = sortedMeetings[round - 1];
-    if (!targetMeeting) return null;
+    if (!targetMeeting) {
+      warn(`[Sprint Quali] No meeting found for ${season} R${round}`);
+      return null;
+    }
+
+    // Log available sessions for debugging
+    const availableSessions = targetMeeting.sessions.map(s =>
+      `${s.session_name} (${s.session_type})`
+    ).join(', ');
+    info(`[Sprint Quali] Available sessions for ${season} R${round}: ${availableSessions}`);
 
     // Try different names for sprint qualifying
     const sprintQualifyingNames = [
@@ -315,7 +327,10 @@ export async function fetchSprintQualifying(season, round) {
     let targetSession = null;
     for (const name of sprintQualifyingNames) {
       targetSession = targetMeeting.sessions.find(s => s.session_name === name);
-      if (targetSession) break;
+      if (targetSession) {
+        info(`[Sprint Quali] Found session with name: "${name}"`);
+        break;
+      }
     }
 
     // Also try Sprint session with Qualifying type
@@ -323,18 +338,32 @@ export async function fetchSprintQualifying(season, round) {
       targetSession = targetMeeting.sessions.find(
         s => s.session_name === "Sprint" && s.session_type === "Qualifying"
       );
+      if (targetSession) {
+        info(`[Sprint Quali] Found Sprint session with Qualifying type`);
+      }
     }
 
-    if (!targetSession) return null;
+    if (!targetSession) {
+      info(`[Sprint Quali] No sprint qualifying session found for ${season} R${round}`);
+      return null;
+    }
 
     // Fetch session results
     const resultsUrl = `${OPENF1_API_BASE_URL}/session_result?session_key=${targetSession.session_key}`;
     const resultsResponse = await rateLimitedFetch(resultsUrl);
 
-    if (!resultsResponse.ok) return null;
+    if (!resultsResponse.ok) {
+      warn(`[Sprint Quali] Session results not available (${resultsResponse.status}) for ${season} R${round}`);
+      return null;
+    }
 
     const sessionResults = await resultsResponse.json();
-    if (!sessionResults || sessionResults.length === 0) return null;
+    if (!sessionResults || sessionResults.length === 0) {
+      info(`[Sprint Quali] No results data returned for ${season} R${round}`);
+      return null;
+    }
+
+    info(`[Sprint Quali] Successfully fetched ${sessionResults.length} results for ${season} R${round}`);
 
     // Get driver info
     const driversUrl = `${OPENF1_API_BASE_URL}/drivers?session_key=${targetSession.session_key}`;

@@ -34,21 +34,18 @@ class F1DataResolver {
     if (this.manualData.config.preferApiData && this.apiCache?.drivers) {
       const fromApi = this.findDriverInApiCache(familyName, fullName);
       if (fromApi) {
-        log(`✅ [API Cache] Driver "${fullName}" found in API cache`);
         return fromApi;
       }
     }
 
     const fromManual = this.findDriverInManualData(familyName, fullName);
     if (fromManual) {
-      log(`✅ [Manual DB] Driver "${fullName}" found in manual database`);
       return fromManual;
     }
 
     if (!this.manualData.config.preferApiData && this.apiCache?.drivers) {
       const fromApi = this.findDriverInApiCache(familyName, fullName);
       if (fromApi) {
-        log(`✅ [API Cache Fallback] Driver "${fullName}" found in API cache`);
         return fromApi;
       }
     }
@@ -163,7 +160,6 @@ class F1DataResolver {
     if (this.manualData.config.preferApiData && this.apiCache?.teams) {
       const fromApi = this.findTeamInApiCache(teamName);
       if (fromApi) {
-        log(`✅ [API Cache] Team "${teamName}" trovato in cache API`);
         return fromApi;
       }
     }
@@ -178,7 +174,6 @@ class F1DataResolver {
     if (!this.manualData.config.preferApiData && this.apiCache?.teams) {
       const fromApi = this.findTeamInApiCache(teamName);
       if (fromApi) {
-        log(`✅ [API Cache Fallback] Team "${teamName}" trovato in cache API`);
         return fromApi;
       }
     }
