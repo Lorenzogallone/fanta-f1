@@ -7,7 +7,7 @@
 import { resolveDriver } from './f1DataResolver.js';
 import { log, error, warn } from '../utils/logger';
 
-const API_BASE_URL = "http://api.jolpi.ca/ergast/f1";
+const API_BASE_URL = "https://api.jolpi.ca/ergast/f1";  // HTTPS not HTTP!
 const OPENF1_API_BASE_URL = "https://api.openf1.org/v1";
 
 /**
@@ -150,10 +150,10 @@ function normalizeDriverName(driver, constructor = null) {
  * @returns {Promise<Object|null>} Object with race and sprint results, or null if unavailable
  */
 export async function fetchRaceResults(season, round) {
-  try {
-    log(`🔄 Fetching results for ${season} Round ${round}...`);
+  log(`🔄 Fetching results for ${season} Round ${round}...`);
 
-    // STEP 1: Try Jolpica/Ergast API first (more reliable for historical data)
+  // STEP 1: Try Jolpica/Ergast API first (more reliable for historical data)
+  try {
     const raceUrl = `${API_BASE_URL}/${season}/${round}/results.json`;
     const raceResponse = await fetch(raceUrl);
 
@@ -215,9 +215,17 @@ export async function fetchRaceResults(season, round) {
       }
     }
 
-    // STEP 2: Fallback to OpenF1 API (faster updates for recent races)
-    warn(`⚠️ No results from Jolpica/Ergast, trying OpenF1 API fallback...`);
+    // Response not OK or no data
+    warn(`⚠️ Jolpica/Ergast: No results (${raceResponse.status})`);
+  } catch (err) {
+    // Network error, CORS, or other fetch error
+    warn(`⚠️ Jolpica/Ergast fetch failed:`, err.message);
+  }
 
+  // STEP 2: Fallback to OpenF1 API (faster updates for recent races)
+  warn(`⚠️ Trying OpenF1 API fallback...`);
+
+  try {
     const openF1Result = await fetchFromOpenF1(season, round);
 
     if (openF1Result) {
@@ -225,14 +233,14 @@ export async function fetchRaceResults(season, round) {
       return openF1Result;
     }
 
-    // No results available from either API
-    warn(`⚠️ No results found for ${season} Round ${round} from any source`);
-    return null;
-
+    warn(`⚠️ OpenF1: No results found`);
   } catch (err) {
-    error(`❌ Error during fetching results:`, err);
-    throw new Error(`Unable to load results: ${err.message}`);
+    warn(`⚠️ OpenF1 fetch failed:`, err.message);
   }
+
+  // No results available from either API
+  warn(`⚠️ No results found for ${season} Round ${round} from any source`);
+  return null;
 }
 
 /**
