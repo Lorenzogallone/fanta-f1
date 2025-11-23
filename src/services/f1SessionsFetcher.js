@@ -270,6 +270,108 @@ export async function fetchSprint(season, round) {
 }
 
 /**
+ * Fetches sprint qualifying results from OpenF1 API
+ * @param {number} season - Season year
+ * @param {number} round - Race round number
+ * @returns {Promise<Array|null>} Array of sprint qualifying results or null
+ */
+export async function fetchSprintQualifying(season, round) {
+  try {
+    // Get all sessions for the year
+    const sessionsUrl = `${OPENF1_API_BASE_URL}/sessions?year=${season}`;
+    const sessionsResponse = await rateLimitedFetch(sessionsUrl);
+
+    if (!sessionsResponse.ok) return null;
+
+    const sessions = await sessionsResponse.json();
+
+    // Group sessions by meeting and sort by date
+    const meetingMap = {};
+    sessions.forEach(session => {
+      if (!meetingMap[session.meeting_key]) {
+        meetingMap[session.meeting_key] = {
+          date: session.date_start,
+          sessions: []
+        };
+      }
+      meetingMap[session.meeting_key].sessions.push(session);
+    });
+
+    const sortedMeetings = Object.entries(meetingMap)
+      .sort(([, a], [, b]) => new Date(a.date) - new Date(b.date))
+      .map(([key, data]) => ({ meeting_key: key, ...data }));
+
+    const targetMeeting = sortedMeetings[round - 1];
+    if (!targetMeeting) return null;
+
+    // Try different names for sprint qualifying
+    const sprintQualifyingNames = [
+      "Sprint Shootout",
+      "Sprint Qualifying",
+      "Sprint Quali",
+      "Shootout"
+    ];
+
+    let targetSession = null;
+    for (const name of sprintQualifyingNames) {
+      targetSession = targetMeeting.sessions.find(s => s.session_name === name);
+      if (targetSession) break;
+    }
+
+    // Also try Sprint session with Qualifying type
+    if (!targetSession) {
+      targetSession = targetMeeting.sessions.find(
+        s => s.session_name === "Sprint" && s.session_type === "Qualifying"
+      );
+    }
+
+    if (!targetSession) return null;
+
+    // Fetch session results
+    const resultsUrl = `${OPENF1_API_BASE_URL}/session_result?session_key=${targetSession.session_key}`;
+    const resultsResponse = await rateLimitedFetch(resultsUrl);
+
+    if (!resultsResponse.ok) return null;
+
+    const sessionResults = await resultsResponse.json();
+    if (!sessionResults || sessionResults.length === 0) return null;
+
+    // Get driver info
+    const driversUrl = `${OPENF1_API_BASE_URL}/drivers?session_key=${targetSession.session_key}`;
+    const driversResponse = await rateLimitedFetch(driversUrl);
+
+    let driverInfo = {};
+    if (driversResponse.ok) {
+      const drivers = await driversResponse.json();
+      drivers.forEach(d => {
+        const resolved = resolveDriver(
+          { givenName: d.first_name, familyName: d.last_name, permanentNumber: d.driver_number },
+          { name: d.team_name }
+        );
+        driverInfo[d.driver_number] = {
+          name: resolved?.displayName || `${d.first_name} ${d.last_name}`,
+          team: d.team_name
+        };
+      });
+    }
+
+    // Sort and format results
+    sessionResults.sort((a, b) => a.position - b.position);
+
+    return sessionResults.map(result => ({
+      position: result.position,
+      driver: driverInfo[result.driver_number]?.name || `Driver #${result.driver_number}`,
+      constructor: driverInfo[result.driver_number]?.team || "—",
+      time: result.time ? `${Math.floor(result.time / 60)}:${(result.time % 60).toFixed(3).padStart(6, '0')}` : "—",
+      gap: result.gap_to_leader ? `+${result.gap_to_leader.toFixed(3)}` : "—",
+    }));
+  } catch (err) {
+    warn(`Sprint qualifying not available for ${season} R${round}:`, err.message);
+    return null;
+  }
+}
+
+/**
  * Fetches race results
  * @param {number} season - Season year
  * @param {number} round - Race round number
@@ -332,11 +434,26 @@ export async function fetchAllSessions(season, round) {
       fetchRace(season, round),
     ]);
 
+    // If there's a sprint, try to fetch sprint qualifying
+    let sprintQualifying = null;
+    if (sprint !== null) {
+      try {
+        sprintQualifying = await fetchSprintQualifying(season, round);
+        if (sprintQualifying) {
+          log(`✅ Sprint Qualifying loaded for ${season} R${round}`);
+        }
+      } catch (err) {
+        warn(`⚠️ Sprint Qualifying failed for ${season} R${round}:`, err.message);
+      }
+    }
+
     return {
       qualifying,
+      sprintQualifying,
       sprint,
       race,
       hasQualifying: qualifying !== null,
+      hasSprintQualifying: sprintQualifying !== null,
       hasSprint: sprint !== null,
       hasRace: race !== null,
     };
@@ -344,9 +461,11 @@ export async function fetchAllSessions(season, round) {
     error(`Error fetching sessions for ${season} R${round}:`, err);
     return {
       qualifying: null,
+      sprintQualifying: null,
       sprint: null,
       race: null,
       hasQualifying: false,
+      hasSprintQualifying: false,
       hasSprint: false,
       hasRace: false,
     };

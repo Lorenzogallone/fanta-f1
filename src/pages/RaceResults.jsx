@@ -332,6 +332,8 @@ export default function RaceResults() {
               defaultKeys.push("race");
             } else if (sessionData.hasSprint) {
               defaultKeys.push("sprint");
+            } else if (sessionData.hasSprintQualifying) {
+              defaultKeys.push("sprintQualifying");
             } else if (sessionData.hasQualifying) {
               defaultKeys.push("qualifying");
             }
@@ -418,6 +420,8 @@ export default function RaceResults() {
           defaultKeys.push("race");
         } else if (sessionData.hasSprint) {
           defaultKeys.push("sprint");
+        } else if (sessionData.hasSprintQualifying) {
+          defaultKeys.push("sprintQualifying");
         } else if (sessionData.hasQualifying) {
           defaultKeys.push("qualifying");
         }
@@ -470,6 +474,8 @@ export default function RaceResults() {
         defaultKeys.push("race");
       } else if (sessionData.hasSprint) {
         defaultKeys.push("sprint");
+      } else if (sessionData.hasSprintQualifying) {
+        defaultKeys.push("sprintQualifying");
       } else if (sessionData.hasQualifying) {
         defaultKeys.push("qualifying");
       }
@@ -980,6 +986,20 @@ export default function RaceResults() {
                       </Accordion.Header>
                       <Accordion.Body className="p-2 p-md-3">
                         {renderQualifyingBody(sessions.qualifying)}
+                      </Accordion.Body>
+                    </Accordion.Item>
+                  )}
+
+                  {/* Sprint Qualifying */}
+                  {sessions.hasSprintQualifying && (
+                    <Accordion.Item eventKey="sprintQualifying">
+                      <Accordion.Header>
+                        <strong style={{ color: accentColor }}>
+                          ⚡ {t("raceResults.sprintQualifying")}
+                        </strong>
+                      </Accordion.Header>
+                      <Accordion.Body className="p-2 p-md-3">
+                        {renderSessionBody(sessions.sprintQualifying, "sprintQualifying")}
                       </Accordion.Body>
                     </Accordion.Item>
                   )}
