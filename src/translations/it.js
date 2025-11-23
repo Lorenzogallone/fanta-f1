@@ -297,7 +297,7 @@ export const it = {
     errorLoadingRaces: "Errore nel caricamento delle gare.",
     errorLoadingSubmissions: "Impossibile caricare submissions.",
     fetchingFromAPI: "🔄 Caricamento risultati da API per {race}...",
-    apiResultsLoaded: "✅ Risultati caricati automaticamente da API! Verifica e modifica se necessario.",
+    apiResultsLoaded: "✅ Risultati caricati. Controlla e conferma.",
     apiNoResults: "⚠️ Risultati non ancora disponibili per questa gara. Inserisci manualmente.",
     apiError: "⚠️ Impossibile caricare risultati da API. Inserisci manualmente.",
     resultsSaved: "Risultati salvati. Calcolo in corso…",

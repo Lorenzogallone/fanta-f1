@@ -297,7 +297,7 @@ export const en = {
     errorLoadingRaces: "Error loading races.",
     errorLoadingSubmissions: "Unable to load submissions.",
     fetchingFromAPI: "🔄 Loading results from API for {race}...",
-    apiResultsLoaded: "✅ Results loaded automatically from API! Verify and edit if necessary.",
+    apiResultsLoaded: "✅ Results loaded. Please review and confirm.",
     apiNoResults: "⚠️ Results not yet available for this race. Enter manually.",
     apiError: "⚠️ Unable to load results from API. Enter manually.",
     resultsSaved: "Results saved. Calculating…",
