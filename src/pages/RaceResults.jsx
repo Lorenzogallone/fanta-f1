@@ -137,10 +137,9 @@ export default function RaceResults() {
    * Renders session accordion body with loading state
    * @param {Array|null} data - Session data
    * @param {string} eventKey - Accordion event key for this session
-   * @param {boolean} isPracticeSession - Whether this is a practice session (FP1/FP2/FP3)
    * @returns {JSX.Element} Accordion body content
    */
-  const renderSessionBody = (data, eventKey, isPracticeSession = false) => {
+  const renderSessionBody = (data, eventKey) => {
     // Check if this accordion is currently open
     const isOpen = activeKeys.includes(eventKey);
 
@@ -149,26 +148,8 @@ export default function RaceResults() {
       return null;
     }
 
-    // If data is not loaded yet, show appropriate message
+    // If data is not loaded yet, show spinner
     if (!data || data.length === 0) {
-      // For practice sessions, show a friendly message instead of infinite loading
-      if (isPracticeSession && !loadingSessions) {
-        return (
-          <Alert variant="info" className="mb-0">
-            <div className="d-flex align-items-center">
-              <span className="me-2">ℹ️</span>
-              <div>
-                <strong>{t("raceResults.practiceDataUnavailable")}</strong>
-                <div className="small mt-1">
-                  {t("raceResults.practiceDataUnavailableDescription")}
-                </div>
-              </div>
-            </div>
-          </Alert>
-        );
-      }
-
-      // For other sessions or during initial loading, show spinner
       return (
         <div className="text-center py-4">
           <Spinner animation="border" size="sm" />
@@ -351,16 +332,8 @@ export default function RaceResults() {
               defaultKeys.push("race");
             } else if (sessionData.hasSprint) {
               defaultKeys.push("sprint");
-            } else if (sessionData.hasSprintQualifying) {
-              defaultKeys.push("sprintQualifying");
             } else if (sessionData.hasQualifying) {
               defaultKeys.push("qualifying");
-            } else if (sessionData.hasFP3) {
-              defaultKeys.push("fp3");
-            } else if (sessionData.hasFP2) {
-              defaultKeys.push("fp2");
-            } else if (sessionData.hasFP1) {
-              defaultKeys.push("fp1");
             }
             setActiveKeys(defaultKeys);
             setLoadingSessions(false); // Sessions loaded
@@ -445,23 +418,15 @@ export default function RaceResults() {
           defaultKeys.push("race");
         } else if (sessionData.hasSprint) {
           defaultKeys.push("sprint");
-        } else if (sessionData.hasSprintQualifying) {
-          defaultKeys.push("sprintQualifying");
         } else if (sessionData.hasQualifying) {
           defaultKeys.push("qualifying");
-        } else if (sessionData.hasFP3) {
-          defaultKeys.push("fp3");
-        } else if (sessionData.hasFP2) {
-          defaultKeys.push("fp2");
-        } else if (sessionData.hasFP1) {
-          defaultKeys.push("fp1");
         }
         setActiveKeys(defaultKeys);
 
         // Check if user can still submit formation
         const now = Timestamp.now();
         const deadlineHasPassed = race.raceUTC.toDate() < now.toDate();
-        const canSubmit = !deadlineHasPassed && (!sessionData.hasQualifying || !sessionData.hasSprintQualifying);
+        const canSubmit = !deadlineHasPassed && !sessionData.hasQualifying;
         setCanSubmitFormation(canSubmit);
 
         return;
@@ -473,9 +438,7 @@ export default function RaceResults() {
 
       const sessionData = await fetchAllSessions(season, round);
 
-      if (!sessionData.hasFP1 && !sessionData.hasFP2 && !sessionData.hasFP3 &&
-          !sessionData.hasSprintQualifying && !sessionData.hasQualifying &&
-          !sessionData.hasSprint && !sessionData.hasRace) {
+      if (!sessionData.hasQualifying && !sessionData.hasSprint && !sessionData.hasRace) {
         setError(t("raceResults.noDataAvailable"));
         setSessions(null);
         return;
@@ -498,7 +461,7 @@ export default function RaceResults() {
       // Check if user can still submit formation
       const now = Timestamp.now();
       const deadlineHasPassed = race.raceUTC.toDate() < now.toDate();
-      const canSubmit = !deadlineHasPassed && (!sessionData.hasQualifying || !sessionData.hasSprintQualifying);
+      const canSubmit = !deadlineHasPassed && !sessionData.hasQualifying;
       setCanSubmitFormation(canSubmit);
 
       // Set default expanded keys
@@ -507,14 +470,8 @@ export default function RaceResults() {
         defaultKeys.push("race");
       } else if (sessionData.hasSprint) {
         defaultKeys.push("sprint");
-      } else if (sessionData.hasSprintQualifying) {
-        defaultKeys.push("sprintQualifying");
       } else if (sessionData.hasQualifying) {
         defaultKeys.push("qualifying");
-      } else if (sessionData.hasFP2) {
-        defaultKeys.push("fp2");
-      } else if (sessionData.hasFP1) {
-        defaultKeys.push("fp1");
       }
       setActiveKeys(defaultKeys);
     } catch (e) {
@@ -1008,77 +965,11 @@ export default function RaceResults() {
               </Card.Header>
 
               <Card.Body>
-                {/* Info notice for practice sessions */}
-                {(sessions.hasFP1 || sessions.hasFP2 || sessions.hasFP3) && (
-                  <Alert variant="info" className="mb-3">
-                    <div className="d-flex align-items-center">
-                      <span className="me-2">ℹ️</span>
-                      <small>{t("raceResults.practiceBetaNotice")}</small>
-                    </div>
-                  </Alert>
-                )}
-
                 <Accordion
                   activeKey={activeKeys}
                   onSelect={(keys) => setActiveKeys(Array.isArray(keys) ? keys : [keys])}
                   alwaysOpen
                 >
-                  {/* FP1 */}
-                  {sessions.hasFP1 && (
-                    <Accordion.Item eventKey="fp1">
-                      <Accordion.Header>
-                        <strong style={{ color: accentColor }}>
-                          🔧 {t("raceResults.fp1")}
-                        </strong>
-                      </Accordion.Header>
-                      <Accordion.Body className="p-2 p-md-3">
-                        {renderSessionBody(sessions.fp1, "fp1", true)}
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  )}
-
-                  {/* FP2 */}
-                  {sessions.hasFP2 && (
-                    <Accordion.Item eventKey="fp2">
-                      <Accordion.Header>
-                        <strong style={{ color: accentColor }}>
-                          🔧 {t("raceResults.fp2")}
-                        </strong>
-                      </Accordion.Header>
-                      <Accordion.Body className="p-2 p-md-3">
-                        {renderSessionBody(sessions.fp2, "fp2", true)}
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  )}
-
-                  {/* FP3 */}
-                  {sessions.hasFP3 && (
-                    <Accordion.Item eventKey="fp3">
-                      <Accordion.Header>
-                        <strong style={{ color: accentColor }}>
-                          🔧 {t("raceResults.fp3")}
-                        </strong>
-                      </Accordion.Header>
-                      <Accordion.Body className="p-2 p-md-3">
-                        {renderSessionBody(sessions.fp3, "fp3", true)}
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  )}
-
-                  {/* Sprint Qualifying */}
-                  {sessions.hasSprintQualifying && (
-                    <Accordion.Item eventKey="sprintQualifying">
-                      <Accordion.Header>
-                        <strong style={{ color: accentColor }}>
-                          ⚡ {t("raceResults.sprintQualifying")}
-                        </strong>
-                      </Accordion.Header>
-                      <Accordion.Body className="p-2 p-md-3">
-                        {renderSessionBody(sessions.sprintQualifying, "sprintQualifying")}
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  )}
-
                   {/* Qualifying */}
                   {sessions.hasQualifying && (
                     <Accordion.Item eventKey="qualifying">
