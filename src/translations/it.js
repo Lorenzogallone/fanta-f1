@@ -104,6 +104,7 @@ export const it = {
     open: "APERTO",
     closed: "CHIUSO",
     save: "Salva Gara",
+    saveSprint: "Salva Sprint",
     saveFormation: "Salva Formazione",
     editFormation: "Modifica Formazione",
     resetFormation: "Reset Formazione",

@@ -104,6 +104,7 @@ export const en = {
     open: "OPEN",
     closed: "CLOSED",
     save: "Save Race",
+    saveSprint: "Save Sprint",
     saveFormation: "Save Lineup",
     editFormation: "Edit Lineup",
     resetFormation: "Reset Lineup",
