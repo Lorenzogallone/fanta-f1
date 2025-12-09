@@ -126,12 +126,12 @@ function RaceHistoryCard({
         setSubs(list);
       } catch (e) {
         error(e);
-        setErrorSub("Unable to load lineups.");
+        setErrorSub(t("history.unableToLoadLineups"));
       } finally {
         setLoadingSub(false);
       }
     })();
-  }, [race.id, rankingMap]);
+  }, [race.id, rankingMap, t]);
 
   const hasJolly2 = subs.some((s) => s.mainJolly2);
   const official = race.officialResults ?? null;
@@ -170,15 +170,15 @@ function RaceHistoryCard({
         >
           <h5 className="mb-0" style={{ color: cancelledMain ? "#6c757d" : accentColor }}>
             {race.round}. {race.name} —{" "}
-            {new Date(race.raceUTC.seconds * 1000).toLocaleDateString("it-IT")}
+            {new Date(race.raceUTC.seconds * 1000).toLocaleDateString()}
             {cancelledMain && (
               <Badge bg="danger" className="ms-2">
-                ⛔ CANCELLATA
+                ⛔ {t("history.cancelled")}
               </Badge>
             )}
             {cancelledSprint && hasSprint && (
               <Badge bg="warning" text="dark" className="ms-2">
-                SPRINT CANCELLATA
+                {t("history.sprintCancelledBadge")}
               </Badge>
             )}
             {doublePts && <DoubleBadge />}
@@ -190,14 +190,14 @@ function RaceHistoryCard({
         {/* Alert for cancelled races */}
         {cancelledMain && (
           <Alert variant="danger" className="mb-3">
-            <strong>⛔ Race Cancelled</strong><br />
-            This race has been cancelled and is not counted in the scores.
+            <strong>⛔ {t("history.raceCancelled")}</strong><br />
+            {t("history.raceCancelledDescription")}
           </Alert>
         )}
         {cancelledSprint && hasSprint && !cancelledMain && (
           <Alert variant="warning" className="mb-3">
-            <strong>⛔ Sprint Cancelled</strong><br />
-            This sprint race has been cancelled and is not counted in the scores.
+            <strong>⛔ {t("history.sprintCancelled")}</strong><br />
+            {t("history.sprintCancelledDescription")}
           </Alert>
         )}
 
@@ -274,7 +274,7 @@ function RaceHistoryCard({
           </>
         ) : showOfficialResults && !official ? (
           <Alert variant="warning">
-            Official results not yet available.
+            {t("history.officialResultsNotAvailable")}
           </Alert>
         ) : null}
 
@@ -286,11 +286,11 @@ function RaceHistoryCard({
         ) : errorSub ? (
           <Alert variant="danger">{errorSub}</Alert>
         ) : subs.length === 0 ? (
-          <Alert variant="info">No lineups submitted yet.</Alert>
+          <Alert variant="info">{t("history.noLineupsYet")}</Alert>
         ) : (
           <>
             <h6 className="fw-bold mb-3" style={{ color: accentColor }}>
-              {showPoints && official ? "Lineups and Scores" : "Lineups"}
+              {showPoints && official ? t("history.lineupsAndScores") : t("history.lineups")}
             </h6>
 
             {/* Mobile layout - cards */}
@@ -387,7 +387,7 @@ function RaceHistoryCard({
                             bg={totalMain > 0 ? "success" : totalMain < 0 ? "danger" : "secondary"}
                             style={{ fontSize: "1rem" }}
                           >
-                            {totalMain} pts
+                            {totalMain} {t("common.points").toLowerCase()}
                           </Badge>
                         )}
                       </div>
@@ -429,10 +429,10 @@ function RaceHistoryCard({
             {/* Desktop layout - table */}
             <div className="d-none d-lg-block table-responsive">
               <Table striped bordered hover size="sm" className="align-middle">
-                <thead className="table-light">
+                <thead>
                   <tr>
                     <th style={{ width: 40, color: accentColor }} className="text-center">#</th>
-                    <th style={{ width: 120, color: accentColor }} className="text-center">User</th>
+                    <th style={{ width: 120, color: accentColor }} className="text-center">{t("history.user")}</th>
                     <th style={{ width: 150, color: accentColor }} className="text-center">P1</th>
                     <th style={{ width: 150, color: accentColor }} className="text-center">P2</th>
                     <th style={{ width: 150, color: accentColor }} className="text-center">P3</th>
@@ -456,8 +456,8 @@ function RaceHistoryCard({
                     )}
                     {showPoints && official && (
                       <>
-                        <th style={{ width: 80, color: accentColor }} className="text-center">Tot Main</th>
-                        {hasSprint && <th style={{ width: 80, color: accentColor }} className="text-center">Tot Sprint</th>}
+                        <th style={{ width: 80, color: accentColor }} className="text-center">{t("history.totalMain")}</th>
+                        {hasSprint && <th style={{ width: 80, color: accentColor }} className="text-center">{t("history.totalSprint")}</th>}
                       </>
                     )}
                   </tr>

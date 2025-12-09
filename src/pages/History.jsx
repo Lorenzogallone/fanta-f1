@@ -332,7 +332,7 @@ export default function History() {
                       <thead>
                         <tr>
                           <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
-                          <th style={{ color: accentColor }}>Team</th>
+                          <th style={{ color: accentColor }}>{t("history.team")}</th>
                           <th className="text-end" style={{ color: accentColor }}>{t("common.points")}</th>
                         </tr>
                       </thead>
@@ -366,19 +366,19 @@ export default function History() {
 
                     {/* Desktop View */}
                     <div className="d-none d-lg-block table-responsive">
-                      <Table hover className="align-middle" size="sm">
+                      <Table striped bordered hover size="sm" className="align-middle">
                         <thead>
                           <tr>
                             <th style={{ color: accentColor }}>{t("history.player")}</th>
                             <th style={{ color: accentColor }}>P1</th>
                             <th style={{ color: accentColor }}>P2</th>
                             <th style={{ color: accentColor }}>P3</th>
-                            <th className="text-center" style={{ color: accentColor }}>Tot Piloti</th>
+                            <th className="text-center" style={{ color: accentColor }}>{t("history.totalDrivers")}</th>
                             <th style={{ color: accentColor }}>C1</th>
                             <th style={{ color: accentColor }}>C2</th>
                             <th style={{ color: accentColor }}>C3</th>
-                            <th className="text-center" style={{ color: accentColor }}>Tot Costruttori</th>
-                            <th className="text-center" style={{ color: accentColor }}>Totale</th>
+                            <th className="text-center" style={{ color: accentColor }}>{t("history.totalConstructors")}</th>
+                            <th className="text-center" style={{ color: accentColor }}>{t("history.total")}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -538,16 +538,17 @@ export default function History() {
         {pastRaces.length > 0 && (
           <Col xs={12}>
             <Card
-              className="shadow"
+              className="shadow border-0"
               style={{
-                borderColor: accentColor,
                 backgroundColor: bgCard,
+                borderLeft: `4px solid ${accentColor}`,
               }}
             >
               <Card.Header
+                className="border-bottom"
                 style={{
                   backgroundColor: bgHeader,
-                  borderBottom: `2px solid ${accentColor}`,
+                  borderBottomColor: accentColor,
                 }}
               >
                 <h4 className="mb-0" style={{ color: accentColor }}>
