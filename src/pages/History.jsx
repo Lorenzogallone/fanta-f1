@@ -412,7 +412,15 @@ export default function History() {
                                   </div>
                                 </td>
                                 <td className="text-center">
-                                  <Badge bg={pts.pilotiPts > 0 ? "success" : "secondary"} pill>
+                                  <Badge
+                                    bg={pts.pilotiPts > 0 ? "success" : undefined}
+                                    text={pts.pilotiPts === 0 ? "muted" : undefined}
+                                    pill
+                                    style={pts.pilotiPts === 0 ? {
+                                      backgroundColor: 'transparent',
+                                      border: '1px solid #6c757d'
+                                    } : undefined}
+                                  >
                                     {pts.pilotiPts}
                                   </Badge>
                                 </td>
@@ -441,12 +449,20 @@ export default function History() {
                                   </div>
                                 </td>
                                 <td className="text-center">
-                                  <Badge bg={pts.costruttoriPts > 0 ? "success" : "secondary"} pill>
+                                  <Badge
+                                    bg={pts.costruttoriPts > 0 ? "success" : undefined}
+                                    text={pts.costruttoriPts === 0 ? "muted" : undefined}
+                                    pill
+                                    style={pts.costruttoriPts === 0 ? {
+                                      backgroundColor: 'transparent',
+                                      border: '1px solid #6c757d'
+                                    } : undefined}
+                                  >
                                     {pts.costruttoriPts}
                                   </Badge>
                                 </td>
                                 <td className="text-center">
-                                  <Badge bg="danger" pill style={{ fontSize: "1rem" }}>
+                                  <Badge bg="primary" pill style={{ fontSize: "1rem" }}>
                                     {pts.total}
                                   </Badge>
                                 </td>
@@ -472,7 +488,7 @@ export default function History() {
                                 <h6 className="mb-0 fw-bold" style={{ color: accentColor }}>
                                   {sub.name}
                                 </h6>
-                                <Badge bg="danger" style={{ fontSize: "1rem" }}>
+                                <Badge bg="primary" style={{ fontSize: "1rem" }}>
                                   {pts.total} {t("common.points").toLowerCase()}
                                 </Badge>
                               </div>
@@ -481,7 +497,15 @@ export default function History() {
                               <div className="mb-3">
                                 <strong className="text-muted" style={{ fontSize: "0.85rem" }}>
                                   {t("history.drivers").toUpperCase()}
-                                  <Badge bg={pts.pilotiPts > 0 ? "success" : "secondary"} className="ms-2">
+                                  <Badge
+                                    bg={pts.pilotiPts > 0 ? "success" : undefined}
+                                    className="ms-2"
+                                    style={pts.pilotiPts === 0 ? {
+                                      backgroundColor: 'transparent',
+                                      border: '1px solid #6c757d',
+                                      color: 'inherit'
+                                    } : undefined}
+                                  >
                                     {pts.pilotiPts} {t("common.points").toLowerCase()}
                                   </Badge>
                                 </strong>
@@ -504,7 +528,15 @@ export default function History() {
                               <div>
                                 <strong className="text-muted" style={{ fontSize: "0.85rem" }}>
                                   {t("history.constructors").toUpperCase()}
-                                  <Badge bg={pts.costruttoriPts > 0 ? "success" : "secondary"} className="ms-2">
+                                  <Badge
+                                    bg={pts.costruttoriPts > 0 ? "success" : undefined}
+                                    className="ms-2"
+                                    style={pts.costruttoriPts === 0 ? {
+                                      backgroundColor: 'transparent',
+                                      border: '1px solid #6c757d',
+                                      color: 'inherit'
+                                    } : undefined}
+                                  >
                                     {pts.costruttoriPts} {t("common.points").toLowerCase()}
                                   </Badge>
                                 </strong>
