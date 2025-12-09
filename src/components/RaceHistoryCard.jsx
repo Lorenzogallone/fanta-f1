@@ -83,6 +83,7 @@ function RaceHistoryCard({
   showOfficialResults = true,
   showPoints = true,
   compact = false,
+  isLastRace = false,
 }) {
   const { isDark } = useTheme();
   const { t } = useLanguage();
@@ -137,6 +138,7 @@ function RaceHistoryCard({
   const official = race.officialResults ?? null;
   const hasSprint = Boolean(race.qualiSprintUTC) || Boolean(official?.SP1) || subs.some(s => s.sprintP1 || s.sprintP2 || s.sprintP3 || s.sprintJolly);
   const doublePts = Boolean(official?.doublePoints);
+  const multiplier = isLastRace ? 2 : 1; 
   const BONUS_MAIN = POINTS.BONUS_JOLLY_MAIN;
   const cancelledMain = race.cancelledMain || false;
   const cancelledSprint = race.cancelledSprint || false;
@@ -221,17 +223,17 @@ function RaceHistoryCard({
                 <tr>
                   <td><strong>1°</strong></td>
                   <td><DriverWithLogo name={official.P1} /></td>
-                  <td className="text-end text-success">{POINTS.MAIN[1]}</td>
+                  <td className="text-end text-success">{POINTS.MAIN[1] * multiplier}</td>
                 </tr>
                 <tr>
                   <td>2°</td>
                   <td><DriverWithLogo name={official.P2} /></td>
-                  <td className="text-end text-success">{POINTS.MAIN[2]}</td>
+                  <td className="text-end text-success">{POINTS.MAIN[2] * multiplier}</td>
                 </tr>
                 <tr>
                   <td>3°</td>
                   <td><DriverWithLogo name={official.P3} /></td>
-                  <td className="text-end text-success">{POINTS.MAIN[3]}</td>
+                  <td className="text-end text-success">{POINTS.MAIN[3] * multiplier}</td>
                 </tr>
               </tbody>
             </Table>
@@ -255,17 +257,17 @@ function RaceHistoryCard({
                     <tr>
                       <td><strong>SP1°</strong></td>
                       <td><DriverWithLogo name={official.SP1} /></td>
-                      <td className="text-end text-success">{POINTS.SPRINT[1]}</td>
+                      <td className="text-end text-success">{POINTS.SPRINT[1] * multiplier}</td>
                     </tr>
                     <tr>
                       <td>SP2°</td>
                       <td><DriverWithLogo name={official.SP2} /></td>
-                      <td className="text-end text-success">{POINTS.SPRINT[2]}</td>
+                      <td className="text-end text-success">{POINTS.SPRINT[2] * multiplier}</td>
                     </tr>
                     <tr>
                       <td>SP3°</td>
                       <td><DriverWithLogo name={official.SP3} /></td>
-                      <td className="text-end text-success">{POINTS.SPRINT[3]}</td>
+                      <td className="text-end text-success">{POINTS.SPRINT[3] * multiplier}</td>
                     </tr>
                   </tbody>
                 </Table>
@@ -297,22 +299,21 @@ function RaceHistoryCard({
             <div className="d-lg-none">
               {subs.map((s, idx) => {
                 /* Points calculation */
-                const p1Pts = showPoints && official && s.mainP1 === official.P1 ? POINTS.MAIN[1] : 0;
-                const p2Pts = showPoints && official && s.mainP2 === official.P2 ? POINTS.MAIN[2] : 0;
-                const p3Pts = showPoints && official && s.mainP3 === official.P3 ? POINTS.MAIN[3] : 0;
+                const p1Pts = showPoints && official && s.mainP1 === official.P1 ? POINTS.MAIN[1] * multiplier : 0;
+                const p2Pts = showPoints && official && s.mainP2 === official.P2 ? POINTS.MAIN[2] * multiplier : 0;
+                const p3Pts = showPoints && official && s.mainP3 === official.P3 ? POINTS.MAIN[3] * multiplier : 0;
 
                 const j1Pts =
                   showPoints && official && s.mainJolly &&
                   [official.P1, official.P2, official.P3].includes(s.mainJolly)
-                    ? BONUS_MAIN
+                    ? BONUS_MAIN * multiplier
                     : 0;
 
                 const j2Pts =
                   showPoints && official && s.mainJolly2 &&
                   [official.P1, official.P2, official.P3].includes(s.mainJolly2)
-                    ? BONUS_MAIN
+                    ? BONUS_MAIN * multiplier
                     : 0;
-
                 const totalMain =
                   showPoints && official
                     ? s.pointsEarned !== undefined
@@ -329,13 +330,13 @@ function RaceHistoryCard({
 
                 if (hasSprint) {
                   if (showPoints && official) {
-                    sp1Pts = s.sprintP1 === official.SP1 ? POINTS.SPRINT[1] : 0;
-                    sp2Pts = s.sprintP2 === official.SP2 ? POINTS.SPRINT[2] : 0;
-                    sp3Pts = s.sprintP3 === official.SP3 ? POINTS.SPRINT[3] : 0;
+                    sp1Pts = s.sprintP1 === official.SP1 ? POINTS.SPRINT[1] * multiplier : 0;
+                    sp2Pts = s.sprintP2 === official.SP2 ? POINTS.SPRINT[2] * multiplier : 0;
+                    sp3Pts = s.sprintP3 === official.SP3 ? POINTS.SPRINT[3] * multiplier : 0;
                     jspPts =
                       s.sprintJolly &&
                       [official.SP1, official.SP2, official.SP3].includes(s.sprintJolly)
-                        ? POINTS.BONUS_JOLLY_SPRINT
+                        ? POINTS.BONUS_JOLLY_SPRINT * multiplier
                         : 0;
                     totalSprint =
                       s.pointsEarnedSprint !== undefined
@@ -466,21 +467,20 @@ function RaceHistoryCard({
                 <tbody>
                   {subs.map((s, idx) => {
                     /* Points calculation */
-                    const p1Pts = showPoints && official && s.mainP1 === official.P1 ? POINTS.MAIN[1] : 0;
-                    const p2Pts = showPoints && official && s.mainP2 === official.P2 ? POINTS.MAIN[2] : 0;
-                    const p3Pts = showPoints && official && s.mainP3 === official.P3 ? POINTS.MAIN[3] : 0;
+                    const p1Pts = showPoints && official && s.mainP1 === official.P1 ? POINTS.MAIN[1] * multiplier : 0;
+                    const p2Pts = showPoints && official && s.mainP2 === official.P2 ? POINTS.MAIN[2] * multiplier : 0;
+                    const p3Pts = showPoints && official && s.mainP3 === official.P3 ? POINTS.MAIN[3] * multiplier : 0;
 
-                    const j1Pts =
-                      showPoints && official && s.mainJolly &&
+                    const j1Pts = showPoints && official && s.mainJolly &&
                       [official.P1, official.P2, official.P3].includes(s.mainJolly)
-                        ? BONUS_MAIN
+                        ? BONUS_MAIN * multiplier
                         : 0;
 
-                    const j2Pts =
-                      showPoints && official && s.mainJolly2 &&
+                    const j2Pts = showPoints && official && s.mainJolly2 &&
                       [official.P1, official.P2, official.P3].includes(s.mainJolly2)
-                        ? BONUS_MAIN
+                        ? BONUS_MAIN * multiplier
                         : 0;
+
 
                     const totalMain =
                       showPoints && official
@@ -498,13 +498,13 @@ function RaceHistoryCard({
 
                     if (hasSprint) {
                       if (showPoints && official) {
-                        sp1Pts = s.sprintP1 === official.SP1 ? POINTS.SPRINT[1] : 0;
-                        sp2Pts = s.sprintP2 === official.SP2 ? POINTS.SPRINT[2] : 0;
-                        sp3Pts = s.sprintP3 === official.SP3 ? POINTS.SPRINT[3] : 0;
+                        sp1Pts = s.sprintP1 === official.SP1 ? POINTS.SPRINT[1] * multiplier : 0;
+                        sp2Pts = s.sprintP2 === official.SP2 ? POINTS.SPRINT[2] * multiplier : 0;
+                        sp3Pts = s.sprintP3 === official.SP3 ? POINTS.SPRINT[3] * multiplier : 0;
                         jspPts =
                           s.sprintJolly &&
                           [official.SP1, official.SP2, official.SP3].includes(s.sprintJolly)
-                            ? POINTS.BONUS_JOLLY_SPRINT
+                            ? POINTS.BONUS_JOLLY_SPRINT * multiplier
                             : 0;
                         totalSprint =
                           s.pointsEarnedSprint !== undefined
@@ -617,6 +617,7 @@ RaceHistoryCard.propTypes = {
   showOfficialResults: PropTypes.bool,
   showPoints: PropTypes.bool,
   compact: PropTypes.bool,
+  isLastRace: PropTypes.bool, 
 };
 
 export default React.memo(RaceHistoryCard);

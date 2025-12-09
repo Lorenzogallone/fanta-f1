@@ -227,6 +227,9 @@ export default function History() {
   // Get selected race
   const selectedRace = pastRaces.find((r) => r.id === selectedRaceId);
 
+  const isLastRaceSelected =
+    pastRaces.length > 0 && selectedRaceId === pastRaces[0].id;
+
   /**
    * Handle race selection change with loading state
    * Provides immediate visual feedback when changing races
@@ -394,7 +397,8 @@ export default function History() {
 
                   {/* Selected Race Details - shown when not loading */}
                   {selectedRace && !isLoadingRaceData && (
-                    <RaceHistoryCard race={selectedRace} key={selectedRaceId} />
+                    <RaceHistoryCard race={selectedRace} key={selectedRaceId} isLastRace={isLastRaceSelected}
+ />
                   )}
 
                   {/* Placeholder when no race selected */}
