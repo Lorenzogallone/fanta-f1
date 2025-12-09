@@ -84,6 +84,7 @@ export default function FormationApp() {
   const [currentLateMode, setCurrentLateMode] = useState(null);
 
   const [userJolly, setUserJolly] = useState(0);
+  const [existingJolly2, setExistingJolly2] = useState(false); // Track if existing submission had jolly2
   const [form, setForm] = useState({
     userId: "",
     raceId: "",
@@ -246,6 +247,7 @@ export default function FormationApp() {
     const { userId, raceId } = form;
     if (!userId || !raceId) {
       setIsEditMode(false);
+      setExistingJolly2(false);
       return;
     }
 
@@ -253,10 +255,16 @@ export default function FormationApp() {
       const snap = await getDoc(doc(db, "races", raceId, "submissions", userId));
       if (!snap.exists()) {
         setIsEditMode(false);
+        setExistingJolly2(false);
         return;
       }
       const d = snap.data();
       const opt = (v) => driverOpts.find((o) => o.value === v) ?? null;
+
+      // Track if existing submission had jolly2
+      const hadJolly2 = Boolean(d.mainJolly2);
+      setExistingJolly2(hadJolly2);
+
       setForm((f) => ({
         ...f,
         P1: opt(d.mainP1),
@@ -410,10 +418,24 @@ export default function FormationApp() {
         setUserUsedLateSubmission(true);
       }
 
-      // Gestione jolly2
-      if (mode === "main" && form.jolly2) {
-        await updateDoc(doc(db, "ranking", form.userId), { jolly: increment(-1) });
-        setUserJolly((p) => p - 1);
+      // Gestione jolly2 - logic for adding/removing double joker
+      if (mode === "main") {
+        const hasJolly2Now = Boolean(form.jolly2);
+        const hadJolly2Before = existingJolly2;
+
+        if (hasJolly2Now && !hadJolly2Before) {
+          // Adding jolly2 for the first time → decrement
+          await updateDoc(doc(db, "ranking", form.userId), { jolly: increment(-1) });
+          setUserJolly((p) => p - 1);
+          setExistingJolly2(true);
+        } else if (!hasJolly2Now && hadJolly2Before) {
+          // Removing jolly2 → refund the joker
+          await updateDoc(doc(db, "ranking", form.userId), { jolly: increment(1) });
+          setUserJolly((p) => p + 1);
+          setExistingJolly2(false);
+        }
+        // If hasJolly2Now && hadJolly2Before → no change needed
+        // If !hasJolly2Now && !hadJolly2Before → no change needed
       }
 
       setFlash({
@@ -508,13 +530,24 @@ export default function FormationApp() {
                   <Form.Label>{t("formations.selectRace")} *</Form.Label>
                   <Form.Select name="raceId" value={form.raceId} onChange={onChangeSimple} required aria-label="Select race to submit formation for">
                     <option value="">{t("formations.selectRace")}</option>
-                    {races.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.round}. {r.name}
-                      </option>
-                    ))}
+                    {races.map((r) => {
+                      const isLastRace = races.length > 0 && r.round === Math.max(...races.map(x => x.round));
+                      return (
+                        <option key={r.id} value={r.id}>
+                          {r.round}. {r.name}{isLastRace ? " (2x)" : ""}
+                        </option>
+                      );
+                    })}
                   </Form.Select>
                 </Form.Group>
+
+                {/* Double points indicator for last race */}
+                {race && races.length > 0 && race.round === Math.max(...races.map(r => r.round)) && (
+                  <Alert variant="info" className="py-2 d-flex align-items-center gap-2">
+                    <Badge bg="warning" text="dark" style={{ fontSize: "0.85rem" }}>2x</Badge>
+                    <span>{t("formations.doublePointsRace")}</span>
+                  </Alert>
+                )}
 
                 {/* MAIN */}
                 {race && (
@@ -550,9 +583,9 @@ export default function FormationApp() {
                       touched={touched}
                       driverOpts={driverOpts}
                     />
-                    {userJolly > 0 && (
+                    {(userJolly > 0 || existingJolly2) && (
                       <DriverSelect
-                        label="Jolly 2 (opzionale)"
+                        label={`Jolly 2 (${t("formations.optional")})`}
                         field="jolly2"
                         clearable
                         disabled={!mainOpen}
@@ -560,7 +593,7 @@ export default function FormationApp() {
                         onSelectChange={onSelectChange}
                         touched={touched}
                         driverOpts={driverOpts}
-                        helpText="Usa un jolly extra per raddoppiare le possibilità"
+                        helpText={existingJolly2 && !form.jolly2 ? t("formations.jolly2RefundHint") : t("formations.jolly2Hint")}
                       />
                     )}
                   </>

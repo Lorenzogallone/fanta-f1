@@ -83,6 +83,7 @@ function RaceHistoryCard({
   showOfficialResults = true,
   showPoints = true,
   compact = false,
+  isLastRace = false,
 }) {
   const { isDark } = useTheme();
   const { t } = useLanguage();
@@ -126,17 +127,18 @@ function RaceHistoryCard({
         setSubs(list);
       } catch (e) {
         error(e);
-        setErrorSub("Unable to load lineups.");
+        setErrorSub(t("history.unableToLoadLineups"));
       } finally {
         setLoadingSub(false);
       }
     })();
-  }, [race.id, rankingMap]);
+  }, [race.id, rankingMap, t]);
 
   const hasJolly2 = subs.some((s) => s.mainJolly2);
   const official = race.officialResults ?? null;
   const hasSprint = Boolean(race.qualiSprintUTC) || Boolean(official?.SP1) || subs.some(s => s.sprintP1 || s.sprintP2 || s.sprintP3 || s.sprintJolly);
   const doublePts = Boolean(official?.doublePoints);
+  const multiplier = isLastRace ? 2 : 1; 
   const BONUS_MAIN = POINTS.BONUS_JOLLY_MAIN;
   const cancelledMain = race.cancelledMain || false;
   const cancelledSprint = race.cancelledSprint || false;
@@ -170,15 +172,15 @@ function RaceHistoryCard({
         >
           <h5 className="mb-0" style={{ color: cancelledMain ? "#6c757d" : accentColor }}>
             {race.round}. {race.name} —{" "}
-            {new Date(race.raceUTC.seconds * 1000).toLocaleDateString("it-IT")}
+            {new Date(race.raceUTC.seconds * 1000).toLocaleDateString()}
             {cancelledMain && (
               <Badge bg="danger" className="ms-2">
-                ⛔ CANCELLATA
+                ⛔ {t("history.cancelled")}
               </Badge>
             )}
             {cancelledSprint && hasSprint && (
               <Badge bg="warning" text="dark" className="ms-2">
-                SPRINT CANCELLATA
+                {t("history.sprintCancelledBadge")}
               </Badge>
             )}
             {doublePts && <DoubleBadge />}
@@ -190,14 +192,14 @@ function RaceHistoryCard({
         {/* Alert for cancelled races */}
         {cancelledMain && (
           <Alert variant="danger" className="mb-3">
-            <strong>⛔ Race Cancelled</strong><br />
-            This race has been cancelled and is not counted in the scores.
+            <strong>⛔ {t("history.raceCancelled")}</strong><br />
+            {t("history.raceCancelledDescription")}
           </Alert>
         )}
         {cancelledSprint && hasSprint && !cancelledMain && (
           <Alert variant="warning" className="mb-3">
-            <strong>⛔ Sprint Cancelled</strong><br />
-            This sprint race has been cancelled and is not counted in the scores.
+            <strong>⛔ {t("history.sprintCancelled")}</strong><br />
+            {t("history.sprintCancelledDescription")}
           </Alert>
         )}
 
@@ -205,7 +207,7 @@ function RaceHistoryCard({
         {showOfficialResults && official && !cancelledMain ? (
           <>
             <h6 className="fw-bold border-bottom pb-1" style={{ color: accentColor }}>
-              {t("formations.mainRace")}
+              {t("calculate.mainRace")}
             </h6>
             <Table size="sm" className="mb-3">
               <thead>
@@ -221,17 +223,17 @@ function RaceHistoryCard({
                 <tr>
                   <td><strong>1°</strong></td>
                   <td><DriverWithLogo name={official.P1} /></td>
-                  <td className="text-end text-success">{POINTS.MAIN[1]}</td>
+                  <td className="text-end text-success">{POINTS.MAIN[1] * multiplier}</td>
                 </tr>
                 <tr>
                   <td>2°</td>
                   <td><DriverWithLogo name={official.P2} /></td>
-                  <td className="text-end text-success">{POINTS.MAIN[2]}</td>
+                  <td className="text-end text-success">{POINTS.MAIN[2] * multiplier}</td>
                 </tr>
                 <tr>
                   <td>3°</td>
                   <td><DriverWithLogo name={official.P3} /></td>
-                  <td className="text-end text-success">{POINTS.MAIN[3]}</td>
+                  <td className="text-end text-success">{POINTS.MAIN[3] * multiplier}</td>
                 </tr>
               </tbody>
             </Table>
@@ -255,17 +257,17 @@ function RaceHistoryCard({
                     <tr>
                       <td><strong>SP1°</strong></td>
                       <td><DriverWithLogo name={official.SP1} /></td>
-                      <td className="text-end text-success">{POINTS.SPRINT[1]}</td>
+                      <td className="text-end text-success">{POINTS.SPRINT[1] * multiplier}</td>
                     </tr>
                     <tr>
                       <td>SP2°</td>
                       <td><DriverWithLogo name={official.SP2} /></td>
-                      <td className="text-end text-success">{POINTS.SPRINT[2]}</td>
+                      <td className="text-end text-success">{POINTS.SPRINT[2] * multiplier}</td>
                     </tr>
                     <tr>
                       <td>SP3°</td>
                       <td><DriverWithLogo name={official.SP3} /></td>
-                      <td className="text-end text-success">{POINTS.SPRINT[3]}</td>
+                      <td className="text-end text-success">{POINTS.SPRINT[3] * multiplier}</td>
                     </tr>
                   </tbody>
                 </Table>
@@ -274,7 +276,7 @@ function RaceHistoryCard({
           </>
         ) : showOfficialResults && !official ? (
           <Alert variant="warning">
-            Official results not yet available.
+            {t("history.officialResultsNotAvailable")}
           </Alert>
         ) : null}
 
@@ -286,33 +288,32 @@ function RaceHistoryCard({
         ) : errorSub ? (
           <Alert variant="danger">{errorSub}</Alert>
         ) : subs.length === 0 ? (
-          <Alert variant="info">No lineups submitted yet.</Alert>
+          <Alert variant="info">{t("history.noLineupsYet")}</Alert>
         ) : (
           <>
             <h6 className="fw-bold mb-3" style={{ color: accentColor }}>
-              {showPoints && official ? "Lineups and Scores" : "Lineups"}
+              {showPoints && official ? t("history.lineupsAndScores") : t("history.lineups")}
             </h6>
 
             {/* Mobile layout - cards */}
             <div className="d-lg-none">
               {subs.map((s, idx) => {
                 /* Points calculation */
-                const p1Pts = showPoints && official && s.mainP1 === official.P1 ? POINTS.MAIN[1] : 0;
-                const p2Pts = showPoints && official && s.mainP2 === official.P2 ? POINTS.MAIN[2] : 0;
-                const p3Pts = showPoints && official && s.mainP3 === official.P3 ? POINTS.MAIN[3] : 0;
+                const p1Pts = showPoints && official && s.mainP1 === official.P1 ? POINTS.MAIN[1] * multiplier : 0;
+                const p2Pts = showPoints && official && s.mainP2 === official.P2 ? POINTS.MAIN[2] * multiplier : 0;
+                const p3Pts = showPoints && official && s.mainP3 === official.P3 ? POINTS.MAIN[3] * multiplier : 0;
 
                 const j1Pts =
                   showPoints && official && s.mainJolly &&
                   [official.P1, official.P2, official.P3].includes(s.mainJolly)
-                    ? BONUS_MAIN
+                    ? BONUS_MAIN * multiplier
                     : 0;
 
                 const j2Pts =
                   showPoints && official && s.mainJolly2 &&
                   [official.P1, official.P2, official.P3].includes(s.mainJolly2)
-                    ? BONUS_MAIN
+                    ? BONUS_MAIN * multiplier
                     : 0;
-
                 const totalMain =
                   showPoints && official
                     ? s.pointsEarned !== undefined
@@ -329,13 +330,13 @@ function RaceHistoryCard({
 
                 if (hasSprint) {
                   if (showPoints && official) {
-                    sp1Pts = s.sprintP1 === official.SP1 ? POINTS.SPRINT[1] : 0;
-                    sp2Pts = s.sprintP2 === official.SP2 ? POINTS.SPRINT[2] : 0;
-                    sp3Pts = s.sprintP3 === official.SP3 ? POINTS.SPRINT[3] : 0;
+                    sp1Pts = s.sprintP1 === official.SP1 ? POINTS.SPRINT[1] * multiplier : 0;
+                    sp2Pts = s.sprintP2 === official.SP2 ? POINTS.SPRINT[2] * multiplier : 0;
+                    sp3Pts = s.sprintP3 === official.SP3 ? POINTS.SPRINT[3] * multiplier : 0;
                     jspPts =
                       s.sprintJolly &&
                       [official.SP1, official.SP2, official.SP3].includes(s.sprintJolly)
-                        ? POINTS.BONUS_JOLLY_SPRINT
+                        ? POINTS.BONUS_JOLLY_SPRINT * multiplier
                         : 0;
                     totalSprint =
                       s.pointsEarnedSprint !== undefined
@@ -387,7 +388,7 @@ function RaceHistoryCard({
                             bg={totalMain > 0 ? "success" : totalMain < 0 ? "danger" : "secondary"}
                             style={{ fontSize: "1rem" }}
                           >
-                            {totalMain} pts
+                            {totalMain} {t("common.points").toLowerCase()}
                           </Badge>
                         )}
                       </div>
@@ -429,10 +430,10 @@ function RaceHistoryCard({
             {/* Desktop layout - table */}
             <div className="d-none d-lg-block table-responsive">
               <Table striped bordered hover size="sm" className="align-middle">
-                <thead className="table-light">
+                <thead>
                   <tr>
                     <th style={{ width: 40, color: accentColor }} className="text-center">#</th>
-                    <th style={{ width: 120, color: accentColor }} className="text-center">User</th>
+                    <th style={{ width: 120, color: accentColor }} className="text-center">{t("history.user")}</th>
                     <th style={{ width: 150, color: accentColor }} className="text-center">P1</th>
                     <th style={{ width: 150, color: accentColor }} className="text-center">P2</th>
                     <th style={{ width: 150, color: accentColor }} className="text-center">P3</th>
@@ -456,8 +457,8 @@ function RaceHistoryCard({
                     )}
                     {showPoints && official && (
                       <>
-                        <th style={{ width: 80, color: accentColor }} className="text-center">Tot Main</th>
-                        {hasSprint && <th style={{ width: 80, color: accentColor }} className="text-center">Tot Sprint</th>}
+                        <th style={{ width: 80, color: accentColor }} className="text-center">{t("history.totalMain")}</th>
+                        {hasSprint && <th style={{ width: 80, color: accentColor }} className="text-center">{t("history.totalSprint")}</th>}
                       </>
                     )}
                   </tr>
@@ -466,21 +467,20 @@ function RaceHistoryCard({
                 <tbody>
                   {subs.map((s, idx) => {
                     /* Points calculation */
-                    const p1Pts = showPoints && official && s.mainP1 === official.P1 ? POINTS.MAIN[1] : 0;
-                    const p2Pts = showPoints && official && s.mainP2 === official.P2 ? POINTS.MAIN[2] : 0;
-                    const p3Pts = showPoints && official && s.mainP3 === official.P3 ? POINTS.MAIN[3] : 0;
+                    const p1Pts = showPoints && official && s.mainP1 === official.P1 ? POINTS.MAIN[1] * multiplier : 0;
+                    const p2Pts = showPoints && official && s.mainP2 === official.P2 ? POINTS.MAIN[2] * multiplier : 0;
+                    const p3Pts = showPoints && official && s.mainP3 === official.P3 ? POINTS.MAIN[3] * multiplier : 0;
 
-                    const j1Pts =
-                      showPoints && official && s.mainJolly &&
+                    const j1Pts = showPoints && official && s.mainJolly &&
                       [official.P1, official.P2, official.P3].includes(s.mainJolly)
-                        ? BONUS_MAIN
+                        ? BONUS_MAIN * multiplier
                         : 0;
 
-                    const j2Pts =
-                      showPoints && official && s.mainJolly2 &&
+                    const j2Pts = showPoints && official && s.mainJolly2 &&
                       [official.P1, official.P2, official.P3].includes(s.mainJolly2)
-                        ? BONUS_MAIN
+                        ? BONUS_MAIN * multiplier
                         : 0;
+
 
                     const totalMain =
                       showPoints && official
@@ -498,13 +498,13 @@ function RaceHistoryCard({
 
                     if (hasSprint) {
                       if (showPoints && official) {
-                        sp1Pts = s.sprintP1 === official.SP1 ? POINTS.SPRINT[1] : 0;
-                        sp2Pts = s.sprintP2 === official.SP2 ? POINTS.SPRINT[2] : 0;
-                        sp3Pts = s.sprintP3 === official.SP3 ? POINTS.SPRINT[3] : 0;
+                        sp1Pts = s.sprintP1 === official.SP1 ? POINTS.SPRINT[1] * multiplier : 0;
+                        sp2Pts = s.sprintP2 === official.SP2 ? POINTS.SPRINT[2] * multiplier : 0;
+                        sp3Pts = s.sprintP3 === official.SP3 ? POINTS.SPRINT[3] * multiplier : 0;
                         jspPts =
                           s.sprintJolly &&
                           [official.SP1, official.SP2, official.SP3].includes(s.sprintJolly)
-                            ? POINTS.BONUS_JOLLY_SPRINT
+                            ? POINTS.BONUS_JOLLY_SPRINT * multiplier
                             : 0;
                         totalSprint =
                           s.pointsEarnedSprint !== undefined
@@ -617,6 +617,7 @@ RaceHistoryCard.propTypes = {
   showOfficialResults: PropTypes.bool,
   showPoints: PropTypes.bool,
   compact: PropTypes.bool,
+  isLastRace: PropTypes.bool, 
 };
 
 export default React.memo(RaceHistoryCard);

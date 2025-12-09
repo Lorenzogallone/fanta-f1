@@ -104,7 +104,7 @@ export default function Leaderboard() {
                   <th className="text-center">{t("common.points")}</th>
                   <th className="text-center">{t("leaderboard.gap")}</th>
                   <th className="text-center">{t("leaderboard.jokers")}</th>
-                  {previousSnapshot && (
+                  {previousSnapshot && previousSnapshot.length > 0 && (
                     <th style={{ width: 80 }} className="text-center">
                       {t("leaderboard.trend")}
                     </th>
@@ -175,7 +175,7 @@ export default function Leaderboard() {
                           {r.jolly}
                         </Badge>
                       </td>
-                      {previousSnapshot && (
+                      {previousSnapshot && previousSnapshot.length > 0 && (
                         <td className="text-center">
                           <TrendBadge />
                         </td>
