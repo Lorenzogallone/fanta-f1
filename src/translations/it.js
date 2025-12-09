@@ -136,6 +136,8 @@ export const it = {
     lineupsAndScores: "Formazioni e Punteggi",
     lineups: "Formazioni",
     championshipResults: "Risultati Campionato",
+    championshipTab: "Campionato",
+    racesTab: "Gare",
     drivers: "Piloti",
     constructors: "Costruttori",
     topDrivers: "Top 3 Piloti",

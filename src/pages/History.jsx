@@ -18,6 +18,7 @@ import {
   Table,
   Badge,
   Form,
+  Nav,
 } from "react-bootstrap";
 import {
   collection,
@@ -31,7 +32,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 import RaceHistoryCard from "../components/RaceHistoryCard";
-import { DRIVER_TEAM, TEAM_LOGOS, POINTS, getDriverTeamDynamic, getTeamLogoDynamic } from "../constants/racing";
+import { TEAM_LOGOS, POINTS, getDriverTeamDynamic, getTeamLogoDynamic } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { error } from "../utils/logger";
@@ -102,6 +103,30 @@ TeamWithLogo.propTypes = {
 };
 
 /**
+ * Helper component for points badge - consistent styling
+ * @param {Object} props - Component props
+ * @param {number} props.pts - Points value
+ * @param {boolean} props.pill - Use pill style
+ * @param {string} props.className - Additional classes
+ * @returns {JSX.Element} Points badge
+ */
+function PointsBadge({ pts, pill = false, className = "" }) {
+  // Same pattern as RaceHistoryCard: green if > 0, secondary (grey) if = 0
+  const bg = pts > 0 ? "success" : "secondary";
+  return (
+    <Badge bg={bg} pill={pill} className={className}>
+      {pts}
+    </Badge>
+  );
+}
+
+PointsBadge.propTypes = {
+  pts: PropTypes.number.isRequired,
+  pill: PropTypes.bool,
+  className: PropTypes.string,
+};
+
+/**
  * History page displaying past races and championship results
  * @returns {JSX.Element} History page with race results and championship standings
  */
@@ -109,11 +134,12 @@ export default function History() {
   const [pastRaces, setPastRaces] = useState([]);
   const [selectedRaceId, setSelectedRaceId] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [errorState, setErrorState] = useState(null);
   const [championshipResults, setChampionshipResults] = useState(null);
   const [championshipSubmissions, setChampionshipSubmissions] = useState([]);
   const [loadingChampionship, setLoadingChampionship] = useState(true);
   const [isLoadingRaceData, setIsLoadingRaceData] = useState(false);
+  const [activeTab, setActiveTab] = useState("races"); // "races" or "championship"
   const { isDark } = useTheme();
   const { t } = useLanguage();
 
@@ -140,7 +166,7 @@ export default function History() {
         }
       } catch (e) {
         error(e);
-        setError(t("errors.generic"));
+        setErrorState(t("errors.generic"));
       } finally {
         setLoading(false);
       }
@@ -221,10 +247,10 @@ export default function History() {
         <Spinner animation="border" />
       </Container>
     );
-  if (error)
+  if (errorState)
     return (
       <Container className="py-5">
-        <Alert variant="danger">{error}</Alert>
+        <Alert variant="danger">{errorState}</Alert>
       </Container>
     );
   if (!pastRaces.length && !championshipResults)
@@ -264,365 +290,378 @@ export default function History() {
     };
   };
 
+  const hasChampionship = !loadingChampionship && championshipResults;
+
   return (
     <Container className="py-5">
-      <Row className="g-4">
-        {/* ============ RISULTATI CAMPIONATO ============ */}
-        {!loadingChampionship && championshipResults && (
-          <Col xs={12}>
-            <Card
-              className="shadow border-0"
-              style={{
-                backgroundColor: bgCard,
-                borderLeft: `4px solid ${accentColor}`,
-              }}
-            >
-              <Card.Header
-                className="border-bottom"
-                style={{
-                  backgroundColor: bgHeader,
-                  borderBottomColor: accentColor,
-                }}
-              >
-                <h4 className="mb-0" style={{ color: accentColor }}>
-                  🏆 {t("history.championshipResults")}
-                </h4>
-              </Card.Header>
-
-              <Card.Body>
-                {/* Risultati Ufficiali */}
-                <Row className="mb-4">
-                  <Col xs={12} md={6}>
-                    <h6 className="fw-bold border-bottom pb-2" style={{ color: accentColor }}>
-                      {t("history.topDrivers")}
-                    </h6>
-                    <Table size="sm" className="mb-0">
-                      <thead>
-                        <tr>
-                          <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
-                          <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                          <th className="text-end" style={{ color: accentColor }}>{t("common.points")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td><strong>1°</strong></td>
-                          <td><DriverWithLogo name={championshipResults.P1} /></td>
-                          <td className="text-end text-success fw-bold">{POINTS.MAIN[1]}</td>
-                        </tr>
-                        <tr>
-                          <td>2°</td>
-                          <td><DriverWithLogo name={championshipResults.P2} /></td>
-                          <td className="text-end text-success fw-bold">{POINTS.MAIN[2]}</td>
-                        </tr>
-                        <tr>
-                          <td>3°</td>
-                          <td><DriverWithLogo name={championshipResults.P3} /></td>
-                          <td className="text-end text-success fw-bold">{POINTS.MAIN[3]}</td>
-                        </tr>
-                      </tbody>
-                    </Table>
-                  </Col>
-
-                  <Col xs={12} md={6}>
-                    <h6 className="fw-bold border-bottom pb-2 mt-3 mt-md-0" style={{ color: accentColor }}>
-                      {t("history.topConstructors")}
-                    </h6>
-                    <Table size="sm" className="mb-0">
-                      <thead>
-                        <tr>
-                          <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
-                          <th style={{ color: accentColor }}>{t("history.team")}</th>
-                          <th className="text-end" style={{ color: accentColor }}>{t("common.points")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td><strong>1°</strong></td>
-                          <td><TeamWithLogo name={championshipResults.C1} /></td>
-                          <td className="text-end text-success fw-bold">{POINTS.MAIN[1]}</td>
-                        </tr>
-                        <tr>
-                          <td>2°</td>
-                          <td><TeamWithLogo name={championshipResults.C2} /></td>
-                          <td className="text-end text-success fw-bold">{POINTS.MAIN[2]}</td>
-                        </tr>
-                        <tr>
-                          <td>3°</td>
-                          <td><TeamWithLogo name={championshipResults.C3} /></td>
-                          <td className="text-end text-success fw-bold">{POINTS.MAIN[3]}</td>
-                        </tr>
-                      </tbody>
-                    </Table>
-                  </Col>
-                </Row>
-
-                {/* Formazioni e Punteggi Giocatori */}
-                {championshipSubmissions.length > 0 && (
-                  <>
-                    <h6 className="fw-bold mb-3 mt-4" style={{ color: accentColor }}>
-                      {t("history.formationsAndPoints")}
-                    </h6>
-
-                    {/* Desktop View */}
-                    <div className="d-none d-lg-block table-responsive">
-                      <Table striped bordered hover size="sm" className="align-middle">
-                        <thead>
-                          <tr>
-                            <th style={{ color: accentColor }}>{t("history.player")}</th>
-                            <th style={{ color: accentColor }}>P1</th>
-                            <th style={{ color: accentColor }}>P2</th>
-                            <th style={{ color: accentColor }}>P3</th>
-                            <th className="text-center" style={{ color: accentColor }}>{t("history.totalDrivers")}</th>
-                            <th style={{ color: accentColor }}>C1</th>
-                            <th style={{ color: accentColor }}>C2</th>
-                            <th style={{ color: accentColor }}>C3</th>
-                            <th className="text-center" style={{ color: accentColor }}>{t("history.totalConstructors")}</th>
-                            <th className="text-center" style={{ color: accentColor }}>{t("history.total")}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {championshipSubmissions.map((sub) => {
-                            const pts = calculateChampionshipPoints(sub, championshipResults);
-                            return (
-                              <tr key={sub.userId}>
-                                <td className="fw-bold">{sub.name}</td>
-                                <td>
-                                  <div className="d-flex align-items-center gap-2">
-                                    <DriverWithLogo name={sub.piloti[0]} />
-                                    {sub.piloti[0] === championshipResults.P1 && (
-                                      <Badge bg="success" pill>{POINTS.MAIN[1]}</Badge>
-                                    )}
-                                  </div>
-                                </td>
-                                <td>
-                                  <div className="d-flex align-items-center gap-2">
-                                    <DriverWithLogo name={sub.piloti[1]} />
-                                    {sub.piloti[1] === championshipResults.P2 && (
-                                      <Badge bg="success" pill>{POINTS.MAIN[2]}</Badge>
-                                    )}
-                                  </div>
-                                </td>
-                                <td>
-                                  <div className="d-flex align-items-center gap-2">
-                                    <DriverWithLogo name={sub.piloti[2]} />
-                                    {sub.piloti[2] === championshipResults.P3 && (
-                                      <Badge bg="success" pill>{POINTS.MAIN[3]}</Badge>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="text-center">
-                                  <Badge
-                                    bg={pts.pilotiPts > 0 ? "success" : "danger"}
-                                    pill
-                                  >
-                                    {pts.pilotiPts}
-                                  </Badge>
-                                </td>
-                                <td>
-                                  <div className="d-flex align-items-center gap-2">
-                                    <TeamWithLogo name={sub.costruttori[0]} />
-                                    {sub.costruttori[0] === championshipResults.C1 && (
-                                      <Badge bg="success" pill>{POINTS.MAIN[1]}</Badge>
-                                    )}
-                                  </div>
-                                </td>
-                                <td>
-                                  <div className="d-flex align-items-center gap-2">
-                                    <TeamWithLogo name={sub.costruttori[1]} />
-                                    {sub.costruttori[1] === championshipResults.C2 && (
-                                      <Badge bg="success" pill>{POINTS.MAIN[2]}</Badge>
-                                    )}
-                                  </div>
-                                </td>
-                                <td>
-                                  <div className="d-flex align-items-center gap-2">
-                                    <TeamWithLogo name={sub.costruttori[2]} />
-                                    {sub.costruttori[2] === championshipResults.C3 && (
-                                      <Badge bg="success" pill>{POINTS.MAIN[3]}</Badge>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="text-center">
-                                  <Badge
-                                    bg={pts.costruttoriPts > 0 ? "success" : "danger"}
-                                    pill
-                                  >
-                                    {pts.costruttoriPts}
-                                  </Badge>
-                                </td>
-                                <td className="text-center">
-                                  <Badge bg="primary" pill style={{ fontSize: "1rem" }}>
-                                    {pts.total}
-                                  </Badge>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </Table>
-                    </div>
-
-                    {/* Mobile View - Cards */}
-                    <div className="d-lg-none">
-                      {championshipSubmissions.map((sub) => {
-                        const pts = calculateChampionshipPoints(sub, championshipResults);
-                        return (
-                          <Card
-                            key={sub.userId}
-                            className="mb-3"
-                            style={{ borderLeft: `3px solid ${accentColor}` }}
-                          >
-                            <Card.Body>
-                              <div className="d-flex justify-content-between align-items-center mb-3">
-                                <h6 className="mb-0 fw-bold" style={{ color: accentColor }}>
-                                  {sub.name}
-                                </h6>
-                                <Badge bg="primary" style={{ fontSize: "1rem" }}>
-                                  {pts.total} {t("common.points").toLowerCase()}
-                                </Badge>
-                              </div>
-
-                              {/* Piloti */}
-                              <div className="mb-3">
-                                <strong className="text-muted" style={{ fontSize: "0.85rem" }}>
-                                  {t("history.drivers").toUpperCase()}
-                                  <Badge
-                                    bg={pts.pilotiPts > 0 ? "success" : "danger"}
-                                    className="ms-2"
-                                  >
-                                    {pts.pilotiPts} {t("common.points").toLowerCase()}
-                                  </Badge>
-                                </strong>
-                                <div className="mt-2">
-                                  {sub.piloti.map((pilot, idx) => (
-                                    <div key={idx} className="d-flex justify-content-between align-items-center py-1 border-bottom">
-                                      <span className="text-muted">{idx + 1}°</span>
-                                      <div className="d-flex align-items-center gap-2">
-                                        <DriverWithLogo name={pilot} />
-                                        {pilot === championshipResults[`P${idx + 1}`] && (
-                                          <Badge bg="success">{POINTS.MAIN[idx + 1]}</Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-
-                              {/* Costruttori */}
-                              <div>
-                                <strong className="text-muted" style={{ fontSize: "0.85rem" }}>
-                                  {t("history.constructors").toUpperCase()}
-                                  <Badge
-                                    bg={pts.costruttoriPts > 0 ? "success" : "danger"}
-                                    className="ms-2"
-                                  >
-                                    {pts.costruttoriPts} {t("common.points").toLowerCase()}
-                                  </Badge>
-                                </strong>
-                                <div className="mt-2">
-                                  {sub.costruttori.map((team, idx) => (
-                                    <div key={idx} className="d-flex justify-content-between align-items-center py-1 border-bottom">
-                                      <span className="text-muted">{idx + 1}°</span>
-                                      <div className="d-flex align-items-center gap-2">
-                                        <TeamWithLogo name={team} />
-                                        {team === championshipResults[`C${idx + 1}`] && (
-                                          <Badge bg="success">{POINTS.MAIN[idx + 1]}</Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </Card.Body>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-              </Card.Body>
-            </Card>
-          </Col>
-        )}
-
-        {/* ============ STORICO GARE ============ */}
-        {pastRaces.length > 0 && (
-          <Col xs={12}>
-            <Card
-              className="shadow border-0"
-              style={{
-                backgroundColor: bgCard,
-                borderLeft: `4px solid ${accentColor}`,
-              }}
-            >
-              <Card.Header
-                className="border-bottom"
-                style={{
-                  backgroundColor: bgHeader,
-                  borderBottomColor: accentColor,
-                }}
-              >
-                <h4 className="mb-0" style={{ color: accentColor }}>
-                  🏁 {t("history.title")}
-                </h4>
-                <small className="text-muted">
-                  {t("history.raceCount", { count: pastRaces.length })}
-                </small>
-              </Card.Header>
-              <Card.Body>
-                {/* Race Selector */}
-                <Form.Group className="mb-4">
-                  <Form.Label className="fw-bold">{t("raceResults.selectRace")}</Form.Label>
-                  <Form.Select
-                    value={selectedRaceId || ""}
-                    onChange={(e) => handleRaceChange(e.target.value)}
+      <Card
+        className="shadow border-0"
+        style={{
+          backgroundColor: bgCard,
+          borderLeft: `4px solid ${accentColor}`,
+        }}
+      >
+        <Card.Header
+          className="border-bottom"
+          style={{
+            backgroundColor: bgHeader,
+            borderBottomColor: accentColor,
+          }}
+        >
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+            <h3 className="mb-0" style={{ color: accentColor }}>
+              📊 {t("nav.history")}
+            </h3>
+            <Nav variant="pills" activeKey={activeTab} onSelect={setActiveTab}>
+              <Nav.Item>
+                <Nav.Link
+                  eventKey="races"
+                  style={{
+                    backgroundColor: activeTab === "races" ? accentColor : "transparent",
+                    color: activeTab === "races" ? "#fff" : (isDark ? "#fff" : "#000"),
+                    borderColor: accentColor,
+                  }}
+                >
+                  🏁 {t("history.racesTab")}
+                </Nav.Link>
+              </Nav.Item>
+              {hasChampionship && (
+                <Nav.Item>
+                  <Nav.Link
+                    eventKey="championship"
                     style={{
+                      backgroundColor: activeTab === "championship" ? accentColor : "transparent",
+                      color: activeTab === "championship" ? "#fff" : (isDark ? "#fff" : "#000"),
                       borderColor: accentColor,
                     }}
                   >
-                    <option value="">{t("raceResults.chooseRace")}</option>
-                    {pastRaces.map((race) => (
-                      <option key={race.id} value={race.id}>
-                        {t("history.round")} {race.round} - {race.name}
-                        {race.officialResults ? ` ✓` : ""}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
+                    🏆 {t("history.championshipTab")}
+                  </Nav.Link>
+                </Nav.Item>
+              )}
+            </Nav>
+          </div>
+        </Card.Header>
 
-                {/* Loading state when changing races */}
-                {isLoadingRaceData && selectedRace && (
-                  <div className="text-center py-5 mb-4">
-                    <div className="mb-3">
-                      <h5 style={{ color: accentColor }}>
-                        {t("history.round")} {selectedRace.round} - {selectedRace.name}
-                      </h5>
-                      <small className="text-muted">
-                        {selectedRace.raceUTC && new Date(selectedRace.raceUTC.seconds * 1000).toLocaleDateString("it-IT")}
-                      </small>
+        <Card.Body>
+          {/* ============ TAB GARE ============ */}
+          {activeTab === "races" && (
+            <>
+              {pastRaces.length > 0 ? (
+                <>
+                  <p className="text-muted mb-3">
+                    {t("history.raceCount", { count: pastRaces.length })}
+                  </p>
+
+                  {/* Race Selector */}
+                  <Form.Group className="mb-4">
+                    <Form.Label className="fw-bold">{t("raceResults.selectRace")}</Form.Label>
+                    <Form.Select
+                      value={selectedRaceId || ""}
+                      onChange={(e) => handleRaceChange(e.target.value)}
+                      style={{
+                        borderColor: accentColor,
+                      }}
+                    >
+                      <option value="">{t("raceResults.chooseRace")}</option>
+                      {pastRaces.map((race) => (
+                        <option key={race.id} value={race.id}>
+                          {t("history.round")} {race.round} - {race.name}
+                          {race.officialResults ? ` ✓` : ""}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+
+                  {/* Loading state when changing races */}
+                  {isLoadingRaceData && selectedRace && (
+                    <div className="text-center py-5 mb-4">
+                      <div className="mb-3">
+                        <h5 style={{ color: accentColor }}>
+                          {t("history.round")} {selectedRace.round} - {selectedRace.name}
+                        </h5>
+                        <small className="text-muted">
+                          {selectedRace.raceUTC && new Date(selectedRace.raceUTC.seconds * 1000).toLocaleDateString()}
+                        </small>
+                      </div>
+                      <Spinner animation="border" variant={isDark ? "light" : "primary"} style={{ width: '3rem', height: '3rem' }} />
+                      <p className="mt-3 text-muted">{t("common.loading")}</p>
                     </div>
-                    <Spinner animation="border" variant={isDark ? "light" : "primary"} style={{ width: '3rem', height: '3rem' }} />
-                    <p className="mt-3 text-muted">{t("common.loading")}</p>
+                  )}
+
+                  {/* Selected Race Details - shown when not loading */}
+                  {selectedRace && !isLoadingRaceData && (
+                    <RaceHistoryCard race={selectedRace} key={selectedRaceId} />
+                  )}
+
+                  {/* Placeholder when no race selected */}
+                  {!selectedRace && (
+                    <Alert variant="info">
+                      {t("raceResults.chooseRace")}
+                    </Alert>
+                  )}
+                </>
+              ) : (
+                <Alert variant="info">{t("history.noRaces")}</Alert>
+              )}
+            </>
+          )}
+
+          {/* ============ TAB CAMPIONATO ============ */}
+          {activeTab === "championship" && hasChampionship && (
+            <>
+              {/* Risultati Ufficiali */}
+              <Row className="mb-4">
+                <Col xs={12} md={6}>
+                  <h6 className="fw-bold border-bottom pb-2" style={{ color: accentColor }}>
+                    {t("history.topDrivers")}
+                  </h6>
+                  <Table size="sm" className="mb-0">
+                    <thead>
+                      <tr>
+                        <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
+                        <th style={{ color: accentColor }}>{t("formations.driver")}</th>
+                        <th className="text-end" style={{ color: accentColor }}>{t("common.points")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>1°</strong></td>
+                        <td><DriverWithLogo name={championshipResults.P1} /></td>
+                        <td className="text-end text-success fw-bold">{POINTS.MAIN[1]}</td>
+                      </tr>
+                      <tr>
+                        <td>2°</td>
+                        <td><DriverWithLogo name={championshipResults.P2} /></td>
+                        <td className="text-end text-success fw-bold">{POINTS.MAIN[2]}</td>
+                      </tr>
+                      <tr>
+                        <td>3°</td>
+                        <td><DriverWithLogo name={championshipResults.P3} /></td>
+                        <td className="text-end text-success fw-bold">{POINTS.MAIN[3]}</td>
+                      </tr>
+                    </tbody>
+                  </Table>
+                </Col>
+
+                <Col xs={12} md={6}>
+                  <h6 className="fw-bold border-bottom pb-2 mt-3 mt-md-0" style={{ color: accentColor }}>
+                    {t("history.topConstructors")}
+                  </h6>
+                  <Table size="sm" className="mb-0">
+                    <thead>
+                      <tr>
+                        <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
+                        <th style={{ color: accentColor }}>{t("history.team")}</th>
+                        <th className="text-end" style={{ color: accentColor }}>{t("common.points")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>1°</strong></td>
+                        <td><TeamWithLogo name={championshipResults.C1} /></td>
+                        <td className="text-end text-success fw-bold">{POINTS.MAIN[1]}</td>
+                      </tr>
+                      <tr>
+                        <td>2°</td>
+                        <td><TeamWithLogo name={championshipResults.C2} /></td>
+                        <td className="text-end text-success fw-bold">{POINTS.MAIN[2]}</td>
+                      </tr>
+                      <tr>
+                        <td>3°</td>
+                        <td><TeamWithLogo name={championshipResults.C3} /></td>
+                        <td className="text-end text-success fw-bold">{POINTS.MAIN[3]}</td>
+                      </tr>
+                    </tbody>
+                  </Table>
+                </Col>
+              </Row>
+
+              {/* Formazioni e Punteggi Giocatori */}
+              {championshipSubmissions.length > 0 && (
+                <>
+                  <h6 className="fw-bold mb-3 mt-4" style={{ color: accentColor }}>
+                    {t("history.formationsAndPoints")}
+                  </h6>
+
+                  {/* Desktop View */}
+                  <div className="d-none d-lg-block table-responsive">
+                    <Table striped bordered hover size="sm" className="align-middle">
+                      <thead>
+                        <tr>
+                          <th style={{ color: accentColor }}>{t("history.player")}</th>
+                          <th style={{ color: accentColor }}>P1</th>
+                          <th style={{ color: accentColor }}>P2</th>
+                          <th style={{ color: accentColor }}>P3</th>
+                          <th className="text-center" style={{ color: accentColor }}>{t("history.totalDrivers")}</th>
+                          <th style={{ color: accentColor }}>C1</th>
+                          <th style={{ color: accentColor }}>C2</th>
+                          <th style={{ color: accentColor }}>C3</th>
+                          <th className="text-center" style={{ color: accentColor }}>{t("history.totalConstructors")}</th>
+                          <th className="text-center" style={{ color: accentColor }}>{t("history.total")}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {championshipSubmissions.map((sub) => {
+                          const pts = calculateChampionshipPoints(sub, championshipResults);
+                          return (
+                            <tr key={sub.userId}>
+                              <td className="fw-bold">{sub.name}</td>
+                              <td>
+                                <div className="d-flex align-items-center gap-2">
+                                  <DriverWithLogo name={sub.piloti[0]} />
+                                  {sub.piloti[0] === championshipResults.P1 && (
+                                    <Badge bg="success" pill>{POINTS.MAIN[1]}</Badge>
+                                  )}
+                                </div>
+                              </td>
+                              <td>
+                                <div className="d-flex align-items-center gap-2">
+                                  <DriverWithLogo name={sub.piloti[1]} />
+                                  {sub.piloti[1] === championshipResults.P2 && (
+                                    <Badge bg="success" pill>{POINTS.MAIN[2]}</Badge>
+                                  )}
+                                </div>
+                              </td>
+                              <td>
+                                <div className="d-flex align-items-center gap-2">
+                                  <DriverWithLogo name={sub.piloti[2]} />
+                                  {sub.piloti[2] === championshipResults.P3 && (
+                                    <Badge bg="success" pill>{POINTS.MAIN[3]}</Badge>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="text-center">
+                                <PointsBadge pts={pts.pilotiPts} pill />
+                              </td>
+                              <td>
+                                <div className="d-flex align-items-center gap-2">
+                                  <TeamWithLogo name={sub.costruttori[0]} />
+                                  {sub.costruttori[0] === championshipResults.C1 && (
+                                    <Badge bg="success" pill>{POINTS.MAIN[1]}</Badge>
+                                  )}
+                                </div>
+                              </td>
+                              <td>
+                                <div className="d-flex align-items-center gap-2">
+                                  <TeamWithLogo name={sub.costruttori[1]} />
+                                  {sub.costruttori[1] === championshipResults.C2 && (
+                                    <Badge bg="success" pill>{POINTS.MAIN[2]}</Badge>
+                                  )}
+                                </div>
+                              </td>
+                              <td>
+                                <div className="d-flex align-items-center gap-2">
+                                  <TeamWithLogo name={sub.costruttori[2]} />
+                                  {sub.costruttori[2] === championshipResults.C3 && (
+                                    <Badge bg="success" pill>{POINTS.MAIN[3]}</Badge>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="text-center">
+                                <PointsBadge pts={pts.costruttoriPts} pill />
+                              </td>
+                              <td className="text-center">
+                                <Badge
+                                  bg={pts.total > 0 ? "success" : "secondary"}
+                                  pill
+                                  style={{ fontSize: "1rem" }}
+                                >
+                                  {pts.total}
+                                </Badge>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </Table>
                   </div>
-                )}
 
-                {/* Selected Race Details - shown when not loading */}
-                {selectedRace && !isLoadingRaceData && (
-                  <RaceHistoryCard race={selectedRace} key={selectedRaceId} />
-                )}
+                  {/* Mobile View - Cards */}
+                  <div className="d-lg-none">
+                    {championshipSubmissions.map((sub) => {
+                      const pts = calculateChampionshipPoints(sub, championshipResults);
+                      return (
+                        <Card
+                          key={sub.userId}
+                          className="mb-3"
+                          style={{ borderLeft: `3px solid ${accentColor}` }}
+                        >
+                          <Card.Body>
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                              <h6 className="mb-0 fw-bold" style={{ color: accentColor }}>
+                                {sub.name}
+                              </h6>
+                              <Badge
+                                bg={pts.total > 0 ? "success" : "secondary"}
+                                style={{ fontSize: "1rem" }}
+                              >
+                                {pts.total} {t("common.points").toLowerCase()}
+                              </Badge>
+                            </div>
 
-                {/* Placeholder when no race selected */}
-                {!selectedRace && (
-                  <Alert variant="info">
-                    {t("raceResults.chooseRace")}
-                  </Alert>
-                )}
-              </Card.Body>
-            </Card>
-          </Col>
-        )}
-      </Row>
+                            {/* Piloti */}
+                            <div className="mb-3">
+                              <strong className="text-muted" style={{ fontSize: "0.85rem" }}>
+                                {t("history.drivers").toUpperCase()}
+                                <PointsBadge pts={pts.pilotiPts} className="ms-2" />
+                                <span className="ms-1 text-muted" style={{ fontSize: "0.8rem" }}>
+                                  {t("common.points").toLowerCase()}
+                                </span>
+                              </strong>
+                              <div className="mt-2">
+                                {sub.piloti.map((pilot, idx) => (
+                                  <div key={idx} className="d-flex justify-content-between align-items-center py-1 border-bottom">
+                                    <span className="text-muted">{idx + 1}°</span>
+                                    <div className="d-flex align-items-center gap-2">
+                                      <DriverWithLogo name={pilot} />
+                                      {pilot === championshipResults[`P${idx + 1}`] && (
+                                        <Badge bg="success">{POINTS.MAIN[idx + 1]}</Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Costruttori */}
+                            <div>
+                              <strong className="text-muted" style={{ fontSize: "0.85rem" }}>
+                                {t("history.constructors").toUpperCase()}
+                                <PointsBadge pts={pts.costruttoriPts} className="ms-2" />
+                                <span className="ms-1 text-muted" style={{ fontSize: "0.8rem" }}>
+                                  {t("common.points").toLowerCase()}
+                                </span>
+                              </strong>
+                              <div className="mt-2">
+                                {sub.costruttori.map((team, idx) => (
+                                  <div key={idx} className="d-flex justify-content-between align-items-center py-1 border-bottom">
+                                    <span className="text-muted">{idx + 1}°</span>
+                                    <div className="d-flex align-items-center gap-2">
+                                      <TeamWithLogo name={team} />
+                                      {team === championshipResults[`C${idx + 1}`] && (
+                                        <Badge bg="success">{POINTS.MAIN[idx + 1]}</Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </Card.Body>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              {championshipSubmissions.length === 0 && (
+                <Alert variant="info">{t("history.noChampionship")}</Alert>
+              )}
+            </>
+          )}
+        </Card.Body>
+      </Card>
     </Container>
   );
 }

@@ -136,6 +136,8 @@ export const en = {
     lineupsAndScores: "Lineups and Scores",
     lineups: "Lineups",
     championshipResults: "Championship Results",
+    championshipTab: "Championship",
+    racesTab: "Races",
     drivers: "Drivers",
     constructors: "Constructors",
     topDrivers: "Top 3 Drivers",
