@@ -119,7 +119,7 @@ export const it = {
     lateConfirm: "Sì, Accetto la Penalità (-3)",
     jolly2Hint: "Usa un jolly extra per raddoppiare le possibilità",
     jolly2RefundHint: "Rimuovi per riavere il jolly indietro",
-    doublePointsRace: "Questa gara assegna PUNTI DOPPI!",
+    doublePointsRace: "Ultima gara della stagione: i punti vengono raddoppiati",
   },
 
   // History

@@ -534,7 +534,7 @@ export default function FormationApp() {
                       const isLastRace = races.length > 0 && r.round === Math.max(...races.map(x => x.round));
                       return (
                         <option key={r.id} value={r.id}>
-                          {r.round}. {r.name}{isLastRace ? " 🌟" : ""}
+                          {r.round}. {r.name}{isLastRace ? " (2x)" : ""}
                         </option>
                       );
                     })}
@@ -543,8 +543,9 @@ export default function FormationApp() {
 
                 {/* Double points indicator for last race */}
                 {race && races.length > 0 && race.round === Math.max(...races.map(r => r.round)) && (
-                  <Alert variant="warning" className="py-2 text-center">
-                    <strong>🌟 {t("formations.doublePointsRace")} 🌟</strong>
+                  <Alert variant="info" className="py-2 d-flex align-items-center gap-2">
+                    <Badge bg="warning" text="dark" style={{ fontSize: "0.85rem" }}>2x</Badge>
+                    <span>{t("formations.doublePointsRace")}</span>
                   </Alert>
                 )}
 
