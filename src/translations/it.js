@@ -315,7 +315,7 @@ export const it = {
     calculateRacePoints: "Calcola Punti Gara",
     calculateChampionshipPoints: "Calcola Punti Campionato",
     race: "Gara",
-    doublePoints: "🌟 Punti doppi! 🌟",
+    doublePoints: "Punti doppi!",
     ready: "PRONTA",
     locked: "BLOCCATA",
     errorLoadingRaces: "Errore nel caricamento delle gare.",

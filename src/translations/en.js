@@ -315,7 +315,7 @@ export const en = {
     calculateRacePoints: "Calculate Race Points",
     calculateChampionshipPoints: "Calculate Championship Points",
     race: "Race",
-    doublePoints: "🌟 Double points! 🌟",
+    doublePoints: "Double points!",
     ready: "READY",
     locked: "LOCKED",
     errorLoadingRaces: "Error loading races.",
