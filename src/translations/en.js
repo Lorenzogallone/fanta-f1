@@ -117,6 +117,9 @@ export const en = {
     lateWarning: "You are about to submit after the deadline",
     latePenalty: "Penalty: -3 points",
     lateConfirm: "Yes, Accept Penalty (-3)",
+    jolly2Hint: "Use an extra joker to double your chances",
+    jolly2RefundHint: "Remove to get your joker back",
+    doublePointsRace: "This race awards DOUBLE POINTS!",
   },
 
   // History

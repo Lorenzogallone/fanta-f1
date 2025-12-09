@@ -117,6 +117,9 @@ export const it = {
     lateWarning: "Stai per inserire la formazione dopo la deadline",
     latePenalty: "Penalità: -3 punti",
     lateConfirm: "Sì, Accetto la Penalità (-3)",
+    jolly2Hint: "Usa un jolly extra per raddoppiare le possibilità",
+    jolly2RefundHint: "Rimuovi per riavere il jolly indietro",
+    doublePointsRace: "Questa gara assegna PUNTI DOPPI!",
   },
 
   // History

@@ -413,13 +413,8 @@ export default function History() {
                                 </td>
                                 <td className="text-center">
                                   <Badge
-                                    bg={pts.pilotiPts > 0 ? "success" : undefined}
-                                    text={pts.pilotiPts === 0 ? "muted" : undefined}
+                                    bg={pts.pilotiPts > 0 ? "success" : "danger"}
                                     pill
-                                    style={pts.pilotiPts === 0 ? {
-                                      backgroundColor: 'transparent',
-                                      border: '1px solid #6c757d'
-                                    } : undefined}
                                   >
                                     {pts.pilotiPts}
                                   </Badge>
@@ -450,13 +445,8 @@ export default function History() {
                                 </td>
                                 <td className="text-center">
                                   <Badge
-                                    bg={pts.costruttoriPts > 0 ? "success" : undefined}
-                                    text={pts.costruttoriPts === 0 ? "muted" : undefined}
+                                    bg={pts.costruttoriPts > 0 ? "success" : "danger"}
                                     pill
-                                    style={pts.costruttoriPts === 0 ? {
-                                      backgroundColor: 'transparent',
-                                      border: '1px solid #6c757d'
-                                    } : undefined}
                                   >
                                     {pts.costruttoriPts}
                                   </Badge>
@@ -498,13 +488,8 @@ export default function History() {
                                 <strong className="text-muted" style={{ fontSize: "0.85rem" }}>
                                   {t("history.drivers").toUpperCase()}
                                   <Badge
-                                    bg={pts.pilotiPts > 0 ? "success" : undefined}
+                                    bg={pts.pilotiPts > 0 ? "success" : "danger"}
                                     className="ms-2"
-                                    style={pts.pilotiPts === 0 ? {
-                                      backgroundColor: 'transparent',
-                                      border: '1px solid #6c757d',
-                                      color: 'inherit'
-                                    } : undefined}
                                   >
                                     {pts.pilotiPts} {t("common.points").toLowerCase()}
                                   </Badge>
@@ -529,13 +514,8 @@ export default function History() {
                                 <strong className="text-muted" style={{ fontSize: "0.85rem" }}>
                                   {t("history.constructors").toUpperCase()}
                                   <Badge
-                                    bg={pts.costruttoriPts > 0 ? "success" : undefined}
+                                    bg={pts.costruttoriPts > 0 ? "success" : "danger"}
                                     className="ms-2"
-                                    style={pts.costruttoriPts === 0 ? {
-                                      backgroundColor: 'transparent',
-                                      border: '1px solid #6c757d',
-                                      color: 'inherit'
-                                    } : undefined}
                                   >
                                     {pts.costruttoriPts} {t("common.points").toLowerCase()}
                                   </Badge>
