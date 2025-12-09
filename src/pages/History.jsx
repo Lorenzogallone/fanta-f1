@@ -108,13 +108,15 @@ TeamWithLogo.propTypes = {
  * @param {number} props.pts - Points value
  * @param {boolean} props.pill - Use pill style
  * @param {string} props.className - Additional classes
+ * @param {Object} props.style - Additional inline styles
  * @returns {JSX.Element} Points badge
  */
-function PointsBadge({ pts, pill = false, className = "" }) {
+function PointsBadge({ pts, pill = false, className = "", style = {} }) {
   // Same pattern as RaceHistoryCard: green if > 0, secondary (grey) if = 0
+  // Use text="light" for secondary to ensure white text visibility
   const bg = pts > 0 ? "success" : "secondary";
   return (
-    <Badge bg={bg} pill={pill} className={className}>
+    <Badge bg={bg} text="light" pill={pill} className={className} style={style}>
       {pts}
     </Badge>
   );
@@ -124,6 +126,7 @@ PointsBadge.propTypes = {
   pts: PropTypes.number.isRequired,
   pill: PropTypes.bool,
   className: PropTypes.string,
+  style: PropTypes.object,
 };
 
 /**
@@ -510,25 +513,28 @@ export default function History() {
                               <td>
                                 <div className="d-flex align-items-center gap-2">
                                   <DriverWithLogo name={sub.piloti[0]} />
-                                  {sub.piloti[0] === championshipResults.P1 && (
-                                    <Badge bg="success" pill>{POINTS.MAIN[1]}</Badge>
-                                  )}
+                                  <PointsBadge
+                                    pts={sub.piloti[0] === championshipResults.P1 ? POINTS.MAIN[1] : 0}
+                                    pill
+                                  />
                                 </div>
                               </td>
                               <td>
                                 <div className="d-flex align-items-center gap-2">
                                   <DriverWithLogo name={sub.piloti[1]} />
-                                  {sub.piloti[1] === championshipResults.P2 && (
-                                    <Badge bg="success" pill>{POINTS.MAIN[2]}</Badge>
-                                  )}
+                                  <PointsBadge
+                                    pts={sub.piloti[1] === championshipResults.P2 ? POINTS.MAIN[2] : 0}
+                                    pill
+                                  />
                                 </div>
                               </td>
                               <td>
                                 <div className="d-flex align-items-center gap-2">
                                   <DriverWithLogo name={sub.piloti[2]} />
-                                  {sub.piloti[2] === championshipResults.P3 && (
-                                    <Badge bg="success" pill>{POINTS.MAIN[3]}</Badge>
-                                  )}
+                                  <PointsBadge
+                                    pts={sub.piloti[2] === championshipResults.P3 ? POINTS.MAIN[3] : 0}
+                                    pill
+                                  />
                                 </div>
                               </td>
                               <td className="text-center">
@@ -537,38 +543,35 @@ export default function History() {
                               <td>
                                 <div className="d-flex align-items-center gap-2">
                                   <TeamWithLogo name={sub.costruttori[0]} />
-                                  {sub.costruttori[0] === championshipResults.C1 && (
-                                    <Badge bg="success" pill>{POINTS.MAIN[1]}</Badge>
-                                  )}
+                                  <PointsBadge
+                                    pts={sub.costruttori[0] === championshipResults.C1 ? POINTS.MAIN[1] : 0}
+                                    pill
+                                  />
                                 </div>
                               </td>
                               <td>
                                 <div className="d-flex align-items-center gap-2">
                                   <TeamWithLogo name={sub.costruttori[1]} />
-                                  {sub.costruttori[1] === championshipResults.C2 && (
-                                    <Badge bg="success" pill>{POINTS.MAIN[2]}</Badge>
-                                  )}
+                                  <PointsBadge
+                                    pts={sub.costruttori[1] === championshipResults.C2 ? POINTS.MAIN[2] : 0}
+                                    pill
+                                  />
                                 </div>
                               </td>
                               <td>
                                 <div className="d-flex align-items-center gap-2">
                                   <TeamWithLogo name={sub.costruttori[2]} />
-                                  {sub.costruttori[2] === championshipResults.C3 && (
-                                    <Badge bg="success" pill>{POINTS.MAIN[3]}</Badge>
-                                  )}
+                                  <PointsBadge
+                                    pts={sub.costruttori[2] === championshipResults.C3 ? POINTS.MAIN[3] : 0}
+                                    pill
+                                  />
                                 </div>
                               </td>
                               <td className="text-center">
                                 <PointsBadge pts={pts.costruttoriPts} pill />
                               </td>
                               <td className="text-center">
-                                <Badge
-                                  bg={pts.total > 0 ? "success" : "secondary"}
-                                  pill
-                                  style={{ fontSize: "1rem" }}
-                                >
-                                  {pts.total}
-                                </Badge>
+                                <PointsBadge pts={pts.total} pill style={{ fontSize: "1rem" }} />
                               </td>
                             </tr>
                           );
@@ -592,12 +595,10 @@ export default function History() {
                               <h6 className="mb-0 fw-bold" style={{ color: accentColor }}>
                                 {sub.name}
                               </h6>
-                              <Badge
-                                bg={pts.total > 0 ? "success" : "secondary"}
+                              <PointsBadge
+                                pts={pts.total}
                                 style={{ fontSize: "1rem" }}
-                              >
-                                {pts.total} {t("common.points").toLowerCase()}
-                              </Badge>
+                              />
                             </div>
 
                             {/* Piloti */}
@@ -605,9 +606,6 @@ export default function History() {
                               <strong className="text-muted" style={{ fontSize: "0.85rem" }}>
                                 {t("history.drivers").toUpperCase()}
                                 <PointsBadge pts={pts.pilotiPts} className="ms-2" />
-                                <span className="ms-1 text-muted" style={{ fontSize: "0.8rem" }}>
-                                  {t("common.points").toLowerCase()}
-                                </span>
                               </strong>
                               <div className="mt-2">
                                 {sub.piloti.map((pilot, idx) => (
@@ -615,9 +613,9 @@ export default function History() {
                                     <span className="text-muted">{idx + 1}°</span>
                                     <div className="d-flex align-items-center gap-2">
                                       <DriverWithLogo name={pilot} />
-                                      {pilot === championshipResults[`P${idx + 1}`] && (
-                                        <Badge bg="success">{POINTS.MAIN[idx + 1]}</Badge>
-                                      )}
+                                      <PointsBadge
+                                        pts={pilot === championshipResults[`P${idx + 1}`] ? POINTS.MAIN[idx + 1] : 0}
+                                      />
                                     </div>
                                   </div>
                                 ))}
@@ -629,9 +627,6 @@ export default function History() {
                               <strong className="text-muted" style={{ fontSize: "0.85rem" }}>
                                 {t("history.constructors").toUpperCase()}
                                 <PointsBadge pts={pts.costruttoriPts} className="ms-2" />
-                                <span className="ms-1 text-muted" style={{ fontSize: "0.8rem" }}>
-                                  {t("common.points").toLowerCase()}
-                                </span>
                               </strong>
                               <div className="mt-2">
                                 {sub.costruttori.map((team, idx) => (
@@ -639,9 +634,9 @@ export default function History() {
                                     <span className="text-muted">{idx + 1}°</span>
                                     <div className="d-flex align-items-center gap-2">
                                       <TeamWithLogo name={team} />
-                                      {team === championshipResults[`C${idx + 1}`] && (
-                                        <Badge bg="success">{POINTS.MAIN[idx + 1]}</Badge>
-                                      )}
+                                      <PointsBadge
+                                        pts={team === championshipResults[`C${idx + 1}`] ? POINTS.MAIN[idx + 1] : 0}
+                                      />
                                     </div>
                                   </div>
                                 ))}
