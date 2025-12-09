@@ -619,7 +619,7 @@ export default function FormationApp() {
                         onClick={() => setSavingMode("sprint")}
                         aria-label={isEditMode ? "Edit sprint formation" : "Save sprint formation"}
                       >
-                        {isEditMode ? `✏️ ${t("formations.editFormation")}` : `💾 ${t("formations.save")}`}
+                        {isEditMode ? `✏️ ${t("formations.editFormation")}` : `💾 ${t("formations.saveSprint")}`}
                       </Button>
                     </Col>
                   )}

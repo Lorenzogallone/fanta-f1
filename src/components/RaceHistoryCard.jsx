@@ -135,7 +135,7 @@ function RaceHistoryCard({
 
   const hasJolly2 = subs.some((s) => s.mainJolly2);
   const official = race.officialResults ?? null;
-  const hasSprint = Boolean(official?.SP1);
+  const hasSprint = Boolean(race.qualiSprintUTC) || Boolean(official?.SP1) || subs.some(s => s.sprintP1 || s.sprintP2 || s.sprintP3 || s.sprintJolly);
   const doublePts = Boolean(official?.doublePoints);
   const BONUS_MAIN = POINTS.BONUS_JOLLY_MAIN;
   const cancelledMain = race.cancelledMain || false;
