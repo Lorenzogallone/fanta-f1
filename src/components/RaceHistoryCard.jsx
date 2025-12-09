@@ -205,7 +205,7 @@ function RaceHistoryCard({
         {showOfficialResults && official && !cancelledMain ? (
           <>
             <h6 className="fw-bold border-bottom pb-1" style={{ color: accentColor }}>
-              {t("formations.mainRace")}
+              {t("calculate.mainRace")}
             </h6>
             <Table size="sm" className="mb-3">
               <thead>
