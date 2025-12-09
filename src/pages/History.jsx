@@ -113,10 +113,10 @@ TeamWithLogo.propTypes = {
  */
 function PointsBadge({ pts, pill = false, className = "", style = {} }) {
   // Same pattern as RaceHistoryCard: green if > 0, secondary (grey) if = 0
-  // Use text="light" for secondary to ensure white text visibility
+  // Force white text color for visibility in both light and dark mode
   const bg = pts > 0 ? "success" : "secondary";
   return (
-    <Badge bg={bg} text="light" pill={pill} className={className} style={style}>
+    <Badge bg={bg} pill={pill} className={className} style={{ color: "#ffffff", ...style }}>
       {pts}
     </Badge>
   );
