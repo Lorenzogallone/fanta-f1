@@ -182,7 +182,7 @@ Administrators have full access to all features through a comprehensive admin da
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **React 19.1.0**: Latest React with concurrent features
+- **React 19.2**: Latest React with concurrent features
 - **React Router v7**: Client-side routing
 - **React Bootstrap 2.10.10**: UI component library
 - **Material-UI**: Advanced components (Charts, Icons)
@@ -204,7 +204,7 @@ Administrators have full access to all features through a comprehensive admin da
 ```
 fanta-f1/
 ├── public/                      # Static assets
-│   └── *.png                    # Team logos (20 teams)
+│   └── *.png                    # Team logos (11 teams) + app logos
 ├── src/
 │   ├── pages/                   # Route components
 │   │   ├── Home.jsx             # Landing page with rules
@@ -223,7 +223,8 @@ fanta-f1/
 │   │   ├── SubmissionsList.jsx  # Formation list component
 │   │   └── AdminLogin.jsx       # Password protection
 │   ├── contexts/                # React Context API
-│   │   └── ThemeContext.jsx     # Dark/light mode state
+│   │   ├── ThemeContext.jsx     # Dark/light mode state
+│   │   └── LanguageContext.jsx  # i18n language state
 │   ├── services/                # Business logic & Firebase
 │   │   ├── firebase.js          # Firebase initialization
 │   │   ├── pointsCalculator.js  # Race points calculation engine
@@ -252,6 +253,7 @@ fanta-f1/
 ├── .env.example                 # Environment variables template
 ├── firebase.json                # Firebase hosting config
 ├── vite.config.js               # Vite configuration
+├── claude.md                    # AI development context
 └── README.md                    # This file
 ```
 
@@ -579,7 +581,15 @@ Built with ❤️ for Formula 1 enthusiasts.
 
 ## 📝 Changelog
 
-### Version 2.0 (Current)
+### Version 2.1 (Current - 2026 Season)
+- ✅ Updated to 2026 F1 season grid (11 teams, 22 drivers)
+- ✅ New teams: Audi (ex-Sauber), Cadillac (11th team)
+- ✅ Racing Bulls rebrand (ex-VCARB)
+- ✅ New drivers: Arvid Lindblad, Sergio Pérez (Cadillac), Valtteri Bottas (Cadillac)
+- ✅ Updated driver numbers (Norris #1, Verstappen #3, etc.)
+- ✅ Added claude.md for AI-assisted development context
+
+### Version 2.0
 - ✅ Complete admin panel redesign
 - ✅ Backup & restore system
 - ✅ Automatic result fetching from Ergast API

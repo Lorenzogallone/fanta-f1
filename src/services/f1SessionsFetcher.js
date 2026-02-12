@@ -68,37 +68,32 @@ async function rateLimitedFetch(url, retryCount = 0) {
 // Note: DRIVER_NAME_MAPPING removed - now using f1DataResolver for all driver/team resolution
 
 /**
- * Mapping of driver numbers to names (2024-2025 season)
+ * Mapping of driver numbers to names (2026 season)
  * Used as fallback when API doesn't provide driver info
  */
 const DRIVER_NUMBER_MAPPING = {
-  1: "Max Verstappen",
-  2: "Logan Sargeant", // 2024
-  4: "Lando Norris",
+  1: "Lando Norris",
+  3: "Max Verstappen",
+  5: "Gabriel Bortoleto",
+  6: "Isack Hadjar",
   10: "Pierre Gasly",
-  11: "Sergio Perez",
+  11: "Sergio Pérez",
+  12: "Andrea Kimi Antonelli",
   14: "Fernando Alonso",
   16: "Charles Leclerc",
   18: "Lance Stroll",
-  20: "Kevin Magnussen",
-  22: "Yuki Tsunoda",
   23: "Alexander Albon",
-  24: "Zhou Guanyu",
   27: "Nico Hülkenberg",
+  30: "Liam Lawson",
   31: "Esteban Ocon",
-  38: "Oliver Bearman",
+  41: "Arvid Lindblad",
   43: "Franco Colapinto",
   44: "Lewis Hamilton",
   55: "Carlos Sainz Jr.",
   63: "George Russell",
   77: "Valtteri Bottas",
   81: "Oscar Piastri",
-  // 2025 changes
-  12: "Andrea Kimi Antonelli", // New at Mercedes
-  17: "Jack Doohan", // New at Alpine
-  25: "Isack Hadjar", // New at RB
-  30: "Liam Lawson", // Racing Bulls
-  50: "Gabriel Bortoleto", // New at Sauber
+  87: "Oliver Bearman",
 };
 
 /**
