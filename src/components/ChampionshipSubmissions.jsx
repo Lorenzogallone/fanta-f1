@@ -22,7 +22,7 @@ const teamLogos = TEAM_LOGOS;
  * @param {number} props.refresh - Timestamp to trigger data refresh
  * @returns {JSX.Element} Championship submissions table
  */
-export default function ChampionshipSubmissions({ refresh }) {
+export default function ChampionshipSubmissions({ refresh, currentUserId = null, deadlineMs = null }) {
   const { isDark } = useTheme();
   const { t } = useLanguage();
   const [subs, setSubs] = useState([]);
@@ -83,10 +83,16 @@ export default function ChampionshipSubmissions({ refresh }) {
   if (!subs.length) {
     return (
       <Alert variant="info" className="mt-4">
-        No championship lineups submitted yet.
+        {t("history.noChampionship") || "No championship lineups submitted yet."}
       </Alert>
     );
   }
+
+  // Visibility: before deadline, only show own submission
+  const deadlinePassed = !deadlineMs || Date.now() >= deadlineMs;
+  const visibleSubs = currentUserId && !deadlinePassed
+    ? subs.filter(s => s.id === currentUserId)
+    : subs;
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
@@ -101,8 +107,19 @@ export default function ChampionshipSubmissions({ refresh }) {
     >
       <Card.Body>
         <Card.Title className="text-center mb-3">
-          {t("history.formationsAndPoints")} ({subs.length})
+          {t("history.formationsAndPoints")} ({visibleSubs.length})
         </Card.Title>
+
+        {/* Visibility warning */}
+        {currentUserId && !deadlinePassed && (
+          <Alert variant="warning" className="mb-3">
+            🔒 {t("championshipForm.othersHidden")}
+          </Alert>
+        )}
+
+        {visibleSubs.length === 0 ? (
+          <Alert variant="info">{t("history.noChampionship") || "No championship lineups submitted yet."}</Alert>
+        ) : (
         <div className="table-responsive">
           <Table striped bordered hover size="sm" className="mb-0 align-middle">
             <thead>
@@ -114,7 +131,7 @@ export default function ChampionshipSubmissions({ refresh }) {
               </tr>
             </thead>
             <tbody>
-              {subs.map((s, idx) => (
+              {visibleSubs.map((s, idx) => (
                 <tr key={s.id}>
                   <td>{idx + 1}</td>
                   <td>{s.name}</td>
@@ -170,6 +187,7 @@ export default function ChampionshipSubmissions({ refresh }) {
             </tbody>
           </Table>
         </div>
+        )}
       </Card.Body>
     </Card>
   );
@@ -177,4 +195,6 @@ export default function ChampionshipSubmissions({ refresh }) {
 
 ChampionshipSubmissions.propTypes = {
   refresh: PropTypes.number,
+  currentUserId: PropTypes.string,
+  deadlineMs: PropTypes.number,
 };

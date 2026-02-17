@@ -120,6 +120,11 @@ export const en = {
     jolly2Hint: "Use an extra joker to double your chances",
     jolly2RefundHint: "Remove to get your joker back",
     doublePointsRace: "Season finale: points are doubled",
+    othersHidden: "Other players' lineups will be visible after qualifying starts.",
+    othersMainHidden: "Other players' race lineups will be visible after qualifying starts. Sprint lineups are already visible.",
+    mainPicksHidden: "Race lineup hidden until qualifying starts",
+    sprintPicksHidden: "Sprint lineup hidden until sprint qualifying starts",
+    hiddenSubmissions: "{{count}} lineups hidden",
   },
 
   // History
@@ -385,6 +390,7 @@ export const en = {
     formationSaved: "Championship lineup saved successfully",
     alreadySubmitted: "You have already submitted your championship lineup",
     deadlinePassed: "The championship deadline has passed",
+    othersHidden: "Other players' championship lineups will be visible after the deadline.",
   },
 
   // Error Messages

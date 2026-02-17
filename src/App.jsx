@@ -84,7 +84,7 @@ export default function App() {
                     <Route path="/lineup"     element={<ProtectedRoute><Formations /></ProtectedRoute>} />
                     <Route path="/history"    element={<ProtectedRoute><History /></ProtectedRoute>} />
                     <Route path="/results"    element={<ProtectedRoute><RaceResults /></ProtectedRoute>} />
-                    <Route path="/statistics" element={<Statistics />} />
+                    <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
 
                     {/* Admin-only routes */}
                     <Route path="/calculate"  element={<AdminRoute><CalculatePoints /></AdminRoute>} />
@@ -101,7 +101,7 @@ export default function App() {
                     <Route path="/calcola" element={<AdminRoute><CalculatePoints /></AdminRoute>} />
                     <Route path="/storico" element={<ProtectedRoute><History /></ProtectedRoute>} />
                     <Route path="/risultati" element={<ProtectedRoute><RaceResults /></ProtectedRoute>} />
-                    <Route path="/statistiche" element={<Statistics />} />
+                    <Route path="/statistiche" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
                   </Routes>
                 </Suspense>
               </BContainer>
