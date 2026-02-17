@@ -200,6 +200,8 @@ export const en = {
     constructorStandingsUnavailable: "Constructor standings not available",
     practiceDataUnavailable: "Practice data unavailable",
     practiceDataUnavailableDescription: "Practice session data may not be available yet or the session has not been completed.",
+    noResultsYet: "Results not yet available",
+    noResultsYetDescription: "The sessions for this race have not been completed yet. Results will be shown as soon as they are available.",
   },
 
   // Statistics

@@ -302,12 +302,14 @@ export default function RaceResults() {
 
           try {
             const sessionData = await fetchAllSessions(season, round);
+            const hasAnySession = sessionData.hasQualifying || sessionData.hasSprint || sessionData.hasRace;
 
             setSessions({
               raceName: selectedRaceToLoad.name,
               date: selectedRaceToLoad.raceUTC.toDate().toLocaleDateString(),
               season,
               round,
+              noData: !hasAnySession,
               ...sessionData,
             });
 
@@ -330,6 +332,13 @@ export default function RaceResults() {
               defaultKeys.push("qualifying");
             }
             setActiveKeys(defaultKeys);
+
+            // Check if user can still submit formation for the initial race
+            const now = new Date();
+            const raceDate = selectedRaceToLoad.raceUTC.toDate();
+            const deadlineHasPassed = raceDate < now;
+            setCanSubmitFormation(!deadlineHasPassed);
+
             setLoadingSessions(false); // Sessions loaded
           } catch (err) {
             error("Error loading race sessions:", err);
@@ -397,12 +406,14 @@ export default function RaceResults() {
       if (sessionsCache[cacheKey]) {
         log(`Using cached sessions for ${season} R${round}`);
         const sessionData = sessionsCache[cacheKey];
+        const hasAnySession = sessionData.hasQualifying || sessionData.hasSprint || sessionData.hasRace;
 
         setSessions({
           raceName: race.name,
           date: race.raceUTC.toDate().toLocaleDateString(),
           season,
           round,
+          noData: !hasAnySession,
           ...sessionData,
         });
 
@@ -421,9 +432,9 @@ export default function RaceResults() {
 
         // Check if user can still submit formation
         const now = Timestamp.now();
-        const deadlineHasPassed = race.raceUTC.toDate() < now.toDate();
-        const canSubmit = !deadlineHasPassed && !sessionData.hasQualifying;
-        setCanSubmitFormation(canSubmit);
+        const raceDate = race.raceUTC.toDate();
+        const deadlineHasPassed = raceDate < now.toDate();
+        setCanSubmitFormation(!deadlineHasPassed);
 
         return;
       }
@@ -434,11 +445,7 @@ export default function RaceResults() {
 
       const sessionData = await fetchAllSessions(season, round);
 
-      if (!sessionData.hasQualifying && !sessionData.hasSprint && !sessionData.hasRace) {
-        setError(t("raceResults.noDataAvailable"));
-        setSessions(null);
-        return;
-      }
+      const hasAnySession = sessionData.hasQualifying || sessionData.hasSprint || sessionData.hasRace;
 
       // Cache the sessions
       setSessionsCache(prev => ({
@@ -451,14 +458,15 @@ export default function RaceResults() {
         date: race.raceUTC.toDate().toLocaleDateString(),
         season,
         round,
+        noData: !hasAnySession,
         ...sessionData,
       });
 
       // Check if user can still submit formation
       const now = Timestamp.now();
-      const deadlineHasPassed = race.raceUTC.toDate() < now.toDate();
-      const canSubmit = !deadlineHasPassed && !sessionData.hasQualifying;
-      setCanSubmitFormation(canSubmit);
+      const raceDate = race.raceUTC.toDate();
+      const deadlineHasPassed = raceDate < now.toDate();
+      setCanSubmitFormation(!deadlineHasPassed);
 
       // Set default expanded keys
       const defaultKeys = [];
@@ -963,67 +971,76 @@ export default function RaceResults() {
               </Card.Header>
 
               <Card.Body>
-                <Accordion
-                  activeKey={activeKeys}
-                  onSelect={(keys) => setActiveKeys(Array.isArray(keys) ? keys : [keys])}
-                  alwaysOpen
-                >
-                  {/* Qualifying */}
-                  {sessions.hasQualifying && (
-                    <Accordion.Item eventKey="qualifying">
-                      <Accordion.Header>
-                        <strong style={{ color: accentColor }}>
-                          🏎️ {t("raceResults.qualifying")}
-                        </strong>
-                      </Accordion.Header>
-                      <Accordion.Body className="p-2 p-md-3">
-                        {renderQualifyingBody(sessions.qualifying)}
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  )}
+                {sessions.noData ? (
+                  <Alert variant="info" className="text-center mb-0">
+                    <div className="py-3">
+                      <h5>{t("raceResults.noResultsYet")}</h5>
+                      <p className="mb-0 text-muted">{t("raceResults.noResultsYetDescription")}</p>
+                    </div>
+                  </Alert>
+                ) : (
+                  <Accordion
+                    activeKey={activeKeys}
+                    onSelect={(keys) => setActiveKeys(Array.isArray(keys) ? keys : [keys])}
+                    alwaysOpen
+                  >
+                    {/* Qualifying */}
+                    {sessions.hasQualifying && (
+                      <Accordion.Item eventKey="qualifying">
+                        <Accordion.Header>
+                          <strong style={{ color: accentColor }}>
+                            🏎️ {t("raceResults.qualifying")}
+                          </strong>
+                        </Accordion.Header>
+                        <Accordion.Body className="p-2 p-md-3">
+                          {renderQualifyingBody(sessions.qualifying)}
+                        </Accordion.Body>
+                      </Accordion.Item>
+                    )}
 
-                  {/* Sprint Qualifying */}
-                  {sessions.hasSprintQualifying && (
-                    <Accordion.Item eventKey="sprintQualifying">
-                      <Accordion.Header>
-                        <strong style={{ color: accentColor }}>
-                          ⚡ {t("raceResults.sprintQualifying")}
-                        </strong>
-                      </Accordion.Header>
-                      <Accordion.Body className="p-2 p-md-3">
-                        {renderSessionBody(sessions.sprintQualifying, "sprintQualifying")}
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  )}
+                    {/* Sprint Qualifying */}
+                    {sessions.hasSprintQualifying && (
+                      <Accordion.Item eventKey="sprintQualifying">
+                        <Accordion.Header>
+                          <strong style={{ color: accentColor }}>
+                            ⚡ {t("raceResults.sprintQualifying")}
+                          </strong>
+                        </Accordion.Header>
+                        <Accordion.Body className="p-2 p-md-3">
+                          {renderSessionBody(sessions.sprintQualifying, "sprintQualifying")}
+                        </Accordion.Body>
+                      </Accordion.Item>
+                    )}
 
-                  {/* Sprint */}
-                  {sessions.hasSprint && (
-                    <Accordion.Item eventKey="sprint">
-                      <Accordion.Header>
-                        <strong style={{ color: accentColor }}>
-                          ⚡ {t("raceResults.sprint")}
-                        </strong>
-                      </Accordion.Header>
-                      <Accordion.Body className="p-2 p-md-3">
-                        {renderSessionBody(sessions.sprint, "sprint")}
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  )}
+                    {/* Sprint */}
+                    {sessions.hasSprint && (
+                      <Accordion.Item eventKey="sprint">
+                        <Accordion.Header>
+                          <strong style={{ color: accentColor }}>
+                            ⚡ {t("raceResults.sprint")}
+                          </strong>
+                        </Accordion.Header>
+                        <Accordion.Body className="p-2 p-md-3">
+                          {renderSessionBody(sessions.sprint, "sprint")}
+                        </Accordion.Body>
+                      </Accordion.Item>
+                    )}
 
-                  {/* Race */}
-                  {sessions.hasRace && (
-                    <Accordion.Item eventKey="race">
-                      <Accordion.Header>
-                        <strong style={{ color: accentColor }}>
-                          🏆 {t("raceResults.race")}
-                        </strong>
-                      </Accordion.Header>
-                      <Accordion.Body className="p-2 p-md-3">
-                        {renderSessionBody(sessions.race, "race")}
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  )}
-                </Accordion>
+                    {/* Race */}
+                    {sessions.hasRace && (
+                      <Accordion.Item eventKey="race">
+                        <Accordion.Header>
+                          <strong style={{ color: accentColor }}>
+                            🏆 {t("raceResults.race")}
+                          </strong>
+                        </Accordion.Header>
+                        <Accordion.Body className="p-2 p-md-3">
+                          {renderSessionBody(sessions.race, "race")}
+                        </Accordion.Body>
+                      </Accordion.Item>
+                    )}
+                  </Accordion>
+                )}
               </Card.Body>
             </Card>
           </Col>

@@ -200,6 +200,8 @@ export const it = {
     constructorStandingsUnavailable: "Classifica costruttori non disponibile",
     practiceDataUnavailable: "Dati prove libere non disponibili",
     practiceDataUnavailableDescription: "I dati delle prove libere potrebbero non essere ancora disponibili o la sessione non è stata completata.",
+    noResultsYet: "Risultati non ancora disponibili",
+    noResultsYetDescription: "Le sessioni di questa gara non sono ancora state completate. I risultati verranno mostrati non appena disponibili.",
   },
 
   // Statistics
