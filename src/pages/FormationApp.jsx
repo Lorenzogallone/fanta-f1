@@ -38,6 +38,7 @@ import RaceHistoryCard from "../components/RaceHistoryCard";
 import { DRIVERS, DRIVER_TEAM, TEAM_LOGOS, TIME_CONSTANTS } from "../constants/racing";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { useLanguage } from "../hooks/useLanguage";
+import { useAuth } from "../hooks/useAuth";
 import { error } from "../utils/logger";
 import { getLateWindowInfo } from "../utils/lateSubmissionHelper";
 import "../styles/customSelect.css";
@@ -65,6 +66,7 @@ const driverOpts = drivers.map((d) => ({
 export default function FormationApp() {
   const colors = useThemeColors();
   const { t } = useLanguage();
+  const { user, userProfile } = useAuth();
 
   // Main state
   const [ranking, setRanking] = useState([]);
@@ -86,7 +88,7 @@ export default function FormationApp() {
   const [userJolly, setUserJolly] = useState(0);
   const [existingJolly2, setExistingJolly2] = useState(false); // Track if existing submission had jolly2
   const [form, setForm] = useState({
-    userId: "",
+    userId: user?.uid || "",
     raceId: "",
     P1: null,
     P2: null,
@@ -137,6 +139,15 @@ export default function FormationApp() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-set userId from authenticated user
+  useEffect(() => {
+    if (user?.uid && form.userId !== user.uid) {
+      setForm(f => ({ ...f, userId: user.uid }));
+      const me = ranking.find(u => u.id === user.uid);
+      setUserJolly(me?.jolly ?? 0);
+    }
+  }, [user, ranking]);
 
   /**
    * Load user's late submission status
@@ -195,19 +206,13 @@ export default function FormationApp() {
   const hasSprintDuplicates = sprintDuplicates.length > 0;
 
   /**
-   * Handle simple input changes (user / race selection)
+   * Handle race selection change
    * @param {Event} e - Change event
    */
   const onChangeSimple = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
 
-    if (name === "userId") {
-      const me = ranking.find((u) => u.id === value);
-      setUserJolly(me?.jolly ?? 0);
-      setIsEditMode(false);
-      setTouched(false);
-    }
     if (name === "raceId") {
       const r = races.find((r) => r.id === value);
       setRace(r ?? null);
@@ -507,23 +512,17 @@ export default function FormationApp() {
 
               {/* Submit unico, ma savingMode viene impostato dal bottone */}
               <Form onSubmit={save}>
-                {/* Utente */}
-                <Form.Group className="mb-3">
-                  <Form.Label>{t("formations.selectUser")} *</Form.Label>
-                  <Form.Select name="userId" value={form.userId} onChange={onChangeSimple} required aria-label="Select user to submit formation for">
-                    <option value="">{t("formations.selectUser")}</option>
-                    {ranking.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name}
-                      </option>
-                    ))}
-                  </Form.Select>
+                {/* Utente auto-detected */}
+                <Alert variant="info" className="mb-3 d-flex align-items-center justify-content-between py-2">
+                  <span>
+                    {t("auth.submittingAs")}: <strong>{userProfile?.nickname || user?.email}</strong>
+                  </span>
                   {form.userId && (
-                    <Form.Text>
+                    <span>
                       {t("formations.jokersAvailable")}: <Badge bg="warning" text="dark">{userJolly}</Badge>
-                    </Form.Text>
+                    </span>
                   )}
-                </Form.Group>
+                </Alert>
 
                 {/* Gara */}
                 <Form.Group className="mb-3">

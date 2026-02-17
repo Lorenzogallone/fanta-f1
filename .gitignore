@@ -162,6 +162,7 @@ dist-ssr
 
 **/serviceAccount.json
 **/serviceaccount.json
+**/serviceAccountKey.json
 
 # Firebase Functions
 functions/node_modules/

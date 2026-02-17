@@ -1,6 +1,6 @@
 /**
  * @file App.jsx
- * @description Main application component with routing and lazy-loaded pages
+ * @description Main application component with routing, authentication, and lazy-loaded pages
  */
 
 import { lazy, Suspense, useEffect } from "react";
@@ -14,9 +14,13 @@ import { Toaster } from 'react-hot-toast';
 
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Navigation from "./components/Navigation";
 import Footer from "./components/Footer";
+import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
+import CompleteProfileModal from "./components/CompleteProfileModal";
 import { syncFromAPI } from "./services/f1DataResolver.js";
 import { warn } from "./utils/logger";
 import "./styles/theme.css";
@@ -33,6 +37,7 @@ const History = lazy(() => import("./pages/History"));
 const RaceResults = lazy(() => import("./pages/RaceResults"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const Statistics = lazy(() => import("./pages/Statistics"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
 
 /**
  * Loading spinner displayed while pages are loading
@@ -45,7 +50,7 @@ const PageLoader = () => (
 );
 
 /**
- * Main application component with theme provider, language provider, and routing
+ * Main application component with theme provider, language provider, auth, and routing
  * @returns {JSX.Element} App with navigation and routes
  */
 export default function App() {
@@ -53,7 +58,6 @@ export default function App() {
   useEffect(() => {
     syncFromAPI().catch(err => {
       warn('Background sync failed:', err);
-      // Non bloccare l'app se il sync fallisce
     });
   }, []);
 
@@ -61,39 +65,50 @@ export default function App() {
     <ErrorBoundary>
       <LanguageProvider>
         <ThemeProvider>
-          <Router>
-            <Navigation />
-            <Toaster />
+          <AuthProvider>
+            <Router>
+              <Navigation />
+              <Toaster />
+              <CompleteProfileModal />
 
-            <BContainer className="py-4">
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route path="/"           element={<Home />} />
-                  <Route path="/leaderboard" element={<Home />} />
-                  <Route path="/participant/:userId" element={<ParticipantDetail />} />
-                  <Route path="/lineup"     element={<Formations />} />
-                  <Route path="/calculate"  element={<CalculatePoints />} />
-                  <Route path="/history"    element={<History />} />
-                  <Route path="/results"    element={<RaceResults />} />
-                  <Route path="/statistics" element={<Statistics />} />
-                  <Route path="/admin"      element={<AdminPanel />} />
-                  {/* Legacy routes for compatibility */}
-                  <Route path="/formations/races" element={<FormationApp />} />
-                  <Route path="/formations/championship" element={<ChampionshipForm />} />
-                  {/* Italian routes redirects for backward compatibility */}
-                  <Route path="/classifica" element={<Home />} />
-                  <Route path="/partecipante/:userId" element={<ParticipantDetail />} />
-                  <Route path="/schiera" element={<Formations />} />
-                  <Route path="/calcola" element={<CalculatePoints />} />
-                  <Route path="/storico" element={<History />} />
-                  <Route path="/risultati" element={<RaceResults />} />
-                  <Route path="/statistiche" element={<Statistics />} />
-                </Routes>
-              </Suspense>
-            </BContainer>
+              <BContainer className="py-4">
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    {/* Public route */}
+                    <Route path="/login" element={<LoginPage />} />
 
-            <Footer />
-          </Router>
+                    {/* Protected routes - require authentication */}
+                    <Route path="/"           element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                    <Route path="/leaderboard" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                    <Route path="/participant/:userId" element={<ProtectedRoute><ParticipantDetail /></ProtectedRoute>} />
+                    <Route path="/lineup"     element={<ProtectedRoute><Formations /></ProtectedRoute>} />
+                    <Route path="/history"    element={<ProtectedRoute><History /></ProtectedRoute>} />
+                    <Route path="/results"    element={<ProtectedRoute><RaceResults /></ProtectedRoute>} />
+                    <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
+
+                    {/* Admin-only routes */}
+                    <Route path="/calculate"  element={<AdminRoute><CalculatePoints /></AdminRoute>} />
+                    <Route path="/admin"      element={<AdminRoute><AdminPanel /></AdminRoute>} />
+
+                    {/* Legacy routes */}
+                    <Route path="/formations/races" element={<ProtectedRoute><FormationApp /></ProtectedRoute>} />
+                    <Route path="/formations/championship" element={<ProtectedRoute><ChampionshipForm /></ProtectedRoute>} />
+
+                    {/* Italian routes for backward compatibility */}
+                    <Route path="/classifica" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                    <Route path="/partecipante/:userId" element={<ProtectedRoute><ParticipantDetail /></ProtectedRoute>} />
+                    <Route path="/schiera" element={<ProtectedRoute><Formations /></ProtectedRoute>} />
+                    <Route path="/calcola" element={<AdminRoute><CalculatePoints /></AdminRoute>} />
+                    <Route path="/storico" element={<ProtectedRoute><History /></ProtectedRoute>} />
+                    <Route path="/risultati" element={<ProtectedRoute><RaceResults /></ProtectedRoute>} />
+                    <Route path="/statistiche" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
+                  </Routes>
+                </Suspense>
+              </BContainer>
+
+              <Footer />
+            </Router>
+          </AuthProvider>
         </ThemeProvider>
       </LanguageProvider>
     </ErrorBoundary>

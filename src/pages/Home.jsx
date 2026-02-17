@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import Leaderboard from "./Leaderboard";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { useAuth } from "../hooks/useAuth";
 
 /**
  * Home page component with quick navigation and leaderboard preview
@@ -17,6 +18,7 @@ import { useLanguage } from "../hooks/useLanguage";
 export default function Home() {
   const { isDark } = useTheme();
   const { t } = useLanguage();
+  const { isAdmin } = useAuth();
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
 
@@ -83,17 +85,19 @@ export default function Home() {
             </Col>
 
             {/* Calculate Points - Admin Only */}
-            <Col xs={12}>
-              <Button
-                as={Link}
-                to="/calculate"
-                variant="outline-secondary"
-                className="w-100 py-2"
-                style={{ fontSize: "0.9rem" }}
-              >
-                🧮 {t("nav.calculatePoints")}
-              </Button>
-            </Col>
+            {isAdmin && (
+              <Col xs={12}>
+                <Button
+                  as={Link}
+                  to="/calculate"
+                  variant="outline-secondary"
+                  className="w-100 py-2"
+                  style={{ fontSize: "0.9rem" }}
+                >
+                  🧮 {t("nav.calculatePoints")}
+                </Button>
+              </Col>
+            )}
           </Row>
         </Col>
       </Row>

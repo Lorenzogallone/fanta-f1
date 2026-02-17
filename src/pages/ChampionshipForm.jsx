@@ -22,6 +22,7 @@ import ChampionshipSubmissions from "../components/ChampionshipSubmissions";
 import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { useAuth } from "../hooks/useAuth";
 import { error } from "../utils/logger";
 import "../styles/customSelect.css";
 
@@ -77,6 +78,7 @@ const asConstructorOptions = (constructorsList) =>
 export default function ChampionshipForm() {
   const { isDark } = useTheme();
   const { t } = useLanguage();
+  const { user, userProfile } = useAuth();
 
   // Translation key mappings for driver and constructor labels
   const driverLabels = {
@@ -91,10 +93,8 @@ export default function ChampionshipForm() {
     C3: "championshipForm.constructor3",
   };
 
-  const [rankingOptions, setRankingOptions] = useState([]);
-  const [loadingRanking, setLoadingRanking] = useState(true);
   const [form, setForm] = useState({
-    userId: "",
+    userId: user?.uid || "",
     D1: null,
     D2: null,
     D3: null,
@@ -117,29 +117,12 @@ export default function ChampionshipForm() {
   const [loadingDeadline, setLoadingDeadline] = useState(true);
   const pastDeadline = deadlineMs ? Date.now() > deadlineMs : false;
 
-  /**
-   * Load user list from ranking collection
-   */
+  // Auto-set userId from authenticated user
   useEffect(() => {
-    (async () => {
-      try {
-        const snap = await getDocs(collection(db, "ranking"));
-        const options = snap.docs.map((docSnap) => ({
-          value: docSnap.id,
-          label: docSnap.data().name || docSnap.id,
-        }));
-        setRankingOptions(options);
-      } catch (e) {
-        error("Errore caricamento utenti:", e);
-        setMessage({
-          variant: "danger",
-          text: t("errors.generic"),
-        });
-      } finally {
-        setLoadingRanking(false);
-      }
-    })();
-  }, []);
+    if (user?.uid && form.userId !== user.uid) {
+      setForm(f => ({ ...f, userId: user.uid }));
+    }
+  }, [user]);
 
   /**
    * Calculate dynamic deadline based on mid-championship race
@@ -264,9 +247,6 @@ export default function ChampionshipForm() {
   const onSel = (selected, field) =>
     setForm((f) => ({ ...f, [field]: selected }));
 
-  const onChangeUser = (e) =>
-    setForm((f) => ({ ...f, userId: e.target.value }));
-
   const allPicked =
     form.userId &&
     form.D1 &&
@@ -311,7 +291,7 @@ export default function ChampionshipForm() {
     }
   };
 
-  if (loadingRanking || loadingDeadline)
+  if (loadingDeadline)
     return (
       <Container className="py-5 text-center">
         <Spinner animation="border" variant="danger" />
@@ -360,24 +340,10 @@ export default function ChampionshipForm() {
               )}
 
               <Form onSubmit={handleSubmit}>
-                {/* selezione utente */}
-                <Form.Group className="mb-4">
-                  <Form.Label>{t("championshipForm.selectUser")}</Form.Label>
-                  <Form.Select
-                    name="userId"
-                    value={form.userId}
-                    onChange={onChangeUser}
-                    required
-                    disabled={pastDeadline}
-                  >
-                    <option value="">{t("formations.selectUser")}</option>
-                    {rankingOptions.map((u) => (
-                      <option key={u.value} value={u.value}>
-                        {u.label}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
+                {/* utente auto-detected */}
+                <Alert variant="info" className="mb-4 py-2">
+                  {t("auth.submittingAs")}: <strong>{userProfile?.nickname || user?.email}</strong>
+                </Alert>
 
                 <h6 className="fw-bold">{t("championshipForm.topDrivers")}</h6>
                 {["D1", "D2", "D3"].map((f) => (

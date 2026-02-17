@@ -38,7 +38,6 @@ import Select from "react-select";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { error } from "../utils/logger";
-import AdminLogin from "../components/AdminLogin";
 import {
   createAndSaveBackup,
   getAllBackups,
@@ -53,7 +52,6 @@ import {
  */
 export default function AdminPanel() {
   const { t } = useLanguage();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState("participants");
 
   // Shared data to avoid multiple fetches
@@ -61,22 +59,12 @@ export default function AdminPanel() {
   const [sharedRaces, setSharedRaces] = useState([]);
   const [loadingShared, setLoadingShared] = useState(false);
 
-  useEffect(() => {
-    // Check if already authenticated
-    const auth = localStorage.getItem("adminAuth");
-    if (auth === "true") {
-      setIsAuthenticated(true);
-    }
-  }, []);
-
   /**
-   * Load shared data when authenticated
+   * Load shared data on mount
    */
   useEffect(() => {
-    if (isAuthenticated) {
-      loadSharedData();
-    }
-  }, [isAuthenticated]);
+    loadSharedData();
+  }, []);
 
   /**
    * Load participants and races data
@@ -100,10 +88,6 @@ export default function AdminPanel() {
       setLoadingShared(false);
     }
   };
-
-  if (!isAuthenticated) {
-    return <AdminLogin onSuccess={() => setIsAuthenticated(true)} useLocalStorage={true} />;
-  }
 
   return (
     <Container className="py-4">
@@ -180,7 +164,6 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
   const { t } = useLanguage();
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
-  const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [currentParticipant, setCurrentParticipant] = useState(null);
   const [formData, setFormData] = useState({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
@@ -190,15 +173,6 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
   const participants = propParticipants;
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
-
-  /**
-   * Open add participant dialog
-   */
-  const openAddDialog = () => {
-    setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
-    setMessage(null);
-    setShowAddDialog(true);
-  };
 
   /**
    * Open edit participant dialog
@@ -215,44 +189,6 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
     });
     setMessage(null);
     setShowEditDialog(true);
-  };
-
-  /**
-   * Handle adding new participant
-   * @param {Event} e - Form submit event
-   */
-  const handleAdd = async (e) => {
-    e.preventDefault();
-    if (!formData.id || !formData.name) {
-      setMessage({ type: "warning", text: t("errors.incompleteForm") });
-      return;
-    }
-
-    setSaving(true);
-    setMessage(null);
-
-    try {
-      await setDoc(doc(db, "ranking", formData.id), {
-        name: formData.name,
-        puntiTotali: parseInt(formData.puntiTotali) || 0,
-        jolly: parseInt(formData.jolly) || 0,
-        usedLateSubmission: false,
-        pointsByRace: {},
-        championshipPiloti: [],
-        championshipCostruttori: [],
-        championshipPts: 0,
-      });
-
-      setMessage({ type: "success", text: t("admin.participantAdded") });
-      setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
-      onDataChange();
-      setTimeout(() => setShowAddDialog(false), 1500);
-    } catch (err) {
-      error(err);
-      setMessage({ type: "danger", text: t("common.error") });
-    } finally {
-      setSaving(false);
-    }
   };
 
   // Edit participant
@@ -280,7 +216,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
     }
   };
 
-  // Delete participant
+  // Delete participant (ranking + user profile + all submissions)
   const handleDelete = async () => {
     if (!window.confirm(`${t("admin.deleteParticipant")} ${currentParticipant.name}?\n\n${t("admin.deleteWarning")}`)) return;
 
@@ -288,7 +224,28 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
     setMessage(null);
 
     try {
-      await deleteDoc(doc(db, "ranking", currentParticipant.id));
+      const uid = currentParticipant.id;
+
+      // Delete submissions from all races
+      const racesSnap = await getDocs(collection(db, "races"));
+      for (const raceDoc of racesSnap.docs) {
+        const subRef = doc(db, "races", raceDoc.id, "submissions", uid);
+        const subSnap = await getDoc(subRef);
+        if (subSnap.exists()) {
+          await deleteDoc(subRef);
+        }
+      }
+
+      // Delete ranking entry
+      await deleteDoc(doc(db, "ranking", uid));
+
+      // Delete user profile
+      const userRef = doc(db, "users", uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        await deleteDoc(userRef);
+      }
+
       setMessage({ type: "success", text: t("admin.participantDeleted") });
       onDataChange();
       setTimeout(() => setShowEditDialog(false), 1500);
@@ -312,12 +269,7 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
     <>
       <Row className="mb-3">
         <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">{t("admin.participants")} ({participants.length})</h5>
-            <Button variant="danger" onClick={openAddDialog} aria-label="Add new participant">
-              ➕ {t("admin.addParticipant")}
-            </Button>
-          </div>
+          <h5 className="mb-0">{t("admin.participants")} ({participants.length})</h5>
         </Col>
       </Row>
 
@@ -382,72 +334,6 @@ function ParticipantsManager({ participants: propParticipants, loading: propLoad
           </Card>
         </Col>
       </Row>
-
-      {/* Add Participant Dialog */}
-      <Modal show={showAddDialog} onHide={() => setShowAddDialog(false)} centered>
-        <Modal.Header closeButton style={{ borderBottomColor: accentColor }}>
-          <Modal.Title>➕ {t("admin.addParticipant")}</Modal.Title>
-        </Modal.Header>
-        <Form onSubmit={handleAdd}>
-          <Modal.Body>
-            {message && (
-              <Alert variant={message.type} dismissible onClose={() => setMessage(null)}>
-                {message.text}
-              </Alert>
-            )}
-
-            <Form.Group className="mb-3">
-              <Form.Label>ID *</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="e.g. mario"
-                value={formData.id}
-                onChange={(e) => setFormData({ ...formData, id: e.target.value })}
-                required
-                autoFocus
-              />
-              <Form.Text>{t("formations.required")}</Form.Text>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t("admin.participantName")} *</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="e.g. Mario Rossi"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t("admin.totalPoints")}</Form.Label>
-              <Form.Control
-                type="number"
-                value={formData.puntiTotali}
-                onChange={(e) => setFormData({ ...formData, puntiTotali: e.target.value })}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t("admin.availableJokers")}</Form.Label>
-              <Form.Control
-                type="number"
-                value={formData.jolly}
-                onChange={(e) => setFormData({ ...formData, jolly: e.target.value })}
-              />
-            </Form.Group>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowAddDialog(false)} disabled={saving}>
-              {t("common.cancel")}
-            </Button>
-            <Button variant="danger" type="submit" disabled={saving}>
-              {saving ? t("common.loading") : t("admin.addParticipant")}
-            </Button>
-          </Modal.Footer>
-        </Form>
-      </Modal>
 
       {/* Edit Participant Dialog */}
       <Modal show={showEditDialog} onHide={() => setShowEditDialog(false)} centered>

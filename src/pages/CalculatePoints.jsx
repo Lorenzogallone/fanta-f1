@@ -21,7 +21,6 @@ import { fetchRaceResults } from "../services/f1ResultsFetcher";
 import { createAndSaveBackup } from "../services/backupService";
 import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
 import RaceHistoryCard from "../components/RaceHistoryCard";
-import AdminLogin from "../components/AdminLogin";
 import Select from "react-select";
 import { useLanguage } from "../hooks/useLanguage";
 import { error } from "../utils/logger";
@@ -603,21 +602,7 @@ useEffect(() => {
   );
 }
 
-/* ==================== WRAPPER WITH PROTECTION ==================== */
+/* ==================== WRAPPER (protected by AdminRoute in App.jsx) ==================== */
 export default function CalculatePoints() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    // Check if already authenticated
-    const auth = localStorage.getItem("adminAuth");
-    if (auth === "true") {
-      setIsAuthenticated(true);
-    }
-  }, []);
-
-  if (!isAuthenticated) {
-    return <AdminLogin onSuccess={() => setIsAuthenticated(true)} useLocalStorage={true} />;
-  }
-
   return <CalculatePointsContent />;
 }

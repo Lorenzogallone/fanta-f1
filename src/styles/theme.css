@@ -494,6 +494,24 @@ body {
   transform: scale(1.05);
 }
 
+/* User menu */
+.user-menu-toggle::after {
+  display: none !important;
+}
+
+.user-menu-dropdown .user-menu-item:hover {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.user-avatar {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.user-menu-toggle:hover .user-avatar {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 2px var(--accent-red);
+}
+
 /* Admin link highlight */
 .admin-link {
   font-weight: 700 !important;

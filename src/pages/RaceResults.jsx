@@ -276,28 +276,20 @@ export default function RaceResults() {
         setRaces(raceList);
         setLoadingRaces(false); // Show race selector immediately
 
-        // Select either current race weekend or last completed race
+        // Select the race closest to today by date
         if (raceList.length > 0) {
           const now = new Date();
 
-          // Find the right race: either current weekend or last completed
-          let selectedRaceToLoad = null;
+          // Find the race with the smallest absolute time distance from now
+          let selectedRaceToLoad = raceList[0];
+          let smallestDiff = Math.abs(raceList[0].raceUTC.toDate() - now);
 
           for (const race of raceList) {
-            const raceDate = race.raceUTC.toDate();
-            const fridayBeforeRace = new Date(raceDate);
-            fridayBeforeRace.setDate(raceDate.getDate() - 2); // 2 days before (Friday if race is Sunday)
-
-            // If we're in the race weekend (Friday to race day) or race is in the past
-            if (now >= fridayBeforeRace || now >= raceDate) {
+            const diff = Math.abs(race.raceUTC.toDate() - now);
+            if (diff < smallestDiff) {
+              smallestDiff = diff;
               selectedRaceToLoad = race;
-              break; // Found the right race
             }
-          }
-
-          // Fallback to most recent race if no match found
-          if (!selectedRaceToLoad) {
-            selectedRaceToLoad = raceList[0];
           }
 
           setSelectedRaceId(selectedRaceToLoad.id);

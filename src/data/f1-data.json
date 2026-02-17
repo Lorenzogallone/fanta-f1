@@ -122,6 +122,26 @@
         "Williams F1",
         "williams"
       ]
+    }, 
+    "audi": {
+      "id": "audi",
+      "displayName": "Audi",
+      "logo": "/audi.png",
+      "apiAliases": [
+        "Audi",
+        "Audi F1 Team",
+        "audi"
+      ]
+    }, 
+    "cadillac": {
+      "id": "cadillac",
+      "displayName": "Cadillac",
+      "logo": "/cadillac.png",
+      "apiAliases": [
+        "Cadillac",
+        "Cadillac F1 Team",
+        "cadillac"
+      ]
     }
   },
   "drivers": {
