@@ -397,7 +397,7 @@ export default function ChampionshipForm() {
 
         {/* LISTA ------------------------------------------------------ */}
         <Col xs={12} lg={6}>
-          <ChampionshipSubmissions refresh={refreshKey} />
+          <ChampionshipSubmissions refresh={refreshKey} currentUserId={user?.uid} deadlineMs={deadlineMs} />
         </Col>
       </Row>
     </Container>

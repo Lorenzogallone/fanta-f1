@@ -84,6 +84,7 @@ function RaceHistoryCard({
   showPoints = true,
   compact = false,
   isLastRace = false,
+  currentUserId = null,
 }) {
   const { isDark } = useTheme();
   const { t } = useLanguage();
@@ -142,6 +143,27 @@ function RaceHistoryCard({
   const BONUS_MAIN = POINTS.BONUS_JOLLY_MAIN;
   const cancelledMain = race.cancelledMain || false;
   const cancelledSprint = race.cancelledSprint || false;
+
+  // Visibility rules: hide other players' picks until qualifying deadlines
+  const nowMs = Date.now();
+  const mainQualifyingStarted = race.qualiUTC ? nowMs >= race.qualiUTC.seconds * 1000 : true;
+  const sprintQualifyingStarted = race.qualiSprintUTC ? nowMs >= race.qualiSprintUTC.seconds * 1000 : true;
+  const canSeeOthersMain = !currentUserId || mainQualifyingStarted;
+  const canSeeOthersSprint = !currentUserId || sprintQualifyingStarted;
+
+  // Helper: check if a submission's main/sprint picks should be masked
+  const isOwn = (subId) => currentUserId && subId === currentUserId;
+  const maskMain = (subId) => !isOwn(subId) && !canSeeOthersMain;
+  const maskSprint = (subId) => !isOwn(subId) && !canSeeOthersSprint;
+
+  // Filter: hide other users entirely if nothing is visible for them
+  const visibleSubs = subs.filter(s => {
+    if (!currentUserId) return true;
+    if (isOwn(s.id)) return true;
+    return canSeeOthersMain || (hasSprint && canSeeOthersSprint);
+  });
+
+  const hiddenCount = subs.length - visibleSubs.length;
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
@@ -295,9 +317,23 @@ function RaceHistoryCard({
               {showPoints && official ? t("history.lineupsAndScores") : t("history.lineups")}
             </h6>
 
+            {/* Visibility warning */}
+            {currentUserId && !canSeeOthersMain && (
+              <Alert variant="warning" className="mb-3">
+                🔒 {hasSprint && canSeeOthersSprint
+                  ? t("formations.othersMainHidden")
+                  : t("formations.othersHidden")}
+                {hiddenCount > 0 && !hasSprint && (
+                  <div className="mt-1 small">
+                    {t("formations.hiddenSubmissions", { count: subs.length - (subs.some(s => isOwn(s.id)) ? 1 : 0) })}
+                  </div>
+                )}
+              </Alert>
+            )}
+
             {/* Mobile layout - cards */}
             <div className="d-lg-none">
-              {subs.map((s, idx) => {
+              {visibleSubs.map((s, idx) => {
                 /* Points calculation */
                 const p1Pts = showPoints && official && s.mainP1 === official.P1 ? POINTS.MAIN[1] * multiplier : 0;
                 const p2Pts = showPoints && official && s.mainP2 === official.P2 ? POINTS.MAIN[2] * multiplier : 0;
@@ -393,33 +429,45 @@ function RaceHistoryCard({
                         )}
                       </div>
 
-                      <div className="mb-2">
-                        <strong className="text-muted" style={{ fontSize: "0.85rem" }}>{t("formations.mainRace").toUpperCase()}</strong>
-                        <PickLine label="P1" pick={s.mainP1} pts={p1Pts} />
-                        <PickLine label="P2" pick={s.mainP2} pts={p2Pts} />
-                        <PickLine label="P3" pick={s.mainP3} pts={p3Pts} />
-                        <PickLine label={t("formations.joker")} pick={s.mainJolly} pts={j1Pts} />
-                        {s.mainJolly2 && <PickLine label={`${t("formations.joker")} 2`} pick={s.mainJolly2} pts={j2Pts} />}
-                      </div>
+                      {maskMain(s.id) ? (
+                        <div className="text-center text-muted py-2">
+                          🔒 <em>{t("formations.mainPicksHidden")}</em>
+                        </div>
+                      ) : (
+                        <div className="mb-2">
+                          <strong className="text-muted" style={{ fontSize: "0.85rem" }}>{t("formations.mainRace").toUpperCase()}</strong>
+                          <PickLine label="P1" pick={s.mainP1} pts={p1Pts} />
+                          <PickLine label="P2" pick={s.mainP2} pts={p2Pts} />
+                          <PickLine label="P3" pick={s.mainP3} pts={p3Pts} />
+                          <PickLine label={t("formations.joker")} pick={s.mainJolly} pts={j1Pts} />
+                          {s.mainJolly2 && <PickLine label={`${t("formations.joker")} 2`} pick={s.mainJolly2} pts={j2Pts} />}
+                        </div>
+                      )}
 
                       {hasSprint && (
-                        <div>
-                          <div className="d-flex justify-content-between align-items-center">
-                            <strong className="text-muted" style={{ fontSize: "0.85rem" }}>{t("formations.sprint").toUpperCase()}</strong>
-                            {showPoints && official && (
-                              <Badge
-                                bg={totalSprint > 0 ? "success" : totalSprint < 0 ? "danger" : "secondary"}
-                                style={{ fontSize: "0.9rem" }}
-                              >
-                                {totalSprint} pts
-                              </Badge>
-                            )}
+                        maskSprint(s.id) ? (
+                          <div className="text-center text-muted py-2">
+                            🔒 <em>{t("formations.sprintPicksHidden")}</em>
                           </div>
-                          <PickLine label="SP1" pick={s.sprintP1} pts={sp1Pts} />
-                          <PickLine label="SP2" pick={s.sprintP2} pts={sp2Pts} />
-                          <PickLine label="SP3" pick={s.sprintP3} pts={sp3Pts} />
-                          <PickLine label={`${t("formations.joker")} SP`} pick={s.sprintJolly} pts={jspPts} />
-                        </div>
+                        ) : (
+                          <div>
+                            <div className="d-flex justify-content-between align-items-center">
+                              <strong className="text-muted" style={{ fontSize: "0.85rem" }}>{t("formations.sprint").toUpperCase()}</strong>
+                              {showPoints && official && (
+                                <Badge
+                                  bg={totalSprint > 0 ? "success" : totalSprint < 0 ? "danger" : "secondary"}
+                                  style={{ fontSize: "0.9rem" }}
+                                >
+                                  {totalSprint} pts
+                                </Badge>
+                              )}
+                            </div>
+                            <PickLine label="SP1" pick={s.sprintP1} pts={sp1Pts} />
+                            <PickLine label="SP2" pick={s.sprintP2} pts={sp2Pts} />
+                            <PickLine label="SP3" pick={s.sprintP3} pts={sp3Pts} />
+                            <PickLine label={`${t("formations.joker")} SP`} pick={s.sprintJolly} pts={jspPts} />
+                          </div>
+                        )
                       )}
                     </Card.Body>
                   </Card>
@@ -465,25 +513,28 @@ function RaceHistoryCard({
                 </thead>
 
                 <tbody>
-                  {subs.map((s, idx) => {
-                    /* Points calculation */
-                    const p1Pts = showPoints && official && s.mainP1 === official.P1 ? POINTS.MAIN[1] * multiplier : 0;
-                    const p2Pts = showPoints && official && s.mainP2 === official.P2 ? POINTS.MAIN[2] * multiplier : 0;
-                    const p3Pts = showPoints && official && s.mainP3 === official.P3 ? POINTS.MAIN[3] * multiplier : 0;
+                  {visibleSubs.map((s, idx) => {
+                    const mainMasked = maskMain(s.id);
+                    const sprintMasked = maskSprint(s.id);
 
-                    const j1Pts = showPoints && official && s.mainJolly &&
+                    /* Points calculation */
+                    const p1Pts = !mainMasked && showPoints && official && s.mainP1 === official.P1 ? POINTS.MAIN[1] * multiplier : 0;
+                    const p2Pts = !mainMasked && showPoints && official && s.mainP2 === official.P2 ? POINTS.MAIN[2] * multiplier : 0;
+                    const p3Pts = !mainMasked && showPoints && official && s.mainP3 === official.P3 ? POINTS.MAIN[3] * multiplier : 0;
+
+                    const j1Pts = !mainMasked && showPoints && official && s.mainJolly &&
                       [official.P1, official.P2, official.P3].includes(s.mainJolly)
                         ? BONUS_MAIN * multiplier
                         : 0;
 
-                    const j2Pts = showPoints && official && s.mainJolly2 &&
+                    const j2Pts = !mainMasked && showPoints && official && s.mainJolly2 &&
                       [official.P1, official.P2, official.P3].includes(s.mainJolly2)
                         ? BONUS_MAIN * multiplier
                         : 0;
 
 
                     const totalMain =
-                      showPoints && official
+                      !mainMasked && showPoints && official
                         ? s.pointsEarned !== undefined
                           ? s.pointsEarned
                           : p1Pts + p2Pts + p3Pts + j1Pts + j2Pts
@@ -496,7 +547,7 @@ function RaceHistoryCard({
                       jspPts = 0,
                       totalSprint = null;
 
-                    if (hasSprint) {
+                    if (hasSprint && !sprintMasked) {
                       if (showPoints && official) {
                         sp1Pts = s.sprintP1 === official.SP1 ? POINTS.SPRINT[1] * multiplier : 0;
                         sp2Pts = s.sprintP2 === official.SP2 ? POINTS.SPRINT[2] * multiplier : 0;
@@ -516,9 +567,11 @@ function RaceHistoryCard({
                     const userName = s.user || rankingMap[s.id] || s.id;
 
                     /* Helper cell with points badge */
-                    const Cell = ({ pick, pts }) => (
+                    const Cell = ({ pick, pts, masked }) => (
                       <td className="text-center">
-                        {pick ? (
+                        {masked ? (
+                          <span className="text-muted">🔒</span>
+                        ) : pick ? (
                           <div className="d-flex align-items-center justify-content-center gap-2">
                             <DriverWithLogo name={pick} short />
                             {showPoints && official && (
@@ -538,7 +591,7 @@ function RaceHistoryCard({
                         <td className="text-center">{idx + 1}</td>
                         <td className="text-center">
                           {userName}
-                          {s.isLate && (
+                          {s.isLate && !mainMasked && (
                             <Badge bg="warning" text="dark" className="ms-1">
                               ⏰ {t("formations.latePenalty")}
                             </Badge>
@@ -546,19 +599,19 @@ function RaceHistoryCard({
                         </td>
 
                         {/* Main race picks */}
-                        <Cell pick={s.mainP1} pts={p1Pts} />
-                        <Cell pick={s.mainP2} pts={p2Pts} />
-                        <Cell pick={s.mainP3} pts={p3Pts} />
-                        <Cell pick={s.mainJolly} pts={j1Pts} />
-                        {hasJolly2 && <Cell pick={s.mainJolly2} pts={j2Pts} />}
+                        <Cell pick={s.mainP1} pts={p1Pts} masked={mainMasked} />
+                        <Cell pick={s.mainP2} pts={p2Pts} masked={mainMasked} />
+                        <Cell pick={s.mainP3} pts={p3Pts} masked={mainMasked} />
+                        <Cell pick={s.mainJolly} pts={j1Pts} masked={mainMasked} />
+                        {hasJolly2 && <Cell pick={s.mainJolly2} pts={j2Pts} masked={mainMasked} />}
 
                         {/* Sprint race picks */}
                         {hasSprint && (
                           <>
-                            <Cell pick={s.sprintP1} pts={sp1Pts} />
-                            <Cell pick={s.sprintP2} pts={sp2Pts} />
-                            <Cell pick={s.sprintP3} pts={sp3Pts} />
-                            <Cell pick={s.sprintJolly} pts={jspPts} />
+                            <Cell pick={s.sprintP1} pts={sp1Pts} masked={sprintMasked} />
+                            <Cell pick={s.sprintP2} pts={sp2Pts} masked={sprintMasked} />
+                            <Cell pick={s.sprintP3} pts={sp3Pts} masked={sprintMasked} />
+                            <Cell pick={s.sprintJolly} pts={jspPts} masked={sprintMasked} />
                           </>
                         )}
 
@@ -567,16 +620,16 @@ function RaceHistoryCard({
                           <>
                             <td
                               className="text-center fw-bold"
-                              style={{ color: totalMain > 0 ? "green" : totalMain < 0 ? "red" : "#6c757d" }}
+                              style={{ color: mainMasked ? "#6c757d" : totalMain > 0 ? "green" : totalMain < 0 ? "red" : "#6c757d" }}
                             >
-                              {totalMain}
+                              {mainMasked ? "🔒" : totalMain}
                             </td>
                             {hasSprint && (
                               <td
                                 className="text-center fw-bold"
-                                style={{ color: totalSprint > 0 ? "green" : totalSprint < 0 ? "red" : "#6c757d" }}
+                                style={{ color: sprintMasked ? "#6c757d" : totalSprint > 0 ? "green" : totalSprint < 0 ? "red" : "#6c757d" }}
                               >
-                                {totalSprint}
+                                {sprintMasked ? "🔒" : totalSprint}
                               </td>
                             )}
                           </>
@@ -617,7 +670,8 @@ RaceHistoryCard.propTypes = {
   showOfficialResults: PropTypes.bool,
   showPoints: PropTypes.bool,
   compact: PropTypes.bool,
-  isLastRace: PropTypes.bool, 
+  isLastRace: PropTypes.bool,
+  currentUserId: PropTypes.string,
 };
 
 export default React.memo(RaceHistoryCard);

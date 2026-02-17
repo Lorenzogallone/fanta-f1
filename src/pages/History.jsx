@@ -35,6 +35,7 @@ import RaceHistoryCard from "../components/RaceHistoryCard";
 import { TEAM_LOGOS, POINTS, getDriverTeamDynamic, getTeamLogoDynamic } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { useAuth } from "../hooks/useAuth";
 import { error } from "../utils/logger";
 
 /**
@@ -145,6 +146,7 @@ export default function History() {
   const [activeTab, setActiveTab] = useState("races"); // "races" or "championship"
   const { isDark } = useTheme();
   const { t } = useLanguage();
+  const { user } = useAuth();
 
   /**
    * Load past races from Firestore
@@ -397,7 +399,7 @@ export default function History() {
 
                   {/* Selected Race Details - shown when not loading */}
                   {selectedRace && !isLoadingRaceData && (
-                    <RaceHistoryCard race={selectedRace} key={selectedRaceId} isLastRace={isLastRaceSelected}
+                    <RaceHistoryCard race={selectedRace} key={selectedRaceId} isLastRace={isLastRaceSelected} currentUserId={user?.uid}
  />
                   )}
 

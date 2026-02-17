@@ -663,7 +663,7 @@ export default function FormationApp() {
 
         {/* ---------- LISTA FORMAZIONI ---------- */}
         <Col xs={12} lg={6}>
-          {race && <RaceHistoryCard key={refreshKey} race={race} showOfficialResults={false} showPoints={false} compact={true} />}
+          {race && <RaceHistoryCard key={refreshKey} race={race} showOfficialResults={false} showPoints={false} compact={true} currentUserId={user?.uid} />}
         </Col>
       </Row>
 

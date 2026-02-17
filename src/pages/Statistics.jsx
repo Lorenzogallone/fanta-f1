@@ -363,7 +363,7 @@ export default function Statistics() {
             variant="tabs"
             activeKey={activeTab}
             onSelect={(k) => setActiveTab(k)}
-            className="mb-3"
+            className="mb-3 justify-content-center"
           >
             <Nav.Item>
               <Nav.Link
@@ -503,11 +503,11 @@ export default function Statistics() {
             >
               <Card.Body>
                 <Row className="g-3">
-                  <Col xs={12} md={6}>
+                  <Col xs={12} md={6} className="text-center text-md-start">
                     <h6 className="mb-2 fw-semibold" style={{ color: accentColor }}>
                       👥 {t("statistics.playersToShow")}
                     </h6>
-                    <div className="d-flex gap-2 flex-wrap">
+                    <div className="d-flex gap-2 flex-wrap justify-content-center justify-content-md-start">
                       <Button
                         size="sm"
                         variant={playersFilter === "5" ? "danger" : "outline-secondary"}
@@ -550,11 +550,11 @@ export default function Statistics() {
                     </div>
                   </Col>
 
-                  <Col xs={12} md={6}>
+                  <Col xs={12} md={6} className="text-center text-md-start">
                     <h6 className="mb-2 fw-semibold" style={{ color: accentColor }}>
                       🏁 {t("statistics.racesToShow")}
                     </h6>
-                    <div className="d-flex gap-2 flex-wrap">
+                    <div className="d-flex gap-2 flex-wrap justify-content-center justify-content-md-start">
                       <Button
                         size="sm"
                         variant={racesFilter === "5" ? "danger" : "outline-secondary"}

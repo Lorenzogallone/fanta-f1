@@ -120,6 +120,11 @@ export const it = {
     jolly2Hint: "Usa un jolly extra per raddoppiare le possibilità",
     jolly2RefundHint: "Rimuovi per riavere il jolly indietro",
     doublePointsRace: "Ultima gara della stagione: i punti vengono raddoppiati",
+    othersHidden: "Le formazioni degli altri giocatori saranno visibili dopo l'inizio delle qualifiche.",
+    othersMainHidden: "Le formazioni gara degli altri giocatori saranno visibili dopo l'inizio delle qualifiche. Le formazioni sprint sono già visibili.",
+    mainPicksHidden: "Formazione gara nascosta fino all'inizio delle qualifiche",
+    sprintPicksHidden: "Formazione sprint nascosta fino all'inizio delle qualifiche sprint",
+    hiddenSubmissions: "{{count}} formazioni nascoste",
   },
 
   // History
@@ -200,6 +205,8 @@ export const it = {
     constructorStandingsUnavailable: "Classifica costruttori non disponibile",
     practiceDataUnavailable: "Dati prove libere non disponibili",
     practiceDataUnavailableDescription: "I dati delle prove libere potrebbero non essere ancora disponibili o la sessione non è stata completata.",
+    noResultsYet: "Risultati non ancora disponibili",
+    noResultsYetDescription: "Le sessioni di questa gara non sono ancora state completate. I risultati verranno mostrati non appena disponibili.",
   },
 
   // Statistics
@@ -383,6 +390,7 @@ export const it = {
     formationSaved: "Formazione campionato salvata con successo",
     alreadySubmitted: "Hai già inviato la tua formazione campionato",
     deadlinePassed: "La deadline per il campionato è scaduta",
+    othersHidden: "Le formazioni campionato degli altri giocatori saranno visibili dopo la deadline.",
   },
 
   // Error Messages
