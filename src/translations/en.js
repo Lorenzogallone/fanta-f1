@@ -296,6 +296,37 @@ export const en = {
     downloadBackup: "Download Backup",
     backupCreated: "Backup created successfully",
     confirmReset: "Are you sure? This operation is irreversible",
+
+    // Database - Backup management
+    backupDatabase: "Database Backup",
+    backupDescription: "Create a full database backup (races, standings, submissions). The backup will be saved to the database and downloaded as a JSON file.",
+    createManualBackup: "Create Manual Backup",
+    creatingBackup: "Creating backup...",
+    backupCreatedAndSaved: "Backup created and saved successfully!",
+    backupManualDescription: "Manual backup created from admin panel",
+    savedBackups: "Saved Backups",
+    noBackupsAvailable: "No backups available. Create your first backup!",
+    backupType: "Type",
+    confirmDeleteBackup: "Are you sure you want to delete this backup?",
+    backupDeleted: "Backup deleted",
+    errorLoadingBackups: "Error loading backups",
+
+    // Database - Restore
+    restoreDatabase: "Database Restore",
+    restoreBackup: "Restore Backup",
+    restoring: "Restoring...",
+    databaseRestored: "Database restored successfully!",
+    restoreError: "Restore error",
+    typeRestoreToConfirm: "Type \"RESTORE\" to confirm the restore:",
+    irreversibleWarning: "WARNING: IRREVERSIBLE OPERATION",
+    restoreWarningDescription: "The restore will delete ALL current data (races, standings, submissions) and replace it with the selected backup data. This operation CANNOT be undone!",
+    backupPreview: "Backup Preview",
+    creationDate: "Creation Date",
+    racesCount: "Number of Races",
+    participantsCount: "Number of Participants",
+    description: "Description",
+    pending: "Pending",
+    refresh: "Refresh",
   },
 
   // Calculate Points
