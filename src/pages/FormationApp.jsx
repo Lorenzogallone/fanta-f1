@@ -65,8 +65,9 @@ const driverOpts = drivers.map((d) => ({
  */
 export default function FormationApp() {
   const colors = useThemeColors();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   const { user, userProfile } = useAuth();
+  const dateLocale = currentLanguage === "en" ? "en-GB" : "it-IT";
 
   // Main state
   const [ranking, setRanking] = useState([]);
@@ -728,9 +729,9 @@ export default function FormationApp() {
         </h5>
         <p className="small text-muted mb-3">
           {t("formations.submitBy")}:{" "}
-          {new Date(deadlineMs).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}
+          {new Date(deadlineMs).toLocaleDateString(dateLocale, { day: "numeric", month: "long", year: "numeric" })}
           {" – "}
-          {new Date(deadlineMs).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
+          {new Date(deadlineMs).toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" })}
         </p>
       </>
     );
@@ -753,7 +754,7 @@ export default function FormationApp() {
               options={driverOpts}
               value={value}
               onChange={(sel) => onSelectChange(sel, field)}
-              placeholder={`Seleziona ${label}`}
+              placeholder={`${t("common.select")} ${label}`}
               classNamePrefix="react-select"
               isClearable={clearable}
               aria-label={`Select driver for ${label}`}
@@ -775,7 +776,7 @@ export default function FormationApp() {
               variant="outline-secondary"
               size="sm"
               onClick={() => onSelectChange(null, field)}
-              title="Cancella selezione"
+              title={t("common.clearSelection")}
               aria-label={`Clear ${label} selection`}
             >
               ✕

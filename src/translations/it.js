@@ -29,6 +29,8 @@ export const it = {
     name: "Nome",
     date: "Data",
     actions: "Azioni",
+    select: "Seleziona",
+    clearSelection: "Cancella selezione",
   },
 
   // Navigation

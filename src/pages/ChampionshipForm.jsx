@@ -77,8 +77,9 @@ const asConstructorOptions = (constructorsList) =>
  */
 export default function ChampionshipForm() {
   const { isDark } = useTheme();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   const { user, userProfile } = useAuth();
+  const dateLocale = currentLanguage === "en" ? "en-GB" : "it-IT";
 
   // Translation key mappings for driver and constructor labels
   const driverLabels = {
@@ -137,10 +138,19 @@ export default function ChampionshipForm() {
           ...doc.data(),
         }));
 
+        const formatDeadline = (date) =>
+          date.toLocaleDateString(dateLocale, {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+
         if (races.length === 0) {
-          // No races found, use fallback
-          setDeadlineMs(new Date("2025-09-07T23:59:00").getTime());
-          setDeadlineText("07/09 ore 23:59");
+          const fallback = new Date("2025-09-07T23:59:00");
+          setDeadlineMs(fallback.getTime());
+          setDeadlineText(formatDeadline(fallback));
           setLoadingDeadline(false);
           return;
         }
@@ -153,26 +163,20 @@ export default function ChampionshipForm() {
           // Deadline = immediately after mid-championship race
           const raceDate = midRace.raceUTC.toDate();
           setDeadlineMs(raceDate.getTime());
-
-          // Format date for badge display
-          const formatted = raceDate.toLocaleDateString("it-IT", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-          setDeadlineText(formatted);
+          setDeadlineText(formatDeadline(raceDate));
         } else {
-          // Fallback if mid-race not found
-          setDeadlineMs(new Date("2025-09-07T23:59:00").getTime());
-          setDeadlineText("07/09 ore 23:59");
+          const fallback = new Date("2025-09-07T23:59:00");
+          setDeadlineMs(fallback.getTime());
+          setDeadlineText(formatDeadline(fallback));
         }
       } catch (e) {
-        error("Errore calcolo deadline:", e);
-        // Fallback on error
-        setDeadlineMs(new Date("2025-09-07T23:59:00").getTime());
-        setDeadlineText("07/09 ore 23:59");
+        error("Deadline calc error:", e);
+        const fallback = new Date("2025-09-07T23:59:00");
+        setDeadlineMs(fallback.getTime());
+        setDeadlineText(fallback.toLocaleDateString(dateLocale, {
+          day: "2-digit", month: "2-digit", year: "numeric",
+          hour: "2-digit", minute: "2-digit",
+        }));
       } finally {
         setLoadingDeadline(false);
       }
@@ -340,10 +344,10 @@ export default function ChampionshipForm() {
               )}
 
               <Form onSubmit={handleSubmit}>
-                {/* utente auto-detected */}
-                <Alert variant="info" className="mb-4 py-2">
-                  {t("auth.submittingAs")}: <strong>{userProfile?.nickname || user?.email}</strong>
-                </Alert>
+                {/* User info */}
+                <div className="text-muted mb-4" style={{ fontSize: "0.9rem" }}>
+                  {t("auth.submittingAs")}: <strong style={{ color: accentColor }}>{userProfile?.nickname || user?.email}</strong>
+                </div>
 
                 <h6 className="fw-bold">{t("championshipForm.topDrivers")}</h6>
                 {["D1", "D2", "D3"].map((f) => (
