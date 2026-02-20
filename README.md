@@ -221,7 +221,7 @@ fanta-f1/
 │   │   ├── RaceHistoryCard.jsx  # Unified race result card
 │   │   ├── ChampionshipSubmissions.jsx # Championship view
 │   │   ├── SubmissionsList.jsx  # Formation list component
-│   │   └── AdminLogin.jsx       # Password protection
+│   │   └── AdminRoute.jsx       # Custom claim route protection
 │   ├── contexts/                # React Context API
 │   │   ├── ThemeContext.jsx     # Dark/light mode state
 │   │   └── LanguageContext.jsx  # i18n language state
@@ -395,25 +395,36 @@ Championship results:
 9. **Last Race x2**: All points doubled in final race of season
 10. **Cancelled Races**: No points awarded, formations not required
 
-## 🔐 Admin Access
+## 🔐 Authentication & Login
 
-The admin panel is password-protected and offers comprehensive management tools.
+The application uses **Firebase Authentication** to manage users securely.
+- **Email & Password**: Standard registration and login flow.
+- **Google Sign-In**: Faster login directly using Google accounts.
+- **Account Linking**: If you register with an email and later sign in with Google using the same email, the app seamlessly links the two credentials to the same user profile so both methods work interchangeably.
+- **Unique Nickname Enforcement**: Participants are required to choose a unique nickname upon registration or Google profile completion.
+- **Password Reset**: Integrated "Forgot Password" functionality via Firebase's secure email system.
 
-### Password Configuration
+## 👑 Admin Access
 
-**⚠️ IMPORTANT**: For security, the admin password should be stored in environment variables.
+Administrators have access to a comprehensive dashboard with full management tools.
+Admin privileges are managed securely through **Firebase Custom Claims** (`admin: true`), entirely bypassing the need for a shared configuration password.
 
-1. Create a `.env` file in the project root (never commit this):
-```bash
-VITE_ADMIN_PASSWORD=your_secure_password_here
-```
+### How to make a profile Admin
 
-2. Update `src/components/AdminLogin.jsx`:
-```javascript
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
-```
+To grant admin privileges to a user, a special Node.js script must be executed locally by the repository owner. This is a one-time operation for each admin user.
 
-3. Ensure `.env` is in `.gitignore` (already configured)
+1. **Obtain the Service Account Key**:
+   - Go to the **Firebase Console** > **Project Settings** > **Service Accounts**.
+   - Click **Generate New Private Key**.
+   - Save the downloaded `.json` file exactly as `scripts/serviceAccountKey.json` inside the project directory. *(This file is ignored by git to prevent security leaks).*
+
+2. **Run the admin script**:
+   Open a terminal in the project root and run:
+   ```bash
+   node scripts/setAdminClaim.js <user_email>
+   ```
+
+*Note: For the new privileges to take effect, the target user must log out and log back in, or wait up to 1 hour.*
 
 ### Admin Privileges
 
@@ -452,6 +463,35 @@ Admins have special powers that bypass normal user restrictions:
 - Node.js 18+ and npm/yarn
 - Firebase project with Firestore enabled
 - Firebase CLI (for deployment)
+
+### Firebase Project Setup (From Scratch)
+
+Before installing the app, you need to create a new Firebase project and configure the required services.
+
+1. **Create a Firebase Project:**
+   - Go to the [Firebase Console](https://console.firebase.google.com/).
+   - Click **Add project** and follow the steps.
+   - Disable Google Analytics if not needed.
+
+2. **Enable Authentication:**
+   - In the sidebar, go to **Build > Authentication**.
+   - Click **Get Started**.
+   - Under the **Sign-in method** tab, add two providers:
+     - **Email/Password**: Enable it.
+     - **Google**: Enable it. Configure the support email and save.
+   - Go to the **Settings** tab (within Authentication), then under **User account linking**, select **Link accounts that use the same email**. This ensures the account linking flow works securely.
+
+3. **Enable Firestore Database:**
+   - In the sidebar, go to **Build > Firestore Database**.
+   - Click **Create database**.
+   - Start in **Test mode** (you can secure rules later) and choose a location close to your users.
+   - *Note on Rules*: Once configured, update the rules to secure your data (`users`, `ranking`, `races`, etc.).
+
+4. **Register the Web App:**
+   - Go to the **Project Overview** (home icon).
+   - Click the **Web** icon (`</>`) to add a Firebase app.
+   - Register the app with a nickname (e.g., "Fanta F1 Web").
+   - You will see a `firebaseConfig` object containing your keys. Keep this handy for the `.env` file.
 
 ### Installation
 
