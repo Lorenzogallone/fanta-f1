@@ -472,6 +472,9 @@ export const it = {
     backToLogin: "Torna al Login",
     nicknameTaken: "Questo nickname è già in uso",
     accountExistsDifferentCredential: "Un account con questa email esiste già. Prova ad accedere con un altro metodo.",
+    linkAccountTitle: "Collega il tuo account Google",
+    linkAccountDesc: "Un account con {{email}} esiste già. Inserisci la tua password per collegare l'accesso Google al tuo account esistente.",
+    linkAccount: "Collega account e accedi",
     noRankingEntry: "Il tuo account non è ancora stato abilitato al gioco. Contatta l'amministratore.",
   },
 

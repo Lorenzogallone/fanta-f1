@@ -13,8 +13,9 @@ import {
   GoogleAuthProvider,
   signOut,
   sendPasswordResetEmail,
+  linkWithCredential,
 } from "firebase/auth";
-import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs } from "firebase/firestore";
 
 const DEFAULT_RANKING = {
   puntiTotali: 0,
@@ -133,52 +134,48 @@ export function AuthProvider({ children }) {
   };
 
   /**
-   * Login/Register with Google. Returns { isNewUser } to signal if profile completion is needed.
-   * If a Firestore profile exists under a different uid with the same email, migrates it.
+   * Login/Register with Google.
+   * Returns { isNewUser } on success or { needsLinking, email, credential }
+   * when the email already has an email/password account that needs linking.
    */
   const loginWithGoogle = async () => {
-    const result = await signInWithPopup(auth, googleProvider);
-    const profileDoc = await getDoc(doc(db, "users", result.user.uid));
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const profileDoc = await getDoc(doc(db, "users", result.user.uid));
 
-    let isNew = false;
-
-    if (profileDoc.exists()) {
-      setUserProfile(profileDoc.data());
-      setNeedsProfile(false);
-    } else {
-      // Check for existing profile by email (account linking scenario)
-      const emailQuery = query(collection(db, "users"), where("email", "==", result.user.email));
-      const emailSnap = await getDocs(emailQuery);
-
-      if (!emailSnap.empty) {
-        const oldDoc = emailSnap.docs[0];
-        const oldUid = oldDoc.id;
-        const profileData = oldDoc.data();
-
-        // Copy profile to new uid
-        await setDoc(doc(db, "users", result.user.uid), profileData);
-
-        // Migrate ranking if exists
-        const oldRanking = await getDoc(doc(db, "ranking", oldUid));
-        if (oldRanking.exists()) {
-          await setDoc(doc(db, "ranking", result.user.uid), oldRanking.data());
-          await deleteDoc(doc(db, "ranking", oldUid));
-        }
-
-        // Remove old profile
-        await deleteDoc(doc(db, "users", oldUid));
-
-        setUserProfile(profileData);
+      if (profileDoc.exists()) {
+        setUserProfile(profileDoc.data());
         setNeedsProfile(false);
-      } else {
-        isNew = true;
-        setNeedsProfile(true);
-        setUserProfile(null);
+        await checkAdmin(result.user);
+        return { isNewUser: false, user: result.user };
       }
-    }
 
-    await checkAdmin(result.user);
-    return { isNewUser: isNew, user: result.user };
+      // Truly new Google user
+      setNeedsProfile(true);
+      setUserProfile(null);
+      await checkAdmin(result.user);
+      return { isNewUser: true, user: result.user };
+    } catch (err) {
+      if (err.code === "auth/account-exists-with-different-credential") {
+        // Email already has an email/password account - return info for linking
+        const email = err.customData?.email;
+        const credential = GoogleAuthProvider.credentialFromError(err);
+        return { needsLinking: true, email, credential };
+      }
+      throw err;
+    }
+  };
+
+  /**
+   * Link a Google credential to an existing email/password account.
+   * Signs in with email/password first, then links Google so both methods use the same uid.
+   */
+  const linkGoogleToAccount = async (email, password, googleCredential) => {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    await linkWithCredential(cred.user, googleCredential);
+    await fetchProfile(cred.user);
+    await checkAdmin(cred.user);
+    return cred.user;
   };
 
   /**
@@ -273,6 +270,7 @@ export function AuthProvider({ children }) {
     needsProfile,
     login,
     loginWithGoogle,
+    linkGoogleToAccount,
     register,
     completeProfile,
     resetPassword,
