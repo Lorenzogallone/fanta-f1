@@ -55,7 +55,7 @@ export default function ChampionshipSubmissions({ refresh, currentUserId = null,
         setSubs(list);
       } catch (e) {
         logError(e);
-        setError("Unable to load championship lineups.");
+        setError(t("history.unableToLoadLineups"));
       } finally {
         setLoading(false);
       }
@@ -83,7 +83,7 @@ export default function ChampionshipSubmissions({ refresh, currentUserId = null,
   if (!subs.length) {
     return (
       <Alert variant="info" className="mt-4">
-        {t("history.noChampionship") || "No championship lineups submitted yet."}
+        {t("history.noChampionship")}
       </Alert>
     );
   }
@@ -118,7 +118,7 @@ export default function ChampionshipSubmissions({ refresh, currentUserId = null,
         )}
 
         {visibleSubs.length === 0 ? (
-          <Alert variant="info">{t("history.noChampionship") || "No championship lineups submitted yet."}</Alert>
+          <Alert variant="info">{t("history.noChampionship")}</Alert>
         ) : (
         <div className="table-responsive">
           <Table striped bordered hover size="sm" className="mb-0 align-middle">

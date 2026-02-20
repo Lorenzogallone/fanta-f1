@@ -65,8 +65,9 @@ const driverOpts = drivers.map((d) => ({
  */
 export default function FormationApp() {
   const colors = useThemeColors();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   const { user, userProfile } = useAuth();
+  const dateLocale = currentLanguage === "en" ? "en-GB" : "it-IT";
 
   // Main state
   const [ranking, setRanking] = useState([]);
@@ -512,17 +513,17 @@ export default function FormationApp() {
 
               {/* Submit unico, ma savingMode viene impostato dal bottone */}
               <Form onSubmit={save}>
-                {/* Utente auto-detected */}
-                <Alert variant="info" className="mb-3 d-flex align-items-center justify-content-between py-2">
+                {/* User info */}
+                <div className="d-flex align-items-center justify-content-between mb-3 text-muted" style={{ fontSize: "0.9rem" }}>
                   <span>
-                    {t("auth.submittingAs")}: <strong>{userProfile?.nickname || user?.email}</strong>
+                    {t("auth.submittingAs")}: <strong style={{ color: colors.accent }}>{userProfile?.nickname || user?.email}</strong>
                   </span>
                   {form.userId && (
                     <span>
-                      {t("formations.jokersAvailable")}: <Badge bg="warning" text="dark">{userJolly}</Badge>
+                      {t("formations.jokersAvailable")}: <strong>{userJolly}</strong>
                     </span>
                   )}
-                </Alert>
+                </div>
 
                 {/* Gara */}
                 <Form.Group className="mb-3">
@@ -728,9 +729,9 @@ export default function FormationApp() {
         </h5>
         <p className="small text-muted mb-3">
           {t("formations.submitBy")}:{" "}
-          {new Date(deadlineMs).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}
+          {new Date(deadlineMs).toLocaleDateString(dateLocale, { day: "numeric", month: "long", year: "numeric" })}
           {" – "}
-          {new Date(deadlineMs).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
+          {new Date(deadlineMs).toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" })}
         </p>
       </>
     );
@@ -753,7 +754,7 @@ export default function FormationApp() {
               options={driverOpts}
               value={value}
               onChange={(sel) => onSelectChange(sel, field)}
-              placeholder={`Seleziona ${label}`}
+              placeholder={`${t("common.select")} ${label}`}
               classNamePrefix="react-select"
               isClearable={clearable}
               aria-label={`Select driver for ${label}`}
@@ -775,7 +776,7 @@ export default function FormationApp() {
               variant="outline-secondary"
               size="sm"
               onClick={() => onSelectChange(null, field)}
-              title="Cancella selezione"
+              title={t("common.clearSelection")}
               aria-label={`Clear ${label} selection`}
             >
               ✕

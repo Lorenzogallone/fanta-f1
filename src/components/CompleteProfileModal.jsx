@@ -34,8 +34,8 @@ export default function CompleteProfileModal() {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
       });
-    } catch {
-      setError(t("auth.genericError"));
+    } catch (err) {
+      setError(err.code === "auth/nickname-taken" ? t("auth.nicknameTaken") : t("auth.genericError"));
     } finally {
       setLoading(false);
     }

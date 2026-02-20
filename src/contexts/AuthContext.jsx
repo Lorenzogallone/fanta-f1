@@ -12,8 +12,10 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   signOut,
+  sendPasswordResetEmail,
+  linkWithCredential,
 } from "firebase/auth";
-import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs } from "firebase/firestore";
 
 const DEFAULT_RANKING = {
   puntiTotali: 0,
@@ -132,27 +134,75 @@ export function AuthProvider({ children }) {
   };
 
   /**
-   * Login/Register with Google. Returns { isNewUser } to signal if profile completion is needed.
+   * Login/Register with Google.
+   * Returns { isNewUser } on success or { needsLinking, email, credential }
+   * when the email already has an email/password account that needs linking.
    */
   const loginWithGoogle = async () => {
-    const result = await signInWithPopup(auth, googleProvider);
-    const profileDoc = await getDoc(doc(db, "users", result.user.uid));
-    const isNew = !profileDoc.exists();
-    if (isNew) {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const profileDoc = await getDoc(doc(db, "users", result.user.uid));
+
+      if (profileDoc.exists()) {
+        setUserProfile(profileDoc.data());
+        setNeedsProfile(false);
+        await checkAdmin(result.user);
+        return { isNewUser: false, user: result.user };
+      }
+
+      // Truly new Google user
       setNeedsProfile(true);
       setUserProfile(null);
-    } else {
-      setUserProfile(profileDoc.data());
-      setNeedsProfile(false);
+      await checkAdmin(result.user);
+      return { isNewUser: true, user: result.user };
+    } catch (err) {
+      if (err.code === "auth/account-exists-with-different-credential") {
+        // Email already has an email/password account - return info for linking
+        const email = err.customData?.email;
+        const credential = GoogleAuthProvider.credentialFromError(err);
+        return { needsLinking: true, email, credential };
+      }
+      throw err;
     }
-    await checkAdmin(result.user);
-    return { isNewUser: isNew, user: result.user };
+  };
+
+  /**
+   * Link a Google credential to an existing email/password account.
+   * Signs in with email/password first, then links Google so both methods use the same uid.
+   */
+  const linkGoogleToAccount = async (email, password, googleCredential) => {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    await linkWithCredential(cred.user, googleCredential);
+    await fetchProfile(cred.user);
+    await checkAdmin(cred.user);
+    return cred.user;
+  };
+
+  /**
+   * Check if a nickname is available.
+   * @param {string} nickname - Nickname to check
+   * @param {string} [excludeUid] - UID to exclude (for editing own profile)
+   * @returns {Promise<boolean>} true if available
+   */
+  const checkNicknameAvailable = async (nickname, excludeUid = null) => {
+    const q = query(collection(db, "users"), where("nickname", "==", nickname));
+    const snap = await getDocs(q);
+    if (snap.empty) return true;
+    if (excludeUid) return snap.docs.every((d) => d.id === excludeUid);
+    return false;
   };
 
   /**
    * Register with email/password and create user profile
    */
   const register = async (email, password, { nickname, firstName, lastName }) => {
+    const available = await checkNicknameAvailable(nickname);
+    if (!available) {
+      const err = new Error("Nickname already taken");
+      err.code = "auth/nickname-taken";
+      throw err;
+    }
+
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     const profile = {
       email,
@@ -173,6 +223,14 @@ export function AuthProvider({ children }) {
    */
   const completeProfile = async ({ nickname, firstName, lastName }) => {
     if (!user) throw new Error("No authenticated user");
+
+    const available = await checkNicknameAvailable(nickname, user.uid);
+    if (!available) {
+      const err = new Error("Nickname already taken");
+      err.code = "auth/nickname-taken";
+      throw err;
+    }
+
     const profile = {
       email: user.email,
       nickname,
@@ -184,6 +242,13 @@ export function AuthProvider({ children }) {
     await ensureRankingEntry(user.uid, nickname);
     setUserProfile(profile);
     setNeedsProfile(false);
+  };
+
+  /**
+   * Send password reset email
+   */
+  const resetPassword = async (email) => {
+    await sendPasswordResetEmail(auth, email);
   };
 
   /**
@@ -205,8 +270,10 @@ export function AuthProvider({ children }) {
     needsProfile,
     login,
     loginWithGoogle,
+    linkGoogleToAccount,
     register,
     completeProfile,
+    resetPassword,
     logout,
   };
 

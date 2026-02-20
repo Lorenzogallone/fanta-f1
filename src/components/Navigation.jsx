@@ -38,7 +38,6 @@ export default function Navigation() {
   const textColor = isDark ? "#ffffff" : "#212529";
   const mutedColor = isDark ? "#aaa" : "#6c757d";
 
-  const themeIcon = themeMode === "auto" ? "🔄" : isDark ? "🌙" : "☀️";
   const currentFlag = availableLanguages.find((lang) => lang.code === currentLanguage)?.flag || "";
 
   // Don't show nav on login page
@@ -138,42 +137,43 @@ export default function Navigation() {
             </Dropdown.Toggle>
 
             <Dropdown.Menu
-              className="user-menu-dropdown shadow"
+              className="user-menu-dropdown shadow-sm"
               style={{
                 backgroundColor: menuBg,
                 border: `1px solid ${menuBorder}`,
-                borderRadius: "12px",
-                padding: "0.5rem 0",
-                minWidth: "220px",
+                borderRadius: "8px",
+                padding: "0.4rem 0",
+                minWidth: "200px",
               }}
             >
               {/* User info header */}
               {user && (
                 <>
-                  <div style={{ padding: "0.5rem 1rem 0.25rem" }}>
-                    <div style={{ fontWeight: 700, color: textColor, fontSize: "0.95rem" }}>
+                  <div style={{ padding: "0.5rem 1rem" }}>
+                    <div style={{ fontWeight: 600, color: textColor, fontSize: "0.9rem" }}>
                       {userProfile?.nickname || "User"}
                       {isAdmin && (
                         <span
                           className="ms-2"
                           style={{
-                            fontSize: "0.65rem",
+                            fontSize: "0.6rem",
                             color: "#fff",
                             backgroundColor: accentColor,
-                            borderRadius: "4px",
-                            padding: "1px 5px",
+                            borderRadius: "3px",
+                            padding: "1px 4px",
                             fontWeight: 700,
+                            verticalAlign: "middle",
                           }}
                         >
                           Admin
                         </span>
                       )}
                     </div>
-                    <div style={{ color: mutedColor, fontSize: "0.8rem" }}>
+                    <div style={{ color: mutedColor, fontSize: "0.78rem" }}>
                       {user.email}
                     </div>
                   </div>
-                  <Dropdown.Divider style={{ borderColor: menuBorder }} />
+                  <Dropdown.Divider style={{ borderColor: menuBorder, margin: "0.25rem 0" }} />
                 </>
               )}
 
@@ -183,72 +183,61 @@ export default function Navigation() {
                   e.stopPropagation();
                   toggleTheme();
                 }}
-                style={{ color: textColor, fontSize: "0.9rem" }}
+                style={{ color: textColor, fontSize: "0.85rem" }}
                 className="user-menu-item"
               >
-                <span className="me-2">{themeIcon}</span>
-                {themeMode === "auto"
-                  ? t("nav.toggleTheme") + " (Auto)"
-                  : themeMode === "light"
-                    ? t("nav.toggleTheme") + " (Light)"
-                    : t("nav.toggleTheme") + " (Dark)"}
+                {t("nav.toggleTheme")}
+                <span className="ms-1" style={{ color: mutedColor, fontSize: "0.8rem" }}>
+                  ({themeMode === "auto" ? "Auto" : themeMode === "light" ? "Light" : "Dark"})
+                </span>
               </Dropdown.Item>
 
-              {/* Language submenu */}
+              {/* Language */}
               <Dropdown.Item
                 as="div"
-                className="p-0"
+                className="px-3 py-1"
                 style={{ backgroundColor: "transparent" }}
               >
-                <div
-                  style={{
-                    padding: "0.35rem 1rem",
-                    color: mutedColor,
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
-                  }}
-                >
-                  {t("nav.changeLanguage")}
-                </div>
-                <div className="d-flex gap-1 px-3 pb-2">
-                  {availableLanguages.map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => changeLanguage(lang.code)}
-                      className="btn btn-sm"
-                      style={{
-                        fontSize: "1.2rem",
-                        padding: "4px 8px",
-                        borderRadius: "8px",
-                        border: currentLanguage === lang.code
-                          ? `2px solid ${accentColor}`
-                          : `1px solid ${menuBorder}`,
-                        backgroundColor: currentLanguage === lang.code
-                          ? (isDark ? "#333" : "#f0f0f0")
-                          : "transparent",
-                        lineHeight: 1,
-                      }}
-                      title={lang.name}
-                      aria-label={lang.name}
-                    >
-                      {lang.flag}
-                    </button>
-                  ))}
+                <div className="d-flex align-items-center gap-2">
+                  <span style={{ color: textColor, fontSize: "0.85rem" }}>{t("nav.changeLanguage")}</span>
+                  <div className="d-flex gap-1 ms-auto">
+                    {availableLanguages.map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => changeLanguage(lang.code)}
+                        className="btn btn-sm p-0"
+                        style={{
+                          fontSize: "1.1rem",
+                          width: 28,
+                          height: 28,
+                          lineHeight: "28px",
+                          textAlign: "center",
+                          borderRadius: "4px",
+                          border: currentLanguage === lang.code
+                            ? `2px solid ${accentColor}`
+                            : `1px solid transparent`,
+                          backgroundColor: "transparent",
+                          opacity: currentLanguage === lang.code ? 1 : 0.5,
+                        }}
+                        title={lang.name}
+                        aria-label={lang.name}
+                      >
+                        {lang.flag}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </Dropdown.Item>
 
-              <Dropdown.Divider style={{ borderColor: menuBorder }} />
+              <Dropdown.Divider style={{ borderColor: menuBorder, margin: "0.25rem 0" }} />
 
               {/* Logout */}
               {user && (
                 <Dropdown.Item
                   onClick={handleLogout}
-                  style={{ color: accentColor, fontSize: "0.9rem", fontWeight: 600 }}
+                  style={{ color: accentColor, fontSize: "0.85rem", fontWeight: 500 }}
                   className="user-menu-item"
                 >
-                  <span className="me-2">🚪</span>
                   {t("auth.logout")}
                 </Dropdown.Item>
               )}

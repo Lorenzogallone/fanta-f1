@@ -29,6 +29,8 @@ export const en = {
     name: "Name",
     date: "Date",
     actions: "Actions",
+    select: "Select",
+    clearSelection: "Clear selection",
   },
 
   // Navigation
@@ -461,6 +463,18 @@ export const en = {
     tooManyRequests: "Too many attempts. Try again in a few minutes",
     popupClosed: "Login window closed. Please try again",
     genericError: "An error occurred. Please try again",
+    forgotPassword: "Forgot Password?",
+    resetPasswordTitle: "Password Reset",
+    resetPasswordDesc: "Enter your email address and we'll send you a link to reset your password.",
+    sendResetLink: "Send Reset Link",
+    checkEmail: "Check your email",
+    resetLinkSent: "We've sent a password reset link to your email. Click the link in the email to reset your password.",
+    backToLogin: "Back to Login",
+    nicknameTaken: "This nickname is already taken",
+    accountExistsDifferentCredential: "An account with this email already exists. Try signing in with a different method.",
+    linkAccountTitle: "Link your Google account",
+    linkAccountDesc: "An account already exists with {{email}}. Enter your password to link Google sign-in to your existing account.",
+    linkAccount: "Link account and sign in",
     noRankingEntry: "Your account has not been enabled for the game yet. Contact the administrator.",
   },
 

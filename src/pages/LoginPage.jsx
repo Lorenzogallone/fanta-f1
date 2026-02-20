@@ -22,7 +22,7 @@ import { useLanguage } from "../hooks/useLanguage";
 import { useTheme } from "../contexts/ThemeContext";
 
 export default function LoginPage() {
-  const { user, needsProfile, login, loginWithGoogle, register } = useAuth();
+  const { user, needsProfile, login, loginWithGoogle, linkGoogleToAccount, register, resetPassword } = useAuth();
   const { t } = useLanguage();
   const { isDark } = useTheme();
   const navigate = useNavigate();
@@ -40,6 +40,11 @@ export default function LoginPage() {
   const [activeTab, setActiveTab] = useState("login");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+  const [linkingState, setLinkingState] = useState(null); // { email, credential }
+  const [linkingPassword, setLinkingPassword] = useState("");
 
   // Login form
   const [loginEmail, setLoginEmail] = useState("");
@@ -105,8 +110,14 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const { isNewUser } = await loginWithGoogle();
-      if (!isNewUser) {
+      const result = await loginWithGoogle();
+      if (result.needsLinking) {
+        setLinkingState({ email: result.email, credential: result.credential });
+        setLinkingPassword("");
+        setLoading(false);
+        return;
+      }
+      if (!result.isNewUser) {
         navigate(from, { replace: true });
       }
       // If isNewUser, the CompleteProfileModal in App.jsx will handle it
@@ -115,6 +126,49 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLinkAccount = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await linkGoogleToAccount(linkingState.email, linkingPassword, linkingState.credential);
+      setLinkingState(null);
+      setLinkingPassword("");
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(getAuthErrorMessage(err.code, t));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelLinking = () => {
+    setLinkingState(null);
+    setLinkingPassword("");
+    setError(null);
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await resetPassword(resetEmail);
+      setResetSent(true);
+    } catch (err) {
+      setError(getAuthErrorMessage(err.code, t));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setShowForgotPassword(false);
+    setResetSent(false);
+    setResetEmail("");
+    setError(null);
   };
 
   return (
@@ -167,62 +221,177 @@ export default function LoginPage() {
                 <Tab.Content>
                   {/* LOGIN TAB */}
                   <Tab.Pane eventKey="login">
-                    <Form onSubmit={handleLogin}>
-                      <Form.Group className="mb-3">
-                        <Form.Label>{t("auth.email")}</Form.Label>
-                        <Form.Control
-                          type="email"
-                          value={loginEmail}
-                          onChange={(e) => setLoginEmail(e.target.value)}
-                          placeholder="email@example.com"
-                          required
-                          autoFocus
-                        />
-                      </Form.Group>
-                      <Form.Group className="mb-3">
-                        <Form.Label>{t("auth.password")}</Form.Label>
-                        <Form.Control
-                          type="password"
-                          value={loginPassword}
-                          onChange={(e) => setLoginPassword(e.target.value)}
-                          required
-                        />
-                      </Form.Group>
-                      <Button
-                        variant="danger"
-                        type="submit"
-                        className="w-100 mb-3"
-                        disabled={loading}
-                      >
-                        {loading ? <Spinner animation="border" size="sm" /> : t("auth.login")}
-                      </Button>
-                    </Form>
+                    {linkingState ? (
+                      <>
+                        <h5 className="text-center mb-3">{t("auth.linkAccountTitle")}</h5>
+                        <p className="text-muted text-center mb-4" style={{ fontSize: "0.9rem" }}>
+                          {t("auth.linkAccountDesc", { email: linkingState.email })}
+                        </p>
+                        <Form onSubmit={handleLinkAccount}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>{t("auth.email")}</Form.Label>
+                            <Form.Control type="email" value={linkingState.email} disabled />
+                          </Form.Group>
+                          <Form.Group className="mb-3">
+                            <Form.Label>{t("auth.password")}</Form.Label>
+                            <Form.Control
+                              type="password"
+                              value={linkingPassword}
+                              onChange={(e) => setLinkingPassword(e.target.value)}
+                              required
+                              autoFocus
+                            />
+                          </Form.Group>
+                          <Button
+                            variant="danger"
+                            type="submit"
+                            className="w-100 mb-3"
+                            disabled={loading}
+                          >
+                            {loading ? <Spinner animation="border" size="sm" /> : t("auth.linkAccount")}
+                          </Button>
+                        </Form>
+                        <div className="text-center mt-2">
+                          <small>
+                            <a
+                              href="#"
+                              onClick={(e) => { e.preventDefault(); handleCancelLinking(); }}
+                              style={{ color: accentColor }}
+                            >
+                              {t("auth.backToLogin")}
+                            </a>
+                          </small>
+                        </div>
+                      </>
+                    ) : showForgotPassword ? (
+                      resetSent ? (
+                        <div className="text-center py-3">
+                          <div className="mb-3" style={{ fontSize: "3rem" }}>
+                            &#9993;
+                          </div>
+                          <h5>{t("auth.checkEmail")}</h5>
+                          <p className="text-muted">
+                            {t("auth.resetLinkSent")}
+                          </p>
+                          <Button
+                            variant="outline-danger"
+                            onClick={handleBackToLogin}
+                            className="mt-2"
+                          >
+                            {t("auth.backToLogin")}
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <h5 className="text-center mb-3">{t("auth.resetPasswordTitle")}</h5>
+                          <p className="text-muted text-center mb-4" style={{ fontSize: "0.9rem" }}>
+                            {t("auth.resetPasswordDesc")}
+                          </p>
+                          <Form onSubmit={handleForgotPassword}>
+                            <Form.Group className="mb-3">
+                              <Form.Label>{t("auth.email")}</Form.Label>
+                              <Form.Control
+                                type="email"
+                                value={resetEmail}
+                                onChange={(e) => setResetEmail(e.target.value)}
+                                placeholder="email@example.com"
+                                required
+                                autoFocus
+                              />
+                            </Form.Group>
+                            <Button
+                              variant="danger"
+                              type="submit"
+                              className="w-100 mb-3"
+                              disabled={loading}
+                            >
+                              {loading ? <Spinner animation="border" size="sm" /> : t("auth.sendResetLink")}
+                            </Button>
+                          </Form>
+                          <div className="text-center mt-2">
+                            <small>
+                              <a
+                                href="#"
+                                onClick={(e) => { e.preventDefault(); handleBackToLogin(); }}
+                                style={{ color: accentColor }}
+                              >
+                                {t("auth.backToLogin")}
+                              </a>
+                            </small>
+                          </div>
+                        </>
+                      )
+                    ) : (
+                      <>
+                        <Form onSubmit={handleLogin}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>{t("auth.email")}</Form.Label>
+                            <Form.Control
+                              type="email"
+                              value={loginEmail}
+                              onChange={(e) => setLoginEmail(e.target.value)}
+                              placeholder="email@example.com"
+                              required
+                              autoFocus
+                            />
+                          </Form.Group>
+                          <Form.Group className="mb-3">
+                            <Form.Label>{t("auth.password")}</Form.Label>
+                            <Form.Control
+                              type="password"
+                              value={loginPassword}
+                              onChange={(e) => setLoginPassword(e.target.value)}
+                              required
+                            />
+                          </Form.Group>
+                          <div className="text-end mb-3">
+                            <small>
+                              <a
+                                href="#"
+                                onClick={(e) => { e.preventDefault(); setShowForgotPassword(true); setError(null); }}
+                                style={{ color: accentColor }}
+                              >
+                                {t("auth.forgotPassword")}
+                              </a>
+                            </small>
+                          </div>
+                          <Button
+                            variant="danger"
+                            type="submit"
+                            className="w-100 mb-3"
+                            disabled={loading}
+                          >
+                            {loading ? <Spinner animation="border" size="sm" /> : t("auth.login")}
+                          </Button>
+                        </Form>
 
-                    <div className="text-center text-muted mb-3">
-                      <small>{t("auth.or")}</small>
-                    </div>
+                        <div className="text-center text-muted mb-3">
+                          <small>{t("auth.or")}</small>
+                        </div>
 
-                    <Button
-                      variant="outline-secondary"
-                      className="w-100"
-                      onClick={handleGoogle}
-                      disabled={loading}
-                    >
-                      <GoogleIcon /> {t("auth.loginWithGoogle")}
-                    </Button>
-
-                    <div className="text-center mt-3">
-                      <small>
-                        {t("auth.noAccount")}{" "}
-                        <a
-                          href="#"
-                          onClick={(e) => { e.preventDefault(); setActiveTab("register"); setError(null); }}
-                          style={{ color: accentColor }}
+                        <Button
+                          variant="outline-secondary"
+                          className="w-100"
+                          onClick={handleGoogle}
+                          disabled={loading}
                         >
-                          {t("auth.register")}
-                        </a>
-                      </small>
-                    </div>
+                          <GoogleIcon /> {t("auth.loginWithGoogle")}
+                        </Button>
+
+                        <div className="text-center mt-3">
+                          <small>
+                            {t("auth.noAccount")}{" "}
+                            <a
+                              href="#"
+                              onClick={(e) => { e.preventDefault(); setActiveTab("register"); setError(null); }}
+                              style={{ color: accentColor }}
+                            >
+                              {t("auth.register")}
+                            </a>
+                          </small>
+                        </div>
+                      </>
+                    )}
                   </Tab.Pane>
 
                   {/* REGISTER TAB */}
@@ -376,6 +545,12 @@ function getAuthErrorMessage(code, t) {
       return t("auth.tooManyRequests");
     case "auth/popup-closed-by-user":
       return t("auth.popupClosed");
+    case "auth/missing-email":
+      return t("auth.invalidEmail");
+    case "auth/nickname-taken":
+      return t("auth.nicknameTaken");
+    case "auth/account-exists-with-different-credential":
+      return t("auth.accountExistsDifferentCredential");
     default:
       return t("auth.genericError");
   }

@@ -834,7 +834,7 @@ export default function Statistics() {
                   borderBottom: `2px solid ${accentColor}`,
                 }}
               >
-                👤 {t("statistics.selectPlayer") || "Seleziona Giocatore"}
+                👤 {t("statistics.selectPlayer")}
               </Card.Header>
               <Card.Body>
                 <Form.Select
@@ -847,7 +847,7 @@ export default function Statistics() {
                   }}
                   aria-label="Select player to view detailed statistics"
                 >
-                  <option value="">{t("statistics.choosePlayer") || "-- Seleziona un giocatore --"}</option>
+                  <option value="">{t("statistics.choosePlayer")}</option>
                   {currentRanking.map((player) => (
                     <option key={player.userId} value={player.userId}>
                       {player.position}. {player.name} ({player.points} pt)
@@ -859,7 +859,7 @@ export default function Statistics() {
                 {loadingPlayerStats && (
                   <div className="text-center mt-4">
                     <Spinner animation="border" size="sm" style={{ color: accentColor }} />
-                    <p className="mt-2 text-muted">{t("statistics.loadingPlayer") || "Caricamento statistiche giocatore..."}</p>
+                    <p className="mt-2 text-muted">{t("statistics.loadingPlayer")}</p>
                   </div>
                 )}
 

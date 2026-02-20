@@ -29,6 +29,8 @@ export const it = {
     name: "Nome",
     date: "Data",
     actions: "Azioni",
+    select: "Seleziona",
+    clearSelection: "Cancella selezione",
   },
 
   // Navigation
@@ -461,6 +463,18 @@ export const it = {
     tooManyRequests: "Troppi tentativi. Riprova tra qualche minuto",
     popupClosed: "Finestra di login chiusa. Riprova",
     genericError: "Si è verificato un errore. Riprova",
+    forgotPassword: "Password dimenticata?",
+    resetPasswordTitle: "Reimpostazione Password",
+    resetPasswordDesc: "Inserisci il tuo indirizzo email e ti invieremo un link per reimpostare la password.",
+    sendResetLink: "Invia Link di Ripristino",
+    checkEmail: "Controlla la tua email",
+    resetLinkSent: "Abbiamo inviato un link di ripristino della password alla tua email. Clicca il link nell'email per reimpostare la password.",
+    backToLogin: "Torna al Login",
+    nicknameTaken: "Questo nickname è già in uso",
+    accountExistsDifferentCredential: "Un account con questa email esiste già. Prova ad accedere con un altro metodo.",
+    linkAccountTitle: "Collega il tuo account Google",
+    linkAccountDesc: "Un account con {{email}} esiste già. Inserisci la tua password per collegare l'accesso Google al tuo account esistente.",
+    linkAccount: "Collega account e accedi",
     noRankingEntry: "Il tuo account non è ancora stato abilitato al gioco. Contatta l'amministratore.",
   },
 
