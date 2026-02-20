@@ -512,17 +512,17 @@ export default function FormationApp() {
 
               {/* Submit unico, ma savingMode viene impostato dal bottone */}
               <Form onSubmit={save}>
-                {/* Utente auto-detected */}
-                <Alert variant="info" className="mb-3 d-flex align-items-center justify-content-between py-2">
+                {/* User info */}
+                <div className="d-flex align-items-center justify-content-between mb-3 text-muted" style={{ fontSize: "0.9rem" }}>
                   <span>
-                    {t("auth.submittingAs")}: <strong>{userProfile?.nickname || user?.email}</strong>
+                    {t("auth.submittingAs")}: <strong style={{ color: colors.accent }}>{userProfile?.nickname || user?.email}</strong>
                   </span>
                   {form.userId && (
                     <span>
-                      {t("formations.jokersAvailable")}: <Badge bg="warning" text="dark">{userJolly}</Badge>
+                      {t("formations.jokersAvailable")}: <strong>{userJolly}</strong>
                     </span>
                   )}
-                </Alert>
+                </div>
 
                 {/* Gara */}
                 <Form.Group className="mb-3">
