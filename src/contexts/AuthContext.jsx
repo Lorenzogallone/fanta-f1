@@ -14,7 +14,7 @@ import {
   signOut,
   sendPasswordResetEmail,
 } from "firebase/auth";
-import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs, deleteDoc } from "firebase/firestore";
 
 const DEFAULT_RANKING = {
   puntiTotali: 0,
@@ -134,26 +134,78 @@ export function AuthProvider({ children }) {
 
   /**
    * Login/Register with Google. Returns { isNewUser } to signal if profile completion is needed.
+   * If a Firestore profile exists under a different uid with the same email, migrates it.
    */
   const loginWithGoogle = async () => {
     const result = await signInWithPopup(auth, googleProvider);
     const profileDoc = await getDoc(doc(db, "users", result.user.uid));
-    const isNew = !profileDoc.exists();
-    if (isNew) {
-      setNeedsProfile(true);
-      setUserProfile(null);
-    } else {
+
+    let isNew = false;
+
+    if (profileDoc.exists()) {
       setUserProfile(profileDoc.data());
       setNeedsProfile(false);
+    } else {
+      // Check for existing profile by email (account linking scenario)
+      const emailQuery = query(collection(db, "users"), where("email", "==", result.user.email));
+      const emailSnap = await getDocs(emailQuery);
+
+      if (!emailSnap.empty) {
+        const oldDoc = emailSnap.docs[0];
+        const oldUid = oldDoc.id;
+        const profileData = oldDoc.data();
+
+        // Copy profile to new uid
+        await setDoc(doc(db, "users", result.user.uid), profileData);
+
+        // Migrate ranking if exists
+        const oldRanking = await getDoc(doc(db, "ranking", oldUid));
+        if (oldRanking.exists()) {
+          await setDoc(doc(db, "ranking", result.user.uid), oldRanking.data());
+          await deleteDoc(doc(db, "ranking", oldUid));
+        }
+
+        // Remove old profile
+        await deleteDoc(doc(db, "users", oldUid));
+
+        setUserProfile(profileData);
+        setNeedsProfile(false);
+      } else {
+        isNew = true;
+        setNeedsProfile(true);
+        setUserProfile(null);
+      }
     }
+
     await checkAdmin(result.user);
     return { isNewUser: isNew, user: result.user };
+  };
+
+  /**
+   * Check if a nickname is available.
+   * @param {string} nickname - Nickname to check
+   * @param {string} [excludeUid] - UID to exclude (for editing own profile)
+   * @returns {Promise<boolean>} true if available
+   */
+  const checkNicknameAvailable = async (nickname, excludeUid = null) => {
+    const q = query(collection(db, "users"), where("nickname", "==", nickname));
+    const snap = await getDocs(q);
+    if (snap.empty) return true;
+    if (excludeUid) return snap.docs.every((d) => d.id === excludeUid);
+    return false;
   };
 
   /**
    * Register with email/password and create user profile
    */
   const register = async (email, password, { nickname, firstName, lastName }) => {
+    const available = await checkNicknameAvailable(nickname);
+    if (!available) {
+      const err = new Error("Nickname already taken");
+      err.code = "auth/nickname-taken";
+      throw err;
+    }
+
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     const profile = {
       email,
@@ -174,6 +226,14 @@ export function AuthProvider({ children }) {
    */
   const completeProfile = async ({ nickname, firstName, lastName }) => {
     if (!user) throw new Error("No authenticated user");
+
+    const available = await checkNicknameAvailable(nickname, user.uid);
+    if (!available) {
+      const err = new Error("Nickname already taken");
+      err.code = "auth/nickname-taken";
+      throw err;
+    }
+
     const profile = {
       email: user.email,
       nickname,

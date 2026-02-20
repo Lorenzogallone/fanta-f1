@@ -468,6 +468,8 @@ export const it = {
     checkEmail: "Controlla la tua email",
     resetLinkSent: "Abbiamo inviato un link di ripristino della password alla tua email. Clicca il link nell'email per reimpostare la password.",
     backToLogin: "Torna al Login",
+    nicknameTaken: "Questo nickname è già in uso",
+    accountExistsDifferentCredential: "Un account con questa email esiste già. Prova ad accedere con un altro metodo.",
     noRankingEntry: "Il tuo account non è ancora stato abilitato al gioco. Contatta l'amministratore.",
   },
 

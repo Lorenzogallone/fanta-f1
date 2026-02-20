@@ -475,6 +475,10 @@ function getAuthErrorMessage(code, t) {
       return t("auth.popupClosed");
     case "auth/missing-email":
       return t("auth.invalidEmail");
+    case "auth/nickname-taken":
+      return t("auth.nicknameTaken");
+    case "auth/account-exists-with-different-credential":
+      return t("auth.accountExistsDifferentCredential");
     default:
       return t("auth.genericError");
   }
