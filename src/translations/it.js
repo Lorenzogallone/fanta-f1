@@ -461,6 +461,13 @@ export const it = {
     tooManyRequests: "Troppi tentativi. Riprova tra qualche minuto",
     popupClosed: "Finestra di login chiusa. Riprova",
     genericError: "Si è verificato un errore. Riprova",
+    forgotPassword: "Password dimenticata?",
+    resetPasswordTitle: "Reimpostazione Password",
+    resetPasswordDesc: "Inserisci il tuo indirizzo email e ti invieremo un link per reimpostare la password.",
+    sendResetLink: "Invia Link di Ripristino",
+    checkEmail: "Controlla la tua email",
+    resetLinkSent: "Abbiamo inviato un link di ripristino della password alla tua email. Clicca il link nell'email per reimpostare la password.",
+    backToLogin: "Torna al Login",
     noRankingEntry: "Il tuo account non è ancora stato abilitato al gioco. Contatta l'amministratore.",
   },
 

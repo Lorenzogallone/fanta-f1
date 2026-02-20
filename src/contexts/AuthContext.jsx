@@ -12,6 +12,7 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   signOut,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 
@@ -187,6 +188,13 @@ export function AuthProvider({ children }) {
   };
 
   /**
+   * Send password reset email
+   */
+  const resetPassword = async (email) => {
+    await sendPasswordResetEmail(auth, email);
+  };
+
+  /**
    * Sign out
    */
   const logout = async () => {
@@ -207,6 +215,7 @@ export function AuthProvider({ children }) {
     loginWithGoogle,
     register,
     completeProfile,
+    resetPassword,
     logout,
   };
 
