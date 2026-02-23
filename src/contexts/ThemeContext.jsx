@@ -13,6 +13,7 @@ const ThemeContext = createContext();
  * @returns {Object} Theme context value
  * @throws {Error} If used outside ThemeProvider
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (!context) {

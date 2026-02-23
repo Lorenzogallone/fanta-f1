@@ -176,3 +176,4 @@ firebase-debug.*.log
 # Environment backups
 .env.backup*
 *.env.backup
+public/firebase-messaging-sw.js

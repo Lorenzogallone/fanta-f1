@@ -491,6 +491,23 @@ export const it = {
     close: "Chiudi",
   },
 
+  // Notifiche Push
+  notifications: {
+    title: "Notifiche",
+    enable: "Attiva promemoria qualifiche",
+    disable: "Disattiva notifiche",
+    enabled: "Notifiche attive ✓",
+    disabled: "Notifiche disattivate",
+    notSupported: "Notifiche non supportate",
+    pwaRequired: "Installa l'app per attivare le notifiche",
+    iosNote: "Su iPhone le notifiche funzionano solo se l'app è aggiunta alla Home (iOS 16.4+)",
+    permissionDenied: "Bloccate nelle impostazioni",
+    qualiReminder1h: "inizia tra 1 ora!",
+    qualiReminder5min: "inizia tra 5 minuti!",
+    qualifying: "Qualifiche",
+    sprintQualifying: "Qualifica Sprint",
+  },
+
   // Language names
   languages: {
     it: "Italiano",

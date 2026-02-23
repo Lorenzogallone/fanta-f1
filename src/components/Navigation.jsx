@@ -8,6 +8,7 @@ import { Navbar, Container, Nav, Dropdown } from "react-bootstrap";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useAuth } from "../hooks/useAuth";
+import NotificationSettings from "./NotificationSettings";
 
 /**
  * Main navigation component with responsive mobile menu, theme switcher, language selector, and auth controls.
@@ -37,8 +38,6 @@ export default function Navigation() {
   const menuBorder = isDark ? "#333333" : "#dee2e6";
   const textColor = isDark ? "#ffffff" : "#212529";
   const mutedColor = isDark ? "#aaa" : "#6c757d";
-
-  const currentFlag = availableLanguages.find((lang) => lang.code === currentLanguage)?.flag || "";
 
   // Don't show nav on login page
   if (location.pathname === "/login") return null;
@@ -228,6 +227,9 @@ export default function Navigation() {
                   </div>
                 </div>
               </Dropdown.Item>
+
+              {/* Notifications (PWA only) */}
+              <NotificationSettings style={{ color: textColor }} />
 
               <Dropdown.Divider style={{ borderColor: menuBorder, margin: "0.25rem 0" }} />
 

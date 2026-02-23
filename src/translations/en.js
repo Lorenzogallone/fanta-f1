@@ -491,6 +491,23 @@ export const en = {
     close: "Close",
   },
 
+  // Push Notifications
+  notifications: {
+    title: "Notifications",
+    enable: "Enable qualifying reminders",
+    disable: "Disable notifications",
+    enabled: "Notifications enabled ✓",
+    disabled: "Notifications disabled",
+    notSupported: "Notifications not supported",
+    pwaRequired: "Install the app to enable notifications",
+    iosNote: "On iPhone, notifications work only when installed to Home Screen (iOS 16.4+)",
+    permissionDenied: "Blocked in settings",
+    qualiReminder1h: "starts in 1 hour!",
+    qualiReminder5min: "starts in 5 minutes!",
+    qualifying: "Qualifying",
+    sprintQualifying: "Sprint Qualifying",
+  },
+
   // Language names
   languages: {
     it: "Italiano",

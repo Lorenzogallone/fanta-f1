@@ -86,6 +86,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    /* ===================== NOTIFICHE PUSH ================================
+     * Collezione: /notificationsSent/{docId}
+     * Deduplicazione notifiche push (solo Cloud Functions / Admin SDK)
+     * ==================================================================== */
+    match /notificationsSent/{docId} {
+      allow read, write: if false;
+      // Only Cloud Functions (Admin SDK) can read/write this collection
+    }
+
     /* ===================== FALLBACK ======================================
      * Blocca accesso a qualsiasi altra collezione non definita sopra
      * ==================================================================== */

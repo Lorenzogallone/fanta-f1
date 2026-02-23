@@ -62,6 +62,15 @@ export default function App() {
     });
   }, []);
 
+  // Set up FCM foreground notification listener (only if notifications are enabled)
+  useEffect(() => {
+    import("./services/notificationService").then(({ setupForegroundListener }) => {
+      setupForegroundListener();
+    }).catch(() => {
+      // Notifications not enabled or not supported — ignore
+    });
+  }, []);
+
   return (
     <ErrorBoundary>
       <LanguageProvider>

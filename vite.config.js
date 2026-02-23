@@ -41,7 +41,7 @@ export default defineConfig({
           // React e dipendenze core
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           // Firebase
-          'firebase-vendor': ['firebase/app', 'firebase/firestore', 'firebase/auth'],
+          'firebase-vendor': ['firebase/app', 'firebase/firestore', 'firebase/auth', 'firebase/messaging'],
           // UI Libraries
           'ui-vendor': ['react-bootstrap', 'react-select'],
         },

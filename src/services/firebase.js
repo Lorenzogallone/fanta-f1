@@ -1,6 +1,6 @@
 /**
  * Firebase Configuration and Initialization
- * Configures and exports Firebase app instance and Firestore database
+ * Configures and exports Firebase app instance, Firestore database, and FCM messaging
  */
 
 import { initializeApp } from "firebase/app";
@@ -30,3 +30,22 @@ export const db = getFirestore(app);
 /** Firebase Auth instance with local persistence (stay logged in across sessions) */
 export const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence);
+
+/**
+ * Lazy-initialized FCM messaging instance.
+ * Only loaded when push notifications are actually requested.
+ * @type {import("firebase/messaging").Messaging | null}
+ */
+let messaging = null;
+
+/**
+ * Returns the Firebase Cloud Messaging instance (creates it on first call).
+ * @returns {Promise<import("firebase/messaging").Messaging>} FCM messaging instance
+ */
+export async function getMessagingInstance() {
+  if (!messaging) {
+    const { getMessaging } = await import("firebase/messaging");
+    messaging = getMessaging(app);
+  }
+  return messaging;
+}

@@ -42,7 +42,7 @@ import { getChampionshipStatistics } from "../services/statisticsService";
 import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
-import { error } from "../utils/logger";
+import { error as logError } from "../utils/logger";
 import PlayerStatsView from "../components/PlayerStatsView";
 import "../styles/statistics.css";
 
@@ -117,7 +117,7 @@ export default function Statistics() {
         setCurrentRanking(ranking);
         setLoadingRanking(false); // Show ranking immediately
       } catch (err) {
-        error("Error loading ranking:", err);
+        logError("Error loading ranking:", err);
         setError(t("statistics.errorLoading"));
         setLoadingRanking(false);
       }
@@ -129,7 +129,7 @@ export default function Statistics() {
         setStatistics(data);
         setLoadingStatistics(false); // Show charts when ready
       } catch (err) {
-        error("Error loading statistics:", err);
+        logError("Error loading statistics:", err);
         // Don't set error here - ranking might still be visible
         setLoadingStatistics(false);
       }
@@ -194,7 +194,7 @@ export default function Statistics() {
               cancelledMain: raceData.cancelledMain || false,
             };
           } catch (err) {
-            error(`Error fetching submission for race ${raceDoc.id}:`, err);
+            logError(`Error fetching submission for race ${raceDoc.id}:`, err);
             return null;
           }
         });
@@ -216,7 +216,7 @@ export default function Statistics() {
           totalCompletedRaces: totalCompleted,
         });
       } catch (err) {
-        error("Error loading player statistics:", err);
+        logError("Error loading player statistics:", err);
       } finally {
         setLoadingPlayerStats(false);
       }
@@ -708,7 +708,7 @@ export default function Statistics() {
                       />
                       {topPlayers
                         .sort((a, b) => a.position - b.position)
-                        .map((player, idx) => (
+                        .map((player) => (
                           <Line
                             key={player.userId}
                             type="monotone"
@@ -780,7 +780,7 @@ export default function Statistics() {
                       />
                       {topPlayers
                         .sort((a, b) => a.position - b.position)
-                        .map((player, idx) => (
+                        .map((player) => (
                           <Line
                             key={player.userId}
                             type="monotone"
