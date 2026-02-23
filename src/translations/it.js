@@ -478,6 +478,19 @@ export const it = {
     noRankingEntry: "Il tuo account non è ancora stato abilitato al gioco. Contatta l'amministratore.",
   },
 
+  // PWA Install Banner
+  pwa: {
+    installTitle: "Installa FantaF1",
+    app: "App",
+    installIosMessage: "Installa l'app per un'esperienza migliore e schermo intero!",
+    installIosStep1: "Tocca l'icona Condividi",
+    installIosStep2: "Scorri, tocca 'Aggiungi a Home' o il pulsante",
+    installAndroidMessage: "Installa l'app per un'esperienza nativa e veloce!",
+    later: "Più tardi",
+    installNow: "Installa Ora",
+    close: "Chiudi",
+  },
+
   // Language names
   languages: {
     it: "Italiano",

@@ -90,9 +90,18 @@ export function ThemeProvider({ children }) {
     }
   }, [themeMode]);
 
-  // Apply theme to body
+  // Apply theme to body and meta tag
   useEffect(() => {
     document.body.setAttribute("data-theme", appliedTheme);
+    
+    // Aggiorna dinamicamente il colore della status bar per le PWA
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (!metaThemeColor) {
+      metaThemeColor = document.createElement('meta');
+      metaThemeColor.name = "theme-color";
+      document.head.appendChild(metaThemeColor);
+    }
+    metaThemeColor.setAttribute("content", appliedTheme === "dark" ? "#1a1a1a" : "#ffffff");
   }, [appliedTheme]);
 
   /**

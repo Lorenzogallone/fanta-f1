@@ -21,6 +21,7 @@ import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import CompleteProfileModal from "./components/CompleteProfileModal";
+import InstallPwaBanner from "./components/InstallPwaBanner";
 import { syncFromAPI } from "./services/f1DataResolver.js";
 import { warn } from "./utils/logger";
 import "./styles/theme.css";
@@ -69,6 +70,7 @@ export default function App() {
             <Router>
               <Navigation />
               <Toaster />
+              <InstallPwaBanner />
               <CompleteProfileModal />
 
               <BContainer className="py-4">

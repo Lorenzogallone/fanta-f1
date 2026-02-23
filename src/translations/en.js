@@ -478,6 +478,19 @@ export const en = {
     noRankingEntry: "Your account has not been enabled for the game yet. Contact the administrator.",
   },
 
+  // PWA Install Banner
+  pwa: {
+    installTitle: "Install FantaF1",
+    app: "App",
+    installIosMessage: "Install the app for a better, full-screen experience!",
+    installIosStep1: "Tap the Share icon",
+    installIosStep2: "Scroll down, tap 'Add to Home Screen' or the button",
+    installAndroidMessage: "Install the app for a fast, native experience!",
+    later: "Later",
+    installNow: "Install Now",
+    close: "Close",
+  },
+
   // Language names
   languages: {
     it: "Italiano",
