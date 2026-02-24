@@ -7,9 +7,18 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // Use injectManifest so we can provide a custom SW that includes
+      // both Workbox precaching AND Firebase Cloud Messaging handlers.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       includeAssets: ['FantaF1_Logo_big.png'],
+      injectManifest: {
+        // Allow the firebase compat CDN scripts loaded via importScripts
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      },
       manifest: {
         name: 'FantaF1',
         short_name: 'FantaF1',
