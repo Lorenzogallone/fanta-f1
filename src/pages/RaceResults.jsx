@@ -4,7 +4,7 @@
  * Smart loading: shows only last race by default, expandable sessions
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import {
   Container,
@@ -105,7 +105,7 @@ TeamWithLogo.propTypes = {
  */
 export default function RaceResults() {
   const { isDark } = useTheme();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   const navigate = useNavigate();
 
   const [races, setRaces] = useState([]);
@@ -132,6 +132,48 @@ export default function RaceResults() {
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
   const bgHeader = isDark ? "var(--bg-tertiary)" : "#ffffff";
+
+  const locale = currentLanguage === "it" ? "it-IT" : "en-US";
+
+  /**
+   * Format a Firestore timestamp to CET date/time components
+   */
+  const formatToCET = (timestamp) => {
+    if (!timestamp) return null;
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp.seconds * 1000);
+    return {
+      dayOfWeek: date.toLocaleDateString(locale, { weekday: "short", timeZone: "Europe/Rome" }),
+      dateStr: date.toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: "Europe/Rome" }),
+      time: date.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" }),
+      raw: date,
+    };
+  };
+
+  /**
+   * Compute schedule data: upcoming and past races sorted chronologically
+   */
+  const scheduleData = useMemo(() => {
+    if (!races.length) return { upcoming: [], past: [], nextRace: null };
+
+    const now = new Date();
+    const sorted = [...races].sort((a, b) => a.round - b.round);
+
+    const upcoming = [];
+    const past = [];
+
+    for (const race of sorted) {
+      const raceDate = race.raceUTC?.toDate ? race.raceUTC.toDate() : new Date(race.raceUTC?.seconds * 1000);
+      if (raceDate > now) {
+        upcoming.push(race);
+      } else {
+        past.push(race);
+      }
+    }
+
+    const nextRace = upcoming.length > 0 ? upcoming[0] : null;
+
+    return { upcoming, past, nextRace };
+  }, [races]);
 
   /**
    * Renders session accordion body with loading state
@@ -545,6 +587,18 @@ export default function RaceResults() {
                       🏆 {t("raceResults.championshipTab")}
                     </Nav.Link>
                   </Nav.Item>
+                  <Nav.Item>
+                    <Nav.Link
+                      eventKey="schedule"
+                      style={{
+                        backgroundColor: activeTab === "schedule" ? accentColor : "transparent",
+                        color: activeTab === "schedule" ? "#fff" : (isDark ? "#fff" : "#000"),
+                        borderColor: accentColor,
+                      }}
+                    >
+                      📅 {t("raceResults.scheduleTab")}
+                    </Nav.Link>
+                  </Nav.Item>
                 </Nav>
               </div>
             </Card.Header>
@@ -925,6 +979,244 @@ export default function RaceResults() {
               )}
             </>
           )}
+
+              {/* Schedule Tab */}
+              {activeTab === "schedule" && (
+                <>
+                  <p className="text-muted mb-4" style={{ fontSize: "0.9rem" }}>
+                    🕐 {t("raceResults.allTimesInCET")}
+                  </p>
+
+                  {races.length === 0 ? (
+                    <Alert variant="info">{t("raceResults.noRacesScheduled")}</Alert>
+                  ) : (
+                    <>
+                      {/* Next Race - Highlighted */}
+                      {scheduleData.nextRace && (() => {
+                        const race = scheduleData.nextRace;
+                        const raceDate = race.raceUTC?.toDate ? race.raceUTC.toDate() : new Date(race.raceUTC?.seconds * 1000);
+                        const daysUntil = Math.ceil((raceDate - new Date()) / (1000 * 60 * 60 * 24));
+                        const isSprint = !!race.qualiSprintUTC;
+
+                        const sessionRows = [];
+                        if (isSprint) {
+                          const sqFmt = formatToCET(race.qualiSprintUTC);
+                          if (sqFmt) sessionRows.push({ label: t("raceResults.sprintQualifying"), ...sqFmt, icon: "⚡" });
+                          const spFmt = formatToCET(race.sprintUTC);
+                          if (spFmt) sessionRows.push({ label: t("raceResults.sprint"), ...spFmt, icon: "⚡" });
+                        }
+                        const qFmt = formatToCET(race.qualiUTC);
+                        if (qFmt) sessionRows.push({ label: t("raceResults.qualifying"), ...qFmt, icon: "🏎️" });
+                        const rFmt = formatToCET(race.raceUTC);
+                        if (rFmt) sessionRows.push({ label: t("raceResults.race"), ...rFmt, icon: "🏆" });
+
+                        let countdownText;
+                        if (daysUntil <= 0) countdownText = t("raceResults.today");
+                        else if (daysUntil === 1) countdownText = t("raceResults.tomorrow");
+                        else countdownText = t("raceResults.daysUntil", { count: daysUntil });
+
+                        return (
+                          <Card
+                            className="mb-4 shadow schedule-next-race"
+                            style={{
+                              borderColor: accentColor,
+                              borderWidth: "2px",
+                              backgroundColor: bgCard,
+                            }}
+                          >
+                            <Card.Header
+                              style={{
+                                backgroundColor: accentColor,
+                                color: "#fff",
+                                borderBottom: "none",
+                              }}
+                            >
+                              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                  <span className="fw-bold" style={{ fontSize: "1.1rem" }}>
+                                    R{race.round} — {race.name}
+                                  </span>
+                                  {isSprint && (
+                                    <Badge bg="warning" text="dark" className="ms-2">
+                                      🏁 {t("raceResults.sprintWeekend")}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="d-flex align-items-center gap-2">
+                                  <Badge bg="light" text="dark" style={{ fontSize: "0.85rem" }}>
+                                    {countdownText}
+                                  </Badge>
+                                  <Badge bg="light" text="dark" style={{ fontSize: "0.75rem" }}>
+                                    {t("raceResults.nextRace")}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </Card.Header>
+                            <Card.Body className="p-0">
+                              <Table hover className="mb-0" size="sm" variant={isDark ? "dark" : undefined}>
+                                <thead>
+                                  <tr>
+                                    <th style={{ color: accentColor, padding: "0.6rem 0.75rem" }}>{t("raceResults.sessionSchedule")}</th>
+                                    <th style={{ color: accentColor, padding: "0.6rem 0.75rem" }}>{t("common.date")}</th>
+                                    <th className="text-end" style={{ color: accentColor, padding: "0.6rem 0.75rem" }}>CET</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {sessionRows.map((s, idx) => (
+                                    <tr key={idx}>
+                                      <td style={{ padding: "0.6rem 0.75rem" }}>
+                                        <span className="me-2">{s.icon}</span>
+                                        <strong>{s.label}</strong>
+                                      </td>
+                                      <td style={{ padding: "0.6rem 0.75rem" }}>
+                                        <span className="text-capitalize">{s.dayOfWeek}</span> {s.dateStr}
+                                      </td>
+                                      <td className="text-end fw-bold font-monospace" style={{ padding: "0.6rem 0.75rem", color: accentColor }}>
+                                        {s.time}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </Table>
+                            </Card.Body>
+                          </Card>
+                        );
+                      })()}
+
+                      {/* Other Upcoming Races */}
+                      {scheduleData.upcoming.length > 1 && (
+                        <>
+                          <h6 className="mb-3 mt-2" style={{ color: accentColor }}>
+                            📅 {t("raceResults.upcomingRaces")} ({scheduleData.upcoming.length - 1})
+                          </h6>
+                          <div className="schedule-race-list">
+                            {scheduleData.upcoming.slice(1).map((race) => {
+                              const isSprint = !!race.qualiSprintUTC;
+                              const qFmt = formatToCET(race.qualiUTC);
+                              const rFmt = formatToCET(race.raceUTC);
+
+                              return (
+                                <Card
+                                  key={race.id}
+                                  className="mb-2 schedule-race-card"
+                                  style={{ backgroundColor: bgCard, borderColor: isDark ? "var(--border-color)" : "#dee2e6" }}
+                                >
+                                  <Card.Body className="p-0">
+                                    {/* Race header row */}
+                                    <div
+                                      className="d-flex justify-content-between align-items-center px-3 py-2"
+                                      style={{
+                                        borderBottom: `1px solid ${isDark ? "var(--border-color)" : "#dee2e6"}`,
+                                        backgroundColor: isDark ? "var(--bg-tertiary)" : "#f8f9fa",
+                                      }}
+                                    >
+                                      <div className="d-flex align-items-center gap-2">
+                                        <Badge bg="secondary" style={{ minWidth: "36px" }}>R{race.round}</Badge>
+                                        <strong style={{ fontSize: "0.95rem" }}>{race.name}</strong>
+                                        {isSprint && (
+                                          <Badge bg="warning" text="dark" style={{ fontSize: "0.7rem" }}>🏁 {t("raceResults.sprintWeekend")}</Badge>
+                                        )}
+                                        {race.cancelledMain && (
+                                          <Badge bg="danger" style={{ fontSize: "0.7rem" }}>{t("history.cancelled")}</Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {/* Session times */}
+                                    <Table hover className="mb-0" size="sm" variant={isDark ? "dark" : undefined} style={{ fontSize: "0.85rem" }}>
+                                      <tbody>
+                                        {isSprint && (() => {
+                                          const sqFmt = formatToCET(race.qualiSprintUTC);
+                                          const spFmt = formatToCET(race.sprintUTC);
+                                          return (
+                                            <>
+                                              {sqFmt && (
+                                                <tr>
+                                                  <td style={{ padding: "0.4rem 0.75rem" }}>⚡ {t("raceResults.sprintQualifying")}</td>
+                                                  <td className="text-muted text-capitalize" style={{ padding: "0.4rem 0.5rem" }}>{sqFmt.dayOfWeek} {sqFmt.dateStr}</td>
+                                                  <td className="text-end fw-bold font-monospace" style={{ padding: "0.4rem 0.75rem", color: accentColor }}>{sqFmt.time}</td>
+                                                </tr>
+                                              )}
+                                              {spFmt && (
+                                                <tr>
+                                                  <td style={{ padding: "0.4rem 0.75rem" }}>⚡ {t("raceResults.sprint")}</td>
+                                                  <td className="text-muted text-capitalize" style={{ padding: "0.4rem 0.5rem" }}>{spFmt.dayOfWeek} {spFmt.dateStr}</td>
+                                                  <td className="text-end fw-bold font-monospace" style={{ padding: "0.4rem 0.75rem", color: accentColor }}>{spFmt.time}</td>
+                                                </tr>
+                                              )}
+                                            </>
+                                          );
+                                        })()}
+                                        {qFmt && (
+                                          <tr>
+                                            <td style={{ padding: "0.4rem 0.75rem" }}>🏎️ {t("raceResults.qualifying")}</td>
+                                            <td className="text-muted text-capitalize" style={{ padding: "0.4rem 0.5rem" }}>{qFmt.dayOfWeek} {qFmt.dateStr}</td>
+                                            <td className="text-end fw-bold font-monospace" style={{ padding: "0.4rem 0.75rem", color: accentColor }}>{qFmt.time}</td>
+                                          </tr>
+                                        )}
+                                        {rFmt && (
+                                          <tr>
+                                            <td style={{ padding: "0.4rem 0.75rem" }}>🏆 {t("raceResults.race")}</td>
+                                            <td className="text-muted text-capitalize" style={{ padding: "0.4rem 0.5rem" }}>{rFmt.dayOfWeek} {rFmt.dateStr}</td>
+                                            <td className="text-end fw-bold font-monospace" style={{ padding: "0.4rem 0.75rem", color: accentColor }}>{rFmt.time}</td>
+                                          </tr>
+                                        )}
+                                      </tbody>
+                                    </Table>
+                                  </Card.Body>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        </>
+                      )}
+
+                      {/* Past Races - Compact */}
+                      {scheduleData.past.length > 0 && (
+                        <>
+                          <h6 className="mb-3 mt-4" style={{ color: isDark ? "var(--text-secondary)" : "#6c757d" }}>
+                            ✅ {t("raceResults.pastRaces")} ({scheduleData.past.length})
+                          </h6>
+                          <Card style={{ backgroundColor: bgCard, borderColor: isDark ? "var(--border-color)" : "#dee2e6" }}>
+                            <div className="table-responsive">
+                              <Table hover size="sm" variant={isDark ? "dark" : undefined} className="mb-0" style={{ fontSize: "0.85rem" }}>
+                                <thead>
+                                  <tr>
+                                    <th style={{ padding: "0.5rem 0.75rem", width: "50px" }}>#</th>
+                                    <th style={{ padding: "0.5rem 0.75rem" }}>{t("history.race")}</th>
+                                    <th style={{ padding: "0.5rem 0.75rem" }}>{t("raceResults.qualifying")}</th>
+                                    <th style={{ padding: "0.5rem 0.75rem" }}>{t("raceResults.race")}</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {scheduleData.past.map((race) => {
+                                    const qFmt = formatToCET(race.qualiUTC);
+                                    const rFmt = formatToCET(race.raceUTC);
+                                    return (
+                                      <tr key={race.id} style={{ opacity: 0.7 }}>
+                                        <td style={{ padding: "0.5rem 0.75rem" }}>{race.round}</td>
+                                        <td style={{ padding: "0.5rem 0.75rem" }}>
+                                          {race.name}
+                                          {race.cancelledMain && <Badge bg="danger" className="ms-2" style={{ fontSize: "0.65rem" }}>{t("history.cancelled")}</Badge>}
+                                        </td>
+                                        <td className="font-monospace" style={{ padding: "0.5rem 0.75rem" }}>
+                                          {qFmt ? `${qFmt.dayOfWeek} ${qFmt.dateStr} ${qFmt.time}` : "—"}
+                                        </td>
+                                        <td className="font-monospace" style={{ padding: "0.5rem 0.75rem" }}>
+                                          {rFmt ? `${rFmt.dayOfWeek} ${rFmt.dateStr} ${rFmt.time}` : "—"}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </Table>
+                            </div>
+                          </Card>
+                        </>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
 
             </Card.Body>
           </Card>

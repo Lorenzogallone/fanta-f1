@@ -43,15 +43,23 @@ export default function Leaderboard() {
   useEffect(() => {
     const q = query(collection(db, "ranking"), orderBy("puntiTotali", "desc"));
     const unsub = onSnapshot(q, (snap) => {
-      setRows(
-        snap.docs.map((d, index) => ({
-          userId: d.id,
-          name: d.data().name,
-          pts: d.data().puntiTotali,
-          jolly: d.data().jolly ?? 0,
-          position: index + 1,
-        }))
-      );
+      // Assign positions handling ties (parimerito): same points = same position
+      const rawRows = snap.docs.map((d) => ({
+        userId: d.id,
+        name: d.data().name,
+        pts: d.data().puntiTotali,
+        jolly: d.data().jolly ?? 0,
+      }));
+
+      let currentPos = 1;
+      const rowsWithPositions = rawRows.map((row, index) => {
+        if (index > 0 && row.pts < rawRows[index - 1].pts) {
+          currentPos = index + 1;
+        }
+        return { ...row, position: currentPos, tied: index > 0 && row.pts === rawRows[index - 1].pts };
+      });
+
+      setRows(rowsWithPositions);
       setLoading(false);
     });
     return () => unsub();
@@ -113,10 +121,11 @@ export default function Leaderboard() {
               </thead>
 
               <tbody>
-                {rows.map((r, idx) => {
-                  const medal = medals[idx] ?? idx + 1;
-                  const gap = idx === 0 ? "—" : `-${leaderPts - r.pts}`;
-                  const isTop3 = idx < 3;
+                {rows.map((r) => {
+                  const posLabel = r.position <= 3 ? medals[r.position - 1] : r.position;
+                  const medal = posLabel;
+                  const gap = (leaderPts - r.pts === 0) ? "—" : `-${leaderPts - r.pts}`;
+                  const isTop3 = r.position <= 3;
 
                   // Calculate position change from previous snapshot
                   const positionChange = previousSnapshot

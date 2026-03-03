@@ -209,6 +209,20 @@ export const en = {
     practiceDataUnavailableDescription: "Practice session data may not be available yet or the session has not been completed.",
     noResultsYet: "Results not yet available",
     noResultsYetDescription: "The sessions for this race have not been completed yet. Results will be shown as soon as they are available.",
+    scheduleTab: "Schedule",
+    allTimesInCET: "All times in CET (Central European Time)",
+    nextRace: "Next",
+    upcoming: "Upcoming",
+    completedRace: "Completed",
+    sprintWeekend: "Sprint",
+    noRacesScheduled: "No races scheduled",
+    upcomingRaces: "Upcoming Races",
+    pastRaces: "Completed Races",
+    raceDate: "Race Date",
+    daysUntil: "in {{count}} days",
+    tomorrow: "Tomorrow",
+    today: "Today",
+    sessionSchedule: "Session Schedule",
   },
 
   // Statistics
@@ -471,10 +485,6 @@ export const en = {
     resetLinkSent: "We've sent a password reset link to your email. Click the link in the email to reset your password.",
     backToLogin: "Back to Login",
     nicknameTaken: "This nickname is already taken",
-    accountExistsDifferentCredential: "An account with this email already exists. Try signing in with a different method.",
-    linkAccountTitle: "Link your Google account",
-    linkAccountDesc: "An account already exists with {{email}}. Enter your password to link Google sign-in to your existing account.",
-    linkAccount: "Link account and sign in",
     noRankingEntry: "Your account has not been enabled for the game yet. Contact the administrator.",
   },
 
@@ -489,6 +499,23 @@ export const en = {
     later: "Later",
     installNow: "Install Now",
     close: "Close",
+  },
+
+  // Push Notifications
+  notifications: {
+    title: "Notifications",
+    enable: "Enable qualifying reminders",
+    disable: "Disable notifications",
+    enabled: "Notifications enabled ✓",
+    disabled: "Notifications disabled",
+    notSupported: "Notifications not supported",
+    pwaRequired: "Install the app to enable notifications",
+    iosNote: "On iPhone, notifications work only when installed to Home Screen (iOS 16.4+)",
+    permissionDenied: "Blocked in settings",
+    qualiReminder1h: "starts in 1 hour!",
+    qualiReminder5min: "starts in 5 minutes!",
+    qualifying: "Qualifying",
+    sprintQualifying: "Sprint Qualifying",
   },
 
   // Language names

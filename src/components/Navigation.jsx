@@ -4,10 +4,11 @@
  */
 import React, { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
-import { Navbar, Container, Nav, Dropdown } from "react-bootstrap";
+import { Navbar, Container, Nav, Dropdown, Modal, Button } from "react-bootstrap";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useAuth } from "../hooks/useAuth";
+import NotificationSettings from "./NotificationSettings";
 
 /**
  * Main navigation component with responsive mobile menu, theme switcher, language selector, and auth controls.
@@ -17,6 +18,7 @@ export default function Navigation() {
   const location = useLocation();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { toggleTheme, isDark, themeMode } = useTheme();
   const { currentLanguage, changeLanguage, availableLanguages, t } = useLanguage();
   const { user, userProfile, isAdmin, logout } = useAuth();
@@ -25,8 +27,13 @@ export default function Navigation() {
     setExpanded(false);
   };
 
-  const handleLogout = async () => {
+  const handleLogoutRequest = () => {
     setExpanded(false);
+    setShowLogoutConfirm(true);
+  };
+
+  const handleLogoutConfirm = async () => {
+    setShowLogoutConfirm(false);
     await logout();
     navigate("/login");
   };
@@ -38,12 +45,31 @@ export default function Navigation() {
   const textColor = isDark ? "#ffffff" : "#212529";
   const mutedColor = isDark ? "#aaa" : "#6c757d";
 
-  const currentFlag = availableLanguages.find((lang) => lang.code === currentLanguage)?.flag || "";
-
   // Don't show nav on login page
   if (location.pathname === "/login") return null;
 
+  const logoutConfirmModal = (
+    <Modal show={showLogoutConfirm} onHide={() => setShowLogoutConfirm(false)} centered size="sm">
+      <Modal.Header className="border-0 pb-0">
+        <Modal.Title style={{ fontSize: "1rem" }}>{t("auth.logout")}</Modal.Title>
+      </Modal.Header>
+      <Modal.Body className="pt-1" style={{ fontSize: "0.9rem" }}>
+        Sei sicuro di voler uscire?
+      </Modal.Body>
+      <Modal.Footer className="border-0 pt-1 gap-2">
+        <Button variant="outline-secondary" size="sm" onClick={() => setShowLogoutConfirm(false)}>
+          Annulla
+        </Button>
+        <Button variant="danger" size="sm" onClick={handleLogoutConfirm}>
+          {t("auth.logout")}
+        </Button>
+      </Modal.Footer>
+    </Modal>
+  );
+
   return (
+    <>
+    {logoutConfirmModal}
     <Navbar
       expand="lg"
       expanded={expanded}
@@ -229,12 +255,15 @@ export default function Navigation() {
                 </div>
               </Dropdown.Item>
 
+              {/* Notifications (PWA only) */}
+              <NotificationSettings style={{ color: textColor }} />
+
               <Dropdown.Divider style={{ borderColor: menuBorder, margin: "0.25rem 0" }} />
 
               {/* Logout */}
               {user && (
                 <Dropdown.Item
-                  onClick={handleLogout}
+                  onClick={handleLogoutRequest}
                   style={{ color: accentColor, fontSize: "0.85rem", fontWeight: 500 }}
                   className="user-menu-item"
                 >
@@ -312,5 +341,6 @@ export default function Navigation() {
         </Navbar.Collapse>
       </Container>
     </Navbar>
+    </>
   );
 }

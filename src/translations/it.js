@@ -209,6 +209,20 @@ export const it = {
     practiceDataUnavailableDescription: "I dati delle prove libere potrebbero non essere ancora disponibili o la sessione non è stata completata.",
     noResultsYet: "Risultati non ancora disponibili",
     noResultsYetDescription: "Le sessioni di questa gara non sono ancora state completate. I risultati verranno mostrati non appena disponibili.",
+    scheduleTab: "Calendario",
+    allTimesInCET: "Orari in CET (Central European Time)",
+    nextRace: "Prossima",
+    upcoming: "In programma",
+    completedRace: "Completata",
+    sprintWeekend: "Sprint",
+    noRacesScheduled: "Nessuna gara in programma",
+    upcomingRaces: "Prossime Gare",
+    pastRaces: "Gare Completate",
+    raceDate: "Data Gara",
+    daysUntil: "tra {{count}} giorni",
+    tomorrow: "Domani",
+    today: "Oggi",
+    sessionSchedule: "Programma Sessioni",
   },
 
   // Statistics
@@ -471,10 +485,6 @@ export const it = {
     resetLinkSent: "Abbiamo inviato un link di ripristino della password alla tua email. Clicca il link nell'email per reimpostare la password.",
     backToLogin: "Torna al Login",
     nicknameTaken: "Questo nickname è già in uso",
-    accountExistsDifferentCredential: "Un account con questa email esiste già. Prova ad accedere con un altro metodo.",
-    linkAccountTitle: "Collega il tuo account Google",
-    linkAccountDesc: "Un account con {{email}} esiste già. Inserisci la tua password per collegare l'accesso Google al tuo account esistente.",
-    linkAccount: "Collega account e accedi",
     noRankingEntry: "Il tuo account non è ancora stato abilitato al gioco. Contatta l'amministratore.",
   },
 
@@ -489,6 +499,23 @@ export const it = {
     later: "Più tardi",
     installNow: "Installa Ora",
     close: "Chiudi",
+  },
+
+  // Notifiche Push
+  notifications: {
+    title: "Notifiche",
+    enable: "Attiva promemoria qualifiche",
+    disable: "Disattiva notifiche",
+    enabled: "Notifiche attive ✓",
+    disabled: "Notifiche disattivate",
+    notSupported: "Notifiche non supportate",
+    pwaRequired: "Installa l'app per attivare le notifiche",
+    iosNote: "Su iPhone le notifiche funzionano solo se l'app è aggiunta alla Home (iOS 16.4+)",
+    permissionDenied: "Bloccate nelle impostazioni",
+    qualiReminder1h: "inizia tra 1 ora!",
+    qualiReminder5min: "inizia tra 5 minuti!",
+    qualifying: "Qualifiche",
+    sprintQualifying: "Qualifica Sprint",
   },
 
   // Language names

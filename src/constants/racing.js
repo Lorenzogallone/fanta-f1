@@ -89,7 +89,7 @@ export const TEAM_LOGOS = {
   "Racing Bulls": "/vcarb.png",
   Alpine: "/alpine.png",
   Haas: "/haas.png",
-  Audi: "/sauber.png",
+  Audi: "/audi.png",
   Cadillac: "/cadillac.png",
 };
 

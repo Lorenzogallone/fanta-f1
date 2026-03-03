@@ -22,6 +22,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import CompleteProfileModal from "./components/CompleteProfileModal";
 import InstallPwaBanner from "./components/InstallPwaBanner";
+import NotificationPromptModal from "./components/NotificationPromptModal";
 import { syncFromAPI } from "./services/f1DataResolver.js";
 import { warn } from "./utils/logger";
 import "./styles/theme.css";
@@ -62,6 +63,15 @@ export default function App() {
     });
   }, []);
 
+  // Set up FCM foreground notification listener (only if notifications are enabled)
+  useEffect(() => {
+    import("./services/notificationService").then(({ setupForegroundListener }) => {
+      setupForegroundListener();
+    }).catch(() => {
+      // Notifications not enabled or not supported — ignore
+    });
+  }, []);
+
   return (
     <ErrorBoundary>
       <LanguageProvider>
@@ -72,6 +82,7 @@ export default function App() {
               <Toaster />
               <InstallPwaBanner />
               <CompleteProfileModal />
+              <NotificationPromptModal />
 
               <BContainer className="py-4">
                 <Suspense fallback={<PageLoader />}>

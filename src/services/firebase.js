@@ -1,6 +1,6 @@
 /**
  * Firebase Configuration and Initialization
- * Configures and exports Firebase app instance and Firestore database
+ * Configures and exports Firebase app instance, Firestore database, and FCM messaging
  */
 
 import { initializeApp } from "firebase/app";
@@ -30,3 +30,4 @@ export const db = getFirestore(app);
 /** Firebase Auth instance with local persistence (stay logged in across sessions) */
 export const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence);
+

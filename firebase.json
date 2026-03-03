@@ -13,6 +13,10 @@
       }
     ]
   },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs20"
+  },
   "firestore": {
     "database": "(default)",
     "location": "eur3",

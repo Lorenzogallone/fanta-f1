@@ -21,13 +21,20 @@ export async function saveRankingSnapshot(type = "race", raceId = null) {
     );
     const rankingSnap = await getDocs(rankingQuery);
 
-    const snapshot = rankingSnap.docs.map((doc, index) => ({
-      userId: doc.id,
-      name: doc.data().name,
-      position: index + 1,
-      points: doc.data().puntiTotali,
-      jolly: doc.data().jolly ?? 0,
+    const rawDocs = rankingSnap.docs.map((d) => ({
+      userId: d.id,
+      name: d.data().name,
+      points: d.data().puntiTotali,
+      jolly: d.data().jolly ?? 0,
     }));
+
+    let currentPos = 1;
+    const snapshot = rawDocs.map((entry, index) => {
+      if (index > 0 && entry.points < rawDocs[index - 1].points) {
+        currentPos = index + 1;
+      }
+      return { ...entry, position: currentPos };
+    });
 
     const timestamp = Date.now();
     const snapshotId = `snapshot_${timestamp}`;
