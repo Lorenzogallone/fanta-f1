@@ -18,9 +18,6 @@ jobs:
 
       - run: npm ci
 
-      - run: npm ci
-        working-directory: functions
-
       - run: npm run build
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
@@ -36,6 +33,6 @@ jobs:
         run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$RUNNER_TEMP/sa.json"
 
       - name: Deploy to Firebase
-        run: npx firebase-tools deploy --force
+        run: npx firebase-tools deploy --only hosting,firestore:rules --force
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
