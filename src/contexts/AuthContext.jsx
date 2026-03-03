@@ -3,7 +3,7 @@
  * Provides authentication context with Firebase Auth integration.
  * Supports Email/Password and Google Sign-In with persistent sessions.
  */
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import PropTypes from "prop-types";
 import {
   onAuthStateChanged,
@@ -13,7 +13,6 @@ import {
   GoogleAuthProvider,
   signOut,
   sendPasswordResetEmail,
-  linkWithCredential,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs } from "firebase/firestore";
 
@@ -54,6 +53,9 @@ export function AuthProvider({ children }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [needsProfile, setNeedsProfile] = useState(false);
+
+  // Ref to prevent onAuthStateChanged from interfering during registration
+  const isRegistering = useRef(false);
 
   /**
    * Fetch user profile from Firestore users/{uid}
@@ -109,9 +111,16 @@ export function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        const [profile] = await Promise.all([fetchProfile(firebaseUser), checkAdmin(firebaseUser)]);
-        if (profile) {
-          await ensureRankingEntry(firebaseUser.uid, profile.nickname);
+        // Skip profile fetch during registration to avoid race condition:
+        // register() creates the profile after createUserWithEmailAndPassword,
+        // but onAuthStateChanged fires before the profile exists in Firestore.
+        if (!isRegistering.current) {
+          const [profile] = await Promise.all([fetchProfile(firebaseUser), checkAdmin(firebaseUser)]);
+          if (profile) {
+            await ensureRankingEntry(firebaseUser.uid, profile.nickname);
+          }
+        } else {
+          await checkAdmin(firebaseUser);
         }
       } else {
         setUserProfile(null);
@@ -135,47 +144,25 @@ export function AuthProvider({ children }) {
 
   /**
    * Login/Register with Google.
-   * Returns { isNewUser } on success or { needsLinking, email, credential }
-   * when the email already has an email/password account that needs linking.
+   * Firebase automatically unifies accounts with the same email.
+   * Returns { isNewUser } to indicate if profile completion is needed.
    */
   const loginWithGoogle = async () => {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const profileDoc = await getDoc(doc(db, "users", result.user.uid));
+    const result = await signInWithPopup(auth, googleProvider);
+    const profileDoc = await getDoc(doc(db, "users", result.user.uid));
 
-      if (profileDoc.exists()) {
-        setUserProfile(profileDoc.data());
-        setNeedsProfile(false);
-        await checkAdmin(result.user);
-        return { isNewUser: false, user: result.user };
-      }
-
-      // Truly new Google user
-      setNeedsProfile(true);
-      setUserProfile(null);
+    if (profileDoc.exists()) {
+      setUserProfile(profileDoc.data());
+      setNeedsProfile(false);
       await checkAdmin(result.user);
-      return { isNewUser: true, user: result.user };
-    } catch (err) {
-      if (err.code === "auth/account-exists-with-different-credential") {
-        // Email already has an email/password account - return info for linking
-        const email = err.customData?.email;
-        const credential = GoogleAuthProvider.credentialFromError(err);
-        return { needsLinking: true, email, credential };
-      }
-      throw err;
+      return { isNewUser: false, user: result.user };
     }
-  };
 
-  /**
-   * Link a Google credential to an existing email/password account.
-   * Signs in with email/password first, then links Google so both methods use the same uid.
-   */
-  const linkGoogleToAccount = async (email, password, googleCredential) => {
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    await linkWithCredential(cred.user, googleCredential);
-    await fetchProfile(cred.user);
-    await checkAdmin(cred.user);
-    return cred.user;
+    // New Google user - needs profile completion
+    setNeedsProfile(true);
+    setUserProfile(null);
+    await checkAdmin(result.user);
+    return { isNewUser: true, user: result.user };
   };
 
   /**
@@ -203,19 +190,25 @@ export function AuthProvider({ children }) {
       throw err;
     }
 
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
-    const profile = {
-      email,
-      nickname,
-      firstName,
-      lastName,
-      createdAt: Timestamp.now(),
-    };
-    await setDoc(doc(db, "users", cred.user.uid), profile);
-    await ensureRankingEntry(cred.user.uid, nickname);
-    setUserProfile(profile);
-    setNeedsProfile(false);
-    return cred.user;
+    // Prevent onAuthStateChanged from fetching a non-existent profile
+    isRegistering.current = true;
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      const profile = {
+        email,
+        nickname,
+        firstName,
+        lastName,
+        createdAt: Timestamp.now(),
+      };
+      await setDoc(doc(db, "users", cred.user.uid), profile);
+      await ensureRankingEntry(cred.user.uid, nickname);
+      setUserProfile(profile);
+      setNeedsProfile(false);
+      return cred.user;
+    } finally {
+      isRegistering.current = false;
+    }
   };
 
   /**
@@ -270,7 +263,6 @@ export function AuthProvider({ children }) {
     needsProfile,
     login,
     loginWithGoogle,
-    linkGoogleToAccount,
     register,
     completeProfile,
     resetPassword,

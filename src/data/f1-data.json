@@ -120,13 +120,16 @@
     "audi": {
       "id": "audi",
       "displayName": "Audi",
-      "logo": "/sauber.png",
+      "logo": "/audi.png",
       "apiAliases": [
         "Audi",
         "Audi F1 Team",
         "Sauber",
         "Kick Sauber",
         "Sauber Motorsport",
+        "Stake F1 Team Kick Sauber",
+        "Stake F1 Team",
+        "Stake",
         "Alfa Romeo",
         "sauber",
         "audi"
@@ -141,26 +144,6 @@
         "Cadillac F1 Team",
         "General Motors",
         "GM",
-        "cadillac"
-      ]
-    }, 
-    "audi": {
-      "id": "audi",
-      "displayName": "Audi",
-      "logo": "/audi.png",
-      "apiAliases": [
-        "Audi",
-        "Audi F1 Team",
-        "audi"
-      ]
-    }, 
-    "cadillac": {
-      "id": "cadillac",
-      "displayName": "Cadillac",
-      "logo": "/cadillac.png",
-      "apiAliases": [
-        "Cadillac",
-        "Cadillac F1 Team",
         "cadillac"
       ]
     }
