@@ -706,3 +706,38 @@ body {
   background-color: var(--bg-secondary);
   border-color: #555555;
 }
+
+/* Schedule Tab */
+.schedule-next-race {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.schedule-race-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.schedule-race-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--shadow-hover);
+}
+
+.schedule-session-cell {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  gap: 0.5rem;
+}
+
+.schedule-session-cell:last-child {
+  border-bottom: none;
+}
+
+@media (min-width: 768px) {
+  .schedule-session-cell {
+    border-bottom: none;
+    border-right: 1px solid var(--border-color);
+  }
+
+  .schedule-session-cell:last-child {
+    border-right: none;
+  }
+}
