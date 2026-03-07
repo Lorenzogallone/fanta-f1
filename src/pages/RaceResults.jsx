@@ -116,7 +116,8 @@ export default function RaceResults() {
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [error, setError] = useState(null);
   const [activeKeys, setActiveKeys] = useState([]);
-  const [canSubmitFormation, setCanSubmitFormation] = useState(false);
+  // { mainOpen: bool, sprintOpen: bool } — live-updated by interval
+  const [submissionStatus, setSubmissionStatus] = useState({ mainOpen: false, sprintOpen: false });
 
   // Lazy loading states for individual sessions
   const [loadingSessionKeys, setLoadingSessionKeys] = useState({});
@@ -148,6 +149,33 @@ export default function RaceResults() {
       raw: date,
     };
   };
+
+  /**
+   * Compute whether formations can still be submitted for a given race.
+   * Uses qualiUTC for the main race deadline and qualiSprintUTC for sprint.
+   */
+  const computeSubmissionStatus = (race) => {
+    if (!race) return { mainOpen: false, sprintOpen: false };
+    const now = Date.now();
+    const qualiMs = race.qualiUTC ? race.qualiUTC.toDate().getTime() : 0;
+    const sprintMs = race.qualiSprintUTC ? race.qualiSprintUTC.toDate().getTime() : 0;
+    return {
+      mainOpen: qualiMs > now,
+      sprintOpen: sprintMs > now,
+    };
+  };
+
+  // Keep submission status live — re-check every 30 s so the card disappears
+  // automatically when the qualifying deadline passes.
+  useEffect(() => {
+    if (!selectedRace) return;
+    setSubmissionStatus(computeSubmissionStatus(selectedRace));
+    const id = setInterval(() => {
+      setSubmissionStatus(computeSubmissionStatus(selectedRace));
+    }, 30_000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRace]);
 
   /**
    * Compute schedule data: upcoming and past races sorted chronologically
@@ -376,10 +404,7 @@ export default function RaceResults() {
             setActiveKeys(defaultKeys);
 
             // Check if user can still submit formation for the initial race
-            const now = new Date();
-            const raceDate = selectedRaceToLoad.raceUTC.toDate();
-            const deadlineHasPassed = raceDate < now;
-            setCanSubmitFormation(!deadlineHasPassed);
+            setSubmissionStatus(computeSubmissionStatus(selectedRaceToLoad));
 
             setLoadingSessions(false); // Sessions loaded
           } catch (err) {
@@ -429,7 +454,7 @@ export default function RaceResults() {
 
     setSelectedRaceId(raceId);
     setError(null);
-    setCanSubmitFormation(false);
+    setSubmissionStatus({ mainOpen: false, sprintOpen: false });
 
     try {
       const race = races.find((r) => r.id === raceId);
@@ -473,10 +498,7 @@ export default function RaceResults() {
         setActiveKeys(defaultKeys);
 
         // Check if user can still submit formation
-        const now = Timestamp.now();
-        const raceDate = race.raceUTC.toDate();
-        const deadlineHasPassed = raceDate < now.toDate();
-        setCanSubmitFormation(!deadlineHasPassed);
+        setSubmissionStatus(computeSubmissionStatus(race));
 
         return;
       }
@@ -505,10 +527,7 @@ export default function RaceResults() {
       });
 
       // Check if user can still submit formation
-      const now = Timestamp.now();
-      const raceDate = race.raceUTC.toDate();
-      const deadlineHasPassed = raceDate < now.toDate();
-      setCanSubmitFormation(!deadlineHasPassed);
+      setSubmissionStatus(computeSubmissionStatus(race));
 
       // Set default expanded keys
       const defaultKeys = [];
@@ -627,13 +646,28 @@ export default function RaceResults() {
                 </Form.Select>
               </Form.Group>
 
-              {/* Submit Formation Button */}
-              {canSubmitFormation && selectedRace && (
+              {/* Submit Formation Card — shown only while deadlines are still open */}
+              {selectedRace && (submissionStatus.mainOpen || submissionStatus.sprintOpen) && (
                 <Alert variant="info" className="mt-3 mb-0">
                   <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
                     <div>
                       <strong>{t("raceResults.canStillSubmit")}</strong>
-                      <div className="small">{t("raceResults.qualifyingNotStarted")}</div>
+                      {submissionStatus.mainOpen && (
+                        <div className="small mt-1">
+                          {t("raceResults.canStillSubmitMain")}
+                          {selectedRace.qualiUTC && (
+                            <> — {t("raceResults.deadlineAt")} {formatToCET(selectedRace.qualiUTC)?.time} ({formatToCET(selectedRace.qualiUTC)?.dateStr})</>
+                          )}
+                        </div>
+                      )}
+                      {submissionStatus.sprintOpen && (
+                        <div className="small mt-1">
+                          {t("raceResults.canStillSubmitSprint")}
+                          {selectedRace.qualiSprintUTC && (
+                            <> — {t("raceResults.deadlineAt")} {formatToCET(selectedRace.qualiSprintUTC)?.time} ({formatToCET(selectedRace.qualiSprintUTC)?.dateStr})</>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <Button
                       variant="primary"
@@ -646,7 +680,7 @@ export default function RaceResults() {
                       }}
                       aria-label="Go to formation page to submit lineup"
                     >
-                      🏎️ {t("raceResults.goToFormation")}
+                      {t("raceResults.goToFormation")}
                     </Button>
                   </div>
                 </Alert>
