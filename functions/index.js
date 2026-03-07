@@ -1,7 +1,12 @@
 /**
  * @file Cloud Functions for FantaF1 Push Notifications
- * @description Scheduled functions that send qualifying reminders
- * (1 hour before and 5 minutes before) for both normal and sprint qualifying sessions.
+ * @description Scheduled functions that send qualifying reminders.
+ *
+ * Notification schedule per session type (Main Race and Sprint treated separately):
+ *   - Daytime session  (CET >= 07:00): 1 ora prima + 5 minuti prima
+ *   - Nighttime session (CET < 07:00): sera precedente alle 21:00 + 5 minuti prima
+ *
+ * All notification text is in Italian, professional tone, no emoji.
  */
 /* eslint-env node */
 
@@ -16,19 +21,72 @@ const db = getFirestore();
 // ─── Configuration ───────────────────────────────────────────────────────────
 
 /** How often the 1h check runs (every 10 minutes) */
-const CHECK_INTERVAL_1H_MS = 10 * 60 * 1000; // 10 min
+const CHECK_INTERVAL_1H_MS = 10 * 60 * 1000;
 
 /** How often the 5min check runs (every 1 minute) */
-const CHECK_INTERVAL_5MIN_MS = 1 * 60 * 1000; // 1 min
+const CHECK_INTERVAL_5MIN_MS = 1 * 60 * 1000;
 
-/** Timezone for logging (notifications work in UTC regardless) */
+/** Timezone used for CET night-time detection */
 const TIMEZONE = "Europe/Rome";
 
 // ─── Helper Functions ────────────────────────────────────────────────────────
 
 /**
+ * Returns the CET hour (0–23) for a given UTC Date object.
+ * @param {Date} dateUTC
+ * @returns {number}
+ */
+function getCETHour(dateUTC) {
+  const cetStr = dateUTC.toLocaleString("en-US", {
+    timeZone: TIMEZONE,
+    hour: "numeric",
+    hour12: false,
+  });
+  return parseInt(cetStr, 10);
+}
+
+/**
+ * Returns true when the session falls in the "nighttime" band (CET hour < 7).
+ * @param {Date} dateUTC
+ * @returns {boolean}
+ */
+function isNightTimeCET(dateUTC) {
+  return getCETHour(dateUTC) < 7;
+}
+
+/**
+ * Formats a UTC Date as a CET time string (HH:MM) for use in notification bodies.
+ * @param {Date} dateUTC
+ * @returns {string}  e.g. "02:00"
+ */
+function formatTimeCET(dateUTC) {
+  return dateUTC.toLocaleString("it-IT", {
+    timeZone: TIMEZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+/**
+ * Formats a UTC Date as a CET date+time string for use in notification bodies.
+ * @param {Date} dateUTC
+ * @returns {string}  e.g. "domenica 6 aprile alle 02:00"
+ */
+function formatDateTimeCET(dateUTC) {
+  const datePart = dateUTC.toLocaleString("it-IT", {
+    timeZone: TIMEZONE,
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  const timePart = formatTimeCET(dateUTC);
+  return `${datePart} alle ${timePart}`;
+}
+
+/**
  * Reads all races from Firestore.
- * @returns {Promise<Array<{id: string, name: string, qualiUTC: Date|null, qualiSprintUTC: Date|null}>>}
+ * @returns {Promise<Array>}
  */
 async function getAllRaces() {
   const snapshot = await db.collection("races").get();
@@ -47,7 +105,7 @@ async function getAllRaces() {
 
 /**
  * Gets all FCM tokens from all users.
- * @returns {Promise<string[]>} Array of FCM tokens
+ * @returns {Promise<string[]>}
  */
 async function getAllFcmTokens() {
   const snapshot = await db.collection("users").get();
@@ -58,13 +116,13 @@ async function getAllFcmTokens() {
       tokens.push(...data.fcmTokens);
     }
   });
-  return [...new Set(tokens)]; // Deduplicate
+  return [...new Set(tokens)];
 }
 
 /**
  * Checks if a notification has already been sent (deduplication).
- * @param {string} docId - Unique ID for this notification (e.g., "race1_quali_1h")
- * @returns {Promise<boolean>} True if already sent
+ * @param {string} docId
+ * @returns {Promise<boolean>}
  */
 async function isAlreadySent(docId) {
   const docRef = db.collection("notificationsSent").doc(docId);
@@ -74,8 +132,8 @@ async function isAlreadySent(docId) {
 
 /**
  * Marks a notification as sent.
- * @param {string} docId - Unique ID for this notification
- * @param {Object} metadata - Additional metadata to store
+ * @param {string} docId
+ * @param {Object} metadata
  */
 async function markAsSent(docId, metadata) {
   await db.collection("notificationsSent").doc(docId).set({
@@ -86,8 +144,7 @@ async function markAsSent(docId, metadata) {
 
 /**
  * Removes invalid FCM tokens from user documents.
- * Called after a send attempt when some tokens are invalid/expired.
- * @param {string[]} invalidTokens - Tokens that failed
+ * @param {string[]} invalidTokens
  */
 async function cleanupInvalidTokens(invalidTokens) {
   if (!invalidTokens.length) return;
@@ -112,36 +169,30 @@ async function cleanupInvalidTokens(invalidTokens) {
 
   if (batchCount > 0) {
     await batch.commit();
-    console.log(`Cleaned up invalid tokens from ${batchCount} user(s)`);
+    console.log(`Token non validi rimossi da ${batchCount} utente/i`);
   }
 }
 
 /**
  * Sends a push notification to all registered devices.
- * @param {string} title - Notification title
- * @param {string} body - Notification body
- * @param {string} tag - Unique tag for notification grouping
+ * @param {string} title
+ * @param {string} body
+ * @param {string} tag
  * @returns {Promise<{successCount: number, failureCount: number}>}
  */
 async function sendToAll(title, body, tag) {
   const tokens = await getAllFcmTokens();
 
   if (tokens.length === 0) {
-    console.log("No FCM tokens found, skipping notification");
+    console.log("Nessun token FCM trovato, invio saltato");
     return { successCount: 0, failureCount: 0 };
   }
 
-  console.log(`Sending "${title}" to ${tokens.length} device(s)`);
+  console.log(`Invio "${title}" a ${tokens.length} dispositivo/i`);
 
   const message = {
-    notification: {
-      title,
-      body,
-    },
-    data: {
-      tag,
-      url: "/lineup",
-    },
+    notification: { title, body },
+    data: { tag, url: "/lineup" },
     webpush: {
       notification: {
         icon: "/FantaF1_Logo_big.png",
@@ -149,9 +200,7 @@ async function sendToAll(title, body, tag) {
         vibrate: [100, 50, 200],
         tag,
       },
-      fcmOptions: {
-        link: "/lineup",
-      },
+      fcmOptions: { link: "/lineup" },
     },
   };
 
@@ -160,16 +209,10 @@ async function sendToAll(title, body, tag) {
   let successCount = 0;
   let failureCount = 0;
 
-  // Send to each token individually (sendEachForMulticast requires tokens array)
-  const response = await messaging.sendEachForMulticast({
-    ...message,
-    tokens,
-  });
-
+  const response = await messaging.sendEachForMulticast({ ...message, tokens });
   successCount = response.successCount;
   failureCount = response.failureCount;
 
-  // Collect invalid tokens for cleanup
   response.responses.forEach((resp, idx) => {
     if (
       !resp.success &&
@@ -181,21 +224,70 @@ async function sendToAll(title, body, tag) {
     }
   });
 
-  // Cleanup invalid tokens
   await cleanupInvalidTokens(invalidTokens);
 
-  console.log(`Sent: ${successCount} success, ${failureCount} failures`);
+  console.log(`Invio completato: ${successCount} riusciti, ${failureCount} falliti`);
   return { successCount, failureCount };
 }
 
+// ─── Notification Body Builders ───────────────────────────────────────────────
+
 /**
- * Checks for upcoming qualifying sessions and sends notifications.
- * @param {number} minutesBefore - Minutes before qualifying to check (60 or 5)
- * @param {number} windowMs - Time window to check (matches schedule interval)
- * @param {string} intervalLabel - Label for dedup ("1h" or "5min")
- * @param {string} reminderText - Text suffix for the notification body
+ * Builds the Italian notification title and body for a given session/interval.
+ *
+ * @param {"main"|"sprint"} sessionType
+ * @param {"1h"|"5min"|"evening"} interval
+ * @param {Date}   deadlineUTC  Qualifying deadline (UTC)
+ * @param {string} raceName
+ * @returns {{ title: string, body: string }}
  */
-async function checkAndNotify(minutesBefore, windowMs, intervalLabel, reminderText) {
+function buildNotification(sessionType, interval, deadlineUTC, raceName) {
+  const sessionLabel =
+    sessionType === "sprint" ? "Sprint" : "Gara Principale";
+  const deadlineTime = formatTimeCET(deadlineUTC);
+  const deadlineDateTime = formatDateTimeCET(deadlineUTC);
+
+  let body;
+  if (interval === "evening") {
+    body =
+      `La scadenza per schierare la formazione per la ${sessionLabel} del Gran Premio ` +
+      `${raceName} e' fissata per ${deadlineDateTime} CET. ` +
+      `Si ricorda di inviare la propria formazione prima di tale orario.`;
+  } else if (interval === "1h") {
+    body =
+      `La scadenza per schierare la formazione per la ${sessionLabel} del Gran Premio ` +
+      `${raceName} e' alle ore ${deadlineTime} CET. Tempo residuo: circa 1 ora.`;
+  } else {
+    body =
+      `La scadenza per schierare la formazione per la ${sessionLabel} del Gran Premio ` +
+      `${raceName} e' alle ore ${deadlineTime} CET. Tempo residuo: circa 5 minuti.`;
+  }
+
+  return {
+    title: `FantaF1 - ${raceName}`,
+    body,
+  };
+}
+
+// ─── Core Check Logic ─────────────────────────────────────────────────────────
+
+/**
+ * Checks all sessions of a given type for an upcoming deadline within a time window
+ * and sends notifications where needed.
+ *
+ * @param {"main"|"sprint"} sessionType
+ * @param {number}  minutesBefore  Minutes before deadline to trigger
+ * @param {number}  windowMs       Width of the detection window (matches schedule interval)
+ * @param {string}  intervalLabel  Dedup suffix: "1h" | "5min"
+ * @param {boolean} skipNight      If true, skip nighttime sessions (CET hour < 7)
+ */
+async function checkAndNotifySession(
+  sessionType,
+  minutesBefore,
+  windowMs,
+  intervalLabel,
+  skipNight
+) {
   const now = new Date();
   const targetTime = new Date(now.getTime() + minutesBefore * 60 * 1000);
   const targetEnd = new Date(targetTime.getTime() + windowMs);
@@ -203,43 +295,79 @@ async function checkAndNotify(minutesBefore, windowMs, intervalLabel, reminderTe
   const races = await getAllRaces();
 
   for (const race of races) {
-    // Check normal qualifying
-    if (race.qualiUTC && !race.cancelledMain) {
-      const qualiTime = race.qualiUTC.getTime();
-      if (qualiTime >= targetTime.getTime() && qualiTime < targetEnd.getTime()) {
-        const docId = `${race.id}_quali_${intervalLabel}`;
-        if (!(await isAlreadySent(docId))) {
-          await sendToAll(
-            `🏁 ${race.name}`,
-            `Qualifying ${reminderText}`,
-            docId
-          );
-          await markAsSent(docId, {
-            raceId: race.id,
-            raceName: race.name,
-            type: "qualifying",
-            interval: intervalLabel,
-          });
-        }
+    const deadlineUTC =
+      sessionType === "sprint" ? race.qualiSprintUTC : race.qualiUTC;
+    const cancelled =
+      sessionType === "sprint" ? race.cancelledSprint : race.cancelledMain;
+
+    if (!deadlineUTC || cancelled) continue;
+
+    if (skipNight && isNightTimeCET(deadlineUTC)) continue;
+
+    const deadlineMs = deadlineUTC.getTime();
+    if (deadlineMs >= targetTime.getTime() && deadlineMs < targetEnd.getTime()) {
+      const sessionKey = sessionType === "sprint" ? "sprintQuali" : "quali";
+      const docId = `${race.id}_${sessionKey}_${intervalLabel}`;
+      if (!(await isAlreadySent(docId))) {
+        const { title, body } = buildNotification(
+          sessionType,
+          intervalLabel,
+          deadlineUTC,
+          race.name
+        );
+        await sendToAll(title, body, docId);
+        await markAsSent(docId, {
+          raceId: race.id,
+          raceName: race.name,
+          type: sessionType === "sprint" ? "sprintQualifying" : "qualifying",
+          interval: intervalLabel,
+        });
       }
     }
+  }
+}
 
-    // Check sprint qualifying
-    if (race.qualiSprintUTC && !race.cancelledSprint) {
-      const sqTime = race.qualiSprintUTC.getTime();
-      if (sqTime >= targetTime.getTime() && sqTime < targetEnd.getTime()) {
-        const docId = `${race.id}_sprintQuali_${intervalLabel}`;
+/**
+ * Checks for nighttime sessions (CET < 07:00) whose deadline falls within
+ * the next ~10 hours and sends the advance evening notification.
+ * Intended to run once daily at 21:00 CET.
+ */
+async function checkAndNotifyEvening() {
+  const now = new Date();
+  // Window: from now up to 10 hours ahead (21:00 CET -> 07:00 CET next day)
+  const windowEnd = new Date(now.getTime() + 10 * 60 * 60 * 1000);
+
+  const races = await getAllRaces();
+
+  for (const race of races) {
+    for (const sessionType of ["main", "sprint"]) {
+      const deadlineUTC =
+        sessionType === "sprint" ? race.qualiSprintUTC : race.qualiUTC;
+      const cancelled =
+        sessionType === "sprint" ? race.cancelledSprint : race.cancelledMain;
+
+      if (!deadlineUTC || cancelled) continue;
+
+      // Only nighttime sessions
+      if (!isNightTimeCET(deadlineUTC)) continue;
+
+      const deadlineMs = deadlineUTC.getTime();
+      if (deadlineMs > now.getTime() && deadlineMs <= windowEnd.getTime()) {
+        const sessionKey = sessionType === "sprint" ? "sprintQuali" : "quali";
+        const docId = `${race.id}_${sessionKey}_evening`;
         if (!(await isAlreadySent(docId))) {
-          await sendToAll(
-            `🏁 ${race.name}`,
-            `Sprint Qualifying ${reminderText}`,
-            docId
+          const { title, body } = buildNotification(
+            sessionType,
+            "evening",
+            deadlineUTC,
+            race.name
           );
+          await sendToAll(title, body, docId);
           await markAsSent(docId, {
             raceId: race.id,
             raceName: race.name,
-            type: "sprintQualifying",
-            interval: intervalLabel,
+            type: sessionType === "sprint" ? "sprintQualifying" : "qualifying",
+            interval: "evening",
           });
         }
       }
@@ -250,8 +378,9 @@ async function checkAndNotify(minutesBefore, windowMs, intervalLabel, reminderTe
 // ─── Scheduled Cloud Functions ───────────────────────────────────────────────
 
 /**
- * Runs every 10 minutes. Checks if any qualifying session starts
- * within the next 60-70 minutes and sends a "1 hour before" reminder.
+ * Runs every 10 minutes.
+ * Sends a "1 ora prima" reminder for DAYTIME sessions only (CET >= 07:00).
+ * Nighttime sessions receive an advance notification at 21:00 CET the evening before.
  */
 exports.sendQualiReminder1h = onSchedule(
   {
@@ -260,14 +389,15 @@ exports.sendQualiReminder1h = onSchedule(
     region: "europe-west1",
   },
   async () => {
-    console.log("⏰ Checking for qualifying sessions starting in ~1 hour...");
-    await checkAndNotify(60, CHECK_INTERVAL_1H_MS, "1h", "starts in 1 hour! 🏎️");
+    console.log("Controllo sessioni diurne in scadenza tra ~1 ora...");
+    await checkAndNotifySession("main",   60, CHECK_INTERVAL_1H_MS, "1h", true);
+    await checkAndNotifySession("sprint", 60, CHECK_INTERVAL_1H_MS, "1h", true);
   }
 );
 
 /**
- * Runs every minute. Checks if any qualifying session starts
- * within the next 5-6 minutes and sends a "5 minutes before" reminder.
+ * Runs every minute.
+ * Sends a "5 minuti prima" reminder for ALL sessions, regardless of time of day.
  */
 exports.sendQualiReminder5min = onSchedule(
   {
@@ -276,7 +406,25 @@ exports.sendQualiReminder5min = onSchedule(
     region: "europe-west1",
   },
   async () => {
-    console.log("⏰ Checking for qualifying sessions starting in ~5 minutes...");
-    await checkAndNotify(5, CHECK_INTERVAL_5MIN_MS, "5min", "starts in 5 minutes! 🚦");
+    console.log("Controllo sessioni in scadenza tra ~5 minuti...");
+    await checkAndNotifySession("main",   5, CHECK_INTERVAL_5MIN_MS, "5min", false);
+    await checkAndNotifySession("sprint", 5, CHECK_INTERVAL_5MIN_MS, "5min", false);
+  }
+);
+
+/**
+ * Runs every day at 21:00 CET.
+ * Sends advance notifications for any nighttime qualifying session (CET < 07:00)
+ * scheduled within the following ~10 hours.
+ */
+exports.sendQualiReminderEvening = onSchedule(
+  {
+    schedule: "0 21 * * *",
+    timeZone: TIMEZONE,
+    region: "europe-west1",
+  },
+  async () => {
+    console.log("Controllo sessioni notturne per la notifica serale delle 21:00...");
+    await checkAndNotifyEvening();
   }
 );
