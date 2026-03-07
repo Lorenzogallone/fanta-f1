@@ -21,6 +21,7 @@ import {
   doc,
   setDoc,
   updateDoc,
+  writeBatch,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "../../services/firebase";
@@ -93,8 +94,9 @@ export default function CalendarManager({ races, loading, onDataChange }) {
     setMessage(null);
 
     try {
+      const batch = writeBatch(db);
       for (const race of parsedRaces) {
-        await setDoc(
+        batch.set(
           doc(db, "races", race.id),
           {
             name: race.name,
@@ -107,6 +109,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
           { merge: true }
         );
       }
+      await batch.commit();
 
       setMessage({
         type: "success",

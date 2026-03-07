@@ -104,12 +104,16 @@ export default function FormationApp() {
   const [isEditMode, setIsEditMode] = useState(false);
 
   /**
-   * Load live ranking and upcoming races from Firestore
+   * Load live ranking and upcoming races from Firestore.
+   * The unSub variable is declared outside the IIFE so the useEffect cleanup
+   * can call it reliably even if the component unmounts before the async work finishes.
    */
   useEffect(() => {
+    let unSub = null;
+
     (async () => {
       try {
-        const unSub = onSnapshot(
+        unSub = onSnapshot(
           query(collection(db, "ranking"), orderBy("puntiTotali", "desc")),
           (snap) => {
             const list = snap.docs.map((d) => ({ id: d.id, ...d.data(), jolly: d.data().jolly ?? 0 }));
@@ -130,7 +134,6 @@ export default function FormationApp() {
           setRace(future[0]);
           setForm((f) => ({ ...f, raceId: future[0].id }));
         }
-        return () => unSub();
       } catch (e) {
         error(e);
         if (e.code === "permission-denied") setPermError(true);
@@ -138,6 +141,8 @@ export default function FormationApp() {
         setBusy(false);
       }
     })();
+
+    return () => { if (unSub) unSub(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

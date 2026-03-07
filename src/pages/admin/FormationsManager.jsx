@@ -72,16 +72,18 @@ export default function FormationsManager({ participants, races, loading, onData
       const racesWithForms = new Set();
       let firstRaceWithoutForm = null;
 
-      for (const race of races) {
-        const formDoc = await getDoc(
-          doc(db, "races", race.id, "submissions", selectedUser)
-        );
+      // Fetch all submission docs in parallel instead of sequentially
+      const formDocs = await Promise.all(
+        races.map((race) => getDoc(doc(db, "races", race.id, "submissions", selectedUser)))
+      );
+
+      formDocs.forEach((formDoc, i) => {
         if (formDoc.exists()) {
-          racesWithForms.add(race.id);
+          racesWithForms.add(races[i].id);
         } else if (!firstRaceWithoutForm) {
-          firstRaceWithoutForm = race;
+          firstRaceWithoutForm = races[i];
         }
-      }
+      });
 
       setRacesWithFormations(racesWithForms);
 
