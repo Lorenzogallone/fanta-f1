@@ -92,11 +92,22 @@ export async function calculatePointsForRace(raceId, official) {
     if (!s.mainP1) {
       mainPts = PENALTY_EMPTY_LIST;
     } else {
-      mainPts = 0;
-      if (s.mainP1 === P1) mainPts += PTS_MAIN[1];
-      if (s.mainP2 === P2) mainPts += PTS_MAIN[2];
-      if (s.mainP3 === P3) mainPts += PTS_MAIN[3];
+      // Calculate base points (position matches only, without jolly)
+      let basePts = 0;
+      if (s.mainP1 === P1) basePts += PTS_MAIN[1];
+      if (s.mainP2 === P2) basePts += PTS_MAIN[2];
+      if (s.mainP3 === P3) basePts += PTS_MAIN[3];
 
+      // Special rule: perfect podium (29 base points) → becomes 30 + earn an extra jolly
+      if (basePts === 29) {
+        basePts += 1; // 29 → 30
+        batchWrites.push(
+          updateDoc(doc(db, "ranking", userId), { jolly: increment(1) })
+        );
+      }
+
+      // Add jolly bonuses on top of base points
+      mainPts = basePts;
       const podio = [P1, P2, P3];
       if (s.mainJolly  && podio.includes(s.mainJolly )) mainPts += BONUS_JOLLY_MAIN;
       if (s.mainJolly2 && podio.includes(s.mainJolly2)) mainPts += BONUS_JOLLY_MAIN;
@@ -121,14 +132,6 @@ export async function calculatePointsForRace(raceId, official) {
         if (s.sprintJolly && sprintPodio.includes(s.sprintJolly))
           sprintPts += BONUS_JOLLY_SPRINT;
       }
-    }
-
-    // Special rule: 29 points becomes 30 + extra jolly
-    if (mainPts === 29) {
-      mainPts += 1;
-      batchWrites.push(
-        updateDoc(doc(db, "ranking", userId), { jolly: increment(1) })
-      );
     }
 
     // Double points multiplier for final race
@@ -168,7 +171,43 @@ export async function calculatePointsForRace(raceId, official) {
     );
   }
 
-  // Step 4: Commit all updates in parallel
+  // Step 4: Apply -3 penalty to users who didn't submit any formation
+  const submittedUserIds = new Set(subsSnap.docs.map(d => d.id));
+  const allUsersSnap = await getDocs(collection(db, "ranking"));
+
+  for (const userDoc of allUsersSnap.docs) {
+    const userId = userDoc.id;
+    if (submittedUserIds.has(userId)) continue; // already processed
+
+    // User didn't submit: apply -3 penalty for main race
+    let mainPts = PENALTY_EMPTY_LIST; // -3
+    let sprintPts = sprintPresent ? PENALTY_EMPTY_LIST : 0; // -3 if sprint exists
+
+    if (doublePoints) {
+      mainPts   *= 2;
+      sprintPts *= 2;
+    }
+
+    const oldPB = userDoc.data().pointsByRace || {};
+    const newPointsByRace = {
+      ...oldPB,
+      [raceId]: { mainPts, sprintPts },
+    };
+
+    const newTotal = Object.values(newPointsByRace).reduce(
+      (sum, { mainPts: m = 0, sprintPts: sp = 0 }) => sum + m + sp,
+      0
+    );
+
+    batchWrites.push(
+      updateDoc(doc(db, "ranking", userId), {
+        pointsByRace: newPointsByRace,
+        puntiTotali:  newTotal,
+      })
+    );
+  }
+
+  // Step 5: Commit all updates in parallel
   await Promise.all(batchWrites);
-  return `✔️ Calcolo completato: aggiornate ${subsSnap.size} submissions e ranking`;
+  return `✔️ Calcolo completato: aggiornate ${subsSnap.size} submissions e ${allUsersSnap.size} ranking`;
 }
