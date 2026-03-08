@@ -170,8 +170,12 @@ export async function getChampionshipStatistics() {
         playersAtThisRace.sort((a, b) => b.cumulativePoints - a.cumulativePoints);
 
         const positions = {};
+        let currentPos = 1;
         playersAtThisRace.forEach((player, index) => {
-          positions[player.userId] = index + 1;
+          if (index > 0 && player.cumulativePoints < playersAtThisRace[index - 1].cumulativePoints) {
+            currentPos = index + 1;
+          }
+          positions[player.userId] = currentPos;
         });
 
         return {
