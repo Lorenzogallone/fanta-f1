@@ -99,7 +99,7 @@ export const POINTS = {
   MAIN: {
     1: 12,
     2: 10,
-    3: 8,
+    3: 7,
   },
 
   // Points per position in sprint

@@ -98,8 +98,9 @@ export async function calculatePointsForRace(raceId, official) {
       if (s.mainP2 === P2) basePts += PTS_MAIN[2];
       if (s.mainP3 === P3) basePts += PTS_MAIN[3];
 
-      // Special rule: perfect podium (30 base points) → earn an extra jolly
-      if (basePts === 30) {
+      // Special rule: perfect podium (29 base points) → becomes 30 + earn an extra jolly
+      if (basePts === 29) {
+        basePts += 1; // 29 → 30
         batchWrites.push(
           updateDoc(doc(db, "ranking", userId), { jolly: increment(1) })
         );
