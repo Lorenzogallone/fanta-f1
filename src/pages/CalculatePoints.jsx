@@ -140,8 +140,6 @@ function CalculatePointsContent() {
   const [rankingMap,setRankingMap] = useState({});
   const [errSubs,   setErrSubs]    = useState(null);
 
-  // Recalculation state
-
   // Championship state
   const [formChamp,setFormChamp]   = useState({
     CP1:null,CP2:null,CP3:null, CC1:null,CC2:null,CC3:null
