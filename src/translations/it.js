@@ -66,7 +66,7 @@ export const it = {
     rank: "Pos.",
     player: "Giocatore",
     totalPoints: "Punti Totali",
-    gap: "Distacco",
+    gap: "Gap",
     jokers: "Jolly",
     trend: "Andamento",
     leader: "Leader",

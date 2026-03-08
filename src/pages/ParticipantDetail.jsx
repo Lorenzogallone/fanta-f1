@@ -72,8 +72,19 @@ export default function ParticipantDetail() {
           }))
           .sort((a, b) => (b.puntiTotali || 0) - (a.puntiTotali || 0));
 
-        const position = ranking.findIndex(p => p.userId === userId) + 1;
-        setParticipantPosition(position > 0 ? position : null);
+        // Calculate position with pari merito (tied positions)
+        let currentPos = 1;
+        let foundPosition = null;
+        for (let i = 0; i < ranking.length; i++) {
+          if (i > 0 && (ranking[i].puntiTotali || 0) < (ranking[i - 1].puntiTotali || 0)) {
+            currentPos = i + 1;
+          }
+          if (ranking[i].userId === userId) {
+            foundPosition = currentPos;
+            break;
+          }
+        }
+        setParticipantPosition(foundPosition);
 
         setParticipant({
           userId,

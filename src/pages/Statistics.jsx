@@ -107,12 +107,19 @@ export default function Statistics() {
           query(collection(db, "ranking"), orderBy("puntiTotali", "desc"))
         );
 
-        const ranking = rankingSnap.docs.map((doc, index) => ({
-          userId: doc.id,
-          name: doc.data().name,
-          points: doc.data().puntiTotali || 0,
-          position: index + 1,
-        }));
+        let currentPos = 1;
+        const ranking = rankingSnap.docs.map((doc, index) => {
+          const points = doc.data().puntiTotali || 0;
+          if (index > 0 && points < (rankingSnap.docs[index - 1].data().puntiTotali || 0)) {
+            currentPos = index + 1;
+          }
+          return {
+            userId: doc.id,
+            name: doc.data().name,
+            points,
+            position: currentPos,
+          };
+        });
 
         setCurrentRanking(ranking);
         setLoadingRanking(false); // Show ranking immediately
@@ -433,9 +440,9 @@ export default function Statistics() {
                       </tr>
                     </thead>
                     <tbody>
-                      {currentRanking.map((player, idx) => {
-                        const medal = medals[idx] ?? idx + 1;
-                        const isTop3 = idx < 3;
+                      {currentRanking.map((player) => {
+                        const medal = medals[player.position - 1] ?? player.position;
+                        const isTop3 = player.position <= 3;
 
                         return (
                           <tr
