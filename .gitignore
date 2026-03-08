@@ -176,3 +176,7 @@ firebase-debug.*.log
 # Environment backups
 .env.backup*
 *.env.backup
+
+# AI development context
+claude.md
+CLAUDE.md

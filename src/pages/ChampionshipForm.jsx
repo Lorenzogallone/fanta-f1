@@ -45,7 +45,7 @@ const asDriverOptions = (driversList) =>
       value: name,
       label: (
         <div className="select-option">
-          {logo && <img className="option-logo" src={logo} alt={team} />}
+          {logo && <img className="option-logo" src={logo} alt={team} loading="lazy" />}
           <span className="option-text">{name}</span>
         </div>
       ),
@@ -64,7 +64,7 @@ const asConstructorOptions = (constructorsList) =>
       value: name,
       label: (
         <div className="select-option">
-          {logo && <img className="option-logo" src={logo} alt={name} />}
+          {logo && <img className="option-logo" src={logo} alt={name} loading="lazy" />}
           <span className="option-text">{name}</span>
         </div>
       ),

@@ -98,7 +98,7 @@ export default function Navigation() {
           aria-label="Fanta F1 home page"
         >
           <img
-            src={isDark ? "/FantaF1_Logo_dark.png" : "/FantaF1_Logo.png"}
+            src={isDark ? "/FantaF1_Logo_dark.webp" : "/FantaF1_Logo.webp"}
             alt="Fanta F1 Fantasy Formula 1 logo"
             height="45"
             style={{ objectFit: "contain" }}

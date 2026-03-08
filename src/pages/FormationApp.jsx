@@ -53,7 +53,7 @@ const driverOpts = drivers.map((d) => ({
   value: d,
   label: (
     <div className="select-option">
-      <img src={teamLogos[driverTeam[d]]} className="option-logo" alt={`${driverTeam[d]} team logo`} />
+      <img src={teamLogos[driverTeam[d]]} className="option-logo" alt={`${driverTeam[d]} team logo`} loading="lazy" />
       <span className="option-text">{d}</span>
     </div>
   ),

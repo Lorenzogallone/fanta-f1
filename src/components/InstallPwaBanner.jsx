@@ -1,9 +1,22 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Toast, Button } from 'react-bootstrap';
-import GetAppIcon from '@mui/icons-material/GetApp';
-import IosShareIcon from '@mui/icons-material/IosShare';
-import AddBoxIcon from '@mui/icons-material/AddBox';
 import { LanguageContext } from './../contexts/LanguageContext';
+
+const GetAppIcon = ({ className }) => (
+  <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+  </svg>
+);
+const IosShareIcon = ({ fontSize, className }) => (
+  <svg className={className} width={fontSize === 'small' ? 20 : 24} height={fontSize === 'small' ? 20 : 24} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .9 2 2z"/>
+  </svg>
+);
+const AddBoxIcon = ({ fontSize, className }) => (
+  <svg className={className} width={fontSize === 'small' ? 20 : 24} height={fontSize === 'small' ? 20 : 24} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+  </svg>
+);
 
 export const InstallPwaBanner = () => {
   const [show, setShow] = useState(false);

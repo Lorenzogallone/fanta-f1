@@ -2,9 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/FantaF1_Logo_big.png" />
-    <link rel="apple-touch-icon" href="/FantaF1_Logo_big.png" />
+    <link rel="icon" type="image/svg+xml" href="/FantaF1_Logo_192.png" />
+    <link rel="apple-touch-icon" href="/FantaF1_Logo_192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Preconnect to Firebase services -->
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://www.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
+    <link rel="dns-prefetch" href="https://www.googleapis.com" />
+    <link rel="dns-prefetch" href="https://api.jolpi.ca" />
 
     <!-- Primary Meta Tags -->
     <title>FantaF1 - Fantasy Formula 1 Game</title>
@@ -50,7 +58,122 @@
     <meta name="apple-mobile-web-app-title" content="FantaF1" />
   </head>
   <body>
-    <div id="root"></div>
+    <script>
+      // Detect theme before render to avoid flash
+      (function() {
+        var m = localStorage.getItem('fanta-f1-theme-mode');
+        var d = m === 'dark' || (m !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (d) document.documentElement.setAttribute('data-splash-theme', 'dark');
+        else document.documentElement.setAttribute('data-splash-theme', 'light');
+      })();
+    </script>
+    <style>
+      #splash {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background: #ffffff;
+        transition: opacity 0.3s ease;
+      }
+      [data-splash-theme="dark"] #splash { background: #1a1a1a; }
+
+      /* Stroke draw animation */
+      .splash-draw {
+        stroke-dasharray: 3000;
+        stroke-dashoffset: 3000;
+        fill-opacity: 0;
+      }
+      .splash-text-el {
+        stroke: #dc3545;
+        fill: #dc3545;
+        animation: splashDraw 2s ease forwards, splashFill 0.6s ease 1.6s forwards;
+      }
+      .splash-f1-el {
+        stroke: #dc3545;
+        fill: #dc3545;
+        animation: splashDraw 1.5s ease 0.4s forwards, splashFill 0.5s ease 1.6s forwards;
+      }
+      .splash-f1-el-2 {
+        stroke: #dc3545;
+        fill: #dc3545;
+        animation: splashDraw 1.5s ease 0.7s forwards, splashFill 0.5s ease 1.8s forwards;
+      }
+      .splash-f1-el-3 {
+        stroke: #dc3545;
+        fill: #dc3545;
+        animation: splashDraw 1.5s ease 1s forwards, splashFill 0.5s ease 2s forwards;
+      }
+
+      /* Dark theme colors */
+      [data-splash-theme="dark"] .splash-text-el,
+      [data-splash-theme="dark"] .splash-f1-el,
+      [data-splash-theme="dark"] .splash-f1-el-2,
+      [data-splash-theme="dark"] .splash-f1-el-3 {
+        stroke: #ff4d5a;
+        fill: #ff4d5a;
+      }
+
+      @keyframes splashDraw {
+        to { stroke-dashoffset: 0; }
+      }
+      @keyframes splashFill {
+        to { fill-opacity: 1; }
+      }
+
+      #splash-spinner {
+        margin-top: 32px;
+        width: 36px;
+        height: 36px;
+        border: 3px solid rgba(0,0,0,0.1);
+        border-top-color: #dc3545;
+        border-radius: 50%;
+        animation: splashSpin 0.8s linear infinite;
+      }
+      [data-splash-theme="dark"] #splash-spinner {
+        border-color: rgba(255,255,255,0.15);
+        border-top-color: #ff4d5a;
+      }
+      @keyframes splashSpin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+
+    <div id="root">
+      <!-- Splash screen - replaced automatically when React mounts -->
+      <div id="splash">
+        <svg viewBox="0 0 500 250" width="280" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <!-- "Fanta" text with stroke draw animation -->
+          <text class="splash-draw splash-text-el"
+                x="250" y="95"
+                text-anchor="middle"
+                font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif"
+                font-weight="900"
+                font-style="italic"
+                font-size="90"
+                stroke-width="2"
+                paint-order="stroke">Fanta</text>
+
+          <!-- F1 shape: upper band (goes right, then diagonal up to form top of "1") -->
+          <path class="splash-draw splash-f1-el"
+                stroke-width="2" stroke-linejoin="round"
+                d="M 45 128 C 25 128 18 148 32 155 L 300 155 L 395 108 L 135 108 C 85 108 55 115 45 128 Z"/>
+
+          <!-- F1 shape: lower band -->
+          <path class="splash-draw splash-f1-el-2"
+                stroke-width="2" stroke-linejoin="round"
+                d="M 55 168 C 35 168 28 188 42 195 L 275 195 L 330 168 Z"/>
+
+          <!-- F1 shape: "1" right element -->
+          <path class="splash-draw splash-f1-el-3"
+                stroke-width="2" stroke-linejoin="round"
+                d="M 395 108 L 425 92 L 442 92 L 442 238 L 418 238 L 418 145 L 360 172 L 300 155 L 395 108 Z"/>
+        </svg>
+        <div id="splash-spinner"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

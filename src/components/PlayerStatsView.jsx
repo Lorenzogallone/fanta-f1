@@ -42,6 +42,7 @@ function DriverWithLogo({ name }) {
         <img
           src={logoSrc}
           alt={`${team} team logo`}
+          loading="lazy"
           style={{
             height: 20,
             width: 20,
@@ -71,6 +72,7 @@ function TeamWithLogo({ name }) {
         <img
           src={logoSrc}
           alt={`${name} team logo`}
+          loading="lazy"
           style={{
             height: 20,
             width: 20,
@@ -215,7 +217,7 @@ const calculateRacePoints = (submission, official, cancelledSprint = false) => {
  * @param {boolean} props.showBackButton - Whether to show back button
  * @returns {JSX.Element}
  */
-export default function PlayerStatsView({
+function PlayerStatsView({
   playerData,
   raceHistory = [],
   totalCompletedRaces = 0,
@@ -564,6 +566,8 @@ export default function PlayerStatsView({
     </>
   );
 }
+
+export default React.memo(PlayerStatsView);
 
 PlayerStatsView.propTypes = {
   playerData: PropTypes.shape({

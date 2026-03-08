@@ -10,7 +10,7 @@
     "mclaren": {
       "id": "mclaren",
       "displayName": "McLaren",
-      "logo": "/mclaren.png",
+      "logo": "/mclaren.webp",
       "apiAliases": [
         "McLaren",
         "McLaren F1 Team",
@@ -22,7 +22,7 @@
     "ferrari": {
       "id": "ferrari",
       "displayName": "Ferrari",
-      "logo": "/ferrari.png",
+      "logo": "/ferrari.webp",
       "apiAliases": [
         "Ferrari",
         "Scuderia Ferrari",
@@ -33,7 +33,7 @@
     "red-bull": {
       "id": "red-bull",
       "displayName": "Red Bull",
-      "logo": "/redbull.png",
+      "logo": "/redbull.webp",
       "apiAliases": [
         "Red Bull Racing",
         "Red Bull",
@@ -44,7 +44,7 @@
     "mercedes": {
       "id": "mercedes",
       "displayName": "Mercedes",
-      "logo": "/mercedes.png",
+      "logo": "/mercedes.webp",
       "apiAliases": [
         "Mercedes",
         "Mercedes-AMG Petronas F1 Team",
@@ -55,7 +55,7 @@
     "aston-martin": {
       "id": "aston-martin",
       "displayName": "Aston Martin",
-      "logo": "/aston.png",
+      "logo": "/aston.webp",
       "apiAliases": [
         "Aston Martin",
         "Aston Martin F1 Team",
@@ -67,7 +67,7 @@
     "williams": {
       "id": "williams",
       "displayName": "Williams",
-      "logo": "/williams.png",
+      "logo": "/williams.webp",
       "apiAliases": [
         "Williams",
         "Williams Racing",
@@ -79,7 +79,7 @@
     "racing-bulls": {
       "id": "racing-bulls",
       "displayName": "Racing Bulls",
-      "logo": "/vcarb.png",
+      "logo": "/vcarb.webp",
       "apiAliases": [
         "Racing Bulls",
         "Visa Cash App Racing Bulls",
@@ -97,7 +97,7 @@
     "alpine": {
       "id": "alpine",
       "displayName": "Alpine",
-      "logo": "/alpine.png",
+      "logo": "/alpine.webp",
       "apiAliases": [
         "Alpine",
         "Alpine F1 Team",
@@ -109,7 +109,7 @@
     "haas": {
       "id": "haas",
       "displayName": "Haas",
-      "logo": "/haas.png",
+      "logo": "/haas.webp",
       "apiAliases": [
         "Haas",
         "Haas F1 Team",
@@ -120,7 +120,7 @@
     "audi": {
       "id": "audi",
       "displayName": "Audi",
-      "logo": "/audi.png",
+      "logo": "/audi.webp",
       "apiAliases": [
         "Audi",
         "Audi F1 Team",
@@ -138,7 +138,7 @@
     "cadillac": {
       "id": "cadillac",
       "displayName": "Cadillac",
-      "logo": "/cadillac.png",
+      "logo": "/cadillac.webp",
       "apiAliases": [
         "Cadillac",
         "Cadillac F1 Team",

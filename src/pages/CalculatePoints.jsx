@@ -68,7 +68,7 @@ const asDriverOpt = d => ({
   value: d,
   label: (
     <div className="select-option">
-      <img src={teamLogos[driverTeam[d]]} className="option-logo" alt={`${driverTeam[d]} team logo`} />
+      <img src={teamLogos[driverTeam[d]]} className="option-logo" alt={`${driverTeam[d]} team logo`} loading="lazy" />
       <span className="option-text">{d}</span>
     </div>
   ),
@@ -82,7 +82,7 @@ const asConstructorOpt = c => ({
   value: c,
   label: (
     <div className="select-option">
-      <img src={teamLogos[c]} className="option-logo" alt={`${c} team logo`} />
+      <img src={teamLogos[c]} className="option-logo" alt={`${c} team logo`} loading="lazy" />
       <span className="option-text">{c}</span>
     </div>
   ),
@@ -105,6 +105,7 @@ const DriverWithLogo = ({ name }) => {
         <img
           src={teamLogos[team]}
           alt={`${team} team logo`}
+          loading="lazy"
           style={{ height: 18, width: 18, objectFit: "contain", marginRight: 4 }}
         />
       )}
