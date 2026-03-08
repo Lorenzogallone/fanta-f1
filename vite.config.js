@@ -14,7 +14,7 @@ export default defineConfig({
       filename: 'sw.js',
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['FantaF1_Logo_big.png'],
+      includeAssets: ['FantaF1_Logo_512.png'],
       injectManifest: {
         // Allow the firebase compat CDN scripts loaded via importScripts
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
@@ -29,12 +29,12 @@ export default defineConfig({
         orientation: 'portrait-primary',
         icons: [
           {
-            src: '/FantaF1_Logo_big.png',
+            src: '/FantaF1_Logo_512.png',
             sizes: '512x512',
             type: 'image/png'
           },
           {
-            src: '/FantaF1_Logo_big.png',
+            src: '/FantaF1_Logo_192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any maskable'
@@ -53,10 +53,12 @@ export default defineConfig({
           'firebase-vendor': ['firebase/app', 'firebase/firestore', 'firebase/auth', 'firebase/messaging'],
           // UI Libraries
           'ui-vendor': ['react-bootstrap', 'react-select'],
+          // Charts (lazy-loaded with Statistics page)
+          'chart-vendor': ['recharts'],
         },
       },
     },
-    // Aumenta il limite di warning a 1000 kB per i vendor chunks
+    target: 'es2020',
     chunkSizeWarningLimit: 1000,
   },
 })

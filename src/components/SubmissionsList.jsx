@@ -36,6 +36,7 @@ function DriverCell({ driverName }) {
         <img
           src={logo}
           alt={team}
+          loading="lazy"
           style={{ height: 20, width: 20, objectFit: "contain", marginRight: 4 }}
         />
       )}

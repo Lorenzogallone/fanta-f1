@@ -80,17 +80,17 @@ export const DRIVER_TEAM = {
 
 /* ==================== TEAM LOGOS (paths in /public) ==================== */
 export const TEAM_LOGOS = {
-  McLaren: "/mclaren.png",
-  Ferrari: "/ferrari.png",
-  "Red Bull": "/redbull.png",
-  Mercedes: "/mercedes.png",
-  "Aston Martin": "/aston.png",
-  Williams: "/williams.png",
-  "Racing Bulls": "/vcarb.png",
-  Alpine: "/alpine.png",
-  Haas: "/haas.png",
-  Audi: "/audi.png",
-  Cadillac: "/cadillac.png",
+  McLaren: "/mclaren.webp",
+  Ferrari: "/ferrari.webp",
+  "Red Bull": "/redbull.webp",
+  Mercedes: "/mercedes.webp",
+  "Aston Martin": "/aston.webp",
+  Williams: "/williams.webp",
+  "Racing Bulls": "/vcarb.webp",
+  Alpine: "/alpine.webp",
+  Haas: "/haas.webp",
+  Audi: "/audi.webp",
+  Cadillac: "/cadillac.webp",
 };
 
 /* ==================== SCORING SYSTEM ==================== */

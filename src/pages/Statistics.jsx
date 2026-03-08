@@ -3,7 +3,7 @@
  * @description Championship statistics page with ranking trends and cumulative points charts
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Container,
@@ -257,8 +257,10 @@ export default function Statistics() {
   }
 
   // Apply players filter to determine how many players to show in charts
-  const numPlayers = playersFilter === "5" ? 5 : playersFilter === "10" ? 10 : currentRanking.length;
-  const topPlayers = currentRanking.slice(0, numPlayers);
+  const topPlayers = useMemo(() => {
+    const numPlayers = playersFilter === "5" ? 5 : playersFilter === "10" ? 10 : currentRanking.length;
+    return currentRanking.slice(0, numPlayers);
+  }, [playersFilter, currentRanking]);
 
   // Get label for chart headers based on players filter
   const playersLabel = playersFilter === "5"
@@ -268,49 +270,39 @@ export default function Statistics() {
     : t("statistics.allPlayers");
 
   // Prepare chart data only if statistics are loaded
-  let pointsChartData = [];
-  let positionChartData = [];
+  const { pointsChartData, positionChartData } = useMemo(() => {
+    if (!statistics?.races?.length) {
+      return { pointsChartData: [], positionChartData: [] };
+    }
 
-  if (statistics && statistics.races && statistics.races.length > 0) {
-    // Apply races filter to determine how many races to show
     const numRaces = racesFilter === "5" ? 5 : racesFilter === "10" ? 10 : statistics.races.length;
-    const filteredRaces = statistics.races.slice(-numRaces); // Get last N races
-    const startIndex = statistics.races.length - numRaces; // Starting index in original array
+    const filteredRaces = statistics.races.slice(-numRaces);
+    const startIndex = statistics.races.length - numRaces;
 
-    // Prepare data for cumulative points chart
-    pointsChartData = filteredRaces.map((race, idx) => {
-      const raceIndex = startIndex + idx; // Actual index in original array
-      const dataPoint = {
-        name: `R${race.round}`,
-        fullName: race.name,
-      };
-
+    const points = filteredRaces.map((race, idx) => {
+      const raceIndex = startIndex + idx;
+      const dataPoint = { name: `R${race.round}`, fullName: race.name };
       topPlayers.forEach(player => {
         const history = statistics.playersData[player.userId] || [];
         const raceData = history[raceIndex];
         dataPoint[player.name] = raceData ? raceData.cumulativePoints : 0;
       });
-
       return dataPoint;
     });
 
-    // Prepare data for position chart (inverted: 1st at top)
-    positionChartData = filteredRaces.map((race, idx) => {
-      const raceIndex = startIndex + idx; // Actual index in original array
-      const dataPoint = {
-        name: `R${race.round}`,
-        fullName: race.name,
-      };
-
+    const positions = filteredRaces.map((race, idx) => {
+      const raceIndex = startIndex + idx;
+      const dataPoint = { name: `R${race.round}`, fullName: race.name };
       topPlayers.forEach(player => {
         const history = statistics.playersData[player.userId] || [];
         const raceData = history[raceIndex];
         dataPoint[player.name] = raceData ? raceData.position : null;
       });
-
       return dataPoint;
     });
-  }
+
+    return { pointsChartData: points, positionChartData: positions };
+  }, [statistics, racesFilter, topPlayers]);
 
   /**
    * Custom tooltip to display full race name

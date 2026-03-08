@@ -51,6 +51,7 @@ function DriverWithLogo({ name, short = false }) {
         <img
           src={logoSrc}
           alt={`${team} team logo`}
+          loading="lazy"
           style={{
             height: 20,
             width: 20,

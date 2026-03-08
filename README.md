@@ -173,11 +173,15 @@ Administrators have full access to all features through a comprehensive admin da
 - 🌓 **Dark Mode**: Full dark theme support with persistent preference
 - 📱 **Responsive**: Fully optimized for desktop, tablet, and mobile
 - ⚡ **Real-time**: Live updates via Firebase Firestore
-- 🔒 **Secure**: Admin panel protected by environment variable password
+- 🔒 **Secure**: Admin panel protected by Firebase Custom Claims
 - 🌍 **Multi-language**: i18n support for Italian/English (expandable)
 - 🔄 **Dynamic Data**: Automatic driver/team sync from Ergast API
 - 💾 **Auto-backup**: Automatic backups before critical operations
 - 📊 **Advanced Analytics**: Detailed statistics and performance tracking
+- 🔔 **Push Notifications**: Automatic qualifying reminders via FCM
+- 📲 **PWA**: Installable on mobile and desktop with offline support
+- 🚀 **CI/CD**: Automatic deployment via GitHub Actions
+- ☁️ **Cloud Functions**: Scheduled notification delivery
 
 ## 🛠️ Tech Stack
 
@@ -185,17 +189,22 @@ Administrators have full access to all features through a comprehensive admin da
 - **React 19.2**: Latest React with concurrent features
 - **React Router v7**: Client-side routing
 - **React Bootstrap 2.10.10**: UI component library
-- **Material-UI**: Advanced components (Charts, Icons)
 - **React-Select**: Searchable dropdown selectors
 - **Recharts**: Data visualization and charts
+- **react-hot-toast**: Toast notifications
+- **vite-plugin-pwa**: Progressive Web App support with Workbox
 
 ### Backend & Database
 - **Firebase Firestore**: NoSQL real-time database
-- **Firebase Hosting**: Static site deployment
+- **Firebase Authentication**: Email/password + Google sign-in
+- **Firebase Cloud Messaging (FCM)**: Push notifications
+- **Firebase Cloud Functions**: Scheduled tasks (Node.js 20)
+- **Firebase Hosting**: Static site deployment with global CDN
 - **Ergast F1 API**: Automatic race results fetching
 
-### Build & Development
-- **Vite 6.3.5**: Lightning-fast build tool
+### Build & Deployment
+- **Vite 6.3.5**: Lightning-fast build tool with ES2020 target
+- **GitHub Actions**: CI/CD pipeline for automatic deployment
 - **ESLint**: Code quality enforcement
 - **Environment Variables**: Secure configuration management
 
@@ -203,8 +212,16 @@ Administrators have full access to all features through a comprehensive admin da
 
 ```
 fanta-f1/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml           # GitHub Actions CI/CD pipeline
+├── functions/                   # Firebase Cloud Functions
+│   ├── index.js                 # Scheduled notification functions
+│   └── package.json             # Functions dependencies
 ├── public/                      # Static assets
-│   └── *.png                    # Team logos (11 teams) + app logos
+│   ├── *.webp                   # Team logos (11 teams, WebP format)
+│   ├── FantaF1_Logo*.png        # App logos (multiple sizes)
+│   └── FantaF1_Logo*.webp       # App logos (WebP for navbar)
 ├── src/
 │   ├── pages/                   # Route components
 │   │   ├── Home.jsx             # Landing page with rules
@@ -213,6 +230,8 @@ fanta-f1/
 │   │   ├── FormationApp.jsx     # Formation submission
 │   │   ├── ChampionshipForm.jsx # Championship predictions
 │   │   ├── ParticipantDetail.jsx# Individual participant stats
+│   │   ├── RaceResults.jsx      # Race results viewer
+│   │   ├── LoginPage.jsx        # Authentication page
 │   │   ├── Statistics.jsx       # Global statistics dashboard
 │   │   ├── CalculatePoints.jsx  # Points calculation (admin)
 │   │   └── AdminPanel.jsx       # Complete admin dashboard
@@ -221,12 +240,25 @@ fanta-f1/
 │   │   ├── RaceHistoryCard.jsx  # Unified race result card
 │   │   ├── ChampionshipSubmissions.jsx # Championship view
 │   │   ├── SubmissionsList.jsx  # Formation list component
-│   │   └── AdminRoute.jsx       # Custom claim route protection
+│   │   ├── PlayerStatsView.jsx  # Unified player statistics
+│   │   ├── AdminRoute.jsx       # Custom claim route protection
+│   │   ├── ProtectedRoute.jsx   # Auth route guard
+│   │   ├── Footer.jsx           # App footer
+│   │   ├── ErrorBoundary.jsx    # Error boundary wrapper
+│   │   ├── InstallPwaBanner.jsx # PWA install prompt
+│   │   ├── NotificationPromptModal.jsx # Push notification opt-in
+│   │   ├── NotificationSettings.jsx    # Notification toggle
+│   │   └── CompleteProfileModal.jsx    # Nickname setup modal
 │   ├── contexts/                # React Context API
 │   │   ├── ThemeContext.jsx     # Dark/light mode state
-│   │   └── LanguageContext.jsx  # i18n language state
+│   │   ├── LanguageContext.jsx  # i18n language state
+│   │   └── AuthContext.jsx      # Firebase auth state
+│   ├── hooks/                   # Custom React hooks
+│   │   ├── useAuth.js           # Auth state hook
+│   │   └── useLanguage.js       # Language hook
 │   ├── services/                # Business logic & Firebase
 │   │   ├── firebase.js          # Firebase initialization
+│   │   ├── notificationService.js # FCM push notification service
 │   │   ├── pointsCalculator.js  # Race points calculation engine
 │   │   ├── championshipPointsCalculator.js # Championship scoring
 │   │   ├── f1DataResolver.js    # Dynamic driver/team resolver
@@ -244,16 +276,19 @@ fanta-f1/
 │   │   ├── theme.css            # CSS variables (dark/light)
 │   │   ├── App.css              # Global styles
 │   │   ├── index.css            # CSS reset
+│   │   ├── statistics.css       # Statistics page styles
 │   │   └── customSelect.css     # React-select theming
+│   ├── sw.js                    # Service worker (Workbox + FCM)
 │   ├── App.jsx                  # Main app + routing
 │   └── main.jsx                 # React DOM entry point
 ├── scripts/                     # Utility scripts
 │   ├── backup.js                # CLI backup tool
-│   └── restoreBackup.js         # CLI restore tool
+│   ├── restoreBackup.js         # CLI restore tool
+│   └── setAdminClaim.js         # Admin privileges script
 ├── .env.example                 # Environment variables template
-├── firebase.json                # Firebase hosting config
-├── vite.config.js               # Vite configuration
-├── claude.md                    # AI development context
+├── firebase.json                # Firebase hosting + rules config
+├── firestore.rules              # Firestore security rules
+├── vite.config.js               # Vite + PWA configuration
 └── README.md                    # This file
 ```
 
@@ -526,6 +561,9 @@ VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
 
 # Admin Password
 VITE_ADMIN_PASSWORD=your_secure_password
+
+# Push Notifications (Firebase Cloud Messaging)
+VITE_FIREBASE_VAPID_KEY=your_vapid_key
 ```
 
 4. **Run development server**
@@ -537,15 +575,50 @@ The app will be available at `http://localhost:5173`
 
 ### Deployment
 
-1. **Build for production**
+The project uses **GitHub Actions** for automatic CI/CD deployment.
+
+#### Automatic (CI/CD)
+Every push to the `main` branch triggers the deployment pipeline:
+1. Builds the app with Vite
+2. Deploys to Firebase Hosting
+3. Deploys Firestore security rules
+
+Environment variables are managed via **GitHub Secrets**.
+
+#### Manual
 ```bash
 npm run build
-```
-
-2. **Deploy to Firebase Hosting**
-```bash
 firebase deploy --only hosting
 ```
+
+## 🔔 Push Notifications
+
+The app sends automatic qualifying reminders via **Firebase Cloud Messaging (FCM)**.
+
+### How it works
+- **1 hour before** qualifying: first reminder
+- **5 minutes before** qualifying: final reminder
+- **Night sessions** (qualifying after midnight CET): reminder sent at 21:00 the evening before
+
+### User opt-in
+- Users are prompted to enable notifications when the PWA is first installed
+- Notifications can be toggled on/off from the user menu (⚙️ Notification Settings)
+- Requires the app to be installed as a PWA (browser push not supported)
+
+### Technical details
+- **Firebase Cloud Functions** run on a schedule to send notifications
+- **Service Worker** (`src/sw.js`) handles background message delivery via Workbox + FCM
+- Token management and permission handling in `src/services/notificationService.js`
+
+## 📲 Progressive Web App (PWA)
+
+FantaF1 is a fully installable PWA:
+
+- **Installable** on Android, iOS, and desktop (Chrome, Safari, Edge)
+- **Offline-capable** via Workbox service worker with precaching
+- **Auto-update**: New versions are detected and applied automatically
+- **Custom install banner**: Guides users through installation on both Android (native prompt) and iOS (manual Add to Home Screen)
+- **Splash screen**: SVG logo animation with theme-aware loading screen
 
 ## 🔧 Configuration
 
@@ -559,7 +632,7 @@ Edit `src/constants/racing.js` to customize:
 ### F1 Data
 - **Automatic**: Drivers and teams sync from Ergast API (cached 72h)
 - **Manual**: Edit `src/data/f1-data.json` for custom drivers/teams
-- **Logos**: Add team logos to `public/` directory (PNG format)
+- **Logos**: Add team logos to `public/` directory (WebP format, max 128x128px)
 
 ### Theme Colors
 Customize in `src/styles/theme.css`:
@@ -621,13 +694,26 @@ Built with ❤️ for Formula 1 enthusiasts.
 
 ## 📝 Changelog
 
-### Version 2.1 (Current - 2026 Season)
+### Version 2.2 (Current)
+- ✅ **Performance**: Converted all images to WebP format (~95% size reduction)
+- ✅ **Performance**: Resized PWA icons (512px, 192px) from original 1.1MB logo
+- ✅ **Performance**: Added lazy loading to below-the-fold team logo images
+- ✅ **Performance**: Added preconnect/dns-prefetch hints for Firebase services
+- ✅ **Performance**: Removed MUI dependency (replaced 5 icons with inline SVGs)
+- ✅ **Performance**: Added `useMemo` for chart data in Statistics page
+- ✅ **Performance**: Separated recharts into dedicated chunk for lazy loading
+- ✅ **Performance**: Set ES2020 build target for smaller bundle output
+- ✅ **UX**: Added SVG path animation splash screen with theme-aware loading
+- ✅ **Docs**: Updated README with Push Notifications, PWA, CI/CD, Cloud Functions docs
+- ✅ **Docs**: Updated project structure to reflect all components and services
+- ✅ Added `claude.md` and `CLAUDE.md` to `.gitignore`
+
+### Version 2.1 (2026 Season)
 - ✅ Updated to 2026 F1 season grid (11 teams, 22 drivers)
 - ✅ New teams: Audi (ex-Sauber), Cadillac (11th team)
 - ✅ Racing Bulls rebrand (ex-VCARB)
 - ✅ New drivers: Arvid Lindblad, Sergio Pérez (Cadillac), Valtteri Bottas (Cadillac)
 - ✅ Updated driver numbers (Norris #1, Verstappen #3, etc.)
-- ✅ Added claude.md for AI-assisted development context
 
 ### Version 2.0
 - ✅ Complete admin panel redesign

@@ -147,7 +147,7 @@ export default function LoginPage() {
         <Col xs={12} sm={10} md={8} lg={5}>
           <div className="text-center mb-4">
             <img
-              src={isDark ? "/FantaF1_Logo_dark.png" : "/FantaF1_Logo.png"}
+              src={isDark ? "/FantaF1_Logo_dark.webp" : "/FantaF1_Logo.webp"}
               alt="Fanta F1"
               height="60"
               style={{ objectFit: "contain" }}
