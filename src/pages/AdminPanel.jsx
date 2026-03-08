@@ -70,18 +70,26 @@ export default function AdminPanel() {
       </Card>
 
       <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
-        <Nav variant="tabs" className="mb-4">
+        <Nav variant="tabs" className="mb-4 flex-nowrap">
           <Nav.Item>
-            <Nav.Link eventKey="participants">👥 {t("admin.participants")}</Nav.Link>
+            <Nav.Link eventKey="participants" className="px-2 px-sm-3">
+              👥 <span className="d-none d-sm-inline">{t("admin.participants")}</span>
+            </Nav.Link>
           </Nav.Item>
           <Nav.Item>
-            <Nav.Link eventKey="formations">📝 {t("admin.formations")}</Nav.Link>
+            <Nav.Link eventKey="formations" className="px-2 px-sm-3">
+              📝 <span className="d-none d-sm-inline">{t("admin.formations")}</span>
+            </Nav.Link>
           </Nav.Item>
           <Nav.Item>
-            <Nav.Link eventKey="calendar">📅 {t("admin.raceCalendar")}</Nav.Link>
+            <Nav.Link eventKey="calendar" className="px-2 px-sm-3">
+              📅 <span className="d-none d-sm-inline">{t("admin.raceCalendar")}</span>
+            </Nav.Link>
           </Nav.Item>
           <Nav.Item>
-            <Nav.Link eventKey="reset">🗑️ {t("admin.database")}</Nav.Link>
+            <Nav.Link eventKey="reset" className="px-2 px-sm-3">
+              🗑️ <span className="d-none d-sm-inline">{t("admin.database")}</span>
+            </Nav.Link>
           </Nav.Item>
         </Nav>
 
