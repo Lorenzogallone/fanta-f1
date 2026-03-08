@@ -10,6 +10,7 @@ import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { hideSplash } from "../utils/splash";
 
 const medals = ["🥇", "🥈", "🥉"];
 
@@ -39,6 +40,7 @@ export default function Leaderboard() {
 
       setRows(rowsWithPositions);
       setLoading(false);
+      hideSplash(); // Hide splash screen once data is loaded
     });
     return () => unsub();
   }, []);

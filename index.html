@@ -1,179 +1,189 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/FantaF1_Logo_192.png" />
-    <link rel="apple-touch-icon" href="/FantaF1_Logo_192.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Preconnect to Firebase services -->
-    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
-    <link rel="preconnect" href="https://www.googleapis.com" crossorigin />
-    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
-    <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
-    <link rel="dns-prefetch" href="https://www.googleapis.com" />
-    <link rel="dns-prefetch" href="https://api.jolpi.ca" />
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/FantaF1_Logo_192.png" />
+  <link rel="apple-touch-icon" href="/FantaF1_Logo_192.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Primary Meta Tags -->
-    <title>FantaF1 - Fantasy Formula 1 Game</title>
-    <meta name="title" content="FantaF1 - Fantasy Formula 1 Game" />
-    <meta
-      name="description"
-      content="Build your dream Formula 1 team! Predict race podiums, earn points, and compete with friends in the ultimate F1 fantasy game."
-    />
-    <meta
-      name="keywords"
-      content="Fantasy F1, Formula 1, F1 Game, Racing Fantasy, Motorsport, Fantasy League"
-    />
-    <meta name="author" content="FantaF1" />
+  <!-- Preconnect to Firebase services -->
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://www.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
+  <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
+  <link rel="dns-prefetch" href="https://www.googleapis.com" />
+  <link rel="dns-prefetch" href="https://api.jolpi.ca" />
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://fantaf1.app/" />
-    <meta property="og:title" content="FantaF1 - Fantasy Formula 1 Game" />
-    <meta
-      property="og:description"
-      content="Build your dream Formula 1 team! Predict race podiums, earn points, and compete with friends."
-    />
-    <meta property="og:image" content="/FantaF1_Logo_big.png" />
+  <!-- Primary Meta Tags -->
+  <title>FantaF1 - Fantasy Formula 1 Game</title>
+  <meta name="title" content="FantaF1 - Fantasy Formula 1 Game" />
+  <meta name="description"
+    content="Build your dream Formula 1 team! Predict race podiums, earn points, and compete with friends in the ultimate F1 fantasy game." />
+  <meta name="keywords" content="Fantasy F1, Formula 1, F1 Game, Racing Fantasy, Motorsport, Fantasy League" />
+  <meta name="author" content="FantaF1" />
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://fantaf1.app/" />
-    <meta property="twitter:title" content="FantaF1 - Fantasy Formula 1 Game" />
-    <meta
-      property="twitter:description"
-      content="Build your dream Formula 1 team! Predict race podiums, earn points, and compete with friends."
-    />
-    <meta property="twitter:image" content="/FantaF1_Logo_big.png" />
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://fantaf1.app/" />
+  <meta property="og:title" content="FantaF1 - Fantasy Formula 1 Game" />
+  <meta property="og:description"
+    content="Build your dream Formula 1 team! Predict race podiums, earn points, and compete with friends." />
+  <meta property="og:image" content="/FantaF1_Logo_big.png" />
 
-    <!-- Theme Color (Now managed dynamically in ThemeContext.jsx, but we keep a default fallback) -->
-    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://fantaf1.app/" />
+  <meta property="twitter:title" content="FantaF1 - Fantasy Formula 1 Game" />
+  <meta property="twitter:description"
+    content="Build your dream Formula 1 team! Predict race podiums, earn points, and compete with friends." />
+  <meta property="twitter:image" content="/FantaF1_Logo_big.png" />
 
-    <!-- Mobile Web App -->
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="FantaF1" />
-  </head>
-  <body>
-    <script>
-      // Detect theme before render to avoid flash
-      (function() {
-        var m = localStorage.getItem('fanta-f1-theme-mode');
-        var d = m === 'dark' || (m !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-        if (d) document.documentElement.setAttribute('data-splash-theme', 'dark');
-        else document.documentElement.setAttribute('data-splash-theme', 'light');
-      })();
-    </script>
-    <style>
-      #splash {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-        background: #ffffff;
-        transition: opacity 0.3s ease;
+  <!-- Theme Color (Now managed dynamically in ThemeContext.jsx, but we keep a default fallback) -->
+  <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+
+  <!-- Mobile Web App -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="FantaF1" />
+</head>
+
+<body>
+  <script>
+    // Detect theme before render to avoid flash
+    (function () {
+      var m = localStorage.getItem('fanta-f1-theme-mode');
+      var d = m === 'dark' || (m !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (d) document.documentElement.setAttribute('data-splash-theme', 'dark');
+      else document.documentElement.setAttribute('data-splash-theme', 'light');
+    })();
+  </script>
+  <style>
+    #global-splash {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 9999;
+      background: #ffffff;
+      transition: opacity 0.5s ease;
+    }
+
+    [data-splash-theme="dark"] #global-splash {
+      background: #1a1a1a;
+    }
+
+    #global-splash:not(.active) {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Stroke draw animation */
+    .splash-draw {
+      stroke-dasharray: 3000;
+      stroke-dashoffset: 3000;
+      fill-opacity: 0;
+    }
+
+    .splash-text-el {
+      stroke: #dc3545;
+      fill: #dc3545;
+      animation: splashDraw 2s ease forwards, splashFill 0.6s ease 1.6s forwards;
+    }
+
+    .splash-f1-el {
+      stroke: #dc3545;
+      fill: #dc3545;
+      animation: splashDraw 1.5s ease 0.4s forwards, splashFill 0.5s ease 1.6s forwards;
+    }
+
+    .splash-f1-el-2 {
+      stroke: #dc3545;
+      fill: #dc3545;
+      animation: splashDraw 1.5s ease 0.7s forwards, splashFill 0.5s ease 1.8s forwards;
+    }
+
+    .splash-f1-el-3 {
+      stroke: #dc3545;
+      fill: #dc3545;
+      animation: splashDraw 1.5s ease 1s forwards, splashFill 0.5s ease 2s forwards;
+    }
+
+    /* Dark theme colors */
+    [data-splash-theme="dark"] .splash-text-el,
+    [data-splash-theme="dark"] .splash-f1-el,
+    [data-splash-theme="dark"] .splash-f1-el-2,
+    [data-splash-theme="dark"] .splash-f1-el-3 {
+      stroke: #ff4d5a;
+      fill: #ff4d5a;
+    }
+
+    @keyframes splashDraw {
+      to {
+        stroke-dashoffset: 0;
       }
-      [data-splash-theme="dark"] #splash { background: #1a1a1a; }
+    }
 
-      /* Stroke draw animation */
-      .splash-draw {
-        stroke-dasharray: 3000;
-        stroke-dashoffset: 3000;
-        fill-opacity: 0;
+    @keyframes splashFill {
+      to {
+        fill-opacity: 1;
       }
-      .splash-text-el {
-        stroke: #dc3545;
-        fill: #dc3545;
-        animation: splashDraw 2s ease forwards, splashFill 0.6s ease 1.6s forwards;
-      }
-      .splash-f1-el {
-        stroke: #dc3545;
-        fill: #dc3545;
-        animation: splashDraw 1.5s ease 0.4s forwards, splashFill 0.5s ease 1.6s forwards;
-      }
-      .splash-f1-el-2 {
-        stroke: #dc3545;
-        fill: #dc3545;
-        animation: splashDraw 1.5s ease 0.7s forwards, splashFill 0.5s ease 1.8s forwards;
-      }
-      .splash-f1-el-3 {
-        stroke: #dc3545;
-        fill: #dc3545;
-        animation: splashDraw 1.5s ease 1s forwards, splashFill 0.5s ease 2s forwards;
-      }
+    }
 
-      /* Dark theme colors */
-      [data-splash-theme="dark"] .splash-text-el,
-      [data-splash-theme="dark"] .splash-f1-el,
-      [data-splash-theme="dark"] .splash-f1-el-2,
-      [data-splash-theme="dark"] .splash-f1-el-3 {
-        stroke: #ff4d5a;
-        fill: #ff4d5a;
-      }
+    #global-splash-spinner {
+      margin-top: 32px;
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(0, 0, 0, 0.1);
+      border-top-color: #dc3545;
+      border-radius: 50%;
+      animation: splashSpin 0.8s linear infinite;
+    }
 
-      @keyframes splashDraw {
-        to { stroke-dashoffset: 0; }
-      }
-      @keyframes splashFill {
-        to { fill-opacity: 1; }
-      }
+    [data-splash-theme="dark"] #global-splash-spinner {
+      border-color: rgba(255, 255, 255, 0.15);
+      border-top-color: #ff4d5a;
+    }
 
-      #splash-spinner {
-        margin-top: 32px;
-        width: 36px;
-        height: 36px;
-        border: 3px solid rgba(0,0,0,0.1);
-        border-top-color: #dc3545;
-        border-radius: 50%;
-        animation: splashSpin 0.8s linear infinite;
+    @keyframes splashSpin {
+      to {
+        transform: rotate(360deg);
       }
-      [data-splash-theme="dark"] #splash-spinner {
-        border-color: rgba(255,255,255,0.15);
-        border-top-color: #ff4d5a;
-      }
-      @keyframes splashSpin {
-        to { transform: rotate(360deg); }
-      }
-    </style>
+    }
+  </style>
 
-    <div id="root">
-      <!-- Splash screen - replaced automatically when React mounts -->
-      <div id="splash">
-        <svg viewBox="0 0 500 250" width="280" xmlns="http://www.w3.org/2000/svg" fill="none">
-          <!-- "Fanta" text with stroke draw animation -->
-          <text class="splash-draw splash-text-el"
-                x="250" y="95"
-                text-anchor="middle"
-                font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif"
-                font-weight="900"
-                font-style="italic"
-                font-size="90"
-                stroke-width="2"
-                paint-order="stroke">Fanta</text>
+  <div id="root"></div>
 
-          <!-- F1 shape: upper band (goes right, then diagonal up to form top of "1") -->
-          <path class="splash-draw splash-f1-el"
-                stroke-width="2" stroke-linejoin="round"
-                d="M 50 190 L 100 140 Q 130 110 160 110 L 375 110 L 347 138 L 160 138 Q 137 138 115 160 L 85 190 Z"/>
+  <!-- Global Splash screen - controlled manually so it stays until data loads -->
+  <div id="global-splash" class="active">
+    <svg viewBox="0 0 500 250" width="280" xmlns="http://www.w3.org/2000/svg" fill="none">
+      <!-- "Fanta" text with stroke draw animation -->
+      <text class="splash-draw splash-text-el" x="250" y="95" text-anchor="middle"
+        font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-style="italic"
+        font-size="90" stroke-width="2" paint-order="stroke">Fanta</text>
 
-          <!-- F1 shape: lower band -->
-          <path class="splash-draw splash-f1-el-2"
-                stroke-width="2" stroke-linejoin="round"
-                d="M 100 190 L 115 175 Q 137 153 160 153 L 305 153 L 277 181 L 170 181 Q 144 181 135 190 Z"/>
+      <!-- F1 shape: upper band (goes right, then diagonal up to form top of "1") -->
+      <path class="splash-draw splash-f1-el" stroke-width="2" stroke-linejoin="round"
+        d="M 50 190 L 100 140 Q 130 110 160 110 L 375 110 L 347 138 L 160 138 Q 137 138 115 160 L 85 190 Z" />
 
-          <!-- F1 shape: "1" right element -->
-          <path class="splash-draw splash-f1-el-3"
-                stroke-width="2" stroke-linejoin="round"
-                d="M 400 110 L 440 110 L 360 190 L 320 190 Z"/>
-        </svg>
-        <div id="splash-spinner"></div>
-      </div>
-    </div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+      <!-- F1 shape: lower band -->
+      <path class="splash-draw splash-f1-el-2" stroke-width="2" stroke-linejoin="round"
+        d="M 100 190 L 115 175 Q 137 153 160 153 L 305 153 L 277 181 L 170 181 Q 144 181 135 190 Z" />
+
+      <!-- F1 shape: "1" right element -->
+      <path class="splash-draw splash-f1-el-3" stroke-width="2" stroke-linejoin="round"
+        d="M 400 110 L 440 110 L 360 190 L 320 190 Z" />
+    </svg>
+    <div id="global-splash-spinner"></div>
+  </div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>

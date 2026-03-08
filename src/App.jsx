@@ -25,6 +25,7 @@ import InstallPwaBanner from "./components/InstallPwaBanner";
 import NotificationPromptModal from "./components/NotificationPromptModal";
 import { syncFromAPI } from "./services/f1DataResolver.js";
 import { warn } from "./utils/logger";
+import { hideSplash } from "./utils/splash";
 import "./styles/theme.css";
 
 // Lazy loading pages for code splitting
@@ -61,6 +62,14 @@ export default function App() {
     syncFromAPI().catch(err => {
       warn('Background sync failed:', err);
     });
+
+    // Fallback: forcefully hide the splash screen after 3.5 seconds
+    // to ensure users are never permanently blocked if a page fails to hide it
+    const fallbackTimer = setTimeout(() => {
+      hideSplash();
+    }, 3500);
+
+    return () => clearTimeout(fallbackTimer);
   }, []);
 
   // Set up FCM foreground notification listener (only if notifications are enabled)
@@ -91,17 +100,17 @@ export default function App() {
                     <Route path="/login" element={<LoginPage />} />
 
                     {/* Protected routes - require authentication */}
-                    <Route path="/"           element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                    <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                     <Route path="/leaderboard" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                     <Route path="/participant/:userId" element={<ProtectedRoute><ParticipantDetail /></ProtectedRoute>} />
-                    <Route path="/lineup"     element={<ProtectedRoute><Formations /></ProtectedRoute>} />
-                    <Route path="/history"    element={<ProtectedRoute><History /></ProtectedRoute>} />
-                    <Route path="/results"    element={<ProtectedRoute><RaceResults /></ProtectedRoute>} />
+                    <Route path="/lineup" element={<ProtectedRoute><Formations /></ProtectedRoute>} />
+                    <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+                    <Route path="/results" element={<ProtectedRoute><RaceResults /></ProtectedRoute>} />
                     <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
 
                     {/* Admin-only routes */}
-                    <Route path="/calculate"  element={<AdminRoute><CalculatePoints /></AdminRoute>} />
-                    <Route path="/admin"      element={<AdminRoute><AdminPanel /></AdminRoute>} />
+                    <Route path="/calculate" element={<AdminRoute><CalculatePoints /></AdminRoute>} />
+                    <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
 
                     {/* Legacy routes */}
                     <Route path="/formations/races" element={<ProtectedRoute><FormationApp /></ProtectedRoute>} />
