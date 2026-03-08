@@ -309,8 +309,17 @@ export const it = {
     raceDate: "Data Gara",
     qualifyingDate: "Data Qualifiche",
     sprintDate: "Data Sprint",
-    hasResults: "Ha Risultati",
+    hasResults: "Risultati",
+    pending: "In attesa",
     raceUpdated: "Gara aggiornata con successo",
+    cancelMainRace: "Cancella Gara",
+    cancelSprint: "Cancella Sprint",
+    cancelRaceWarning: "Stai per cancellare la gara principale. I partecipanti non potranno più inserire formazioni e i punti non verranno calcolati.",
+    cancelSprintWarning: "Stai per cancellare la sprint. I partecipanti non potranno più inserire formazioni sprint.",
+    cancelConfirmQuestion: "Sei sicuro di voler procedere?",
+    raceCancelled: "Cancellata",
+    sprintCancelled: "Sprint cancellata",
+    deadline: "Deadline",
 
     // Database
     databaseOperations: "Operazioni Database",
@@ -351,7 +360,6 @@ export const it = {
     racesCount: "Numero Gare",
     participantsCount: "Numero Partecipanti",
     description: "Descrizione",
-    pending: "In attesa",
     refresh: "Aggiorna",
   },
 

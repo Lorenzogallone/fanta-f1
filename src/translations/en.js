@@ -309,8 +309,17 @@ export const en = {
     raceDate: "Race Date",
     qualifyingDate: "Qualifying Date",
     sprintDate: "Sprint Date",
-    hasResults: "Has Results",
+    hasResults: "Results",
+    pending: "Pending",
     raceUpdated: "Race updated successfully",
+    cancelMainRace: "Cancel Race",
+    cancelSprint: "Cancel Sprint",
+    cancelRaceWarning: "You are about to cancel the main race. Participants will no longer be able to submit lineups and points will not be calculated.",
+    cancelSprintWarning: "You are about to cancel the sprint. Participants will no longer be able to submit sprint lineups.",
+    cancelConfirmQuestion: "Are you sure you want to proceed?",
+    raceCancelled: "Cancelled",
+    sprintCancelled: "Sprint cancelled",
+    deadline: "Deadline",
 
     // Database
     databaseOperations: "Database Operations",
@@ -351,7 +360,6 @@ export const en = {
     racesCount: "Number of Races",
     participantsCount: "Number of Participants",
     description: "Description",
-    pending: "Pending",
     refresh: "Refresh",
   },
 

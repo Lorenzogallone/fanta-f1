@@ -13,13 +13,12 @@ import {
   Form,
   Alert,
   Spinner,
-  Table,
   Badge,
   Modal,
+  ListGroup,
 } from "react-bootstrap";
 import {
   doc,
-  setDoc,
   updateDoc,
   writeBatch,
   Timestamp,
@@ -28,14 +27,6 @@ import { db } from "../../services/firebase";
 import { useLanguage } from "../../hooks/useLanguage";
 import { error } from "../../utils/logger";
 
-/**
- * Calendar management component with ICS import support
- * @param {Object} props - Component props
- * @param {Array} props.races - List of races
- * @param {boolean} props.loading - Loading state
- * @param {Function} props.onDataChange - Callback to refresh data
- * @returns {JSX.Element} Calendar management interface
- */
 export default function CalendarManager({ races, loading, onDataChange }) {
   const { t } = useLanguage();
   const [uploading, setUploading] = useState(false);
@@ -70,7 +61,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
       setParsedRaces(parsed);
       setMessage({
         type: "success",
-        text: `${t("common.success")}: ${parsed.length} ${t("history.pastRaces")}`,
+        text: `${parsed.length} gare trovate nel file`,
       });
     } catch (err) {
       error(err);
@@ -87,8 +78,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
       return;
     }
 
-    const confirmMsg = `${t("admin.confirmReset")}`;
-    if (!window.confirm(confirmMsg)) return;
+    if (!window.confirm(t("admin.confirmReset"))) return;
 
     setImporting(true);
     setMessage(null);
@@ -113,7 +103,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
 
       setMessage({
         type: "success",
-        text: `${t("common.success")}: ${parsedRaces.length} ${t("history.pastRaces")}`,
+        text: `${parsedRaces.length} gare importate`,
       });
       setParsedRaces([]);
       setIcsFile(null);
@@ -218,6 +208,24 @@ export default function CalendarManager({ races, loading, onDataChange }) {
     }
   };
 
+  const formatDate = (firestoreTimestamp) => {
+    if (!firestoreTimestamp) return "—";
+    return new Date(firestoreTimestamp.seconds * 1000).toLocaleDateString("it-IT", {
+      day: "2-digit",
+      month: "short",
+    });
+  };
+
+  const formatDateTime = (firestoreTimestamp) => {
+    if (!firestoreTimestamp) return "—";
+    return new Date(firestoreTimestamp.seconds * 1000).toLocaleString("it-IT", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -227,243 +235,207 @@ export default function CalendarManager({ races, loading, onDataChange }) {
   }
 
   return (
-    <Row className="g-4">
+    <Row className="g-3">
       {/* ICS Import Section */}
       <Col xs={12}>
-        <Card className="shadow border-primary">
-          <Card.Header className="bg-primary text-white">
-            <h5 className="mb-0">📅 {t("admin.importICS")}</h5>
+        <Card className="shadow-sm border-primary">
+          <Card.Header className="bg-primary text-white py-2">
+            <h6 className="mb-0">📅 {t("admin.importICS")}</h6>
           </Card.Header>
-          <Card.Body>
-            <p>{t("admin.raceCalendar")}</p>
-
+          <Card.Body className="py-3">
             {message && (
-              <Alert variant={message.type} dismissible onClose={() => setMessage(null)}>
+              <Alert variant={message.type} dismissible onClose={() => setMessage(null)} className="py-2">
                 {message.text}
               </Alert>
             )}
 
-            <Form.Group className="mb-3">
-              <Form.Label>{t("admin.importICS")}</Form.Label>
+            <Form.Group className="mb-2">
               <Form.Control
                 type="file"
                 accept=".ics"
+                size="sm"
                 onChange={handleIcsFileSelect}
                 disabled={loadingIcs || importing}
-                aria-label="Select ICS calendar file to import races"
               />
             </Form.Group>
 
             {loadingIcs && (
-              <div className="text-center py-3">
+              <div className="text-center py-2">
                 <Spinner animation="border" size="sm" className="me-2" />
                 {t("common.loading")}
               </div>
             )}
 
             {parsedRaces.length > 0 && !loadingIcs && (
-              <>
-                <Alert variant="info">
-                  {parsedRaces.length} {t("history.pastRaces")}
-                </Alert>
-
-                <div className="table-responsive" style={{ maxHeight: "300px", overflowY: "auto" }}>
-                  <Table striped bordered hover size="sm">
-                    <thead style={{ position: "sticky", top: 0, backgroundColor: "#fff", zIndex: 1 }}>
-                      <tr>
-                        <th>#</th>
-                        <th>{t("admin.raceName")}</th>
-                        <th>{t("admin.qualifyingDate")}</th>
-                        <th>{t("admin.raceDate")}</th>
-                        <th>{t("formations.sprint")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {parsedRaces.map((race) => (
-                        <tr key={race.id}>
-                          <td>{race.round}</td>
-                          <td>{race.name}</td>
-                          <td>{race.qualiUTC.toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" })}</td>
-                          <td>{race.raceUTC.toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" })}</td>
-                          <td>
-                            {race.sprintUTC ? (
-                              <span className="text-success">✓</span>
-                            ) : (
-                              <span className="text-muted">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </div>
-
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="w-100 mt-3"
-                  onClick={handleIcsImport}
-                  disabled={importing}
-                  aria-label={`Import ${parsedRaces.length} races from calendar file`}
-                >
-                  {importing ? (
-                    <>
-                      <Spinner animation="border" size="sm" className="me-2" />
-                      {t("common.loading")}
-                    </>
-                  ) : (
-                    `📥 ${t("admin.importICS")} (${parsedRaces.length})`
-                  )}
-                </Button>
-              </>
+              <Button
+                variant="primary"
+                className="w-100 mt-2"
+                onClick={handleIcsImport}
+                disabled={importing}
+              >
+                {importing ? (
+                  <>
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    {t("common.loading")}
+                  </>
+                ) : (
+                  `📥 ${t("admin.importICS")} (${parsedRaces.length})`
+                )}
+              </Button>
             )}
           </Card.Body>
         </Card>
       </Col>
 
+      {/* Race List — mobile-first card layout */}
       <Col xs={12}>
-        <Card className="shadow">
-          <Card.Header className="bg-white d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">{t("admin.raceCalendar")} ({races.length})</h5>
-            <Button size="sm" variant="outline-primary" onClick={onDataChange} aria-label="Refresh race calendar">
-              🔄
-            </Button>
-          </Card.Header>
-          <Card.Body className="p-0">
-            {races.length === 0 ? (
-              <Alert variant="info" className="m-3">
-                {t("leaderboard.noData")}
-              </Alert>
-            ) : (
-              <div className="table-responsive">
-                <Table hover className="mb-0" size="sm">
-                  <thead className="table-light">
-                    <tr>
-                      <th style={{ width: "50px" }}>#</th>
-                      <th>{t("admin.raceName")}</th>
-                      <th>{t("admin.raceDate")}</th>
-                      <th>{t("admin.qualifyingDate")}</th>
-                      <th className="text-center">{t("formations.sprint")}</th>
-                      <th className="text-center">{t("admin.hasResults")}</th>
-                      <th style={{ width: "80px" }} className="text-center">{t("common.actions")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {races.map((r) => (
-                      <tr key={r.id}>
-                        <td>{r.round}</td>
-                        <td>
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <h6 className="mb-0">{t("admin.raceCalendar")} ({races.length})</h6>
+          <Button size="sm" variant="outline-secondary" onClick={onDataChange}>
+            🔄
+          </Button>
+        </div>
+
+        {races.length === 0 ? (
+          <Alert variant="info">{t("leaderboard.noData")}</Alert>
+        ) : (
+          <ListGroup variant="flush">
+            {races.map((r) => {
+              const isCancelledMain = r.cancelledMain;
+              const isCancelledSprint = r.cancelledSprint;
+              const hasSprint = Boolean(r.qualiSprintUTC);
+              const hasResults = Boolean(r.officialResults);
+
+              return (
+                <ListGroup.Item
+                  key={r.id}
+                  className="px-2 py-2"
+                  action
+                  onClick={() => handleEditRace(r)}
+                >
+                  <div className="d-flex justify-content-between align-items-start">
+                    <div className="flex-grow-1 me-2" style={{ minWidth: 0 }}>
+                      <div className="d-flex align-items-center gap-1 flex-wrap">
+                        <span className="text-muted small fw-bold" style={{ minWidth: "24px" }}>
+                          R{r.round}
+                        </span>
+                        <span className="fw-semibold text-truncate">
                           {r.name}
-                          {r.cancelledMain && (
-                            <Badge bg="danger" className="ms-2">{t("errors.raceCancelled")}</Badge>
-                          )}
-                          {r.cancelledSprint && r.qualiSprintUTC && (
-                            <Badge bg="warning" text="dark" className="ms-2">{t("formations.sprint")} {t("errors.raceCancelled")}</Badge>
-                          )}
-                        </td>
-                        <td>
-                          {r.raceUTC
-                            ? new Date(r.raceUTC.seconds * 1000).toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" })
-                            : "—"}
-                        </td>
-                        <td>
-                          {r.qualiUTC
-                            ? new Date(r.qualiUTC.seconds * 1000).toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" })
-                            : "—"}
-                        </td>
-                        <td className="text-center">
-                          {r.qualiSprintUTC ? (
-                            r.cancelledSprint ? (
-                              <Badge bg="secondary">✗</Badge>
-                            ) : (
-                              <Badge bg="warning" text="dark">✓</Badge>
-                            )
-                          ) : "—"}
-                        </td>
-                        <td className="text-center">
-                          {r.officialResults ? (
-                            <Badge bg="success">{t("admin.hasResults")}</Badge>
-                          ) : (
-                            <Badge bg="secondary">{t("admin.pending")}</Badge>
-                          )}
-                        </td>
-                        <td className="text-center">
-                          <Button
-                            size="sm"
-                            variant="outline-primary"
-                            onClick={() => handleEditRace(r)}
-                            aria-label={`Edit race ${r.name}`}
-                          >
-                            ✏️
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            )}
-          </Card.Body>
-        </Card>
+                        </span>
+                      </div>
+                      <div className="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                        <small className="text-muted">
+                          {formatDate(r.raceUTC)}
+                        </small>
+                        {hasSprint && !isCancelledSprint && (
+                          <Badge bg="warning" text="dark" className="fw-normal" style={{ fontSize: "0.65rem" }}>
+                            Sprint
+                          </Badge>
+                        )}
+                        {isCancelledMain && (
+                          <Badge bg="danger" className="fw-normal" style={{ fontSize: "0.65rem" }}>
+                            {t("admin.raceCancelled")}
+                          </Badge>
+                        )}
+                        {isCancelledSprint && hasSprint && (
+                          <Badge bg="secondary" className="fw-normal" style={{ fontSize: "0.65rem" }}>
+                            {t("admin.sprintCancelled")}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="d-flex align-items-center gap-1 flex-shrink-0">
+                      {hasResults ? (
+                        <Badge bg="success" style={{ fontSize: "0.65rem" }}>{t("admin.hasResults")}</Badge>
+                      ) : (
+                        <Badge bg="secondary" style={{ fontSize: "0.65rem" }}>{t("admin.pending")}</Badge>
+                      )}
+                      <span className="text-muted">✏️</span>
+                    </div>
+                  </div>
+                </ListGroup.Item>
+              );
+            })}
+          </ListGroup>
+        )}
       </Col>
 
-      {/* Modal to edit race dates */}
-      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg">
+      {/* Edit Race Modal */}
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
         <Modal.Header closeButton>
-          <Modal.Title>✏️ {t("admin.editRace")} - {editingRace?.name}</Modal.Title>
+          <Modal.Title className="fs-6">
+            ✏️ {editingRace?.name}
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <Alert variant="light" className="mb-4">
-              <strong>{t("admin.raceDate")}:</strong>{" "}
+            {/* Race date info */}
+            <div className="text-muted small mb-3">
               {editingRace?.raceUTC && new Date(editingRace.raceUTC.seconds * 1000).toLocaleDateString("it-IT", {
                 weekday: "long", year: "numeric", month: "long", day: "numeric"
               })}
-            </Alert>
+            </div>
 
-            <h6>⏰ {t("formations.deadline")} {t("formations.mainRace")}</h6>
-            <Form.Group className="mb-3">
-              <Form.Label>{t("formations.deadline")}</Form.Label>
-              <Form.Control
-                type="time"
-                value={editFormData.qualiTime}
-                onChange={(e) => setEditFormData({ ...editFormData, qualiTime: e.target.value })}
-                required
-                disabled={editingRace?.cancelledMain}
-              />
-            </Form.Group>
-
+            {/* Main Race Section */}
             {!editingRace?.cancelledMain ? (
-              <Button variant="danger" size="sm" className="mb-4" onClick={() => handleCancelRace("main")}>
-                ⛔ {t("errors.raceCancelled")}
-              </Button>
-            ) : (
-              <Alert variant="danger" className="mb-4">
-                <strong>⚠️ {t("errors.raceCancelled")}</strong>
-              </Alert>
-            )}
-
-            {editingRace?.qualiSprintUTC && (
               <>
-                <hr />
-                <h6>🏁 {t("formations.sprint")}</h6>
                 <Form.Group className="mb-3">
-                  <Form.Label>{t("formations.deadline")} {t("formations.sprint")}</Form.Label>
+                  <Form.Label className="small fw-semibold">
+                    {t("admin.deadline")} {t("formations.mainRace")}
+                  </Form.Label>
                   <Form.Control
                     type="time"
-                    value={editFormData.sprintTime}
-                    onChange={(e) => setEditFormData({ ...editFormData, sprintTime: e.target.value })}
-                    disabled={editingRace?.cancelledSprint}
+                    size="sm"
+                    value={editFormData.qualiTime}
+                    onChange={(e) => setEditFormData({ ...editFormData, qualiTime: e.target.value })}
+                    required
                   />
                 </Form.Group>
 
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  className="mb-3"
+                  onClick={() => handleCancelRace("main")}
+                >
+                  ⛔ {t("admin.cancelMainRace")}
+                </Button>
+              </>
+            ) : (
+              <Alert variant="danger" className="py-2 mb-3">
+                ⛔ {t("admin.raceCancelled")}
+              </Alert>
+            )}
+
+            {/* Sprint Section */}
+            {editingRace?.qualiSprintUTC && (
+              <>
+                <hr />
                 {!editingRace?.cancelledSprint ? (
-                  <Button variant="warning" size="sm" onClick={() => handleCancelRace("sprint")}>
-                    ⛔ {t("formations.sprint")} {t("errors.raceCancelled")}
-                  </Button>
+                  <>
+                    <Form.Group className="mb-3">
+                      <Form.Label className="small fw-semibold">
+                        {t("admin.deadline")} {t("formations.sprint")}
+                      </Form.Label>
+                      <Form.Control
+                        type="time"
+                        size="sm"
+                        value={editFormData.sprintTime}
+                        onChange={(e) => setEditFormData({ ...editFormData, sprintTime: e.target.value })}
+                      />
+                    </Form.Group>
+
+                    <Button
+                      variant="outline-warning"
+                      size="sm"
+                      onClick={() => handleCancelRace("sprint")}
+                    >
+                      ⛔ {t("admin.cancelSprint")}
+                    </Button>
+                  </>
                 ) : (
-                  <Alert variant="warning">
-                    <strong>⚠️ {t("formations.sprint")} {t("errors.raceCancelled")}</strong>
+                  <Alert variant="warning" className="py-2">
+                    ⛔ {t("admin.sprintCancelled")}
                   </Alert>
                 )}
               </>
@@ -471,34 +443,43 @@ export default function CalendarManager({ races, loading, onDataChange }) {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+          <Button variant="secondary" size="sm" onClick={() => setShowEditModal(false)}>
             {t("common.cancel")}
           </Button>
-          <Button variant="primary" onClick={handleSaveRaceDates} disabled={uploading}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleSaveRaceDates}
+            disabled={uploading || editingRace?.cancelledMain}
+          >
             {uploading ? <Spinner animation="border" size="sm" /> : `💾 ${t("common.save")}`}
           </Button>
         </Modal.Footer>
       </Modal>
 
-      {/* Cancellation confirmation modal */}
-      <Modal show={showCancelModal} onHide={() => setShowCancelModal(false)}>
+      {/* Cancel Race Confirmation Modal */}
+      <Modal show={showCancelModal} onHide={() => setShowCancelModal(false)} centered>
         <Modal.Header closeButton>
-          <Modal.Title>⚠️ {t("common.confirm")}</Modal.Title>
+          <Modal.Title className="fs-6">
+            ⚠️ {cancelType === "main" ? t("admin.cancelMainRace") : t("admin.cancelSprint")}
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Alert variant={cancelType === "main" ? "danger" : "warning"}>
-            <strong>{t("common.warning")}!</strong>
-            <br />
-            {t("admin.deleteWarning")}
+          <Alert variant={cancelType === "main" ? "danger" : "warning"} className="mb-3">
+            {cancelType === "main"
+              ? t("admin.cancelRaceWarning")
+              : t("admin.cancelSprintWarning")
+            }
           </Alert>
-          <p className="mb-0">{t("admin.confirmReset")}</p>
+          <p className="fw-semibold mb-0">{t("admin.cancelConfirmQuestion")}</p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowCancelModal(false)}>
+          <Button variant="secondary" size="sm" onClick={() => setShowCancelModal(false)}>
             {t("common.cancel")}
           </Button>
           <Button
             variant={cancelType === "main" ? "danger" : "warning"}
+            size="sm"
             onClick={confirmCancelRace}
             disabled={uploading}
           >

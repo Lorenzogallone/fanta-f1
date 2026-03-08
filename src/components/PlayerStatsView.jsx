@@ -156,9 +156,16 @@ const calculateRacePoints = (submission, official, cancelledSprint = false) => {
   if (!submission.mainP1 && !submission.mainP2 && !submission.mainP3) {
     mainPoints = -3; // Not submitted
   } else {
-    if (submission.mainP1 === official.P1) mainPoints += POINTS.MAIN[1];
-    if (submission.mainP2 === official.P2) mainPoints += POINTS.MAIN[2];
-    if (submission.mainP3 === official.P3) mainPoints += POINTS.MAIN[3];
+    // Base position points
+    let basePoints = 0;
+    if (submission.mainP1 === official.P1) basePoints += POINTS.MAIN[1];
+    if (submission.mainP2 === official.P2) basePoints += POINTS.MAIN[2];
+    if (submission.mainP3 === official.P3) basePoints += POINTS.MAIN[3];
+
+    // Perfect podium bonus: 29 → 30
+    if (basePoints === 29) basePoints = 30;
+
+    mainPoints = basePoints;
 
     // Joker 1 bonus
     if (submission.mainJolly && [official.P1, official.P2, official.P3].includes(submission.mainJolly)) {

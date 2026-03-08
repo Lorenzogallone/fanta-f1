@@ -1,6 +1,6 @@
 /**
  * @file Leaderboard.jsx
- * @description Real-time leaderboard component displaying current rankings and position changes
+ * @description Real-time leaderboard component displaying current rankings
  */
 
 import React, { useState, useEffect } from "react";
@@ -10,40 +10,18 @@ import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
-import { getLastRankingSnapshot, calculatePositionChange } from "../services/rankingSnapshot";
 
 const medals = ["🥇", "🥈", "🥉"];
 
-/**
- * Leaderboard component showing live ranking with position trends
- * @returns {JSX.Element} Leaderboard table with live updates
- */
 export default function Leaderboard() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [previousSnapshot, setPreviousSnapshot] = useState(null);
   const { isDark } = useTheme();
   const { t } = useLanguage();
 
-  /**
-   * Load the last ranking snapshot for position comparison
-   */
-  useEffect(() => {
-    (async () => {
-      const lastSnapshot = await getLastRankingSnapshot();
-      if (lastSnapshot) {
-        setPreviousSnapshot(lastSnapshot.snapshot);
-      }
-    })();
-  }, []);
-
-  /**
-   * Subscribe to live ranking updates from Firestore
-   */
   useEffect(() => {
     const q = query(collection(db, "ranking"), orderBy("puntiTotali", "desc"));
     const unsub = onSnapshot(q, (snap) => {
-      // Assign positions handling ties (parimerito): same points = same position
       const rawRows = snap.docs.map((d) => ({
         userId: d.id,
         name: d.data().name,
@@ -56,7 +34,7 @@ export default function Leaderboard() {
         if (index > 0 && row.pts < rawRows[index - 1].pts) {
           currentPos = index + 1;
         }
-        return { ...row, position: currentPos, tied: index > 0 && row.pts === rawRows[index - 1].pts };
+        return { ...row, position: currentPos };
       });
 
       setRows(rowsWithPositions);
@@ -96,105 +74,69 @@ export default function Leaderboard() {
             <p className="mt-3">{t("common.loading")}</p>
           </div>
         ) : (
-          <div className="table-responsive">
-            <Table
-              hover
-              striped
-              className="mb-0 align-middle"
-              style={{ borderTop: `1px solid ${accentColor}` }}
-            >
-              <thead>
-                <tr>
-                  <th style={{ width: 60 }} className="text-center">
-                    #
-                  </th>
-                  <th>{t("leaderboard.player")}</th>
-                  <th className="text-center">{t("common.points")}</th>
-                  <th className="text-center">{t("leaderboard.gap")}</th>
-                  <th className="text-center">{t("leaderboard.jokers")}</th>
-                  {previousSnapshot && previousSnapshot.length > 0 && (
-                    <th style={{ width: 80 }} className="text-center">
-                      {t("leaderboard.trend")}
-                    </th>
-                  )}
-                </tr>
-              </thead>
+          <Table
+            hover
+            striped
+            className="mb-0 align-middle"
+            style={{ borderTop: `1px solid ${accentColor}`, tableLayout: "fixed" }}
+          >
+            <colgroup>
+              <col style={{ width: "36px" }} />
+              <col />
+              <col style={{ width: "50px" }} />
+              <col style={{ width: "50px" }} />
+              <col style={{ width: "46px" }} />
+            </colgroup>
+            <thead>
+              <tr>
+                <th className="text-center px-1">#</th>
+                <th className="px-1">{t("leaderboard.player")}</th>
+                <th className="text-center px-1">{t("common.points")}</th>
+                <th className="text-center px-1">{t("leaderboard.gap")}</th>
+                <th className="text-center px-1">J</th>
+              </tr>
+            </thead>
 
-              <tbody>
-                {rows.map((r) => {
-                  const posLabel = r.position <= 3 ? medals[r.position - 1] : r.position;
-                  const medal = posLabel;
-                  const gap = (leaderPts - r.pts === 0) ? "—" : `-${leaderPts - r.pts}`;
-                  const isTop3 = r.position <= 3;
+            <tbody>
+              {rows.map((r) => {
+                const medal = r.position <= 3 ? medals[r.position - 1] : r.position;
+                const gap = (leaderPts - r.pts === 0) ? "—" : `-${leaderPts - r.pts}`;
+                const isTop3 = r.position <= 3;
 
-                  // Calculate position change from previous snapshot
-                  const positionChange = previousSnapshot
-                    ? calculatePositionChange(r.userId, r.position, previousSnapshot)
-                    : 0;
-
-                  /**
-                   * Component to display position trend indicator
-                   * @returns {JSX.Element} Trend badge with color-coded arrow
-                   */
-                  const TrendBadge = () => {
-                    if (positionChange === 0) {
-                      return <span style={{ color: "#6c757d" }}>—</span>;
-                    } else if (positionChange > 0) {
-                      return (
-                        <span style={{ color: "#28a745", fontWeight: "bold" }}>
-                          ↑ +{positionChange}
-                        </span>
-                      );
-                    } else {
-                      return (
-                        <span style={{ color: "#dc3545", fontWeight: "bold" }}>
-                          ↓ {positionChange}
-                        </span>
-                      );
-                    }
-                  };
-
-                  return (
-                    <tr key={r.name} className={isTop3 ? "fw-bold" : ""}>
-                      <td className="text-center">{medal}</td>
-                      <td>
-                        <Link
-                          to={`/participant/${r.userId}`}
-                          style={{
-                            color: "inherit",
-                            textDecoration: "none",
-                            cursor: "pointer",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.target.style.textDecoration = "underline";
-                            e.target.style.color = accentColor;
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.textDecoration = "none";
-                            e.target.style.color = "inherit";
-                          }}
-                        >
-                          {r.name}
-                        </Link>
-                      </td>
-                      <td className="text-center">{r.pts}</td>
-                      <td className="text-center">{gap}</td>
-                      <td className="text-center">
-                        <Badge bg={r.jolly ? "success" : "secondary"}>
-                          {r.jolly}
-                        </Badge>
-                      </td>
-                      {previousSnapshot && previousSnapshot.length > 0 && (
-                        <td className="text-center">
-                          <TrendBadge />
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </Table>
-          </div>
+                return (
+                  <tr key={r.userId} className={isTop3 ? "fw-bold" : ""}>
+                    <td className="text-center px-1">{medal}</td>
+                    <td className="px-1 text-truncate">
+                      <Link
+                        to={`/participant/${r.userId}`}
+                        style={{
+                          color: "inherit",
+                          textDecoration: "none",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.textDecoration = "underline";
+                          e.target.style.color = accentColor;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.textDecoration = "none";
+                          e.target.style.color = "inherit";
+                        }}
+                      >
+                        {r.name}
+                      </Link>
+                    </td>
+                    <td className="text-center px-1">{r.pts}</td>
+                    <td className="text-center px-1 text-muted small">{gap}</td>
+                    <td className="text-center px-1">
+                      <Badge bg={r.jolly ? "success" : "secondary"} style={{ fontSize: "0.7rem" }}>
+                        {r.jolly}
+                      </Badge>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </Table>
         )}
       </Card.Body>
     </Card>
