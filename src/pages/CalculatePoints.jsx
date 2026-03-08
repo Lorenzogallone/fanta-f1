@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { isLastRace, calculatePointsForRace } from "../services/pointsCalculator";
+import { recalculateAllRaces } from "../services/recalculateAllRaces";
 import { calculateChampionshipPoints } from "../services/championshipPointsCalculator";
 import { saveRankingSnapshot } from "../services/rankingSnapshot";
 import { fetchRaceResults } from "../services/f1ResultsFetcher";
@@ -139,6 +140,9 @@ function CalculatePointsContent() {
   const [loadingSubs, setLoadingSubs] = useState(true);
   const [rankingMap,setRankingMap] = useState({});
   const [errSubs,   setErrSubs]    = useState(null);
+
+  // Recalculation state
+  const [recalculating, setRecalculating] = useState(false);
 
   // Championship state
   const [formChamp,setFormChamp]   = useState({
@@ -519,6 +523,33 @@ useEffect(() => {
                       aria-label={savingRace ? t("common.loading") : "Calculate and save race points"}
                     >
                       {savingRace ? t("common.loading") : t("calculate.calculateAndSave")}
+                    </Button>
+
+                    <hr />
+                    <Button
+                      variant="outline-warning" className="w-100"
+                      disabled={recalculating}
+                      onClick={async () => {
+                        if (!window.confirm("Ricalcolare i punti di TUTTE le gare? Questa operazione resetterà e ricalcolerà tutti i punteggi.")) return;
+                        setRecalculating(true);
+                        setMsgRace(null);
+                        try {
+                          const res = await recalculateAllRaces();
+                          setMsgRace({ variant: "success", msg: res });
+                          // Refresh preview
+                          const rDoc = await getDoc(doc(db, "races", race.id));
+                          setOfficial(rDoc.data().officialResults ?? null);
+                          const sSnap = await getDocs(collection(db, "races", race.id, "submissions"));
+                          setSubs(sSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+                        } catch (err) {
+                          error(err);
+                          setMsgRace({ variant: "danger", msg: `Errore ricalcolo: ${err.message}` });
+                        } finally {
+                          setRecalculating(false);
+                        }
+                      }}
+                    >
+                      {recalculating ? "Ricalcolo in corso..." : "Ricalcola TUTTE le gare"}
                     </Button>
                   </Card.Body>
                 </Card>

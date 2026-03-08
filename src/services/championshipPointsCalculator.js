@@ -61,17 +61,15 @@ export async function calculateChampionshipPoints() {
     if (costruttoriPicks[1] === C2) costruttoriPoints += PTS_MAIN[2]; // 10 points
     if (costruttoriPicks[2] === C3) costruttoriPoints += PTS_MAIN[3]; //  7 points
 
-    // Special rule: 29 points becomes 30 + extra jolly for DRIVERS
+    // Special rule: perfect prediction (30 points) → earn an extra jolly for DRIVERS
     let jollyBonus = 0;
-    if (pilotiPoints === 29) {
-      pilotiPoints += 1;      // 29 becomes 30
-      jollyBonus += 1;        // +1 accumulated jolly
+    if (pilotiPoints === 30) {
+      jollyBonus += 1;
     }
 
-    // Special rule: 29 points becomes 30 + extra jolly for CONSTRUCTORS
-    if (costruttoriPoints === 29) {
-      costruttoriPoints += 1;  // 29 becomes 30
-      jollyBonus += 1;         // +1 accumulated jolly
+    // Special rule: perfect prediction (30 points) → earn an extra jolly for CONSTRUCTORS
+    if (costruttoriPoints === 30) {
+      jollyBonus += 1;
     }
 
     // Step 5: Total championship points (drivers + constructors)
