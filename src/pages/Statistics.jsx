@@ -99,6 +99,49 @@ export default function Statistics() {
   const { isDark } = useTheme();
   const { t } = useLanguage();
 
+  // Apply players filter to determine how many players to show in charts
+  // MUST be before any conditional returns to follow Rules of Hooks
+  const topPlayers = useMemo(() => {
+    const numPlayers = playersFilter === "5" ? 5 : playersFilter === "10" ? 10 : currentRanking.length;
+    return currentRanking.slice(0, numPlayers);
+  }, [playersFilter, currentRanking]);
+
+  // Prepare chart data only if statistics are loaded
+  // MUST be before any conditional returns to follow Rules of Hooks
+  const { pointsChartData, positionChartData } = useMemo(() => {
+    if (!statistics?.races?.length) {
+      return { pointsChartData: [], positionChartData: [] };
+    }
+
+    const numRaces = racesFilter === "5" ? 5 : racesFilter === "10" ? 10 : statistics.races.length;
+    const filteredRaces = statistics.races.slice(-numRaces);
+    const startIndex = statistics.races.length - numRaces;
+
+    const points = filteredRaces.map((race, idx) => {
+      const raceIndex = startIndex + idx;
+      const dataPoint = { name: `R${race.round}`, fullName: race.name };
+      topPlayers.forEach(player => {
+        const history = statistics.playersData[player.userId] || [];
+        const raceData = history[raceIndex];
+        dataPoint[player.name] = raceData ? raceData.cumulativePoints : 0;
+      });
+      return dataPoint;
+    });
+
+    const positions = filteredRaces.map((race, idx) => {
+      const raceIndex = startIndex + idx;
+      const dataPoint = { name: `R${race.round}`, fullName: race.name };
+      topPlayers.forEach(player => {
+        const history = statistics.playersData[player.userId] || [];
+        const raceData = history[raceIndex];
+        dataPoint[player.name] = raceData ? raceData.position : null;
+      });
+      return dataPoint;
+    });
+
+    return { pointsChartData: points, positionChartData: positions };
+  }, [statistics, racesFilter, topPlayers]);
+
   useEffect(() => {
     // Load ranking and statistics in parallel for faster initial render
     const loadRanking = async () => {
@@ -256,53 +299,12 @@ export default function Statistics() {
     );
   }
 
-  // Apply players filter to determine how many players to show in charts
-  const topPlayers = useMemo(() => {
-    const numPlayers = playersFilter === "5" ? 5 : playersFilter === "10" ? 10 : currentRanking.length;
-    return currentRanking.slice(0, numPlayers);
-  }, [playersFilter, currentRanking]);
-
   // Get label for chart headers based on players filter
   const playersLabel = playersFilter === "5"
     ? t("statistics.top5Players")
     : playersFilter === "10"
     ? t("statistics.top10Players")
     : t("statistics.allPlayers");
-
-  // Prepare chart data only if statistics are loaded
-  const { pointsChartData, positionChartData } = useMemo(() => {
-    if (!statistics?.races?.length) {
-      return { pointsChartData: [], positionChartData: [] };
-    }
-
-    const numRaces = racesFilter === "5" ? 5 : racesFilter === "10" ? 10 : statistics.races.length;
-    const filteredRaces = statistics.races.slice(-numRaces);
-    const startIndex = statistics.races.length - numRaces;
-
-    const points = filteredRaces.map((race, idx) => {
-      const raceIndex = startIndex + idx;
-      const dataPoint = { name: `R${race.round}`, fullName: race.name };
-      topPlayers.forEach(player => {
-        const history = statistics.playersData[player.userId] || [];
-        const raceData = history[raceIndex];
-        dataPoint[player.name] = raceData ? raceData.cumulativePoints : 0;
-      });
-      return dataPoint;
-    });
-
-    const positions = filteredRaces.map((race, idx) => {
-      const raceIndex = startIndex + idx;
-      const dataPoint = { name: `R${race.round}`, fullName: race.name };
-      topPlayers.forEach(player => {
-        const history = statistics.playersData[player.userId] || [];
-        const raceData = history[raceIndex];
-        dataPoint[player.name] = raceData ? raceData.position : null;
-      });
-      return dataPoint;
-    });
-
-    return { pointsChartData: points, positionChartData: positions };
-  }, [statistics, racesFilter, topPlayers]);
 
   /**
    * Custom tooltip to display full race name
