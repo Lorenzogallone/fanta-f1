@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
+import { useLocation } from "react-router-dom";
 import {
   Container,
   Row,
@@ -137,6 +138,7 @@ PointsBadge.propTypes = {
  * @returns {JSX.Element} History page with race results and championship standings
  */
 export default function History() {
+  const location = useLocation();
   const [pastRaces, setPastRaces] = useState([]);
   const [selectedRaceId, setSelectedRaceId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -167,9 +169,11 @@ export default function History() {
         const races = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         setPastRaces(races);
 
-        // Set first race (most recent) as selected by default
+        // If navigated with a specific raceId, select that race; otherwise select most recent
         if (races.length > 0) {
-          setSelectedRaceId(races[0].id);
+          const targetRaceId = location.state?.raceId;
+          const matchedRace = targetRaceId && races.find(r => r.id === targetRaceId);
+          setSelectedRaceId(matchedRace ? matchedRace.id : races[0].id);
         }
       } catch (e) {
         error(e);

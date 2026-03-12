@@ -24,7 +24,9 @@ import {
 import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { useAuth } from "../hooks/useAuth";
 import { error as logError } from "../utils/logger";
+import { getChampionshipDeadlineMs } from "../utils/championshipDeadline";
 import PlayerStatsView from "../components/PlayerStatsView";
 
 /**
@@ -35,14 +37,17 @@ export default function ParticipantDetail() {
   const { userId } = useParams();
   const { isDark } = useTheme();
   const { t } = useLanguage();
+  const { user } = useAuth();
 
   const [participant, setParticipant] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [raceHistory, setRaceHistory] = useState([]);
   const [loadingParticipant, setLoadingParticipant] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [error, setError] = useState(null);
   const [totalCompletedRaces, setTotalCompletedRaces] = useState(0);
   const [participantPosition, setParticipantPosition] = useState(null);
+  const [championshipDeadlinePassed, setChampionshipDeadlinePassed] = useState(false);
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
 
@@ -52,16 +57,35 @@ export default function ParticipantDetail() {
   useEffect(() => {
     (async () => {
       try {
-        // Load participant basic info from ranking - show immediately
-        const userDoc = await getDoc(doc(db, "ranking", userId));
-        if (!userDoc.exists()) {
+        // Load participant basic info from ranking, user profile, and deadline in parallel
+        const [rankingDoc, profileDoc, deadlineMs] = await Promise.all([
+          getDoc(doc(db, "ranking", userId)),
+          getDoc(doc(db, "users", userId)),
+          getChampionshipDeadlineMs(),
+        ]);
+
+        if (!rankingDoc.exists()) {
           setError(t("participantDetail.notFound"));
           setLoadingParticipant(false);
           setLoadingHistory(false);
           return;
         }
 
-        const userData = userDoc.data();
+        const userData = rankingDoc.data();
+
+        // Store user profile data
+        if (profileDoc.exists()) {
+          const profileData = profileDoc.data();
+          setUserProfile({
+            firstName: profileData.firstName || "",
+            lastName: profileData.lastName || "",
+            photoURL: profileData.photoURL || "",
+          });
+        }
+
+        // Check championship deadline
+        const deadlinePassed = deadlineMs ? Date.now() > deadlineMs : false;
+        setChampionshipDeadlinePassed(deadlinePassed);
 
         // Load all participants to calculate position
         const allParticipantsSnap = await getDocs(collection(db, "ranking"));
@@ -86,14 +110,18 @@ export default function ParticipantDetail() {
         }
         setParticipantPosition(foundPosition);
 
+        // Hide championship data if deadline hasn't passed and viewing another user
+        const isOwnProfile = user?.uid === userId;
+        const showChampionship = deadlinePassed || isOwnProfile;
+
         setParticipant({
           userId,
           name: userData.name,
           puntiTotali: userData.puntiTotali || 0,
           jolly: userData.jolly ?? 0,
-          championshipPiloti: userData.championshipPiloti || [],
-          championshipCostruttori: userData.championshipCostruttori || [],
-          championshipPts: userData.championshipPts || 0,
+          championshipPiloti: showChampionship ? (userData.championshipPiloti || []) : [],
+          championshipCostruttori: showChampionship ? (userData.championshipCostruttori || []) : [],
+          championshipPts: showChampionship ? (userData.championshipPts || 0) : 0,
         });
         setLoadingParticipant(false); // Show participant info immediately
 
@@ -152,7 +180,7 @@ export default function ParticipantDetail() {
         setLoadingHistory(false);
       }
     })();
-  }, [userId, t]);
+  }, [userId, t, user?.uid]);
 
   // Show error if participant not found
   if (error) {
@@ -190,6 +218,9 @@ export default function ParticipantDetail() {
             championshipCostruttori: participant?.championshipCostruttori || [],
             championshipPts: participant?.championshipPts || 0,
           }}
+          firstName={userProfile?.firstName}
+          lastName={userProfile?.lastName}
+          photoURL={userProfile?.photoURL}
           raceHistory={[]}
           totalCompletedRaces={totalCompletedRaces}
           showCharts={false}
@@ -215,6 +246,9 @@ export default function ParticipantDetail() {
           championshipCostruttori: participant?.championshipCostruttori || [],
           championshipPts: participant?.championshipPts || 0,
         }}
+        firstName={userProfile?.firstName}
+        lastName={userProfile?.lastName}
+        photoURL={userProfile?.photoURL}
         raceHistory={raceHistory}
         totalCompletedRaces={totalCompletedRaces}
         showCharts={true}

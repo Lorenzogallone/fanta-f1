@@ -27,6 +27,7 @@ import { useNavigate } from "react-router-dom";
 import { DRIVER_TEAM, TEAM_LOGOS, POINTS, getDriverTeamDynamic, getTeamLogoDynamic } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import UserAvatar from "./UserAvatar";
 import "../styles/statistics.css";
 
 /**
@@ -135,6 +136,23 @@ CustomTooltip.propTypes = {
 };
 
 /**
+ * Points badge consistent with History.jsx styling
+ */
+function PointsBadge({ pts }) {
+  if (pts === null || pts === undefined) return <span className="text-muted">—</span>;
+  const bg = pts > 0 ? "success" : pts < 0 ? "danger" : "secondary";
+  return (
+    <Badge bg={bg} style={{ color: "#ffffff", fontSize: "0.75rem", minWidth: "32px" }}>
+      {pts > 0 ? `+${pts}` : pts}
+    </Badge>
+  );
+}
+
+PointsBadge.propTypes = {
+  pts: PropTypes.number,
+};
+
+/**
  * Calculate points for a race submission
  */
 const calculateRacePoints = (submission, official, cancelledSprint = false) => {
@@ -215,6 +233,9 @@ const calculateRacePoints = (submission, official, cancelledSprint = false) => {
  * @param {number} props.totalCompletedRaces - Total number of completed races
  * @param {boolean} props.showCharts - Whether to show progression charts
  * @param {boolean} props.showBackButton - Whether to show back button
+ * @param {string} [props.firstName] - Player's first name
+ * @param {string} [props.lastName] - Player's last name
+ * @param {string} [props.photoURL] - Player's profile photo URL
  * @returns {JSX.Element}
  */
 function PlayerStatsView({
@@ -223,6 +244,9 @@ function PlayerStatsView({
   totalCompletedRaces = 0,
   showCharts = true,
   showBackButton = false,
+  firstName,
+  lastName,
+  photoURL,
 }) {
   const { isDark } = useTheme();
   const { t } = useLanguage();
@@ -239,6 +263,8 @@ function PlayerStatsView({
   const averagePoints = totalRaces > 0
     ? (playerData.totalPoints / totalRaces).toFixed(1)
     : "0.0";
+
+  const fullName = firstName && lastName ? `${firstName} ${lastName}` : null;
 
   // Prepare chart data if we have races and history
   let chartRaces = [];
@@ -296,9 +322,23 @@ function PlayerStatsView({
                 borderBottom: `2px solid ${accentColor}`,
               }}
             >
-              <h3 className="mb-0" style={{ color: accentColor }}>
-                👤 {playerData.name}
-              </h3>
+              <div className="d-flex align-items-center gap-3">
+                <UserAvatar
+                  photoURL={photoURL}
+                  name={playerData.name}
+                  size={56}
+                />
+                <div>
+                  <h3 className="mb-0" style={{ color: accentColor }}>
+                    {playerData.name}
+                  </h3>
+                  {fullName && (
+                    <div style={{ color: isDark ? "#aaa" : "#6c757d", fontSize: "0.9rem" }}>
+                      {fullName}
+                    </div>
+                  )}
+                </div>
+              </div>
             </Card.Header>
             <Card.Body>
               <Row className="g-3">
@@ -479,10 +519,10 @@ function PlayerStatsView({
         {raceHistory.length > 0 && (
           <Col xs={12}>
             <Card
-              className="shadow"
+              className="shadow border-0"
               style={{
-                borderColor: accentColor,
                 backgroundColor: bgCard,
+                borderLeft: `4px solid ${accentColor}`,
               }}
             >
               <Card.Header
@@ -497,14 +537,15 @@ function PlayerStatsView({
               </Card.Header>
               <Card.Body className="p-0">
                 <div className="table-responsive">
-                  <Table hover className="mb-0" size="sm" style={{ fontSize: "0.9rem" }}>
+                  <Table hover striped className="mb-0 align-middle" size="sm" style={{ fontSize: "0.85rem" }}>
                     <thead>
                       <tr>
-                        <th className="text-center" style={{ width: "60px" }}>{t("raceResults.round")}</th>
-                        <th>{t("raceResults.race")}</th>
-                        <th className="text-center" style={{ width: "70px" }}>Main</th>
-                        <th className="text-center" style={{ width: "70px" }}>Sprint</th>
-                        <th className="text-center" style={{ width: "70px" }}>Tot</th>
+                        <th className="text-center px-2" style={{ width: "45px" }}>{t("raceResults.round")}</th>
+                        <th className="px-2">{t("raceResults.race")}</th>
+                        <th className="text-center px-1" style={{ width: "55px" }}>Main</th>
+                        <th className="text-center px-1" style={{ width: "55px" }}>Sprint</th>
+                        <th className="text-center px-1" style={{ width: "55px" }}>Tot</th>
+                        <th className="text-center px-1" style={{ width: "44px" }}></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -513,44 +554,42 @@ function PlayerStatsView({
 
                         return (
                           <tr key={race.raceId}>
-                            <td className="text-center fw-semibold text-muted" style={{ fontSize: "0.85rem" }}>
-                              {race.round}
+                            <td className="text-center px-2 fw-semibold text-muted">
+                              R{race.round}
                             </td>
-                            <td>{race.raceName}</td>
-                            <td className="text-center fw-semibold">
-                              {points.mainPoints !== null ? (
-                                <span
-                                  style={{
-                                    color: points.mainPoints < 0 ? "#dc3545" : points.mainPoints === 0 ? "#6c757d" : "#198754"
-                                  }}
-                                >
-                                  {points.mainPoints > 0 ? `+${points.mainPoints}` : points.mainPoints}
-                                </span>
-                              ) : (
-                                <span className="text-muted">—</span>
-                              )}
+                            <td className="px-2 text-truncate" style={{ maxWidth: "150px" }}>
+                              {race.raceName}
                             </td>
-                            <td className="text-center fw-semibold">
-                              {points.sprintPoints !== null ? (
-                                <span
-                                  style={{
-                                    color: points.sprintPoints < 0 ? "#dc3545" : points.sprintPoints === 0 ? "#6c757d" : "#198754"
-                                  }}
-                                >
-                                  {points.sprintPoints > 0 ? `+${points.sprintPoints}` : points.sprintPoints}
-                                </span>
-                              ) : (
-                                <span className="text-muted">—</span>
-                              )}
+                            <td className="text-center px-1">
+                              <PointsBadge pts={points.mainPoints} />
                             </td>
-                            <td className="text-center fw-bold">
-                              <span
+                            <td className="text-center px-1">
+                              <PointsBadge pts={points.sprintPoints} />
+                            </td>
+                            <td className="text-center px-1">
+                              <PointsBadge pts={points.total} />
+                            </td>
+                            <td className="text-center px-1">
+                              <Button
+                                variant="link"
+                                size="sm"
+                                className="p-0"
+                                onClick={() => navigate("/history", { state: { raceId: race.raceId } })}
                                 style={{
-                                  color: points.total < 0 ? "#dc3545" : points.total === 0 ? "#6c757d" : "#198754"
+                                  color: accentColor,
+                                  fontSize: "1rem",
+                                  lineHeight: 1,
+                                  minWidth: "44px",
+                                  minHeight: "44px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
                                 }}
+                                title={t("profile.viewDetails")}
+                                aria-label={`${t("profile.viewDetails")} - ${race.raceName}`}
                               >
-                                {points.total > 0 ? `+${points.total}` : points.total}
-                              </span>
+                                →
+                              </Button>
                             </td>
                           </tr>
                         );
@@ -590,4 +629,7 @@ PlayerStatsView.propTypes = {
   totalCompletedRaces: PropTypes.number,
   showCharts: PropTypes.bool,
   showBackButton: PropTypes.bool,
+  firstName: PropTypes.string,
+  lastName: PropTypes.string,
+  photoURL: PropTypes.string,
 };

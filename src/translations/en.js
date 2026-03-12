@@ -45,6 +45,7 @@ export const en = {
     calculatePoints: "Calculate Points",
     toggleTheme: "Toggle theme",
     changeLanguage: "Change language",
+    myProfile: "My Profile",
   },
 
   // Home
@@ -497,6 +498,7 @@ export const en = {
     backToLogin: "Back to Login",
     nicknameTaken: "This nickname is already taken",
     noRankingEntry: "Your account has not been enabled for the game yet. Contact the administrator.",
+    logoutConfirm: "Are you sure you want to log out?",
   },
 
   // PWA Install Banner
@@ -527,6 +529,33 @@ export const en = {
     qualiReminder5min: "starts in 5 minutes!",
     qualifying: "Qualifying",
     sprintQualifying: "Sprint Qualifying",
+  },
+
+  // Profile
+  profile: {
+    title: "My Profile",
+    editProfile: "Edit Profile",
+    personalInfo: "Personal Information",
+    preferences: "Preferences",
+    changePhoto: "Change photo",
+    removePhoto: "Remove photo",
+    nickname: "Nickname",
+    firstName: "First Name",
+    lastName: "Last Name",
+    email: "Email",
+    memberSince: "Member since",
+    profileUpdated: "Profile updated successfully",
+    nicknameTaken: "This nickname is already taken",
+    imageTooLarge: "Image too large (max 5MB)",
+    theme: "Theme",
+    language: "Language",
+    notifications: "Notifications",
+    uploadingImage: "Uploading image...",
+    savingProfile: "Saving...",
+    auto: "Auto",
+    light: "Light",
+    dark: "Dark",
+    viewDetails: "View details",
   },
 
   // Language names

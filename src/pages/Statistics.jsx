@@ -42,7 +42,9 @@ import { getChampionshipStatistics } from "../services/statisticsService";
 import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { useAuth } from "../hooks/useAuth";
 import { error as logError } from "../utils/logger";
+import { getChampionshipDeadlineMs } from "../utils/championshipDeadline";
 import PlayerStatsView from "../components/PlayerStatsView";
 import "../styles/statistics.css";
 
@@ -95,9 +97,11 @@ export default function Statistics() {
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
   const [playerStats, setPlayerStats] = useState(null);
   const [loadingPlayerStats, setLoadingPlayerStats] = useState(false);
+  const [championshipDeadlinePassed, setChampionshipDeadlinePassed] = useState(false);
 
   const { isDark } = useTheme();
   const { t } = useLanguage();
+  const { user } = useAuth();
 
   // Apply players filter to determine how many players to show in charts
   // MUST be before any conditional returns to follow Rules of Hooks
@@ -185,9 +189,19 @@ export default function Statistics() {
       }
     };
 
-    // Execute both in parallel
+    const loadDeadline = async () => {
+      try {
+        const ms = await getChampionshipDeadlineMs();
+        setChampionshipDeadlinePassed(ms ? Date.now() > ms : false);
+      } catch {
+        // Non-critical
+      }
+    };
+
+    // Execute all in parallel
     loadRanking();
     loadStatistics();
+    loadDeadline();
   }, [t]);
 
   // Load individual player statistics when selected
@@ -197,14 +211,19 @@ export default function Statistics() {
     const loadPlayerStatistics = async () => {
       setLoadingPlayerStats(true);
       try {
-        // Get full player data from ranking
-        const userDoc = await getDoc(doc(db, "ranking", selectedPlayerId));
-        if (!userDoc.exists()) {
+        // Get full player data from ranking and user profile in parallel
+        const [rankingDoc, profileDoc] = await Promise.all([
+          getDoc(doc(db, "ranking", selectedPlayerId)),
+          getDoc(doc(db, "users", selectedPlayerId)),
+        ]);
+
+        if (!rankingDoc.exists()) {
           setLoadingPlayerStats(false);
           return;
         }
 
-        const userData = userDoc.data();
+        const userData = rankingDoc.data();
+        const profileData = profileDoc.exists() ? profileDoc.data() : {};
 
         // Load all past races with submissions
         const now = Timestamp.now();
@@ -252,16 +271,23 @@ export default function Statistics() {
         const allSubmissions = await Promise.all(submissionsPromises);
         const raceHistory = allSubmissions.filter(Boolean);
 
+        // Hide championship data if deadline hasn't passed and viewing another user
+        const isOwnProfile = user?.uid === selectedPlayerId;
+        const showChampionship = championshipDeadlinePassed || isOwnProfile;
+
         setPlayerStats({
           playerData: {
             name: userData.name,
             totalPoints: userData.puntiTotali || 0,
             position: currentRanking.find(p => p.userId === selectedPlayerId)?.position,
             jolly: userData.jolly ?? 0,
-            championshipPiloti: userData.championshipPiloti || [],
-            championshipCostruttori: userData.championshipCostruttori || [],
-            championshipPts: userData.championshipPts || 0,
+            championshipPiloti: showChampionship ? (userData.championshipPiloti || []) : [],
+            championshipCostruttori: showChampionship ? (userData.championshipCostruttori || []) : [],
+            championshipPts: showChampionship ? (userData.championshipPts || 0) : 0,
           },
+          firstName: profileData.firstName || "",
+          lastName: profileData.lastName || "",
+          photoURL: profileData.photoURL || "",
           raceHistory,
           totalCompletedRaces: totalCompleted,
         });
@@ -273,7 +299,7 @@ export default function Statistics() {
     };
 
     loadPlayerStatistics();
-  }, [selectedPlayerId, currentRanking]);
+  }, [selectedPlayerId, currentRanking, championshipDeadlinePassed, user?.uid]);
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
@@ -869,6 +895,9 @@ export default function Statistics() {
                   <div className="mt-4">
                     <PlayerStatsView
                       playerData={playerStats.playerData}
+                      firstName={playerStats.firstName}
+                      lastName={playerStats.lastName}
+                      photoURL={playerStats.photoURL}
                       raceHistory={playerStats.raceHistory}
                       totalCompletedRaces={playerStats.totalCompletedRaces}
                       showCharts={true}

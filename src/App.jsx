@@ -40,6 +40,7 @@ const History = lazy(() => import("./pages/History"));
 const RaceResults = lazy(() => import("./pages/RaceResults"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const Statistics = lazy(() => import("./pages/Statistics"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 
 /**
@@ -107,6 +108,7 @@ export default function App() {
                     <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
                     <Route path="/results" element={<ProtectedRoute><RaceResults /></ProtectedRoute>} />
                     <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
+                    <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
                     {/* Admin-only routes */}
                     <Route path="/calculate" element={<AdminRoute><CalculatePoints /></AdminRoute>} />
@@ -124,6 +126,7 @@ export default function App() {
                     <Route path="/storico" element={<ProtectedRoute><History /></ProtectedRoute>} />
                     <Route path="/risultati" element={<ProtectedRoute><RaceResults /></ProtectedRoute>} />
                     <Route path="/statistiche" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
+                    <Route path="/profilo" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                   </Routes>
                 </Suspense>
               </BContainer>

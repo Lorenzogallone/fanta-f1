@@ -255,6 +255,14 @@ export function AuthProvider({ children }) {
     setNeedsProfile(false);
   };
 
+  /**
+   * Update user profile data in local state (called after profileService updates Firestore)
+   * @param {Object} updates - Fields to update in local state
+   */
+  const updateUserProfile = (updates) => {
+    setUserProfile((prev) => (prev ? { ...prev, ...updates } : prev));
+  };
+
   const value = {
     user,
     userProfile,
@@ -267,6 +275,8 @@ export function AuthProvider({ children }) {
     completeProfile,
     resetPassword,
     logout,
+    checkNicknameAvailable,
+    updateUserProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
