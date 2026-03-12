@@ -6,6 +6,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth, browserLocalPersistence, setPersistence } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 
 /**
  * Firebase configuration object with API credentials
@@ -30,4 +31,7 @@ export const db = getFirestore(app);
 /** Firebase Auth instance with local persistence (stay logged in across sessions) */
 export const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence);
+
+/** Firebase Storage instance for file uploads (avatars) */
+export const storage = getStorage(app);
 

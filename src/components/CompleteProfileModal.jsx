@@ -3,13 +3,13 @@
  * @description Modal to complete profile after Google Sign-In (nickname, first name, last name)
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Form, Button, Alert, Spinner } from "react-bootstrap";
 import { useAuth } from "../hooks/useAuth";
 import { useLanguage } from "../hooks/useLanguage";
 
 export default function CompleteProfileModal() {
-  const { needsProfile, completeProfile, logout } = useAuth();
+  const { needsProfile, completeProfile, logout, user } = useAuth();
   const { t } = useLanguage();
 
   const [nickname, setNickname] = useState("");
@@ -17,6 +17,19 @@ export default function CompleteProfileModal() {
   const [lastName, setLastName] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Auto-fill first/last name from Google account displayName
+  useEffect(() => {
+    if (needsProfile && user?.displayName) {
+      const parts = user.displayName.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        setFirstName((prev) => prev || parts[0]);
+        setLastName((prev) => prev || parts.slice(1).join(" "));
+      } else if (parts.length === 1) {
+        setFirstName((prev) => prev || parts[0]);
+      }
+    }
+  }, [needsProfile, user?.displayName]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

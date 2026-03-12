@@ -16,8 +16,9 @@ import {
   Spinner,
 } from "react-bootstrap";
 import Select from "react-select";
-import { collection, getDocs, doc, getDoc, updateDoc, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../services/firebase";
+import { getChampionshipDeadlineMs } from "../utils/championshipDeadline";
 import ChampionshipSubmissions from "../components/ChampionshipSubmissions";
 import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
@@ -131,52 +132,18 @@ export default function ChampionshipForm() {
   useEffect(() => {
     (async () => {
       try {
-        const racesQuery = query(collection(db, "races"), orderBy("round", "asc"));
-        const racesSnap = await getDocs(racesQuery);
-        const races = racesSnap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        const formatDeadline = (date) =>
-          date.toLocaleDateString(dateLocale, {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-
-        if (races.length === 0) {
-          const fallback = new Date("2025-09-07T23:59:00");
-          setDeadlineMs(fallback.getTime());
-          setDeadlineText(formatDeadline(fallback));
-          setLoadingDeadline(false);
-          return;
-        }
-
-        // Find mid-championship race
-        const midRound = Math.ceil(races.length / 2);
-        const midRace = races.find(r => r.round === midRound);
-
-        if (midRace && midRace.raceUTC) {
-          // Deadline = immediately after mid-championship race
-          const raceDate = midRace.raceUTC.toDate();
-          setDeadlineMs(raceDate.getTime());
-          setDeadlineText(formatDeadline(raceDate));
-        } else {
-          const fallback = new Date("2025-09-07T23:59:00");
-          setDeadlineMs(fallback.getTime());
-          setDeadlineText(formatDeadline(fallback));
+        const ms = await getChampionshipDeadlineMs();
+        if (ms) {
+          setDeadlineMs(ms);
+          setDeadlineText(
+            new Date(ms).toLocaleDateString(dateLocale, {
+              day: "2-digit", month: "2-digit", year: "numeric",
+              hour: "2-digit", minute: "2-digit",
+            })
+          );
         }
       } catch (e) {
         error("Deadline calc error:", e);
-        const fallback = new Date("2025-09-07T23:59:00");
-        setDeadlineMs(fallback.getTime());
-        setDeadlineText(fallback.toLocaleDateString(dateLocale, {
-          day: "2-digit", month: "2-digit", year: "numeric",
-          hour: "2-digit", minute: "2-digit",
-        }));
       } finally {
         setLoadingDeadline(false);
       }

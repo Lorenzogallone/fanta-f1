@@ -8,7 +8,7 @@ import { Navbar, Container, Nav, Dropdown, Modal, Button } from "react-bootstrap
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useAuth } from "../hooks/useAuth";
-import NotificationSettings from "./NotificationSettings";
+import UserAvatar from "./UserAvatar";
 
 /**
  * Main navigation component with responsive mobile menu, theme switcher, language selector, and auth controls.
@@ -54,11 +54,11 @@ export default function Navigation() {
         <Modal.Title style={{ fontSize: "1rem" }}>{t("auth.logout")}</Modal.Title>
       </Modal.Header>
       <Modal.Body className="pt-1" style={{ fontSize: "0.9rem" }}>
-        Sei sicuro di voler uscire?
+        {t("auth.logoutConfirm")}
       </Modal.Body>
       <Modal.Footer className="border-0 pt-1 gap-2">
         <Button variant="outline-secondary" size="sm" onClick={() => setShowLogoutConfirm(false)}>
-          Annulla
+          {t("common.cancel")}
         </Button>
         <Button variant="danger" size="sm" onClick={handleLogoutConfirm}>
           {t("auth.logout")}
@@ -113,24 +113,11 @@ export default function Navigation() {
               className="user-menu-toggle p-0 border-0 shadow-none text-decoration-none d-flex align-items-center gap-2"
               style={{ color: textColor }}
             >
-              <div
-                className="user-avatar"
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: "50%",
-                  backgroundColor: accentColor,
-                  color: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 700,
-                  fontSize: "0.85rem",
-                  flexShrink: 0,
-                }}
-              >
-                {userProfile?.nickname?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "?"}
-              </div>
+              <UserAvatar
+                photoURL={userProfile?.photoURL}
+                name={userProfile?.nickname || user?.email}
+                size={34}
+              />
               <span
                 className="d-none d-md-inline"
                 style={{
@@ -176,32 +163,51 @@ export default function Navigation() {
               {user && (
                 <>
                   <div style={{ padding: "0.5rem 1rem" }}>
-                    <div style={{ fontWeight: 600, color: textColor, fontSize: "0.9rem" }}>
-                      {userProfile?.nickname || "User"}
-                      {isAdmin && (
-                        <span
-                          className="ms-2"
-                          style={{
-                            fontSize: "0.6rem",
-                            color: "#fff",
-                            backgroundColor: accentColor,
-                            borderRadius: "3px",
-                            padding: "1px 4px",
-                            fontWeight: 700,
-                            verticalAlign: "middle",
-                          }}
-                        >
-                          Admin
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ color: mutedColor, fontSize: "0.78rem" }}>
-                      {user.email}
+                    <div className="d-flex align-items-center gap-2">
+                      <UserAvatar
+                        photoURL={userProfile?.photoURL}
+                        name={userProfile?.nickname || user?.email}
+                        size={28}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 600, color: textColor, fontSize: "0.9rem" }}>
+                          {userProfile?.nickname || "User"}
+                          {isAdmin && (
+                            <span
+                              className="ms-2"
+                              style={{
+                                fontSize: "0.6rem",
+                                color: "#fff",
+                                backgroundColor: accentColor,
+                                borderRadius: "3px",
+                                padding: "1px 4px",
+                                fontWeight: 700,
+                                verticalAlign: "middle",
+                              }}
+                            >
+                              Admin
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ color: mutedColor, fontSize: "0.78rem" }}>
+                          {user.email}
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <Dropdown.Divider style={{ borderColor: menuBorder, margin: "0.25rem 0" }} />
                 </>
               )}
+
+              {/* My Profile link */}
+              <Dropdown.Item
+                as={Link}
+                to="/profile"
+                style={{ color: textColor, fontSize: "0.85rem" }}
+                className="user-menu-item"
+              >
+                👤 {t("nav.myProfile")}
+              </Dropdown.Item>
 
               {/* Theme */}
               <Dropdown.Item
@@ -254,9 +260,6 @@ export default function Navigation() {
                   </div>
                 </div>
               </Dropdown.Item>
-
-              {/* Notifications (PWA only) */}
-              <NotificationSettings style={{ color: textColor }} />
 
               <Dropdown.Divider style={{ borderColor: menuBorder, margin: "0.25rem 0" }} />
 

@@ -45,6 +45,7 @@ export const it = {
     calculatePoints: "Calcola Punteggi",
     toggleTheme: "Cambia tema",
     changeLanguage: "Cambia lingua",
+    myProfile: "Il mio Profilo",
   },
 
   // Home
@@ -497,6 +498,7 @@ export const it = {
     backToLogin: "Torna al Login",
     nicknameTaken: "Questo nickname è già in uso",
     noRankingEntry: "Il tuo account non è ancora stato abilitato al gioco. Contatta l'amministratore.",
+    logoutConfirm: "Sei sicuro di voler uscire?",
   },
 
   // PWA Install Banner
@@ -527,6 +529,33 @@ export const it = {
     qualiReminder5min: "inizia tra 5 minuti!",
     qualifying: "Qualifiche",
     sprintQualifying: "Qualifica Sprint",
+  },
+
+  // Profile
+  profile: {
+    title: "Il mio Profilo",
+    editProfile: "Modifica Profilo",
+    personalInfo: "Informazioni Personali",
+    preferences: "Preferenze",
+    changePhoto: "Cambia foto",
+    removePhoto: "Rimuovi foto",
+    nickname: "Nickname",
+    firstName: "Nome",
+    lastName: "Cognome",
+    email: "Email",
+    memberSince: "Membro dal",
+    profileUpdated: "Profilo aggiornato con successo",
+    nicknameTaken: "Questo nickname è già in uso",
+    imageTooLarge: "Immagine troppo grande (max 5MB)",
+    theme: "Tema",
+    language: "Lingua",
+    notifications: "Notifiche",
+    uploadingImage: "Caricamento immagine...",
+    savingProfile: "Salvataggio...",
+    auto: "Automatico",
+    light: "Chiaro",
+    dark: "Scuro",
+    viewDetails: "Vedi dettagli",
   },
 
   // Language names

@@ -1,24 +1,43 @@
 /**
  * @file Leaderboard.jsx
- * @description Real-time leaderboard component displaying current rankings
+ * @description Real-time leaderboard component displaying current rankings with user avatars
  */
 
 import React, { useState, useEffect } from "react";
 import { Card, Table, Spinner, Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { hideSplash } from "../utils/splash";
+import UserAvatar from "../components/UserAvatar";
 
 const medals = ["🥇", "🥈", "🥉"];
 
 export default function Leaderboard() {
   const [rows, setRows] = useState([]);
+  const [userProfiles, setUserProfiles] = useState({});
   const [loading, setLoading] = useState(true);
   const { isDark } = useTheme();
   const { t } = useLanguage();
+
+  // Load user profiles for avatar display
+  useEffect(() => {
+    (async () => {
+      try {
+        const snap = await getDocs(collection(db, "users"));
+        const profiles = {};
+        snap.docs.forEach((d) => {
+          const data = d.data();
+          profiles[d.id] = { photoURL: data.photoURL || "", nickname: data.nickname || "" };
+        });
+        setUserProfiles(profiles);
+      } catch {
+        // Non-critical: avatars will fallback to initials
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     const q = query(collection(db, "ranking"), orderBy("puntiTotali", "desc"));
@@ -28,6 +47,7 @@ export default function Leaderboard() {
         name: d.data().name,
         pts: d.data().puntiTotali,
         jolly: d.data().jolly ?? 0,
+        photoURL: d.data().photoURL || "",
       }));
 
       let currentPos = 1;
@@ -40,7 +60,7 @@ export default function Leaderboard() {
 
       setRows(rowsWithPositions);
       setLoading(false);
-      hideSplash(); // Hide splash screen once data is loaded
+      hideSplash();
     });
     return () => unsub();
   }, []);
@@ -59,8 +79,8 @@ export default function Leaderboard() {
       }}
     >
       <Card.Header
-        as="h5"
-        className="text-center fw-semibold"
+        as="h6"
+        className="text-center fw-semibold py-2"
         style={{
           backgroundColor: bgHeader,
           borderBottom: `2px solid ${accentColor}`,
@@ -87,19 +107,19 @@ export default function Leaderboard() {
             }}
           >
             <colgroup>
-              <col style={{ width: "30px" }} />
+              <col style={{ width: "28px" }} />
               <col />
-              <col style={{ width: "46px" }} />
-              <col style={{ width: "44px" }} />
-              <col style={{ width: "38px" }} />
+              <col style={{ width: "42px" }} />
+              <col style={{ width: "42px" }} />
+              <col style={{ width: "28px" }} />
             </colgroup>
             <thead>
               <tr>
-                <th className="text-center px-1" style={{ whiteSpace: "nowrap" }}>#</th>
-                <th className="px-1" style={{ whiteSpace: "nowrap" }}>{t("leaderboard.player")}</th>
-                <th className="text-center px-1" style={{ whiteSpace: "nowrap" }}>{t("common.points")}</th>
-                <th className="text-center px-1" style={{ whiteSpace: "nowrap" }}>{t("leaderboard.gap")}</th>
-                <th className="text-center px-1" style={{ whiteSpace: "nowrap" }}>J</th>
+                <th className="text-center px-1" style={{ whiteSpace: "nowrap", fontSize: "0.8rem" }}>#</th>
+                <th className="px-1" style={{ whiteSpace: "nowrap", fontSize: "0.8rem" }}>{t("leaderboard.player")}</th>
+                <th className="text-center px-1" style={{ whiteSpace: "nowrap", fontSize: "0.8rem" }}>{t("common.points")}</th>
+                <th className="text-center px-1" style={{ whiteSpace: "nowrap", fontSize: "0.8rem" }}>{t("leaderboard.gap")}</th>
+                <th className="text-center px-1" style={{ whiteSpace: "nowrap", fontSize: "0.8rem" }}>J</th>
               </tr>
             </thead>
 
@@ -108,35 +128,43 @@ export default function Leaderboard() {
                 const medal = r.position <= 3 ? medals[r.position - 1] : r.position;
                 const gap = (leaderPts - r.pts === 0) ? "—" : `-${leaderPts - r.pts}`;
                 const isTop3 = r.position <= 3;
+                const avatarURL = r.photoURL || userProfiles[r.userId]?.photoURL || "";
 
                 return (
                   <tr key={r.userId} className={isTop3 ? "fw-bold" : ""}>
-                    <td className="text-center px-1">{medal}</td>
-                    <td className="px-1 text-truncate">
+                    <td className="text-center px-1" style={{ fontSize: "0.85rem", padding: "6px 2px" }}>{medal}</td>
+                    <td className="px-1" style={{ padding: "6px 4px" }}>
                       <Link
                         to={`/participant/${r.userId}`}
+                        className="d-flex align-items-center gap-1 text-truncate"
                         style={{
                           color: "inherit",
                           textDecoration: "none",
+                          fontSize: "0.88rem",
                         }}
                         onMouseEnter={(e) => {
-                          e.target.style.textDecoration = "underline";
-                          e.target.style.color = accentColor;
+                          e.currentTarget.style.textDecoration = "underline";
+                          e.currentTarget.style.color = accentColor;
                         }}
                         onMouseLeave={(e) => {
-                          e.target.style.textDecoration = "none";
-                          e.target.style.color = "inherit";
+                          e.currentTarget.style.textDecoration = "none";
+                          e.currentTarget.style.color = "inherit";
                         }}
                       >
-                        {r.name}
+                        <UserAvatar
+                          photoURL={avatarURL}
+                          name={r.name}
+                          size={22}
+                        />
+                        <span className="text-truncate">{r.name}</span>
                       </Link>
                     </td>
-                    <td className="text-center px-1">{r.pts}</td>
-                    <td className="text-center px-1 text-muted small">{gap}</td>
-                    <td className="text-center px-1">
-                      <Badge bg={r.jolly ? "success" : "secondary"} style={{ fontSize: "0.7rem" }}>
+                    <td className="text-center px-1 fw-semibold" style={{ fontSize: "0.85rem", padding: "6px 2px" }}>{r.pts}</td>
+                    <td className="text-center px-1 text-muted" style={{ fontSize: "0.75rem", padding: "6px 2px" }}>{gap}</td>
+                    <td className="text-center px-1" style={{ padding: "6px 2px" }}>
+                      <span style={{ fontSize: "0.7rem", color: r.jolly ? "#198754" : "#6c757d", fontWeight: "bold" }}>
                         {r.jolly}
-                      </Badge>
+                      </span>
                     </td>
                   </tr>
                 );
