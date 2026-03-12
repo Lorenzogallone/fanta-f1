@@ -69,7 +69,7 @@ export default function Leaderboard() {
         {t("leaderboard.title")}
       </Card.Header>
 
-      <Card.Body className="p-0">
+      <Card.Body className="p-0" style={{ overflowX: "auto" }}>
         {loading ? (
           <div className="py-5 text-center">
             <Spinner animation="border" />
@@ -80,22 +80,26 @@ export default function Leaderboard() {
             hover
             striped
             className="mb-0 align-middle"
-            style={{ borderTop: `1px solid ${accentColor}`, tableLayout: "fixed" }}
+            style={{
+              borderTop: `1px solid ${accentColor}`,
+              tableLayout: "fixed",
+              minWidth: "320px",
+            }}
           >
             <colgroup>
-              <col style={{ width: "36px" }} />
+              <col style={{ width: "30px" }} />
               <col />
-              <col style={{ width: "50px" }} />
-              <col style={{ width: "50px" }} />
               <col style={{ width: "46px" }} />
+              <col style={{ width: "44px" }} />
+              <col style={{ width: "38px" }} />
             </colgroup>
             <thead>
               <tr>
-                <th className="text-center px-1">#</th>
-                <th className="px-1">{t("leaderboard.player")}</th>
-                <th className="text-center px-1">{t("common.points")}</th>
-                <th className="text-center px-1">{t("leaderboard.gap")}</th>
-                <th className="text-center px-1">J</th>
+                <th className="text-center px-1" style={{ whiteSpace: "nowrap" }}>#</th>
+                <th className="px-1" style={{ whiteSpace: "nowrap" }}>{t("leaderboard.player")}</th>
+                <th className="text-center px-1" style={{ whiteSpace: "nowrap" }}>{t("common.points")}</th>
+                <th className="text-center px-1" style={{ whiteSpace: "nowrap" }}>{t("leaderboard.gap")}</th>
+                <th className="text-center px-1" style={{ whiteSpace: "nowrap" }}>J</th>
               </tr>
             </thead>
 
