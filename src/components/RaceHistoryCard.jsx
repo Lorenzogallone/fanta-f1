@@ -140,7 +140,7 @@ function RaceHistoryCard({
   const official = race.officialResults ?? null;
   const hasSprint = Boolean(race.qualiSprintUTC) || Boolean(official?.SP1) || subs.some(s => s.sprintP1 || s.sprintP2 || s.sprintP3 || s.sprintJolly);
   const doublePts = Boolean(official?.doublePoints);
-  const multiplier = isLastRace ? 2 : 1; 
+  const multiplier = doublePts ? 2 : 1;
   const BONUS_MAIN = POINTS.BONUS_JOLLY_MAIN;
   const cancelledMain = race.cancelledMain || false;
   const cancelledSprint = race.cancelledSprint || false;
