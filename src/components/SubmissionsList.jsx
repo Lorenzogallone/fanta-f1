@@ -112,8 +112,8 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
     );
 
   // Render submissions list
-  const headerBase = ["#", t("leaderboard.player"), "P1", "P2", "P3", t("formations.joker")];
-  const headerSprint = ["SP1", "SP2", "SP3", `${t("formations.joker")} SP`];
+  const headerBase = ["#", t("leaderboard.player"), "P1", "P2", "P3", "J1"];
+  const headerSprint = ["SP1", "SP2", "SP3", "J SP"];
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
 
@@ -161,8 +161,8 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
                     <PickLine label="P1" driver={s.mainP1} />
                     <PickLine label="P2" driver={s.mainP2} />
                     <PickLine label="P3" driver={s.mainP3} />
-                    <PickLine label={t("formations.joker")} driver={s.mainJolly} />
-                    {s.mainJolly2 && <PickLine label={`${t("formations.joker")} 2`} driver={s.mainJolly2} />}
+                    <PickLine label="J1" driver={s.mainJolly} />
+                    {s.mainJolly2 && <PickLine label="J2" driver={s.mainJolly2} />}
                   </div>
 
                   {hasSprint && (
@@ -171,7 +171,7 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
                       <PickLine label="SP1" driver={s.sprintP1} />
                       <PickLine label="SP2" driver={s.sprintP2} />
                       <PickLine label="SP3" driver={s.sprintP3} />
-                      <PickLine label={`${t("formations.joker")} SP`} driver={s.sprintJolly} />
+                      <PickLine label="J SP" driver={s.sprintJolly} />
                     </div>
                   )}
                 </Card.Body>

@@ -440,8 +440,8 @@ function RaceHistoryCard({
                           <PickLine label="P1" pick={s.mainP1} pts={p1Pts} />
                           <PickLine label="P2" pick={s.mainP2} pts={p2Pts} />
                           <PickLine label="P3" pick={s.mainP3} pts={p3Pts} />
-                          <PickLine label={t("formations.joker")} pick={s.mainJolly} pts={j1Pts} />
-                          {s.mainJolly2 && <PickLine label={`${t("formations.joker")} 2`} pick={s.mainJolly2} pts={j2Pts} />}
+                          <PickLine label="J1" pick={s.mainJolly} pts={j1Pts} />
+                          {s.mainJolly2 && <PickLine label="J2" pick={s.mainJolly2} pts={j2Pts} />}
                         </div>
                       )}
 
@@ -466,7 +466,7 @@ function RaceHistoryCard({
                             <PickLine label="SP1" pick={s.sprintP1} pts={sp1Pts} />
                             <PickLine label="SP2" pick={s.sprintP2} pts={sp2Pts} />
                             <PickLine label="SP3" pick={s.sprintP3} pts={sp3Pts} />
-                            <PickLine label={`${t("formations.joker")} SP`} pick={s.sprintJolly} pts={jspPts} />
+                            <PickLine label="J SP" pick={s.sprintJolly} pts={jspPts} />
                           </div>
                         )
                       )}
@@ -487,11 +487,11 @@ function RaceHistoryCard({
                     <th style={{ width: 150, color: accentColor }} className="text-center">P2</th>
                     <th style={{ width: 150, color: accentColor }} className="text-center">P3</th>
                     <th style={{ width: 150, color: accentColor }} className="text-center">
-                      {t("formations.joker")} 1
+                      J1
                     </th>
                     {hasJolly2 && (
                       <th style={{ width: 150, color: accentColor }} className="text-center">
-                        {t("formations.joker")} 2
+                        J2
                       </th>
                     )}
                     {hasSprint && (
@@ -500,7 +500,7 @@ function RaceHistoryCard({
                         <th style={{ width: 150, color: accentColor }} className="text-center">SP2</th>
                         <th style={{ width: 150, color: accentColor }} className="text-center">SP3</th>
                         <th style={{ width: 150, color: accentColor }} className="text-center">
-                          {t("formations.joker")} SP
+                          J SP
                         </th>
                       </>
                     )}

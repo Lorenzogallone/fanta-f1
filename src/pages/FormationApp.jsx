@@ -466,7 +466,10 @@ export default function FormationApp() {
       setShowLateModal(false);
       setCurrentLateMode(null);
       setTouched(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      // Scroll to bottom so the user can see the updated submissions list
+      setTimeout(() => {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+      }, 300);
     } catch (err) {
       error(err);
       setFlash({ type: "danger", msg: `❌ ${t("common.error")}: ${err.message}` });
@@ -554,22 +557,37 @@ export default function FormationApp() {
                   </Alert>
                 )}
 
-                {/* MAIN */}
-                {race && (
-                  <>
-                    <SectionHeader title={t("formations.mainRace")} open={mainOpen} deadlineMs={qualiMs} accentColor={colors.accent} />
+                {/* Render sections dynamically: show the one with the closest open deadline first */}
+                {race && (() => {
+                  // Sprint section shows first if sprint is open and its deadline is before main
+                  const showSprintFirst = isSprintRace && sprOpen && (!mainOpen || sprMs < qualiMs);
 
-                    {hasMainDuplicates && touched && (
-                      <Alert variant="warning" className="py-2 small">
-                        ⚠️ {t("formations.duplicateWarning")}: <strong>{mainDuplicates.join(", ")}</strong>
-                      </Alert>
-                    )}
+                  const mainSection = (
+                    <>
+                      <SectionHeader title={t("formations.mainRace")} open={mainOpen} deadlineMs={qualiMs} accentColor={colors.accent} />
 
-                    {["P1", "P2", "P3"].map((l) => (
+                      {hasMainDuplicates && touched && (
+                        <Alert variant="warning" className="py-2 small">
+                          ⚠️ {t("formations.duplicateWarning")}: <strong>{mainDuplicates.join(", ")}</strong>
+                        </Alert>
+                      )}
+
+                      {["P1", "P2", "P3"].map((l) => (
+                        <DriverSelect
+                          key={l}
+                          label={l}
+                          field={l}
+                          required
+                          disabled={!mainOpen}
+                          form={form}
+                          onSelectChange={onSelectChange}
+                          touched={touched}
+                          driverOpts={driverOpts}
+                        />
+                      ))}
                       <DriverSelect
-                        key={l}
-                        label={l}
-                        field={l}
+                        label="Jolly"
+                        field="jolly"
                         required
                         disabled={!mainOpen}
                         form={form}
@@ -577,59 +595,50 @@ export default function FormationApp() {
                         touched={touched}
                         driverOpts={driverOpts}
                       />
-                    ))}
-                    <DriverSelect
-                      label="Jolly"
-                      field="jolly"
-                      required
-                      disabled={!mainOpen}
-                      form={form}
-                      onSelectChange={onSelectChange}
-                      touched={touched}
-                      driverOpts={driverOpts}
-                    />
-                    {(userJolly > 0 || existingJolly2) && (
-                      <DriverSelect
-                        label={`Jolly 2 (${t("formations.optional")})`}
-                        field="jolly2"
-                        clearable
-                        disabled={!mainOpen}
-                        form={form}
-                        onSelectChange={onSelectChange}
-                        touched={touched}
-                        driverOpts={driverOpts}
-                        helpText={existingJolly2 && !form.jolly2 ? t("formations.jolly2RefundHint") : t("formations.jolly2Hint")}
-                      />
-                    )}
-                  </>
-                )}
+                      {(userJolly > 0 || existingJolly2) && (
+                        <DriverSelect
+                          label={`Jolly 2 (${t("formations.optional")})`}
+                          field="jolly2"
+                          clearable
+                          disabled={!mainOpen}
+                          form={form}
+                          onSelectChange={onSelectChange}
+                          touched={touched}
+                          driverOpts={driverOpts}
+                          helpText={existingJolly2 && !form.jolly2 ? t("formations.jolly2RefundHint") : t("formations.jolly2Hint")}
+                        />
+                      )}
+                    </>
+                  );
 
-                {/* SPRINT */}
-                {isSprintRace && (
-                  <>
-                    <SectionHeader title={t("formations.sprintOptional")} open={sprOpen} deadlineMs={sprMs} accentColor={colors.accent} />
+                  const sprintSection = isSprintRace ? (
+                    <>
+                      <SectionHeader title={t("formations.sprintOptional")} open={sprOpen} deadlineMs={sprMs} accentColor={colors.accent} />
 
-                    {hasSprintDuplicates && touched && (
-                      <Alert variant="warning" className="py-2 small">
-                        ⚠️ {t("formations.duplicateWarning")}: <strong>{sprintDuplicates.join(", ")}</strong>
-                      </Alert>
-                    )}
+                      {hasSprintDuplicates && touched && (
+                        <Alert variant="warning" className="py-2 small">
+                          ⚠️ {t("formations.duplicateWarning")}: <strong>{sprintDuplicates.join(", ")}</strong>
+                        </Alert>
+                      )}
 
-                    {["sprintP1", "sprintP2", "sprintP3", "sprintJolly"].map((f) => (
-                      <DriverSelect
-                        key={f}
-                        label={f.replace("sprint", "SP").replace("sprintJolly", "Jolly SP")}
-                        field={f}
-                        clearable
-                        disabled={!sprOpen}
-                        form={form}
-                        onSelectChange={onSelectChange}
-                        touched={touched}
-                        driverOpts={driverOpts}
-                      />
-                    ))}
-                  </>
-                )}
+                      {["sprintP1", "sprintP2", "sprintP3", "sprintJolly"].map((f) => (
+                        <DriverSelect
+                          key={f}
+                          label={f.replace("sprint", "SP").replace("sprintJolly", "Jolly SP")}
+                          field={f}
+                          clearable
+                          disabled={!sprOpen}
+                          form={form}
+                          onSelectChange={onSelectChange}
+                          touched={touched}
+                          driverOpts={driverOpts}
+                        />
+                      ))}
+                    </>
+                  ) : null;
+
+                  return showSprintFirst ? <>{sprintSection}{mainSection}</> : <>{mainSection}{sprintSection}</>;
+                })()}
 
                 {/* BOTTONI */}
                 <Row className="g-2 mt-3">

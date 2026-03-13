@@ -1,0 +1,12 @@
+[
+  {
+    "origin": [
+      "https://fanta-f1-bfb7b.web.app",
+      "https://fanta-f1-bfb7b.firebaseapp.com",
+      "http://localhost:5173"
+    ],
+    "method": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type", "Authorization"]
+  }
+]

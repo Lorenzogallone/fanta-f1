@@ -11,6 +11,7 @@ import {
 } from "react-router-dom";
 import { Container as BContainer, Spinner } from "react-bootstrap";
 import { Toaster } from 'react-hot-toast';
+import { useTheme } from "./contexts/ThemeContext";
 
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
@@ -57,6 +58,38 @@ const PageLoader = () => (
  * Main application component with theme provider, language provider, auth, and routing
  * @returns {JSX.Element} App with navigation and routes
  */
+/**
+ * Theme-aware Toaster that adapts to dark/light mode
+ */
+function ThemedToaster() {
+  const { isDark } = useTheme();
+  return (
+    <Toaster
+      toastOptions={{
+        style: {
+          background: isDark ? '#2d2d2d' : '#ffffff',
+          color: isDark ? '#f8f9fa' : '#212529',
+          border: isDark ? '1px solid #404040' : '1px solid #dee2e6',
+        },
+        success: {
+          style: {
+            background: isDark ? '#1a3d2e' : '#d1e7dd',
+            color: isDark ? '#a3ffcf' : '#0f5132',
+            border: isDark ? '1px solid #2d6650' : '1px solid #badbcc',
+          },
+        },
+        error: {
+          style: {
+            background: isDark ? '#4a1a1a' : '#f8d7da',
+            color: isDark ? '#ffb3b3' : '#842029',
+            border: isDark ? '1px solid #7f2d2d' : '1px solid #f5c2c7',
+          },
+        },
+      }}
+    />
+  );
+}
+
 export default function App() {
   // Sincronizza dati piloti/team da API all'avvio (background)
   useEffect(() => {
@@ -89,7 +122,7 @@ export default function App() {
           <AuthProvider>
             <Router>
               <Navigation />
-              <Toaster />
+              <ThemedToaster />
               <InstallPwaBanner />
               <CompleteProfileModal />
               <NotificationPromptModal />
