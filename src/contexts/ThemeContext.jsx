@@ -125,11 +125,23 @@ export function ThemeProvider({ children }) {
     localStorage.setItem("fanta-f1-theme-mode", "auto");
   };
 
+  /**
+   * Sets a specific theme mode directly.
+   * @param {string} mode - "auto", "light", or "dark"
+   */
+  const setMode = (mode) => {
+    if (["auto", "light", "dark"].includes(mode)) {
+      setThemeMode(mode);
+      localStorage.setItem("fanta-f1-theme-mode", mode);
+    }
+  };
+
   const value = {
     theme: appliedTheme, // Backward compatibility
     themeMode, // New: "auto", "light", or "dark"
     toggleTheme,
     resetToSystem,
+    setMode,
     isDark: appliedTheme === "dark",
     isAuto: themeMode === "auto",
   };

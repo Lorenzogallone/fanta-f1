@@ -131,22 +131,6 @@ export default function Navigation() {
               >
                 {userProfile?.nickname || user?.email || ""}
               </span>
-              {isAdmin && (
-                <span
-                  className="d-none d-md-inline"
-                  style={{
-                    fontSize: "0.65rem",
-                    color: "#fff",
-                    backgroundColor: accentColor,
-                    borderRadius: "4px",
-                    padding: "1px 5px",
-                    fontWeight: 700,
-                    lineHeight: 1.4,
-                  }}
-                >
-                  ADM
-                </span>
-              )}
             </Dropdown.Toggle>
 
             <Dropdown.Menu
@@ -209,19 +193,36 @@ export default function Navigation() {
                 👤 {t("nav.myProfile")}
               </Dropdown.Item>
 
-              {/* Theme */}
+              {/* Theme - single toggle button with emoji */}
               <Dropdown.Item
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleTheme();
-                }}
-                style={{ color: textColor, fontSize: "0.85rem" }}
-                className="user-menu-item"
+                as="div"
+                className="px-3 py-1"
+                style={{ backgroundColor: "transparent" }}
               >
-                {t("nav.toggleTheme")}
-                <span className="ms-1" style={{ color: mutedColor, fontSize: "0.8rem" }}>
-                  ({themeMode === "auto" ? "Auto" : themeMode === "light" ? "Light" : "Dark"})
-                </span>
+                <div className="d-flex align-items-center gap-2">
+                  <span style={{ color: textColor, fontSize: "0.85rem" }}>{t("nav.toggleTheme")}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleTheme();
+                    }}
+                    className="btn btn-sm p-0 ms-auto"
+                    style={{
+                      fontSize: "1.3rem",
+                      width: 36,
+                      height: 36,
+                      lineHeight: "36px",
+                      textAlign: "center",
+                      borderRadius: "6px",
+                      border: `1px solid ${menuBorder}`,
+                      backgroundColor: "transparent",
+                    }}
+                    title={themeMode === "auto" ? "Auto" : themeMode === "light" ? "Light" : "Dark"}
+                    aria-label="Toggle theme"
+                  >
+                    {themeMode === "light" ? "☀️" : themeMode === "dark" ? "🌙" : "🌗"}
+                  </button>
+                </div>
               </Dropdown.Item>
 
               {/* Language */}

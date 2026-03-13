@@ -23,7 +23,7 @@ import NotificationSettings from "../components/NotificationSettings";
 
 export default function ProfilePage() {
   const { user, userProfile, checkNicknameAvailable, updateUserProfile } = useAuth();
-  const { isDark, toggleTheme, themeMode } = useTheme();
+  const { isDark, toggleTheme, themeMode, setMode } = useTheme();
   const { t, currentLanguage, changeLanguage, availableLanguages } = useLanguage();
 
   const [nickname, setNickname] = useState("");
@@ -183,6 +183,7 @@ export default function ProfilePage() {
       )
     : "—";
 
+  const themeEmojis = { light: "☀️", dark: "🌙", auto: "🌗" };
   const themeLabels = {
     auto: t("profile.auto"),
     light: t("profile.light"),
@@ -408,25 +409,29 @@ export default function ProfilePage() {
               {t("profile.theme")}
             </span>
             <div className="d-flex gap-1">
-              {["auto", "light", "dark"].map((mode) => (
-                <Button
+              {["light", "auto", "dark"].map((mode) => (
+                <button
                   key={mode}
-                  size="sm"
-                  variant={themeMode === mode ? "danger" : "outline-secondary"}
-                  onClick={() => {
-                    // Toggle to next mode or click specific
-                    while (themeMode !== mode) toggleTheme();
-                  }}
+                  onClick={() => setMode(mode)}
+                  className="btn btn-sm p-0"
                   style={{
-                    backgroundColor: themeMode === mode ? accentColor : "transparent",
-                    borderColor: themeMode === mode ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
-                    color: themeMode === mode ? "#fff" : textColor,
-                    fontSize: "0.8rem",
-                    padding: "2px 10px",
+                    fontSize: "1.3rem",
+                    width: 40,
+                    height: 40,
+                    lineHeight: "40px",
+                    textAlign: "center",
+                    borderRadius: "6px",
+                    border: themeMode === mode
+                      ? `2px solid ${accentColor}`
+                      : `1px solid ${isDark ? "#6c757d" : "#dee2e6"}`,
+                    backgroundColor: "transparent",
+                    opacity: themeMode === mode ? 1 : 0.5,
                   }}
+                  title={themeLabels[mode]}
+                  aria-label={themeLabels[mode]}
                 >
-                  {themeLabels[mode]}
-                </Button>
+                  {themeEmojis[mode]}
+                </button>
               ))}
             </div>
           </div>
