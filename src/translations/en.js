@@ -237,6 +237,7 @@ export const en = {
     playerStatistics: "Player Statistics",
     pointsProgression: "Cumulative Points Progression",
     pointsPerRace: "Points per Race",
+    positionPerRace: "Championship Position per Race",
     positionProgression: "Position Progression",
     playersToShow: "Players to display:",
     racesToShow: "Races to display:",
@@ -261,7 +262,7 @@ export const en = {
     player: "Player",
     selectPlayer: "Select Player",
     choosePlayer: "-- Select a player --",
-    selectPlayerPrompt: "Select a player from the dropdown to view their detailed statistics",
+    selectPlayerPrompt: "Select a participant to view their detailed statistics",
   },
 
   // Admin Panel
@@ -313,6 +314,7 @@ export const en = {
     resetDeadline: "Reset to auto",
     deadlineSaved: "Deadline saved successfully",
     deadlineReset: "Deadline reset to auto-calculated value",
+    deadlineCurrentLabel: "Current deadline",
     manageChampionshipFormations: "Championship Formations",
     noChampionshipFormations: "No championship formations submitted yet",
     confirmDeleteFormation: "Delete championship formation for",

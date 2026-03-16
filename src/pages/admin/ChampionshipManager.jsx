@@ -353,6 +353,9 @@ export default function ChampionshipManager({ participants, loading, onDataChang
                           borderColor: isDark ? "#4a5568" : undefined,
                         }}
                       />
+                      <Form.Text style={{ color: isDark ? "#a0aec0" : "#6c757d" }}>
+                        {t("admin.deadlineCurrentLabel")}: <strong>{formatDate(effectiveDeadlineMs, dateLocale)}</strong>
+                      </Form.Text>
                     </Col>
                     <Col xs="auto">
                       <Button

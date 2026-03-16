@@ -237,6 +237,7 @@ export const it = {
     playerStatistics: "Statistiche Giocatore",
     pointsProgression: "Andamento Punti Cumulativi",
     pointsPerRace: "Punti per Gara",
+    positionPerRace: "Posizione in Classifica per Gara",
     positionProgression: "Andamento Posizioni",
     playersToShow: "Giocatori da visualizzare:",
     racesToShow: "Gare da visualizzare:",
@@ -261,7 +262,7 @@ export const it = {
     player: "Giocatore",
     selectPlayer: "Seleziona Giocatore",
     choosePlayer: "-- Seleziona un giocatore --",
-    selectPlayerPrompt: "Seleziona un giocatore dal menu a tendina per visualizzare le sue statistiche dettagliate",
+    selectPlayerPrompt: "Seleziona un partecipante per visualizzarne le statistiche dettagliate",
   },
 
   // Admin Panel
@@ -313,6 +314,7 @@ export const it = {
     resetDeadline: "Ripristina automatica",
     deadlineSaved: "Deadline salvata con successo",
     deadlineReset: "Deadline ripristinata al valore automatico",
+    deadlineCurrentLabel: "Deadline attuale",
     manageChampionshipFormations: "Formazioni Campionato",
     noChampionshipFormations: "Nessuna formazione campionato inviata",
     confirmDeleteFormation: "Elimina la formazione campionato di",

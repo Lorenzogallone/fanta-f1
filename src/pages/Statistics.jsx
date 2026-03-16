@@ -3,8 +3,7 @@
  * @description Championship statistics page with ranking trends and cumulative points charts
  */
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Container,
   Row,
@@ -866,31 +865,52 @@ export default function Statistics() {
       {activeTab === "player" && (
         <Row className="g-4">
           <Col xs={12}>
-            {/* Player grid */}
-            <div className="d-flex flex-wrap gap-2 mb-4">
-              {currentRanking.map((player) => {
-                const isSelected = selectedPlayerId === player.userId;
-                const medal = medals[player.position - 1];
-                return (
-                  <Button
-                    key={player.userId}
-                    size="sm"
-                    onClick={() => setSelectedPlayerId(isSelected ? null : player.userId)}
-                    style={{
-                      backgroundColor: isSelected ? accentColor : (isDark ? "var(--bg-secondary)" : "#f8f9fa"),
-                      borderColor: isSelected ? accentColor : (isDark ? "var(--border-color)" : "#dee2e6"),
-                      color: isSelected ? "#fff" : textColor,
-                      fontWeight: isSelected ? "bold" : "normal",
-                    }}
-                  >
-                    {medal ?? `${player.position}.`} {player.name}
-                    <Badge bg={isSelected ? "light" : "secondary"} text={isSelected ? "dark" : undefined} className="ms-1" style={{ fontSize: "0.7rem" }}>
-                      {player.points} pt
-                    </Badge>
-                  </Button>
-                );
-              })}
-            </div>
+            {/* Player selection */}
+            <Card
+              className="shadow mb-4"
+              style={{ borderColor: accentColor, backgroundColor: bgCard }}
+            >
+              <Card.Header
+                style={{ backgroundColor: bgHeader, borderBottom: `2px solid ${accentColor}` }}
+              >
+                <h6 className="mb-0 fw-semibold" style={{ color: accentColor }}>
+                  👤 {t("statistics.playerStatistics")}
+                </h6>
+              </Card.Header>
+              <Card.Body className="py-3">
+                <div className="d-flex flex-wrap gap-2">
+                  {currentRanking.map((player) => {
+                    const isSelected = selectedPlayerId === player.userId;
+                    const medal = medals[player.position - 1];
+                    return (
+                      <div
+                        key={player.userId}
+                        role="button"
+                        onClick={() => setSelectedPlayerId(isSelected ? null : player.userId)}
+                        style={{
+                          cursor: "pointer",
+                          padding: "5px 12px",
+                          borderRadius: "20px",
+                          border: `1px solid ${isSelected ? accentColor : (isDark ? "#495057" : "#dee2e6")}`,
+                          backgroundColor: isSelected ? accentColor : "transparent",
+                          color: isSelected ? "#fff" : textColor,
+                          fontSize: "0.85rem",
+                          fontWeight: isSelected ? "600" : "normal",
+                          userSelect: "none",
+                          transition: "all 0.15s ease",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {medal ?? `${player.position}.`} {player.name}
+                        <span style={{ marginLeft: 6, fontSize: "0.75rem", opacity: 0.7 }}>
+                          {player.points} pt
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card.Body>
+            </Card>
 
             {/* Spinner solo per caricamento dati base (molto veloce) */}
             {loadingPlayerStats && (
@@ -911,14 +931,24 @@ export default function Statistics() {
                 showCharts={!loadingRaceHistory}
                 loadingHistory={loadingRaceHistory}
                 showBackButton={false}
+                positionData={
+                  statistics?.playersData?.[selectedPlayerId]
+                    ? statistics.playersData[selectedPlayerId].map((d, idx) => ({
+                        round: statistics.races[idx]?.round,
+                        name: statistics.races[idx]?.name,
+                        position: d.position,
+                      }))
+                    : []
+                }
               />
             )}
 
             {/* No player selected */}
             {!loadingPlayerStats && !playerStats && selectedPlayerId === null && (
-              <Alert variant="info" className="text-center">
-                👆 {t("statistics.selectPlayerPrompt")}
-              </Alert>
+              <div className="text-center py-5" style={{ color: isDark ? "#6c757d" : "#adb5bd" }}>
+                <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>👤</div>
+                <p className="mb-0 small">{t("statistics.selectPlayerPrompt")}</p>
+              </div>
             )}
           </Col>
         </Row>
