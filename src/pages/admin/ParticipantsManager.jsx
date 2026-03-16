@@ -192,7 +192,9 @@ export default function ParticipantsManager({ participants, loading, onDataChang
                             <div>
                               <strong>{p.name}</strong>
                               <br />
-                              <small className="text-muted">ID: {p.id}</small>
+                              <small className="text-muted font-monospace" style={{ fontSize: "0.7rem" }}>
+                                {p.id.length > 10 ? `${p.id.slice(0, 10)}…` : p.id}
+                              </small>
                             </div>
                           </td>
                           <td className="text-center">

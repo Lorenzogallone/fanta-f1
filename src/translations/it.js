@@ -321,6 +321,14 @@ export const it = {
     raceCancelled: "Cancellata",
     sprintCancelled: "Sprint cancellata",
     deadline: "Deadline",
+    raceRound: "Round",
+    raceDateTimeUTC: "Data/Ora Gara (UTC)",
+    qualiDateTimeUTC: "Deadline Qualifiche (UTC)",
+    sprintQualiDateTimeUTC: "Deadline Qualifiche Sprint (UTC, opzionale)",
+    sprintDateTimeUTC: "Data/Ora Sprint (UTC, opzionale)",
+    raceAdded: "Gara aggiunta con successo",
+    restoreRace: "Ripristina Gara",
+    restoreSprint: "Ripristina Sprint",
 
     // Database
     databaseOperations: "Operazioni Database",

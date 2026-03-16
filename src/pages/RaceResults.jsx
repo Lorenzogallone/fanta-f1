@@ -162,8 +162,8 @@ export default function RaceResults() {
     const qualiMs = race.qualiUTC ? race.qualiUTC.toDate().getTime() : 0;
     const sprintMs = race.qualiSprintUTC ? race.qualiSprintUTC.toDate().getTime() : 0;
     return {
-      mainOpen: qualiMs > now,
-      sprintOpen: sprintMs > now,
+      mainOpen: !race.cancelledMain && qualiMs > now,
+      sprintOpen: !race.cancelledSprint && sprintMs > now,
     };
   };
 
@@ -643,10 +643,18 @@ export default function RaceResults() {
                   {races.map((race) => (
                     <option key={race.id} value={race.id}>
                       {t("history.round")} {race.round} - {race.name}
+                      {race.cancelledMain ? ` ⛔` : ""}
                     </option>
                   ))}
                 </Form.Select>
               </Form.Group>
+
+              {/* Cancelled race alert */}
+              {selectedRace?.cancelledMain && (
+                <Alert variant="danger" className="mt-3 mb-0 py-2">
+                  ⛔ <strong>{t("history.raceCancelled")}</strong> — {t("history.raceCancelledDescription")}
+                </Alert>
+              )}
 
               {/* Submit Formation Card — shown only while deadlines are still open */}
               {selectedRace && (submissionStatus.mainOpen || submissionStatus.sprintOpen) && (

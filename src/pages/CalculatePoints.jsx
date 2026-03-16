@@ -159,8 +159,10 @@ useEffect(() => {
         query(collection(db, "races"), orderBy("raceUTC", "asc"))
       );
 
-      // Complete list
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Complete list — exclude cancelled races (can't calculate points for them)
+      const list = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(r => !r.cancelledMain);
       setRaces(list);
 
       // Default = first race without official results (not yet calculated), otherwise first race

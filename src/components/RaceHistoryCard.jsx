@@ -119,8 +119,19 @@ function RaceHistoryCard({
         );
         let list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
-        // Sort alphabetically
+        // Sort: current user first, then by submission time ascending, then alphabetically
         list.sort((a, b) => {
+          if (currentUserId) {
+            if (a.id === currentUserId) return -1;
+            if (b.id === currentUserId) return 1;
+          }
+          // Sort by submittedAt if available
+          const aTs = a.submittedAt?.seconds ?? null;
+          const bTs = b.submittedAt?.seconds ?? null;
+          if (aTs !== null && bTs !== null) return aTs - bTs;
+          if (aTs !== null) return -1;
+          if (bTs !== null) return 1;
+          // Fallback: alphabetical
           const aName = a.user || rankingMap[a.id] || a.id;
           const bName = b.user || rankingMap[b.id] || b.id;
           return aName.localeCompare(bName, "it");
@@ -134,7 +145,7 @@ function RaceHistoryCard({
         setLoadingSub(false);
       }
     })();
-  }, [race.id, rankingMap, t]);
+  }, [race.id, rankingMap, t, currentUserId]);
 
   const hasJolly2 = subs.some((s) => s.mainJolly2);
   const official = race.officialResults ?? null;

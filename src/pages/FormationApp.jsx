@@ -128,7 +128,9 @@ export default function FormationApp() {
         const rsnap = await getDocs(
           query(collection(db, "races"), where("raceUTC", ">", Timestamp.now()), orderBy("raceUTC", "asc"))
         );
-        const future = rsnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const future = rsnap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((r) => !r.cancelledMain); // exclude fully cancelled races
         setRaces(future);
         if (future.length) {
           setRace(future[0]);
@@ -176,8 +178,8 @@ export default function FormationApp() {
   const fullMain = form.P1 && form.P2 && form.P3 && form.jolly;
   const fullSpr = form.sprintP1 && form.sprintP2 && form.sprintP3 && form.sprintJolly;
 
-  const disabledMain = !(form.userId && form.raceId && mainOpen && fullMain);
-  const disabledSprint = !(form.userId && form.raceId && sprOpen && fullSpr && isSprintRace);
+  const disabledMain = !(form.userId && form.raceId && mainOpen && fullMain) || Boolean(race?.cancelledMain);
+  const disabledSprint = !(form.userId && form.raceId && sprOpen && fullSpr && isSprintRace) || Boolean(race?.cancelledSprint);
 
   /**
    * Get duplicate drivers in main race selection
@@ -412,6 +414,11 @@ export default function FormationApp() {
       });
     }
 
+    // Track submission time for ordering (only on new submission, not edit)
+    if (!isEditMode) {
+      payload.submittedAt = Timestamp.now();
+    }
+
     // Aggiungi flag late submission se necessario
     if (isLate) {
       payload.isLate = true;
@@ -548,6 +555,14 @@ export default function FormationApp() {
                     })}
                   </Form.Select>
                 </Form.Group>
+
+                {/* Cancelled race alert */}
+                {race?.cancelledMain && (
+                  <Alert variant="danger" className="py-2 d-flex align-items-center gap-2">
+                    <span>⛔</span>
+                    <span><strong>{t("errors.raceCancelled")}</strong></span>
+                  </Alert>
+                )}
 
                 {/* Double points indicator for last race */}
                 {race && races.length > 0 && race.round === Math.max(...races.map(r => r.round)) && (

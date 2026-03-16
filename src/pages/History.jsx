@@ -381,7 +381,7 @@ export default function History() {
                       {pastRaces.map((race) => (
                         <option key={race.id} value={race.id}>
                           {t("history.round")} {race.round} - {race.name}
-                          {race.officialResults ? ` ✓` : ""}
+                          {race.cancelledMain ? ` ⛔` : race.officialResults ? ` ✓` : ""}
                         </option>
                       ))}
                     </Form.Select>

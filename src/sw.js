@@ -92,8 +92,8 @@ self.addEventListener("push", (event) => {
   const title = notification.title || "FantaF1";
   const options = {
     body: notification.body || "",
-    icon: notification.icon || "/FantaF1_Logo_big.png",
-    badge: "/FantaF1_Logo_big.png",
+    icon: notification.icon || "/FantaF1_Logo_192.png",
+    badge: "/FantaF1_Logo_192.png",
     data: data.data || {},
     vibrate: [100, 50, 200],
     tag: data.data?.tag || "fantaf1-notification",
@@ -115,8 +115,8 @@ async function initBackgroundMessaging() {
     const notificationTitle = title || "FantaF1";
     const notificationOptions = {
       body: body || "",
-      icon: icon || "/FantaF1_Logo_big.png",
-      badge: "/FantaF1_Logo_big.png",
+      icon: icon || "/FantaF1_Logo_192.png",
+      badge: "/FantaF1_Logo_192.png",
       data: payload.data || {},
       vibrate: [100, 50, 200],
       tag: payload.data?.tag || "fantaf1-notification",
