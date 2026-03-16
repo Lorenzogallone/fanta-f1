@@ -161,10 +161,11 @@ export default function ChampionshipManager({ participants, loading, onDataChang
       if (configSnap.exists()) {
         const { deadlineOverride: ov } = configSnap.data();
         setDeadlineOverride(ov || null);
-        setDeadlineInput(ov ? toDatetimeLocal(ov) : "");
+        const effectiveMs = ov ? ov.toDate().getTime() : autoMs;
+        setDeadlineInput(effectiveMs ? toDatetimeLocal(new Date(effectiveMs)) : "");
       } else {
         setDeadlineOverride(null);
-        setDeadlineInput("");
+        setDeadlineInput(autoMs ? toDatetimeLocal(new Date(autoMs)) : "");
       }
     } catch (e) {
       logError(e);
@@ -353,9 +354,6 @@ export default function ChampionshipManager({ participants, loading, onDataChang
                           borderColor: isDark ? "#4a5568" : undefined,
                         }}
                       />
-                      <Form.Text style={{ color: isDark ? "#a0aec0" : "#6c757d" }}>
-                        {t("admin.deadlineCurrentLabel")}: <strong>{formatDate(effectiveDeadlineMs, dateLocale)}</strong>
-                      </Form.Text>
                     </Col>
                     <Col xs="auto">
                       <Button
