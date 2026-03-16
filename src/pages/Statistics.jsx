@@ -3,7 +3,7 @@
  * @description Championship statistics page with ranking trends and cumulative points charts
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Container,
@@ -16,7 +16,6 @@ import {
   Badge,
   Button,
   Nav,
-  Form,
 } from "react-bootstrap";
 import {
   LineChart,
@@ -97,7 +96,12 @@ export default function Statistics() {
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
   const [playerStats, setPlayerStats] = useState(null);
   const [loadingPlayerStats, setLoadingPlayerStats] = useState(false);
+  const [loadingRaceHistory, setLoadingRaceHistory] = useState(false);
   const [championshipDeadlinePassed, setChampionshipDeadlinePassed] = useState(false);
+
+  // Cache: evita ri-fetch gare e dati giocatori già caricati
+  const racesCache = useRef(null); // { docs, totalCompleted } — caricato una volta sola
+  const playerCache = useRef({}); // { [userId]: playerStats }
 
   const { isDark } = useTheme();
   const { t } = useLanguage();
@@ -206,12 +210,23 @@ export default function Statistics() {
 
   // Load individual player statistics when selected
   useEffect(() => {
-    if (!selectedPlayerId) return;
+    if (!selectedPlayerId) {
+      setPlayerStats(null);
+      return;
+    }
+
+    // Se già in cache, mostra subito senza fetch
+    if (playerCache.current[selectedPlayerId]) {
+      setPlayerStats(playerCache.current[selectedPlayerId]);
+      return;
+    }
 
     const loadPlayerStatistics = async () => {
       setLoadingPlayerStats(true);
+      setPlayerStats(null);
+
       try {
-        // Get full player data from ranking and user profile in parallel
+        // Step 1: dati base giocatore (2 read) — mostra subito l'header
         const [rankingDoc, profileDoc] = await Promise.all([
           getDoc(doc(db, "ranking", selectedPlayerId)),
           getDoc(doc(db, "users", selectedPlayerId)),
@@ -224,34 +239,54 @@ export default function Statistics() {
 
         const userData = rankingDoc.data();
         const profileData = profileDoc.exists() ? profileDoc.data() : {};
+        const isOwnProfile = user?.uid === selectedPlayerId;
+        const showChampionship = championshipDeadlinePassed || isOwnProfile;
 
-        // Load all past races with submissions
-        const now = Timestamp.now();
-        const racesSnap = await getDocs(
-          query(
-            collection(db, "races"),
-            where("raceUTC", "<", now),
-            orderBy("raceUTC", "desc")
-          )
-        );
+        // Mostra subito i dati base, storia ancora vuota
+        const baseStats = {
+          playerData: {
+            name: userData.name,
+            totalPoints: userData.puntiTotali || 0,
+            position: currentRanking.find(p => p.userId === selectedPlayerId)?.position,
+            jolly: userData.jolly ?? 0,
+            championshipPiloti: showChampionship ? (userData.championshipPiloti || []) : [],
+            championshipCostruttori: showChampionship ? (userData.championshipCostruttori || []) : [],
+            championshipPts: showChampionship ? (userData.championshipPts || 0) : 0,
+          },
+          firstName: profileData.firstName || "",
+          lastName: profileData.lastName || "",
+          photoURL: profileData.photoURL || "",
+          raceHistory: [],
+          totalCompletedRaces: 0,
+        };
+        setPlayerStats(baseStats);
+        setLoadingPlayerStats(false);
 
-        // Count total completed races
-        const totalCompleted = racesSnap.docs.filter(doc => doc.data().officialResults).length;
+        // Step 2: carica la race history in background (loader solo sul grafico/tabella)
+        setLoadingRaceHistory(true);
 
-        // Load submissions for all races in parallel
-        const submissionsPromises = racesSnap.docs.map(async (raceDoc) => {
+        // Usa la cache delle gare se già disponibile, altrimenti fetchale una volta sola
+        if (!racesCache.current) {
+          const now = Timestamp.now();
+          const racesSnap = await getDocs(
+            query(collection(db, "races"), where("raceUTC", "<", now), orderBy("raceUTC", "desc"))
+          );
+          racesCache.current = {
+            docs: racesSnap.docs,
+            totalCompleted: racesSnap.docs.filter(d => d.data().officialResults).length,
+          };
+        }
+
+        const { docs: raceDocs, totalCompleted } = racesCache.current;
+
+        // Fetch solo le submission del giocatore selezionato (in parallelo)
+        const submissionsPromises = raceDocs.map(async (raceDoc) => {
           const raceData = raceDoc.data();
-
-          // Only include races with official results
-          if (!raceData.officialResults) {
-            return null;
-          }
-
+          if (!raceData.officialResults) return null;
           try {
             const submissionDoc = await getDoc(
               doc(db, "races", raceDoc.id, "submissions", selectedPlayerId)
             );
-
             return {
               raceId: raceDoc.id,
               raceName: raceData.name,
@@ -271,35 +306,20 @@ export default function Statistics() {
         const allSubmissions = await Promise.all(submissionsPromises);
         const raceHistory = allSubmissions.filter(Boolean);
 
-        // Hide championship data if deadline hasn't passed and viewing another user
-        const isOwnProfile = user?.uid === selectedPlayerId;
-        const showChampionship = championshipDeadlinePassed || isOwnProfile;
-
-        setPlayerStats({
-          playerData: {
-            name: userData.name,
-            totalPoints: userData.puntiTotali || 0,
-            position: currentRanking.find(p => p.userId === selectedPlayerId)?.position,
-            jolly: userData.jolly ?? 0,
-            championshipPiloti: showChampionship ? (userData.championshipPiloti || []) : [],
-            championshipCostruttori: showChampionship ? (userData.championshipCostruttori || []) : [],
-            championshipPts: showChampionship ? (userData.championshipPts || 0) : 0,
-          },
-          firstName: profileData.firstName || "",
-          lastName: profileData.lastName || "",
-          photoURL: profileData.photoURL || "",
-          raceHistory,
-          totalCompletedRaces: totalCompleted,
-        });
+        const fullStats = { ...baseStats, raceHistory, totalCompletedRaces: totalCompleted };
+        playerCache.current[selectedPlayerId] = fullStats;
+        setPlayerStats(fullStats);
       } catch (err) {
         logError("Error loading player statistics:", err);
-      } finally {
         setLoadingPlayerStats(false);
+      } finally {
+        setLoadingRaceHistory(false);
       }
     };
 
     loadPlayerStatistics();
-  }, [selectedPlayerId, currentRanking, championshipDeadlinePassed, user?.uid]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPlayerId, championshipDeadlinePassed, user?.uid]);
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
@@ -846,74 +866,60 @@ export default function Statistics() {
       {activeTab === "player" && (
         <Row className="g-4">
           <Col xs={12}>
-            <Card
-              className="shadow"
-              style={{
-                borderColor: accentColor,
-                backgroundColor: bgCard,
-              }}
-            >
-              <Card.Header
-                as="h5"
-                className="fw-semibold"
-                style={{
-                  backgroundColor: bgHeader,
-                  borderBottom: `2px solid ${accentColor}`,
-                }}
-              >
-                👤 {t("statistics.selectPlayer")}
-              </Card.Header>
-              <Card.Body>
-                <Form.Select
-                  value={selectedPlayerId || ""}
-                  onChange={(e) => setSelectedPlayerId(e.target.value || null)}
-                  style={{
-                    backgroundColor: isDark ? "var(--bg-tertiary)" : "#fff",
-                    color: textColor,
-                    borderColor: accentColor,
-                  }}
-                  aria-label="Select player to view detailed statistics"
-                >
-                  <option value="">{t("statistics.choosePlayer")}</option>
-                  {currentRanking.map((player) => (
-                    <option key={player.userId} value={player.userId}>
-                      {player.position}. {player.name} ({player.points} pt)
-                    </option>
-                  ))}
-                </Form.Select>
+            {/* Player grid */}
+            <div className="d-flex flex-wrap gap-2 mb-4">
+              {currentRanking.map((player) => {
+                const isSelected = selectedPlayerId === player.userId;
+                const medal = medals[player.position - 1];
+                return (
+                  <Button
+                    key={player.userId}
+                    size="sm"
+                    onClick={() => setSelectedPlayerId(isSelected ? null : player.userId)}
+                    style={{
+                      backgroundColor: isSelected ? accentColor : (isDark ? "var(--bg-secondary)" : "#f8f9fa"),
+                      borderColor: isSelected ? accentColor : (isDark ? "var(--border-color)" : "#dee2e6"),
+                      color: isSelected ? "#fff" : textColor,
+                      fontWeight: isSelected ? "bold" : "normal",
+                    }}
+                  >
+                    {medal ?? `${player.position}.`} {player.name}
+                    <Badge bg={isSelected ? "light" : "secondary"} text={isSelected ? "dark" : undefined} className="ms-1" style={{ fontSize: "0.7rem" }}>
+                      {player.points} pt
+                    </Badge>
+                  </Button>
+                );
+              })}
+            </div>
 
-                {/* Loading spinner */}
-                {loadingPlayerStats && (
-                  <div className="text-center mt-4">
-                    <Spinner animation="border" size="sm" style={{ color: accentColor }} />
-                    <p className="mt-2 text-muted">{t("statistics.loadingPlayer")}</p>
-                  </div>
-                )}
+            {/* Spinner solo per caricamento dati base (molto veloce) */}
+            {loadingPlayerStats && (
+              <div className="text-center py-4">
+                <Spinner animation="border" size="sm" style={{ color: accentColor }} />
+              </div>
+            )}
 
-                {/* Player stats view using unified component */}
-                {!loadingPlayerStats && playerStats && (
-                  <div className="mt-4">
-                    <PlayerStatsView
-                      playerData={playerStats.playerData}
-                      firstName={playerStats.firstName}
-                      lastName={playerStats.lastName}
-                      photoURL={playerStats.photoURL}
-                      raceHistory={playerStats.raceHistory}
-                      totalCompletedRaces={playerStats.totalCompletedRaces}
-                      showCharts={true}
-                      showBackButton={false}
-                    />
-                  </div>
-                )}
+            {/* Player stats view — mostra subito l'header, la history arriva dopo */}
+            {playerStats && (
+              <PlayerStatsView
+                playerData={playerStats.playerData}
+                firstName={playerStats.firstName}
+                lastName={playerStats.lastName}
+                photoURL={playerStats.photoURL}
+                raceHistory={playerStats.raceHistory}
+                totalCompletedRaces={playerStats.totalCompletedRaces}
+                showCharts={!loadingRaceHistory}
+                loadingHistory={loadingRaceHistory}
+                showBackButton={false}
+              />
+            )}
 
-                {/* No player selected message */}
-                {!loadingPlayerStats && !playerStats && selectedPlayerId === null && (
-                  <Alert variant="info" className="mt-4 text-center">
-                    {t("statistics.selectPlayerPrompt")}
-                  </Alert>
-                )}
-              </Card.Body>
-            </Card>
+            {/* No player selected */}
+            {!loadingPlayerStats && !playerStats && selectedPlayerId === null && (
+              <Alert variant="info" className="text-center">
+                👆 {t("statistics.selectPlayerPrompt")}
+              </Alert>
+            )}
           </Col>
         </Row>
       )}

@@ -12,7 +12,7 @@ import {
   Badge,
   Alert,
 } from "react-bootstrap";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, onSnapshot } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { DRIVER_TEAM, TEAM_LOGOS, POINTS, getDriverTeamDynamic, getTeamLogoDynamic } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
@@ -86,6 +86,7 @@ function RaceHistoryCard({
   compact = false,
   isLastRace = false,
   currentUserId = null,
+  reactive = false,
 }) {
   const { isDark } = useTheme();
   const { t } = useLanguage();
@@ -110,42 +111,58 @@ function RaceHistoryCard({
     })();
   }, []);
 
-  // Load submissions for this race
+  // Load submissions for this race (reactive via onSnapshot, or one-shot via getDocs)
   useEffect(() => {
-    (async () => {
-      try {
-        const snap = await getDocs(
-          collection(db, "races", race.id, "submissions")
-        );
-        let list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    setLoadingSub(true);
+    setErrorSub(null);
 
-        // Sort: current user first, then by submission time ascending, then alphabetically
-        list.sort((a, b) => {
-          if (currentUserId) {
-            if (a.id === currentUserId) return -1;
-            if (b.id === currentUserId) return 1;
-          }
-          // Sort by submittedAt if available
-          const aTs = a.submittedAt?.seconds ?? null;
-          const bTs = b.submittedAt?.seconds ?? null;
-          if (aTs !== null && bTs !== null) return aTs - bTs;
-          if (aTs !== null) return -1;
-          if (bTs !== null) return 1;
-          // Fallback: alphabetical
-          const aName = a.user || rankingMap[a.id] || a.id;
-          const bName = b.user || rankingMap[b.id] || b.id;
-          return aName.localeCompare(bName, "it");
-        });
+    const sortList = (list) => {
+      list.sort((a, b) => {
+        if (currentUserId) {
+          if (a.id === currentUserId) return -1;
+          if (b.id === currentUserId) return 1;
+        }
+        const aTs = a.submittedAt?.seconds ?? null;
+        const bTs = b.submittedAt?.seconds ?? null;
+        if (aTs !== null && bTs !== null) return aTs - bTs;
+        if (aTs !== null) return -1;
+        if (bTs !== null) return 1;
+        const aName = a.user || rankingMap[a.id] || a.id;
+        const bName = b.user || rankingMap[b.id] || b.id;
+        return aName.localeCompare(bName, "it");
+      });
+      return list;
+    };
 
-        setSubs(list);
-      } catch (e) {
+    if (reactive) {
+      const unsub = onSnapshot(
+        collection(db, "races", race.id, "submissions"),
+        (snap) => {
+          const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          setSubs(sortList(list));
+          setLoadingSub(false);
+        },
+        (e) => {
+          error(e);
+          setErrorSub(t("history.unableToLoadLineups"));
+          setLoadingSub(false);
+        }
+      );
+      return unsub;
+    }
+
+    // One-shot fetch
+    getDocs(collection(db, "races", race.id, "submissions"))
+      .then((snap) => {
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setSubs(sortList(list));
+      })
+      .catch((e) => {
         error(e);
         setErrorSub(t("history.unableToLoadLineups"));
-      } finally {
-        setLoadingSub(false);
-      }
-    })();
-  }, [race.id, rankingMap, t, currentUserId]);
+      })
+      .finally(() => setLoadingSub(false));
+  }, [race.id, rankingMap, t, currentUserId, reactive]);
 
   const hasJolly2 = subs.some((s) => s.mainJolly2);
   const official = race.officialResults ?? null;
@@ -684,6 +701,7 @@ RaceHistoryCard.propTypes = {
   compact: PropTypes.bool,
   isLastRace: PropTypes.bool,
   currentUserId: PropTypes.string,
+  reactive: PropTypes.bool,
 };
 
 export default React.memo(RaceHistoryCard);

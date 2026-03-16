@@ -89,7 +89,7 @@ self.addEventListener("push", (event) => {
 
   const data = event.data?.json?.() ?? {};
   const notification = data.notification || {};
-  const title = notification.title || "FantaF1";
+  const title = notification.title || "";
   const options = {
     body: notification.body || "",
     icon: notification.icon || "/FantaF1_Logo_192.png",
@@ -112,7 +112,7 @@ async function initBackgroundMessaging() {
 
   messaging.onBackgroundMessage((payload) => {
     const { title, body, icon } = payload.notification || {};
-    const notificationTitle = title || "FantaF1";
+    const notificationTitle = title || "";
     const notificationOptions = {
       body: body || "",
       icon: icon || "/FantaF1_Logo_192.png",

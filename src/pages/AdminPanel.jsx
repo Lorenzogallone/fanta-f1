@@ -21,6 +21,7 @@ import { useLanguage } from "../hooks/useLanguage";
 import { error } from "../utils/logger";
 import ParticipantsManager from "./admin/ParticipantsManager";
 import FormationsManager from "./admin/FormationsManager";
+import ChampionshipManager from "./admin/ChampionshipManager";
 import CalendarManager from "./admin/CalendarManager";
 import DatabaseReset from "./admin/DatabaseReset";
 
@@ -82,6 +83,11 @@ export default function AdminPanel() {
             </Nav.Link>
           </Nav.Item>
           <Nav.Item>
+            <Nav.Link eventKey="championship" className="px-2 px-sm-3">
+              🏆 <span className="d-none d-sm-inline">{t("admin.championship")}</span>
+            </Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
             <Nav.Link eventKey="calendar" className="px-2 px-sm-3">
               📅 <span className="d-none d-sm-inline">{t("admin.raceCalendar")}</span>
             </Nav.Link>
@@ -106,6 +112,14 @@ export default function AdminPanel() {
             <FormationsManager
               participants={sharedParticipants}
               races={sharedRaces}
+              loading={loadingShared}
+              onDataChange={loadSharedData}
+            />
+          </Tab.Pane>
+
+          <Tab.Pane eventKey="championship">
+            <ChampionshipManager
+              participants={sharedParticipants}
               loading={loadingShared}
               onDataChange={loadSharedData}
             />

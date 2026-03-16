@@ -244,6 +244,7 @@ function PlayerStatsView({
   totalCompletedRaces = 0,
   showCharts = true,
   showBackButton = false,
+  loadingHistory = false,
   firstName,
   lastName,
   photoURL,
@@ -449,74 +450,16 @@ function PlayerStatsView({
           </Col>
         )}
 
-        {/* Charts Section */}
-        {showCharts && chartRaces.length > 0 && (
-          <>
-            {/* Points progression chart */}
-            <Col xs={12}>
-              <Card
-                className="shadow"
-                style={{
-                  borderColor: accentColor,
-                  backgroundColor: bgCard,
-                }}
-              >
-                <Card.Header
-                  as="h6"
-                  className="fw-semibold"
-                  style={{
-                    backgroundColor: bgHeader,
-                    borderBottom: `2px solid ${accentColor}`,
-                  }}
-                >
-                  📈 {t("statistics.pointsProgression")}
-                </Card.Header>
-                <Card.Body className="chart-container-optimized">
-                  <ResponsiveContainer width="100%" height={400}>
-                    <LineChart
-                      data={chartRaces.map((race, idx) => ({
-                        name: `R${race.round}`,
-                        fullName: race.name,
-                        points: chartHistory[idx]?.cumulativePoints || 0,
-                      }))}
-                      margin={{ top: 10, right: 5, left: 0, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                      <XAxis
-                        dataKey="name"
-                        stroke={textColor}
-                        style={{ fontSize: "0.8rem" }}
-                      />
-                      <YAxis
-                        stroke={textColor}
-                        style={{ fontSize: "0.8rem" }}
-                        width={50}
-                        label={{
-                          value: t("statistics.points"),
-                          angle: -90,
-                          position: "insideLeft",
-                          style: { fill: textColor, fontSize: "0.7rem" },
-                        }}
-                      />
-                      <Tooltip content={(props) => <CustomTooltip {...props} isDark={isDark} accentColor={accentColor} />} />
-                      <Line
-                        type="monotone"
-                        dataKey="points"
-                        name={t("statistics.points")}
-                        stroke={accentColor}
-                        strokeWidth={3}
-                        dot={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </Card.Body>
-              </Card>
-            </Col>
-          </>
+        {/* Spinner storia gare in caricamento */}
+        {loadingHistory && (
+          <Col xs={12} className="text-center py-3">
+            <Spinner animation="border" size="sm" style={{ color: accentColor }} />
+            <p className="mt-2 text-muted small">{t("statistics.loadingPlayer")}</p>
+          </Col>
         )}
 
-        {/* Race History Table */}
-        {raceHistory.length > 0 && (
+        {/* Race History Table — compatta */}
+        {!loadingHistory && raceHistory.length > 0 && (
           <Col xs={12}>
             <Card
               className="shadow border-0"
@@ -529,74 +472,122 @@ function PlayerStatsView({
                 style={{
                   backgroundColor: bgHeader,
                   borderBottom: `2px solid ${accentColor}`,
+                  padding: "8px 12px",
                 }}
               >
-                <h5 className="mb-0" style={{ color: accentColor }}>
+                <h6 className="mb-0" style={{ color: accentColor }}>
                   📊 {t("participantDetail.raceHistory")}
-                </h5>
+                </h6>
               </Card.Header>
               <Card.Body className="p-0">
-                <div className="table-responsive">
-                  <Table hover striped className="mb-0 align-middle" size="sm" style={{ fontSize: "0.85rem" }}>
-                    <thead>
-                      <tr>
-                        <th className="text-center px-2" style={{ width: "45px" }}>{t("raceResults.round")}</th>
-                        <th className="px-2">{t("raceResults.race")}</th>
-                        <th className="text-center px-1" style={{ width: "55px" }}>Main</th>
-                        <th className="text-center px-1" style={{ width: "55px" }}>Sprint</th>
-                        <th className="text-center px-1" style={{ width: "55px" }}>Tot</th>
-                        <th className="text-center px-1" style={{ width: "44px" }}></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {raceHistory.map((race) => {
-                        const points = calculateRacePoints(race.submission, race.officialResults, race.cancelledSprint);
+                <Table hover className="mb-0 align-middle" size="sm" style={{ fontSize: "0.72rem" }}>
+                  <thead>
+                    <tr>
+                      <th className="text-center" style={{ width: "36px", padding: "4px 2px" }}>#</th>
+                      <th style={{ padding: "4px 4px" }}>{t("raceResults.race")}</th>
+                      <th className="text-center" style={{ width: "44px", padding: "4px 2px" }}>Main</th>
+                      <th className="text-center" style={{ width: "44px", padding: "4px 2px" }}>Spr</th>
+                      <th className="text-center" style={{ width: "44px", padding: "4px 2px" }}>Tot</th>
+                      <th style={{ width: "28px", padding: "4px 2px" }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {raceHistory.map((race) => {
+                      const points = calculateRacePoints(race.submission, race.officialResults, race.cancelledSprint);
+                      return (
+                        <tr key={race.raceId}>
+                          <td className="text-center fw-semibold text-muted" style={{ padding: "3px 2px" }}>
+                            R{race.round}
+                          </td>
+                          <td className="text-truncate" style={{ maxWidth: "110px", padding: "3px 4px" }}>
+                            {race.raceName}
+                          </td>
+                          <td className="text-center" style={{ padding: "3px 2px" }}>
+                            <PointsBadge pts={points.mainPoints} />
+                          </td>
+                          <td className="text-center" style={{ padding: "3px 2px" }}>
+                            <PointsBadge pts={points.sprintPoints} />
+                          </td>
+                          <td className="text-center" style={{ padding: "3px 2px" }}>
+                            <PointsBadge pts={points.total} />
+                          </td>
+                          <td className="text-center" style={{ padding: "3px 2px" }}>
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="p-0"
+                              onClick={() => navigate("/history", { state: { raceId: race.raceId } })}
+                              style={{ color: accentColor, fontSize: "0.9rem", lineHeight: 1 }}
+                              title={t("profile.viewDetails")}
+                              aria-label={`${t("profile.viewDetails")} - ${race.raceName}`}
+                            >
+                              →
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </Table>
+              </Card.Body>
+            </Card>
+          </Col>
+        )}
 
-                        return (
-                          <tr key={race.raceId}>
-                            <td className="text-center px-2 fw-semibold text-muted">
-                              R{race.round}
-                            </td>
-                            <td className="px-2 text-truncate" style={{ maxWidth: "150px" }}>
-                              {race.raceName}
-                            </td>
-                            <td className="text-center px-1">
-                              <PointsBadge pts={points.mainPoints} />
-                            </td>
-                            <td className="text-center px-1">
-                              <PointsBadge pts={points.sprintPoints} />
-                            </td>
-                            <td className="text-center px-1">
-                              <PointsBadge pts={points.total} />
-                            </td>
-                            <td className="text-center px-1">
-                              <Button
-                                variant="link"
-                                size="sm"
-                                className="p-0"
-                                onClick={() => navigate("/history", { state: { raceId: race.raceId } })}
-                                style={{
-                                  color: accentColor,
-                                  fontSize: "1rem",
-                                  lineHeight: 1,
-                                  minWidth: "44px",
-                                  minHeight: "44px",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                }}
-                                title={t("profile.viewDetails")}
-                                aria-label={`${t("profile.viewDetails")} - ${race.raceName}`}
-                              >
-                                →
-                              </Button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </Table>
-                </div>
+        {/* Grafico punti per gara — ultima card */}
+        {!loadingHistory && showCharts && chartRaces.length > 0 && (
+          <Col xs={12}>
+            <Card
+              className="shadow"
+              style={{
+                borderColor: accentColor,
+                backgroundColor: bgCard,
+              }}
+            >
+              <Card.Header
+                as="h6"
+                className="fw-semibold"
+                style={{
+                  backgroundColor: bgHeader,
+                  borderBottom: `2px solid ${accentColor}`,
+                }}
+              >
+                📈 {t("statistics.pointsPerRace")}
+              </Card.Header>
+              <Card.Body className="chart-container-optimized">
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart
+                    data={chartRaces.map((race, idx) => ({
+                      name: `R${race.round}`,
+                      fullName: race.name,
+                      points: chartHistory[idx]?.racePoints ?? 0,
+                    }))}
+                    margin={{ top: 10, right: 5, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                    <XAxis dataKey="name" stroke={textColor} style={{ fontSize: "0.8rem" }} />
+                    <YAxis
+                      stroke={textColor}
+                      style={{ fontSize: "0.8rem" }}
+                      width={45}
+                      label={{
+                        value: t("statistics.points"),
+                        angle: -90,
+                        position: "insideLeft",
+                        style: { fill: textColor, fontSize: "0.7rem" },
+                      }}
+                    />
+                    <Tooltip content={(props) => <CustomTooltip {...props} isDark={isDark} accentColor={accentColor} />} />
+                    <Line
+                      type="monotone"
+                      dataKey="points"
+                      name={t("statistics.points")}
+                      stroke={accentColor}
+                      strokeWidth={2.5}
+                      dot={{ r: 3 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </Card.Body>
             </Card>
           </Col>
@@ -629,6 +620,7 @@ PlayerStatsView.propTypes = {
   totalCompletedRaces: PropTypes.number,
   showCharts: PropTypes.bool,
   showBackButton: PropTypes.bool,
+  loadingHistory: PropTypes.bool,
   firstName: PropTypes.string,
   lastName: PropTypes.string,
   photoURL: PropTypes.string,

@@ -4,7 +4,7 @@
  * Handles both race results entry and points calculation with automatic F1 API fetching
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Card, Form, Button, Alert, Spinner, Container,
   Row, Col, Badge, Tab, Nav, Table
@@ -121,6 +121,7 @@ const DriverWithLogo = ({ name }) => {
 function CalculatePointsContent() {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("race");
+  const previewRef = useRef(null);
 
   // Race state
   const [races, setRaces] = useState([]);
@@ -348,6 +349,8 @@ useEffect(() => {
       setOfficial(rDoc.data().officialResults ?? null);
       const sSnap= await getDocs(collection(db,"races",race.id,"submissions"));
       setSubs(sSnap.docs.map(d=>({id:d.id,...d.data()})));
+      /* scroll alla lista */
+      setTimeout(() => previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
 
       // Create automatic backup after successful calculation (non-blocking)
       createAndSaveBackup("auto_race", {
@@ -434,6 +437,22 @@ useEffect(() => {
 
   return (
     <Container className="py-4">
+      {/* Loader fullscreen durante il calcolo */}
+      {savingRace && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: "rgba(0,0,0,0.88)",
+          zIndex: 9999,
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          color: "#fff",
+        }}>
+          <img src="/FantaF1_Logo.png" alt="FantaF1" style={{ width: 100, marginBottom: 24, opacity: 0.95 }} />
+          <Spinner animation="border" variant="danger" style={{ width: "2.5rem", height: "2.5rem" }} className="mb-3" />
+          <h5 className="mb-1">{t("calculate.calculatingPoints")}</h5>
+          <small className="text-muted">{t("calculate.pleaseWait")}</small>
+        </div>
+      )}
       <Tab.Container activeKey={activeTab} onSelect={k=>setActiveTab(k)}>
         <Nav variant="tabs" className="justify-content-center mb-4">
           <Nav.Item><Nav.Link eventKey="race">{t("calculate.raceTab")}</Nav.Link></Nav.Item>
@@ -528,8 +547,8 @@ useEffect(() => {
                 </Card>
               </Col>
               {/* ---------- PREVIEW ---------- */}
-              <Col xs={12} lg={10}>
-                {race && <RaceHistoryCard race={race} showPoints={true} />}
+              <Col xs={12} lg={10} ref={previewRef}>
+                {race && <RaceHistoryCard race={race} showPoints={true} reactive={true} />}
               </Col>
             </Row>
           </Tab.Pane>

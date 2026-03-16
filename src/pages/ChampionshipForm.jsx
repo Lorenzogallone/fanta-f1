@@ -279,26 +279,9 @@ export default function ChampionshipForm() {
         <Col xs={12} lg={6}>
           <Card className="shadow" style={{ borderLeft: `4px solid ${accentColor}` }}>
             <Card.Body>
-              <h4 className="text-center mb-3">
+              <Card.Title className="mb-3" style={{ color: accentColor }}>
                 📋 {t("championshipForm.title")}
-              </h4>
-
-              <div className="text-center mb-4">
-                <Badge
-                  bg={pastDeadline ? "danger" : "warning"}
-                  text={pastDeadline ? "light" : "dark"}
-                  className="fs-6 px-3 py-2"
-                >
-                  {pastDeadline ? `🔒 ${t("formations.closed")}` : `⏰ ${t("formations.deadline")}: ${deadlineText}`}
-                </Badge>
-              </div>
-
-              {pastDeadline && (
-                <Alert variant="danger" className="text-center">
-                  <strong>⚠️ {t("common.warning")}!</strong><br />
-                  {t("championshipForm.deadlinePassed")}
-                </Alert>
-              )}
+              </Card.Title>
 
               {message && (
                 <Alert
@@ -312,9 +295,23 @@ export default function ChampionshipForm() {
 
               <Form onSubmit={handleSubmit}>
                 {/* User info */}
-                <div className="text-muted mb-4" style={{ fontSize: "0.9rem" }}>
+                <div className="text-muted mb-3" style={{ fontSize: "0.9rem" }}>
                   {t("auth.submittingAs")}: <strong style={{ color: accentColor }}>{userProfile?.nickname || user?.email}</strong>
                 </div>
+
+                {/* Scadenza — stile allineato a FormationApp */}
+                <hr style={{ borderColor: accentColor }} />
+                <div className="d-flex align-items-center gap-2 mb-1">
+                  <h5 className="mb-0" style={{ color: accentColor }}>
+                    {t("formations.deadline")}
+                  </h5>
+                  <Badge bg={pastDeadline ? "danger" : "success"}>
+                    {pastDeadline ? t("formations.closed") : t("formations.open")}
+                  </Badge>
+                </div>
+                <p className="small text-muted mb-3">
+                  {t("formations.submitBy")}: {deadlineText}
+                </p>
 
                 <h6 className="fw-bold">{t("championshipForm.topDrivers")}</h6>
                 {["D1", "D2", "D3"].map((f) => (

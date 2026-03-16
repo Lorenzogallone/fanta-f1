@@ -236,6 +236,7 @@ export const it = {
     generalRanking: "Classifica Generale",
     playerStatistics: "Statistiche Giocatore",
     pointsProgression: "Andamento Punti Cumulativi",
+    pointsPerRace: "Punti per Gara",
     positionProgression: "Andamento Posizioni",
     playersToShow: "Giocatori da visualizzare:",
     racesToShow: "Gare da visualizzare:",
@@ -299,6 +300,22 @@ export const it = {
     selectRace: "Seleziona gara",
     formationAdded: "Formazione aggiunta con successo",
     formationUpdated: "Formazione aggiornata con successo",
+    formationDeleted: "Formazione eliminata con successo",
+
+    // Championship
+    championship: "Campionato",
+    manageChampionship: "Gestione Campionato",
+    championshipDeadline: "Deadline Campionato",
+    deadlineOverride: "Imposta deadline personalizzata (ora locale)",
+    deadlineAutoCalculated: "Automatica (gara a metà stagione)",
+    deadlineOverrideActive: "Override attivo",
+    setDeadline: "Imposta Deadline",
+    resetDeadline: "Ripristina automatica",
+    deadlineSaved: "Deadline salvata con successo",
+    deadlineReset: "Deadline ripristinata al valore automatico",
+    manageChampionshipFormations: "Formazioni Campionato",
+    noChampionshipFormations: "Nessuna formazione campionato inviata",
+    confirmDeleteFormation: "Elimina la formazione campionato di",
 
     // Calendar
     manageCalendar: "Gestione Calendario",
@@ -327,6 +344,7 @@ export const it = {
     sprintQualiDateTimeUTC: "Deadline Qualifiche Sprint (UTC, opzionale)",
     sprintDateTimeUTC: "Data/Ora Sprint (UTC, opzionale)",
     raceAdded: "Gara aggiunta con successo",
+    racesWillShift: "gare verranno spostate al round successivo",
     restoreRace: "Ripristina Gara",
     restoreSprint: "Ripristina Sprint",
 
@@ -399,6 +417,8 @@ export const it = {
     apiNoResults: "⚠️ Risultati non ancora disponibili per questa gara. Inserisci manualmente.",
     apiError: "⚠️ Impossibile caricare risultati da API. Inserisci manualmente.",
     resultsSaved: "Risultati salvati. Calcolo in corso…",
+    calculatingPoints: "Calcolo punti in corso…",
+    pleaseWait: "Attendere prego",
     saveError: "Errore nel salvataggio o calcolo.",
     championshipAvailableAfterEnd: "⚠️ Calcolo disponibile solo a campionato concluso.",
     mainRace: "Gara Principale",

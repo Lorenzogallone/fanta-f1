@@ -161,18 +161,31 @@ export default function CalendarManager({ races, loading, onDataChange }) {
     setMessage(null);
 
     try {
+      const newRound = parseInt(addFormData.round);
       const raceDate = new Date(addFormData.raceDateTimeUTC);
       const qualiDate = new Date(addFormData.qualiDateTimeUTC);
       const sprintQualiDate = addFormData.sprintQualiDateTimeUTC ? new Date(addFormData.sprintQualiDateTimeUTC) : null;
       const sprintDate = addFormData.sprintDateTimeUTC ? new Date(addFormData.sprintDateTimeUTC) : null;
 
+      // Se il round esiste già, shifta tutte le gare con round >= newRound di +1
+      const racesToShift = races.filter((r) => r.round >= newRound);
+      if (racesToShift.length > 0) {
+        // Ordina dal round più alto al più basso per evitare collisioni
+        const sorted = [...racesToShift].sort((a, b) => b.round - a.round);
+        const batch = writeBatch(db);
+        for (const r of sorted) {
+          batch.update(doc(db, "races", r.id), { round: r.round + 1 });
+        }
+        await batch.commit();
+      }
+
       // Generate ID from round and name slug
       const nameSlug = addFormData.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-      const raceId = `r${String(addFormData.round).padStart(2, "0")}-${nameSlug}`;
+      const raceId = `r${String(newRound).padStart(2, "0")}-${nameSlug}`;
 
       await setDoc(doc(db, "races", raceId), {
         name: addFormData.name,
-        round: parseInt(addFormData.round),
+        round: newRound,
         raceUTC: Timestamp.fromDate(raceDate),
         qualiUTC: Timestamp.fromDate(qualiDate),
         ...(sprintQualiDate ? { qualiSprintUTC: Timestamp.fromDate(sprintQualiDate) } : {}),
@@ -388,14 +401,9 @@ export default function CalendarManager({ races, loading, onDataChange }) {
       <Col xs={12}>
         <div className="d-flex justify-content-between align-items-center mb-2">
           <h6 className="mb-0" style={{ color: textColor }}>{t("admin.raceCalendar")} ({races.length})</h6>
-          <div className="d-flex gap-2">
-            <Button size="sm" variant="danger" onClick={openAddModal}>
-              ➕ {t("admin.addRace")}
-            </Button>
-            <Button size="sm" variant="outline-secondary" onClick={onDataChange}>
-              🔄
-            </Button>
-          </div>
+          <Button size="sm" variant="danger" onClick={openAddModal}>
+            ➕ {t("admin.addRace")}
+          </Button>
         </div>
 
         {races.length === 0 ? (
@@ -502,6 +510,11 @@ export default function CalendarManager({ races, loading, onDataChange }) {
                     style={{ backgroundColor: isDark ? "var(--bg-tertiary)" : undefined, color: textColor, borderColor }}
                   />
                 </Form.Group>
+                {addFormData.round && races.filter((r) => r.round >= parseInt(addFormData.round)).length > 0 && (
+                  <small className="text-warning d-block mt-1">
+                    ⚠️ {races.filter((r) => r.round >= parseInt(addFormData.round)).length} {t("admin.racesWillShift")}
+                  </small>
+                )}
               </Col>
               <Col xs={8}>
                 <Form.Group>

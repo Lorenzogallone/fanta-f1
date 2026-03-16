@@ -236,6 +236,7 @@ export const en = {
     generalRanking: "General Ranking",
     playerStatistics: "Player Statistics",
     pointsProgression: "Cumulative Points Progression",
+    pointsPerRace: "Points per Race",
     positionProgression: "Position Progression",
     playersToShow: "Players to display:",
     racesToShow: "Races to display:",
@@ -299,6 +300,22 @@ export const en = {
     selectRace: "Select race",
     formationAdded: "Lineup added successfully",
     formationUpdated: "Lineup updated successfully",
+    formationDeleted: "Lineup deleted successfully",
+
+    // Championship
+    championship: "Championship",
+    manageChampionship: "Manage Championship",
+    championshipDeadline: "Championship Deadline",
+    deadlineOverride: "Set custom deadline (local time)",
+    deadlineAutoCalculated: "Auto (mid-season race)",
+    deadlineOverrideActive: "Override active",
+    setDeadline: "Set Deadline",
+    resetDeadline: "Reset to auto",
+    deadlineSaved: "Deadline saved successfully",
+    deadlineReset: "Deadline reset to auto-calculated value",
+    manageChampionshipFormations: "Championship Formations",
+    noChampionshipFormations: "No championship formations submitted yet",
+    confirmDeleteFormation: "Delete championship formation for",
 
     // Calendar
     manageCalendar: "Manage Calendar",
@@ -327,6 +344,7 @@ export const en = {
     sprintQualiDateTimeUTC: "Sprint Qualifying Deadline (UTC, optional)",
     sprintDateTimeUTC: "Sprint Date/Time (UTC, optional)",
     raceAdded: "Race added successfully",
+    racesWillShift: "races will be shifted to the next round",
     restoreRace: "Restore Race",
     restoreSprint: "Restore Sprint",
 
@@ -399,6 +417,8 @@ export const en = {
     apiNoResults: "⚠️ Results not yet available for this race. Enter manually.",
     apiError: "⚠️ Unable to load results from API. Enter manually.",
     resultsSaved: "Results saved. Calculating…",
+    calculatingPoints: "Calculating points…",
+    pleaseWait: "Please wait",
     saveError: "Error saving or calculating.",
     championshipAvailableAfterEnd: "⚠️ Calculation available only after championship ends.",
     mainRace: "Main Race",

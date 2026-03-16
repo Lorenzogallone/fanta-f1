@@ -65,13 +65,13 @@ function getCETHour(dateUTC) {
  * @returns {boolean}
  */
 function isNightTimeCET(dateUTC) {
-  return getCETHour(dateUTC) < 7;
+  return getCETHour(dateUTC) < 9;
 }
 
 /**
- * Formats a UTC Date as a CET time string (HH:MM) for use in notification bodies.
+ * Formats a UTC Date as "HH:MM" in CET.
  * @param {Date} dateUTC
- * @returns {string}  e.g. "02:00"
+ * @returns {string}
  */
 function formatTimeCET(dateUTC) {
   return dateUTC.toLocaleString("it-IT", {
@@ -83,19 +83,16 @@ function formatTimeCET(dateUTC) {
 }
 
 /**
- * Formats a UTC Date as a CET date+time string for use in notification bodies.
+ * Formats a UTC Date as "6 aprile" (day + month) in CET.
  * @param {Date} dateUTC
- * @returns {string}  e.g. "domenica 6 aprile alle 02:00"
+ * @returns {string}
  */
-function formatDateTimeCET(dateUTC) {
-  const datePart = dateUTC.toLocaleString("it-IT", {
+function formatDateCET(dateUTC) {
+  return dateUTC.toLocaleString("it-IT", {
     timeZone: TIMEZONE,
-    weekday: "long",
     day: "numeric",
     month: "long",
   });
-  const timePart = formatTimeCET(dateUTC);
-  return `${datePart} alle ${timePart}`;
 }
 
 /**
@@ -256,36 +253,20 @@ async function sendToAll(title, body, tag) {
  * @returns {{ title: string, body: string }}
  */
 function buildNotification(sessionType, interval, deadlineUTC, raceName) {
-  const sessionLabel =
-    sessionType === "sprint" ? "Sprint" : "Gara Principale";
-  const deadlineTime = formatTimeCET(deadlineUTC);
-  const deadlineDateTime = formatDateTimeCET(deadlineUTC);
+  const sessionLabel = sessionType === "sprint" ? "Sprint" : "Gara";
 
   let body;
-  if (interval === "morning") {
-    body =
-      `Domani scade la formazione per la ${sessionLabel} del Gran Premio ` +
-      `${raceName}. La scadenza e' fissata per ${deadlineDateTime} CET. ` +
-      `Ricordati di inviare piloti e costruttori prima di tale orario.`;
-  } else if (interval === "evening") {
-    body =
-      `La scadenza per schierare la formazione per la ${sessionLabel} del Gran Premio ` +
-      `${raceName} e' fissata per ${deadlineDateTime} CET. ` +
-      `Si ricorda di inviare la propria formazione prima di tale orario.`;
+  if (interval === "evening") {
+    const time = formatTimeCET(deadlineUTC);
+    const date = formatDateCET(deadlineUTC);
+    body = `Formazione ${sessionLabel} — GP ${raceName}. Schiera entro le ${time} del ${date} CET.`;
   } else if (interval === "1h") {
-    body =
-      `La scadenza per schierare la formazione per la ${sessionLabel} del Gran Premio ` +
-      `${raceName} e' alle ore ${deadlineTime} CET. Tempo residuo: circa 1 ora.`;
+    body = `Circa 1 ora alla deadline formazione ${sessionLabel} — GP ${raceName}.`;
   } else {
-    body =
-      `La scadenza per schierare la formazione per la ${sessionLabel} del Gran Premio ` +
-      `${raceName} e' alle ore ${deadlineTime} CET. Tempo residuo: circa 5 minuti.`;
+    body = `5 minuti alla deadline formazione ${sessionLabel} — GP ${raceName}!`;
   }
 
-  return {
-    title: `FantaF1 - ${raceName}`,
-    body,
-  };
+  return { title: raceName, body };
 }
 
 // ─── Core Check Logic ─────────────────────────────────────────────────────────
@@ -439,13 +420,10 @@ async function checkAndNotifyChampionshipEvening() {
   const docId = "championship_evening";
   if (await isAlreadySent(docId)) return;
 
-  const deadlineDateTime = formatDateTimeCET(deadlineUTC);
-  const deadlineTime = formatTimeCET(deadlineUTC);
-  const title = "FantaF1 - Classifica Campionato";
-  const body =
-    `Domani alle ore ${deadlineTime} CET scade il termine per inviare la tua ` +
-    `classifica piloti e costruttori di metà stagione (deadline: ${deadlineDateTime} CET). ` +
-    `Non aspettare l'ultimo momento!`;
+  const time = formatTimeCET(deadlineUTC);
+  const date = formatDateCET(deadlineUTC);
+  const title = "Classifica Campionato";
+  const body = `Formazione Campionato — schiera piloti e costruttori entro le ${time} del ${date} CET.`;
 
   await sendToAll(title, body, docId);
   await markAsSent(docId, {
@@ -455,56 +433,11 @@ async function checkAndNotifyChampionshipEvening() {
   });
 }
 
-/**
- * Checks for sessions whose deadline falls within the next 24 hours and sends
- * the morning day-before notification.
- * Intended to run once daily at 09:00 CET.
- */
-async function checkAndNotifyMorning() {
-  const now = new Date();
-  // Window: from now up to 24 hours ahead (09:00 CET oggi -> 09:00 CET domani)
-  const windowEnd = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-
-  const races = await getAllRaces();
-
-  for (const race of races) {
-    for (const sessionType of ["main", "sprint"]) {
-      const deadlineUTC =
-        sessionType === "sprint" ? race.qualiSprintUTC : race.qualiUTC;
-      const cancelled =
-        sessionType === "sprint" ? race.cancelledSprint : race.cancelledMain;
-
-      if (!deadlineUTC || cancelled) continue;
-
-      const deadlineMs = deadlineUTC.getTime();
-      if (deadlineMs > now.getTime() && deadlineMs <= windowEnd.getTime()) {
-        const sessionKey = sessionType === "sprint" ? "sprintQuali" : "quali";
-        const docId = `${race.id}_${sessionKey}_morning`;
-        if (!(await isAlreadySent(docId))) {
-          const { title, body } = buildNotification(
-            sessionType,
-            "morning",
-            deadlineUTC,
-            race.name
-          );
-          await sendToAll(title, body, docId);
-          await markAsSent(docId, {
-            raceId: race.id,
-            raceName: race.name,
-            type: sessionType === "sprint" ? "sprintQualifying" : "qualifying",
-            interval: "morning",
-          });
-        }
-      }
-    }
-  }
-}
-
 // ─── Scheduled Cloud Functions ───────────────────────────────────────────────
 
 /**
  * Runs every 10 minutes.
- * Sends a "1 ora prima" reminder for DAYTIME sessions only (CET >= 07:00).
+ * Sends a "1 ora prima" reminder for DAYTIME sessions only (CET >= 09:00).
  * Nighttime sessions receive an advance notification at 21:00 CET the evening before.
  */
 exports.sendQualiReminder1h = onSchedule(
@@ -539,8 +472,8 @@ exports.sendQualiReminder5min = onSchedule(
 
 /**
  * Runs every day at 21:00 CET.
- * Sends advance notifications for any nighttime qualifying session (CET < 07:00)
- * scheduled within the following ~10 hours.
+ * Sends advance notifications for any nighttime qualifying session (CET < 09:00)
+ * scheduled within the following ~12 hours.
  */
 exports.sendQualiReminderEvening = onSchedule(
   {
@@ -555,19 +488,3 @@ exports.sendQualiReminderEvening = onSchedule(
   }
 );
 
-/**
- * Runs every day at 09:00 CET.
- * Sends a "giorno prima" reminder for ALL sessions (main e sprint) con scadenza
- * nelle successive 24 ore, ricordando agli utenti di inviare piloti e costruttori.
- */
-exports.sendQualiReminderMorning = onSchedule(
-  {
-    schedule: "0 9 * * *",
-    timeZone: TIMEZONE,
-    region: "europe-west1",
-  },
-  async () => {
-    console.log("Controllo sessioni in scadenza nelle prossime 24 ore (notifica mattutina)...");
-    await checkAndNotifyMorning();
-  }
-);

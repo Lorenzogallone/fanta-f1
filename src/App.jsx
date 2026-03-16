@@ -9,7 +9,7 @@ import {
   Routes,
   Route,
 } from "react-router-dom";
-import { Container as BContainer, Spinner } from "react-bootstrap";
+import { Container as BContainer } from "react-bootstrap";
 import { Toaster } from 'react-hot-toast';
 import { useTheme } from "./contexts/ThemeContext";
 
@@ -44,15 +44,6 @@ const Statistics = lazy(() => import("./pages/Statistics"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 
-/**
- * Loading spinner displayed while pages are loading
- * @returns {JSX.Element} Centered spinner component
- */
-const PageLoader = () => (
-  <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "60vh" }}>
-    <Spinner animation="border" variant="danger" />
-  </div>
-);
 
 /**
  * Main application component with theme provider, language provider, auth, and routing
@@ -128,7 +119,7 @@ export default function App() {
               <NotificationPromptModal />
 
               <BContainer className="py-4">
-                <Suspense fallback={<PageLoader />}>
+                <Suspense fallback={null}>
                   <Routes>
                     {/* Public route */}
                     <Route path="/login" element={<LoginPage />} />
