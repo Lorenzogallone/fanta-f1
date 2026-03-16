@@ -27,6 +27,7 @@ import { useLanguage } from "../hooks/useLanguage";
 import { useAuth } from "../hooks/useAuth";
 import { error as logError } from "../utils/logger";
 import { getChampionshipDeadlineMs } from "../utils/championshipDeadline";
+import { getChampionshipStatistics } from "../services/statisticsService";
 import PlayerStatsView from "../components/PlayerStatsView";
 
 /**
@@ -48,6 +49,7 @@ export default function ParticipantDetail() {
   const [totalCompletedRaces, setTotalCompletedRaces] = useState(0);
   const [participantPosition, setParticipantPosition] = useState(null);
   const [championshipDeadlinePassed, setChampionshipDeadlinePassed] = useState(false);
+  const [positionData, setPositionData] = useState([]);
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
 
@@ -173,6 +175,25 @@ export default function ParticipantDetail() {
         const history = allSubmissions.filter(Boolean); // Remove null entries (races without official results)
 
         setRaceHistory(history);
+
+        // Load championship position history for the chart (background)
+        try {
+          const stats = await getChampionshipStatistics();
+          const userHistory = stats.playersData[userId];
+          if (userHistory) {
+            setPositionData(
+              userHistory
+                .filter(d => d.position !== undefined)
+                .map(d => ({
+                  round: d.raceRound,
+                  name: d.raceName,
+                  position: d.position,
+                }))
+            );
+          }
+        } catch (err) {
+          logError("Error loading position history:", err);
+        }
       } catch (e) {
         logError("Error loading participant:", e);
         setError(t("errors.generic"));
@@ -225,6 +246,7 @@ export default function ParticipantDetail() {
           totalCompletedRaces={totalCompletedRaces}
           showCharts={false}
           showBackButton={true}
+          positionData={positionData}
         />
         <div className="text-center mt-4">
           <Spinner animation="border" size="sm" style={{ color: accentColor }} />
@@ -253,6 +275,7 @@ export default function ParticipantDetail() {
         totalCompletedRaces={totalCompletedRaces}
         showCharts={true}
         showBackButton={true}
+        positionData={positionData}
       />
     </Container>
   );
