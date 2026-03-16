@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Container,
   Row,
@@ -105,6 +106,7 @@ export default function Statistics() {
   const { isDark } = useTheme();
   const { t } = useLanguage();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Apply players filter to determine how many players to show in charts
   // MUST be before any conditional returns to follow Rules of Hooks
@@ -498,7 +500,7 @@ export default function Statistics() {
                               e.currentTarget.style.backgroundColor = "";
                             }}
                             onClick={() => {
-                              window.location.href = `/participant/${player.userId}`;
+                              navigate(`/participant/${player.userId}`);
                             }}
                           >
                             <td className="text-center">{medal}</td>
@@ -933,11 +935,13 @@ export default function Statistics() {
                 showBackButton={false}
                 positionData={
                   statistics?.playersData?.[selectedPlayerId]
-                    ? statistics.playersData[selectedPlayerId].map((d, idx) => ({
-                        round: statistics.races[idx]?.round,
-                        name: statistics.races[idx]?.name,
-                        position: d.position,
-                      }))
+                    ? statistics.playersData[selectedPlayerId]
+                        .filter(d => d.position !== undefined)
+                        .map(d => ({
+                          round: d.raceRound,
+                          name: d.raceName,
+                          position: d.position,
+                        }))
                     : []
                 }
               />
