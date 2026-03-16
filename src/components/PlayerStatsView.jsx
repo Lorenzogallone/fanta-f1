@@ -477,9 +477,9 @@ function PlayerStatsView({
                   <tbody>
                     {[...raceHistory].reverse().map((race) => {
                       const points = calculateRacePoints(race.submission, race.officialResults, race.cancelledSprint);
-                      const mainBg = points.mainPoints > 0 ? "success" : points.mainPoints < 0 ? "danger" : "secondary";
-                      const sprintBg = points.sprintPoints !== null ? (points.sprintPoints > 0 ? "success" : points.sprintPoints < 0 ? "danger" : "secondary") : null;
-                      const totalBg = points.total > 0 ? "success" : points.total < 0 ? "danger" : "secondary";
+                      const mainColor = points.mainPoints > 0 ? "#198754" : points.mainPoints < 0 ? "#dc3545" : (isDark ? "#adb5bd" : "#6c757d");
+                      const sprintColor = points.sprintPoints !== null ? (points.sprintPoints > 0 ? "#198754" : points.sprintPoints < 0 ? "#dc3545" : (isDark ? "#adb5bd" : "#6c757d")) : null;
+                      const totalColor = points.total > 0 ? "#198754" : points.total < 0 ? "#dc3545" : (isDark ? "#adb5bd" : "#6c757d");
                       return (
                         <tr
                           key={race.raceId}
@@ -492,24 +492,14 @@ function PlayerStatsView({
                           <td className="text-truncate" style={{ maxWidth: "120px", padding: "3px 4px" }}>
                             {race.raceName}
                           </td>
-                          <td className="text-center" style={{ padding: "3px 2px" }}>
-                            {points.mainPoints !== null ? (
-                              <Badge bg={mainBg} style={{ fontSize: "0.7rem", minWidth: "30px" }}>
-                                {points.mainPoints > 0 ? `+${points.mainPoints}` : points.mainPoints}
-                              </Badge>
-                            ) : "—"}
+                          <td className="text-center fw-semibold" style={{ padding: "3px 2px", color: mainColor }}>
+                            {points.mainPoints !== null ? (points.mainPoints > 0 ? `+${points.mainPoints}` : points.mainPoints) : "—"}
                           </td>
-                          <td className="text-center" style={{ padding: "3px 2px" }}>
-                            {points.sprintPoints !== null ? (
-                              <Badge bg={sprintBg} style={{ fontSize: "0.7rem", minWidth: "30px" }}>
-                                {points.sprintPoints > 0 ? `+${points.sprintPoints}` : points.sprintPoints}
-                              </Badge>
-                            ) : <span className="text-muted">—</span>}
+                          <td className="text-center fw-semibold" style={{ padding: "3px 2px", color: sprintColor ?? (isDark ? "#adb5bd" : "#6c757d") }}>
+                            {points.sprintPoints !== null ? (points.sprintPoints > 0 ? `+${points.sprintPoints}` : points.sprintPoints) : "—"}
                           </td>
-                          <td className="text-center" style={{ padding: "3px 2px" }}>
-                            <Badge bg={totalBg} style={{ fontSize: "0.7rem", minWidth: "30px" }}>
-                              {points.total > 0 ? `+${points.total}` : points.total}
-                            </Badge>
+                          <td className="text-center fw-semibold" style={{ padding: "3px 2px", color: totalColor }}>
+                            {points.total > 0 ? `+${points.total}` : points.total}
                           </td>
                         </tr>
                       );
