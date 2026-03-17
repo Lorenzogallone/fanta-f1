@@ -305,11 +305,16 @@ export default function ChampionshipManager({ participants, loading, onDataChang
 
       {/* ── DEADLINE CARD ── */}
       <Col xs={12}>
-        <Card className="shadow" style={{ backgroundColor: bgCard }}>
-          <Card.Header style={{ backgroundColor: bgHeader }}>
-            <h5 className="mb-0">🗓️ {t("admin.championshipDeadline")}</h5>
+        <Card className="shadow border-0" style={{ backgroundColor: bgCard }}>
+          <Card.Header className="py-2" style={{ backgroundColor: bgHeader, borderBottom: `2px solid ${isDark ? "#4a5568" : "#dee2e6"}` }}>
+            <div className="d-flex justify-content-between align-items-center">
+              <h6 className="mb-0 fw-bold">🗓️ {t("admin.championshipDeadline")}</h6>
+              <Badge bg={isOpen ? "success" : "danger"} style={{ fontSize: "0.75rem" }}>
+                {isOpen ? t("formations.open") : t("formations.closed")}
+              </Badge>
+            </div>
           </Card.Header>
-          <Card.Body>
+          <Card.Body className="py-3">
             <InlineMsg msg={deadlineMsg} isDark={isDark} onClose={() => setDeadlineMsg(null)} />
 
             {loadingDeadline ? (
@@ -317,67 +322,62 @@ export default function ChampionshipManager({ participants, loading, onDataChang
             ) : (
               <>
                 {/* Current effective deadline */}
-                <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
-                  <span className="fw-semibold">{t("formations.deadline")}:</span>
-                  <span>{formatDate(effectiveDeadlineMs, dateLocale)}</span>
-                  <Badge bg={isOpen ? "success" : "danger"}>
-                    {isOpen ? t("formations.open") : t("formations.closed")}
-                  </Badge>
+                <div className="d-flex flex-wrap align-items-center gap-2 mb-3" style={{ fontSize: "0.9rem" }}>
+                  <span className="fw-semibold">{t("admin.deadlineCurrentLabel")}:</span>
+                  <span className="fw-bold" style={{ color: isDark ? "#fbbf24" : "#d97706" }}>
+                    {formatDate(effectiveDeadlineMs, dateLocale)}
+                  </span>
                   {deadlineOverride ? (
-                    <Badge bg="warning" text="dark">⚙️ {t("admin.deadlineOverrideActive")}</Badge>
+                    <Badge bg="warning" text="dark" style={{ fontSize: "0.7rem" }}>⚙️ {t("admin.deadlineOverrideActive")}</Badge>
                   ) : (
-                    <Badge bg="secondary">🤖 {t("admin.deadlineAutoCalculated")}</Badge>
+                    <Badge bg="secondary" style={{ fontSize: "0.7rem" }}>🤖 {t("admin.deadlineAutoCalculated")}</Badge>
                   )}
                 </div>
 
                 {/* Auto deadline info */}
-                {deadlineAutoMs && (
-                  <p className="small text-muted mb-3">
+                {deadlineAutoMs && deadlineOverride && (
+                  <p className="small text-muted mb-3" style={{ fontSize: "0.8rem" }}>
                     {t("admin.deadlineAutoCalculated")}: {formatDate(deadlineAutoMs, dateLocale)}
                   </p>
                 )}
 
-                {/* Override form */}
+                {/* Edit deadline form */}
                 <Form onSubmit={handleSaveDeadline}>
-                  <Row className="align-items-end g-2">
-                    <Col xs={12} sm={6} md={5}>
-                      <Form.Label className="mb-1 small fw-semibold">
-                        {t("admin.deadlineOverride")}
-                      </Form.Label>
-                      <Form.Control
-                        type="datetime-local"
-                        value={deadlineInput}
-                        onChange={(e) => setDeadlineInput(e.target.value)}
-                        style={{
-                          backgroundColor: isDark ? "#2d3748" : undefined,
-                          color: isDark ? "#e2e8f0" : undefined,
-                          borderColor: isDark ? "#4a5568" : undefined,
-                        }}
-                      />
-                    </Col>
-                    <Col xs="auto">
-                      <Button
-                        variant="danger"
-                        type="submit"
-                        disabled={savingDeadline || !deadlineInput}
-                        size="sm"
-                      >
-                        {savingDeadline ? t("common.loading") : t("admin.setDeadline")}
-                      </Button>
-                    </Col>
+                  <Form.Label className="mb-1 small fw-semibold text-muted">
+                    ✏️ {t("admin.editDeadline")}
+                  </Form.Label>
+                  <div className="d-flex align-items-center gap-2 flex-wrap">
+                    <Form.Control
+                      type="datetime-local"
+                      size="sm"
+                      value={deadlineInput}
+                      onChange={(e) => setDeadlineInput(e.target.value)}
+                      style={{
+                        backgroundColor: isDark ? "#2d3748" : undefined,
+                        color: isDark ? "#e2e8f0" : undefined,
+                        borderColor: isDark ? "#4a5568" : undefined,
+                        maxWidth: 260,
+                      }}
+                    />
+                    <Button
+                      variant="danger"
+                      type="submit"
+                      disabled={savingDeadline || !deadlineInput}
+                      size="sm"
+                    >
+                      {savingDeadline ? t("common.loading") : t("common.save")}
+                    </Button>
                     {deadlineOverride && (
-                      <Col xs="auto">
-                        <Button
-                          variant="outline-secondary"
-                          size="sm"
-                          disabled={savingDeadline}
-                          onClick={handleResetDeadline}
-                        >
-                          {t("admin.resetDeadline")}
-                        </Button>
-                      </Col>
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        disabled={savingDeadline}
+                        onClick={handleResetDeadline}
+                      >
+                        {t("admin.resetDeadline")}
+                      </Button>
                     )}
-                  </Row>
+                  </div>
                 </Form>
               </>
             )}
@@ -387,11 +387,16 @@ export default function ChampionshipManager({ participants, loading, onDataChang
 
       {/* ── FORMATIONS CARD ── */}
       <Col xs={12}>
-        <Card className="shadow" style={{ backgroundColor: bgCard }}>
-          <Card.Header style={{ backgroundColor: bgHeader }}>
-            <h5 className="mb-0">
-              📋 {t("admin.manageChampionshipFormations")}
-            </h5>
+        <Card className="shadow border-0" style={{ backgroundColor: bgCard }}>
+          <Card.Header className="py-2" style={{ backgroundColor: bgHeader, borderBottom: `2px solid ${isDark ? "#4a5568" : "#dee2e6"}` }}>
+            <div className="d-flex justify-content-between align-items-center">
+              <h6 className="mb-0 fw-bold">
+                📋 {t("admin.manageChampionshipFormations")}
+              </h6>
+              <Badge bg="secondary" style={{ fontSize: "0.75rem" }}>
+                {formations.length} {t("admin.participants").toLowerCase()}
+              </Badge>
+            </div>
           </Card.Header>
           <Card.Body>
             <InlineMsg msg={formationsMsg} isDark={isDark} onClose={() => setFormationsMsg(null)} />

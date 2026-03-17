@@ -311,6 +311,7 @@ export const it = {
     deadlineAutoCalculated: "Automatica (gara a metà stagione)",
     deadlineOverrideActive: "Override attivo",
     setDeadline: "Imposta Deadline",
+    editDeadline: "Modifica deadline",
     resetDeadline: "Ripristina automatica",
     deadlineSaved: "Deadline salvata con successo",
     deadlineReset: "Deadline ripristinata al valore automatico",

@@ -311,6 +311,7 @@ export const en = {
     deadlineAutoCalculated: "Auto (mid-season race)",
     deadlineOverrideActive: "Override active",
     setDeadline: "Set Deadline",
+    editDeadline: "Edit deadline",
     resetDeadline: "Reset to auto",
     deadlineSaved: "Deadline saved successfully",
     deadlineReset: "Deadline reset to auto-calculated value",
