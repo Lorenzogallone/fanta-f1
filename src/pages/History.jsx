@@ -37,6 +37,7 @@ import { TEAM_LOGOS, POINTS, getDriverTeamDynamic, getTeamLogoDynamic } from "..
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useAuth } from "../hooks/useAuth";
+import { getChampionshipDeadlineMs } from "../utils/championshipDeadline";
 import { error } from "../utils/logger";
 
 /**
@@ -148,6 +149,7 @@ export default function History() {
   const [loadingChampionship, setLoadingChampionship] = useState(true);
   const [isLoadingRaceData, setIsLoadingRaceData] = useState(false);
   const [activeTab, setActiveTab] = useState("races"); // "races" or "championship"
+  const [championshipDeadlineMs, setChampionshipDeadlineMs] = useState(null);
   const { isDark } = useTheme();
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -190,6 +192,10 @@ export default function History() {
   useEffect(() => {
     (async () => {
       try {
+        // Load championship deadline
+        const deadlineMs = await getChampionshipDeadlineMs();
+        setChampionshipDeadlineMs(deadlineMs);
+
         // Load official championship results
         const champDoc = await getDoc(doc(db, "championship", "results"));
         if (champDoc.exists()) {
@@ -307,7 +313,7 @@ export default function History() {
   const hasChampionship = !loadingChampionship && championshipResults;
 
   return (
-    <Container className="py-5">
+    <Container className="py-3 py-md-5">
       <Card
         className="shadow border-0"
         style={{
@@ -316,24 +322,26 @@ export default function History() {
         }}
       >
         <Card.Header
-          className="border-bottom"
+          className="border-bottom px-3 py-2"
           style={{
             backgroundColor: bgHeader,
             borderBottomColor: accentColor,
           }}
         >
-          <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
-            <h3 className="mb-0" style={{ color: accentColor }}>
+          <div className="d-flex justify-content-between align-items-center">
+            <h5 className="mb-0" style={{ color: accentColor }}>
               📊 {t("nav.history")}
-            </h3>
+            </h5>
             <Nav variant="pills" activeKey={activeTab} onSelect={setActiveTab}>
               <Nav.Item>
                 <Nav.Link
                   eventKey="races"
+                  className="py-1 px-2 px-md-3"
                   style={{
                     backgroundColor: activeTab === "races" ? accentColor : "transparent",
                     color: activeTab === "races" ? "#fff" : (isDark ? "#fff" : "#000"),
                     borderColor: accentColor,
+                    fontSize: "0.9rem",
                   }}
                 >
                   🏁 {t("history.racesTab")}
@@ -343,10 +351,12 @@ export default function History() {
                 <Nav.Item>
                   <Nav.Link
                     eventKey="championship"
+                    className="py-1 px-2 px-md-3"
                     style={{
                       backgroundColor: activeTab === "championship" ? accentColor : "transparent",
                       color: activeTab === "championship" ? "#fff" : (isDark ? "#fff" : "#000"),
                       borderColor: accentColor,
+                      fontSize: "0.9rem",
                     }}
                   >
                     🏆 {t("history.championshipTab")}
@@ -357,19 +367,14 @@ export default function History() {
           </div>
         </Card.Header>
 
-        <Card.Body>
+        <Card.Body className="px-3 py-3">
           {/* ============ TAB GARE ============ */}
           {activeTab === "races" && (
             <>
               {pastRaces.length > 0 ? (
                 <>
-                  <p className="text-muted mb-3">
-                    {t("history.raceCount", { count: pastRaces.length })}
-                  </p>
-
                   {/* Race Selector */}
-                  <Form.Group className="mb-4">
-                    <Form.Label className="fw-bold">{t("raceResults.selectRace")}</Form.Label>
+                  <Form.Group className="mb-3">
                     <Form.Select
                       value={selectedRaceId || ""}
                       onChange={(e) => handleRaceChange(e.target.value)}
@@ -493,12 +498,29 @@ export default function History() {
               </Row>
 
               {/* Formazioni e Punteggi Giocatori */}
-              {championshipSubmissions.length > 0 && (
+              {(() => {
+                const champDeadlinePassed = !championshipDeadlineMs || Date.now() >= championshipDeadlineMs;
+                const visibleChampSubs = user?.uid && !champDeadlinePassed
+                  ? championshipSubmissions.filter(s => s.userId === user.uid)
+                  : championshipSubmissions;
+
+                return championshipSubmissions.length > 0 && (
                 <>
                   <h6 className="fw-bold mb-3 mt-4" style={{ color: accentColor }}>
                     {t("history.formationsAndPoints")}
                   </h6>
 
+                  {/* Visibility warning */}
+                  {user?.uid && !champDeadlinePassed && (
+                    <Alert variant="warning" className="mb-3">
+                      🔒 {t("championshipForm.othersHidden")}
+                    </Alert>
+                  )}
+
+                  {visibleChampSubs.length === 0 ? (
+                    <Alert variant="info">{t("history.noChampionship")}</Alert>
+                  ) : (
+                  <>
                   {/* Desktop View */}
                   <div className="d-none d-lg-block table-responsive">
                     <Table striped bordered hover size="sm" className="align-middle">
@@ -517,7 +539,7 @@ export default function History() {
                         </tr>
                       </thead>
                       <tbody>
-                        {championshipSubmissions.map((sub) => {
+                        {visibleChampSubs.map((sub) => {
                           const pts = calculateChampionshipPoints(sub, championshipResults);
                           return (
                             <tr key={sub.userId}>
@@ -594,7 +616,7 @@ export default function History() {
 
                   {/* Mobile View - Cards */}
                   <div className="d-lg-none">
-                    {championshipSubmissions.map((sub) => {
+                    {visibleChampSubs.map((sub) => {
                       const pts = calculateChampionshipPoints(sub, championshipResults);
                       return (
                         <Card
@@ -659,8 +681,11 @@ export default function History() {
                       );
                     })}
                   </div>
+                  </>
+                  )}
                 </>
-              )}
+              );
+              })()}
 
               {championshipSubmissions.length === 0 && (
                 <Alert variant="info">{t("history.noChampionship")}</Alert>

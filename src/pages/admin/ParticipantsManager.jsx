@@ -6,9 +6,6 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import {
-  Row,
-  Col,
-  Card,
   Button,
   Form,
   Alert,
@@ -154,80 +151,57 @@ export default function ParticipantsManager({ participants, loading, onDataChang
 
   return (
     <>
-      <Row className="mb-3">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">{t("admin.participants")} ({participants.length})</h5>
-            <Button variant="danger" onClick={openAddDialog} aria-label="Add new participant">
-              ➕ {t("admin.addParticipant")}
-            </Button>
-          </div>
-        </Col>
-      </Row>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h6 className="mb-0 fw-bold">{t("admin.participants")} ({participants.length})</h6>
+        <Button variant="danger" size="sm" onClick={openAddDialog} aria-label="Add new participant">
+          ➕ {t("admin.addParticipant")}
+        </Button>
+      </div>
 
-      <Row>
-        <Col>
-          <Card className="shadow">
-            <Card.Body className="p-0">
-              {participants.length === 0 ? (
-                <Alert variant="info" className="m-3">
-                  {t("leaderboard.noData")}
-                </Alert>
-              ) : (
-                <div className="table-responsive">
-                  <Table hover className="mb-0 align-middle">
-                    <thead>
-                      <tr>
-                        <th>{t("common.name")}</th>
-                        <th className="text-center">{t("common.points")}</th>
-                        <th className="text-center">{t("leaderboard.jokers")}</th>
-                        <th className="text-center">{t("admin.lateSubmissionUsed")}</th>
-                        <th className="text-center" style={{ width: 100 }}>{t("common.actions")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {participants.map((p) => (
-                        <tr key={p.id}>
-                          <td>
-                            <div>
-                              <strong>{p.name}</strong>
-                              <br />
-                              <small className="text-muted font-monospace" style={{ fontSize: "0.7rem" }}>
-                                {p.id.length > 10 ? `${p.id.slice(0, 10)}…` : p.id}
-                              </small>
-                            </div>
-                          </td>
-                          <td className="text-center">
-                            <span className="fw-semibold">{p.puntiTotali || 0}</span>
-                          </td>
-                          <td className="text-center">
-                            <span className="fw-semibold">{p.jolly || 0}</span>
-                          </td>
-                          <td className="text-center">
-                            <Badge bg={p.usedLateSubmission ? "warning" : "secondary"}>
-                              {p.usedLateSubmission ? "Yes" : "No"}
-                            </Badge>
-                          </td>
-                          <td className="text-center">
-                            <Button
-                              size="sm"
-                              variant="outline-primary"
-                              onClick={() => openEditDialog(p)}
-                              aria-label={`Edit participant ${p.name}`}
-                            >
-                              ✏️ {t("common.edit")}
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      {participants.length === 0 ? (
+        <Alert variant="info">
+          {t("leaderboard.noData")}
+        </Alert>
+      ) : (
+        <div className="table-responsive">
+          <Table hover size="sm" className="mb-0 align-middle" style={{ fontSize: "0.85rem" }}>
+            <thead>
+              <tr>
+                <th>{t("common.name")}</th>
+                <th className="text-center" style={{ width: 60 }}>{t("common.points")}</th>
+                <th className="text-center" style={{ width: 50 }}>{t("leaderboard.jokers")}</th>
+                <th className="text-center" style={{ width: 50 }}>⏰</th>
+                <th className="text-center" style={{ width: 50 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {participants.map((p) => (
+                <tr key={p.id}>
+                  <td className="fw-semibold">{p.name}</td>
+                  <td className="text-center fw-semibold">{p.puntiTotali || 0}</td>
+                  <td className="text-center">{p.jolly || 0}</td>
+                  <td className="text-center">
+                    <Badge bg={p.usedLateSubmission ? "warning" : "secondary"} style={{ fontSize: "0.7rem" }}>
+                      {p.usedLateSubmission ? "Si" : "No"}
+                    </Badge>
+                  </td>
+                  <td className="text-center">
+                    <Button
+                      size="sm"
+                      variant="outline-primary"
+                      className="py-0 px-2"
+                      onClick={() => openEditDialog(p)}
+                      aria-label={`Edit participant ${p.name}`}
+                    >
+                      ✏️
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </div>
+      )}
 
       {/* Add Participant Dialog */}
       <Modal show={showAddDialog} onHide={() => setShowAddDialog(false)} centered>
