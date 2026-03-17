@@ -13,6 +13,7 @@ import {
   Badge,
   Table,
   Button,
+  Spinner,
 } from "react-bootstrap";
 import {
   LineChart,
@@ -464,14 +465,14 @@ function PlayerStatsView({
                 </h6>
               </Card.Header>
               <Card.Body className="p-0">
-                <Table hover className="mb-0 align-middle" size="sm" style={{ fontSize: "0.72rem" }}>
+                <Table hover className="mb-0 align-middle" size="sm" style={{ fontSize: "0.85rem" }}>
                   <thead>
                     <tr>
-                      <th className="text-center" style={{ width: "36px", padding: "4px 2px" }}>#</th>
-                      <th style={{ padding: "4px 4px" }}>{t("raceResults.race")}</th>
-                      <th className="text-center" style={{ width: "44px", padding: "4px 2px" }}>Main</th>
-                      <th className="text-center" style={{ width: "44px", padding: "4px 2px" }}>Spr</th>
-                      <th className="text-center" style={{ width: "44px", padding: "4px 2px" }}>Tot</th>
+                      <th className="text-center" style={{ width: "42px", padding: "6px 4px" }}>#</th>
+                      <th style={{ padding: "6px 6px" }}>{t("raceResults.race")}</th>
+                      <th className="text-center" style={{ width: "52px", padding: "6px 4px" }}>Main</th>
+                      <th className="text-center" style={{ width: "52px", padding: "6px 4px" }}>Spr</th>
+                      <th className="text-center" style={{ width: "52px", padding: "6px 4px" }}>Tot</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -486,19 +487,19 @@ function PlayerStatsView({
                           style={{ cursor: "pointer" }}
                           onClick={() => navigate("/history", { state: { raceId: race.raceId } })}
                         >
-                          <td className="text-center fw-semibold text-muted" style={{ padding: "3px 2px" }}>
+                          <td className="text-center fw-semibold text-muted" style={{ padding: "5px 4px" }}>
                             R{race.round}
                           </td>
-                          <td className="text-truncate" style={{ maxWidth: "120px", padding: "3px 4px" }}>
+                          <td className="text-truncate" style={{ maxWidth: "150px", padding: "5px 6px" }}>
                             {race.raceName}
                           </td>
-                          <td className="text-center fw-semibold" style={{ padding: "3px 2px", color: mainColor }}>
+                          <td className="text-center fw-semibold" style={{ padding: "5px 4px", color: mainColor }}>
                             {points.mainPoints !== null ? (points.mainPoints > 0 ? `+${points.mainPoints}` : points.mainPoints) : "—"}
                           </td>
-                          <td className="text-center fw-semibold" style={{ padding: "3px 2px", color: sprintColor ?? (isDark ? "#adb5bd" : "#6c757d") }}>
+                          <td className="text-center fw-semibold" style={{ padding: "5px 4px", color: sprintColor ?? (isDark ? "#adb5bd" : "#6c757d") }}>
                             {points.sprintPoints !== null ? (points.sprintPoints > 0 ? `+${points.sprintPoints}` : points.sprintPoints) : "—"}
                           </td>
-                          <td className="text-center fw-semibold" style={{ padding: "3px 2px", color: totalColor }}>
+                          <td className="text-center fw-semibold" style={{ padding: "5px 4px", color: totalColor }}>
                             {points.total > 0 ? `+${points.total}` : points.total}
                           </td>
                         </tr>
