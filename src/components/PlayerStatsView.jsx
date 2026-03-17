@@ -346,7 +346,7 @@ function PlayerStatsView({
                 <Col xs={6} md={playerData.position ? 2 : 3}>
                   <div className="text-center">
                     <div className="text-muted small">{t("leaderboard.totalPoints")}</div>
-                    <div className="fs-2 fw-bold" style={{ color: pointsColor(playerData.totalPoints) }}>
+                    <div className="fs-2 fw-bold" style={{ color: accentColor }}>
                       {playerData.totalPoints}
                     </div>
                   </div>
@@ -362,7 +362,7 @@ function PlayerStatsView({
                 <Col xs={6} md={playerData.position ? 3 : 3}>
                   <div className="text-center">
                     <div className="text-muted small">{t("participantDetail.averagePoints")}</div>
-                    <div className="fs-2 fw-bold" style={{ color: pointsColor(parseFloat(averagePoints)) }}>
+                    <div className="fs-2 fw-bold" style={{ color: accentColor }}>
                       {averagePoints}
                     </div>
                   </div>
