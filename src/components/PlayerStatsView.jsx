@@ -243,6 +243,10 @@ function PlayerStatsView({
   const bgHeader = isDark ? "var(--bg-tertiary)" : "#ffffff";
   const textColor = isDark ? "#e9ecef" : "#212529";
   const gridColor = isDark ? "#495057" : "#dee2e6";
+  const grayColor = isDark ? "#adb5bd" : "#6c757d";
+
+  const pointsColor = (val) =>
+    val > 0 ? "#198754" : val < 0 ? "#dc3545" : grayColor;
 
   // Calculate statistics
   const totalRaces = raceHistory.filter(race => race.submission !== null).length;
@@ -342,7 +346,7 @@ function PlayerStatsView({
                 <Col xs={6} md={playerData.position ? 2 : 3}>
                   <div className="text-center">
                     <div className="text-muted small">{t("leaderboard.totalPoints")}</div>
-                    <div className="fs-2 fw-bold" style={{ color: accentColor }}>
+                    <div className="fs-2 fw-bold" style={{ color: pointsColor(playerData.totalPoints) }}>
                       {playerData.totalPoints}
                     </div>
                   </div>
@@ -358,7 +362,7 @@ function PlayerStatsView({
                 <Col xs={6} md={playerData.position ? 3 : 3}>
                   <div className="text-center">
                     <div className="text-muted small">{t("participantDetail.averagePoints")}</div>
-                    <div className="fs-2 fw-bold" style={{ color: accentColor }}>
+                    <div className="fs-2 fw-bold" style={{ color: pointsColor(parseFloat(averagePoints)) }}>
                       {averagePoints}
                     </div>
                   </div>
@@ -478,9 +482,9 @@ function PlayerStatsView({
                   <tbody>
                     {[...raceHistory].reverse().map((race) => {
                       const points = calculateRacePoints(race.submission, race.officialResults, race.cancelledSprint);
-                      const mainColor = points.mainPoints > 0 ? "#198754" : points.mainPoints < 0 ? "#dc3545" : (isDark ? "#adb5bd" : "#6c757d");
-                      const sprintColor = points.sprintPoints !== null ? (points.sprintPoints > 0 ? "#198754" : points.sprintPoints < 0 ? "#dc3545" : (isDark ? "#adb5bd" : "#6c757d")) : null;
-                      const totalColor = points.total > 0 ? "#198754" : points.total < 0 ? "#dc3545" : (isDark ? "#adb5bd" : "#6c757d");
+                      const mainColor = pointsColor(points.mainPoints);
+                      const sprintColor = points.sprintPoints !== null ? pointsColor(points.sprintPoints) : null;
+                      const totalColor = pointsColor(points.total);
                       return (
                         <tr
                           key={race.raceId}
