@@ -115,6 +115,36 @@ async function getAllRaces() {
 }
 
 /**
+ * Reads only races whose session deadline falls within the given time window.
+ * Much cheaper than getAllRaces() for frequent scheduled checks — typically
+ * returns 0 documents and costs 0 reads outside of race weekends.
+ *
+ * @param {"main"|"sprint"} sessionType
+ * @param {Date} windowStart
+ * @param {Date} windowEnd
+ * @returns {Promise<Array>}
+ */
+async function getRacesInWindow(sessionType, windowStart, windowEnd) {
+  const field = sessionType === "sprint" ? "qualiSprintUTC" : "qualiUTC";
+  const snapshot = await db
+    .collection("races")
+    .where(field, ">=", windowStart)
+    .where(field, "<", windowEnd)
+    .get();
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      name: data.name,
+      qualiUTC: data.qualiUTC ? data.qualiUTC.toDate() : null,
+      qualiSprintUTC: data.qualiSprintUTC ? data.qualiSprintUTC.toDate() : null,
+      cancelledMain: data.cancelledMain || false,
+      cancelledSprint: data.cancelledSprint || false,
+    };
+  });
+}
+
+/**
  * Gets all FCM tokens from all users.
  * @returns {Promise<string[]>}
  */
@@ -292,7 +322,9 @@ async function checkAndNotifySession(
   const targetTime = new Date(now.getTime() + minutesBefore * 60 * 1000);
   const targetEnd = new Date(targetTime.getTime() + windowMs);
 
-  const races = await getAllRaces();
+  // Targeted query: only fetch races whose deadline is within the window.
+  // Costs 0 reads when no race is imminent (the common case).
+  const races = await getRacesInWindow(sessionType, targetTime, targetEnd);
 
   for (const race of races) {
     const deadlineUTC =
@@ -304,25 +336,22 @@ async function checkAndNotifySession(
 
     if (skipNight && isNightTimeCET(deadlineUTC)) continue;
 
-    const deadlineMs = deadlineUTC.getTime();
-    if (deadlineMs >= targetTime.getTime() && deadlineMs < targetEnd.getTime()) {
-      const sessionKey = sessionType === "sprint" ? "sprintQuali" : "quali";
-      const docId = `${race.id}_${sessionKey}_${intervalLabel}`;
-      if (!(await isAlreadySent(docId))) {
-        const { title, body } = buildNotification(
-          sessionType,
-          intervalLabel,
-          deadlineUTC,
-          race.name
-        );
-        await sendToAll(title, body, docId);
-        await markAsSent(docId, {
-          raceId: race.id,
-          raceName: race.name,
-          type: sessionType === "sprint" ? "sprintQualifying" : "qualifying",
-          interval: intervalLabel,
-        });
-      }
+    const sessionKey = sessionType === "sprint" ? "sprintQuali" : "quali";
+    const docId = `${race.id}_${sessionKey}_${intervalLabel}`;
+    if (!(await isAlreadySent(docId))) {
+      const { title, body } = buildNotification(
+        sessionType,
+        intervalLabel,
+        deadlineUTC,
+        race.name
+      );
+      await sendToAll(title, body, docId);
+      await markAsSent(docId, {
+        raceId: race.id,
+        raceName: race.name,
+        type: sessionType === "sprint" ? "sprintQualifying" : "qualifying",
+        interval: intervalLabel,
+      });
     }
   }
 }
