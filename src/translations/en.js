@@ -362,6 +362,10 @@ export const en = {
     qualiDeadlineHint: "This is the deadline for lineup submissions. Move it if qualifying is postponed.",
     deleteRaceConfirm: "Are you sure you want to delete this race? This is irreversible and will also delete all associated lineups.",
     raceDeleted: "Race deleted successfully",
+    addSprint: "Add Sprint",
+    removeSprint: "Remove Sprint",
+    submitted: "Submitted",
+    notSubmitted: "Not submitted",
 
     // Database
     databaseOperations: "Database Operations",
@@ -394,6 +398,7 @@ export const en = {
     restoring: "Restoring...",
     databaseRestored: "Database restored successfully!",
     restoreError: "Restore error",
+    typeResetToConfirm: "Type \"RESET\" to confirm:",
     typeRestoreToConfirm: "Type \"RESTORE\" to confirm the restore:",
     irreversibleWarning: "WARNING: IRREVERSIBLE OPERATION",
     restoreWarningDescription: "The restore will delete ALL current data (races, standings, submissions) and replace it with the selected backup data. This operation CANNOT be undone!",

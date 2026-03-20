@@ -1,23 +1,25 @@
 /**
  * @file FormationsManager.jsx
- * @description Formations management component for admin panel
+ * @description Formations management — race selector card at top, then user list
+ * with submission status and edit/create/delete actions via modal.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import {
-  Row,
-  Col,
-  Card,
   Button,
   Form,
   Alert,
   Spinner,
+  Badge,
+  Modal,
+  ListGroup,
 } from "react-bootstrap";
 import {
   doc,
   getDoc,
   setDoc,
+  deleteDoc,
   updateDoc,
   Timestamp,
 } from "firebase/firestore";
@@ -28,114 +30,96 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../hooks/useLanguage";
 import { error } from "../../utils/logger";
 
-/**
- * Formations management component for admin editing
- * @param {Object} props - Component props
- * @param {Array} props.participants - List of participants
- * @param {Array} props.races - List of races
- * @param {boolean} props.loading - Loading state
- * @param {Function} props.onDataChange - Callback to refresh data
- * @returns {JSX.Element} Formations management interface
- */
+const driverOptions = DRIVERS.map((d) => ({ value: d, label: d }));
+
 export default function FormationsManager({ participants, races, loading, onDataChange }) {
   const { t } = useLanguage();
   const { isDark } = useTheme();
 
+  const [selectedRace, setSelectedRace] = useState(null);
+  const [submissions, setSubmissions] = useState({});     // userId → submission data
+  const [loadingSubs, setLoadingSubs] = useState(false);
+
+  // Edit modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
-  const [touched, setTouched] = useState(false);
-
-  const [selectedUser, setSelectedUser] = useState("");
-  const [selectedRace, setSelectedRace] = useState(null);
-  const [existingFormation, setExistingFormation] = useState(null);
-  const [racesWithFormations, setRacesWithFormations] = useState(new Set());
-
   const [formData, setFormData] = useState({
-    mainP1: null,
-    mainP2: null,
-    mainP3: null,
-    mainJolly: null,
-    mainJolly2: null,
-    sprintP1: null,
-    sprintP2: null,
-    sprintP3: null,
+    mainP1: null, mainP2: null, mainP3: null,
+    mainJolly: null, mainJolly2: null,
+    sprintP1: null, sprintP2: null, sprintP3: null,
     sprintJolly: null,
   });
-
   const [isLateSubmission, setIsLateSubmission] = useState(false);
 
-  // Load formation status and auto-select first race without formation
+  // Delete confirmation
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingUser, setDeletingUser] = useState(null);
+
+  const borderColor = isDark ? "var(--border-color)" : "#dee2e6";
+  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
+
+  // Default to first race without results and not cancelled
+  const defaultRace = useMemo(() => {
+    return races.find((r) => !r.officialResults && !r.cancelledMain) || (races.length > 0 ? races[0] : null);
+  }, [races]);
+
   useEffect(() => {
-    if (!selectedUser || races.length === 0) return;
+    if (!selectedRace && defaultRace) {
+      setSelectedRace(defaultRace);
+    }
+  }, [defaultRace]);
 
-    (async () => {
-      const racesWithForms = new Set();
-      let firstRaceWithoutForm = null;
+  // Load all submissions when race changes
+  useEffect(() => {
+    if (!selectedRace) return;
+    loadSubmissions();
+  }, [selectedRace]);
 
-      // Fetch all submission docs in parallel instead of sequentially
-      const formDocs = await Promise.all(
-        races.map((race) => getDoc(doc(db, "races", race.id, "submissions", selectedUser)))
+  const loadSubmissions = async () => {
+    if (!selectedRace) return;
+    setLoadingSubs(true);
+    try {
+      const results = {};
+      const docs = await Promise.all(
+        participants.map((p) => getDoc(doc(db, "races", selectedRace.id, "submissions", p.id)))
       );
-
-      formDocs.forEach((formDoc, i) => {
-        if (formDoc.exists()) {
-          racesWithForms.add(races[i].id);
-        } else if (!firstRaceWithoutForm) {
-          firstRaceWithoutForm = races[i];
+      docs.forEach((d, i) => {
+        if (d.exists()) {
+          results[participants[i].id] = d.data();
         }
       });
-
-      setRacesWithFormations(racesWithForms);
-
-      if (firstRaceWithoutForm) {
-        setSelectedRace(firstRaceWithoutForm);
-      } else if (races.length > 0 && !selectedRace) {
-        setSelectedRace(races[0]);
-      }
-    })();
-  }, [selectedUser, races]);
-
-  // Load existing formation when user and race are selected
-  useEffect(() => {
-    if (!selectedUser || !selectedRace) {
-      setExistingFormation(null);
-      resetForm();
-      return;
-    }
-
-    loadFormation();
-  }, [selectedUser, selectedRace]);
-
-  const loadFormation = async () => {
-    try {
-      const formDoc = await getDoc(
-        doc(db, "races", selectedRace.id, "submissions", selectedUser)
-      );
-
-      if (formDoc.exists()) {
-        const data = formDoc.data();
-        setExistingFormation(data);
-
-        setFormData({
-          mainP1: findDriverOption(data.mainP1),
-          mainP2: findDriverOption(data.mainP2),
-          mainP3: findDriverOption(data.mainP3),
-          mainJolly: findDriverOption(data.mainJolly),
-          mainJolly2: findDriverOption(data.mainJolly2),
-          sprintP1: findDriverOption(data.sprintP1),
-          sprintP2: findDriverOption(data.sprintP2),
-          sprintP3: findDriverOption(data.sprintP3),
-          sprintJolly: findDriverOption(data.sprintJolly),
-        });
-        setIsLateSubmission(data.isLate ?? false);
-      } else {
-        setExistingFormation(null);
-        resetForm();
-      }
+      setSubmissions(results);
     } catch (err) {
       error(err);
+    } finally {
+      setLoadingSubs(false);
     }
   };
+
+  const hasSprint = Boolean(selectedRace?.qualiSprintUTC);
+
+  // ─── Edit Modal ───
+  const openEdit = (participant) => {
+    setEditingUser(participant);
+    setMessage(null);
+    const sub = submissions[participant.id];
+    if (sub) {
+      setFormData({
+        mainP1: findOpt(sub.mainP1), mainP2: findOpt(sub.mainP2), mainP3: findOpt(sub.mainP3),
+        mainJolly: findOpt(sub.mainJolly), mainJolly2: findOpt(sub.mainJolly2),
+        sprintP1: findOpt(sub.sprintP1), sprintP2: findOpt(sub.sprintP2), sprintP3: findOpt(sub.sprintP3),
+        sprintJolly: findOpt(sub.sprintJolly),
+      });
+      setIsLateSubmission(sub.isLate ?? false);
+    } else {
+      resetForm();
+    }
+    setShowEditModal(true);
+  };
+
+  const findOpt = (name) => name ? driverOptions.find((o) => o.value === name) || null : null;
 
   const resetForm = () => {
     setFormData({
@@ -147,81 +131,28 @@ export default function FormationsManager({ participants, races, loading, onData
     setIsLateSubmission(false);
   };
 
-  const findDriverOption = (name) => {
-    if (!name) return null;
-    return driverOptions.find((opt) => opt.value === name) || null;
+  const getSelectedDrivers = (fields) =>
+    fields.map((f) => formData[f]?.value).filter(Boolean);
+
+  const getAvailableOptions = (field, fields) => {
+    const selected = getSelectedDrivers(fields);
+    const current = formData[field]?.value;
+    return driverOptions.filter((o) => !selected.includes(o.value) || o.value === current);
   };
 
-  const getSelectedMainDrivers = () => {
-    return [formData.mainP1, formData.mainP2, formData.mainP3, formData.mainJolly, formData.mainJolly2]
-      .filter(Boolean).map(d => d.value);
-  };
+  const mainFields = ["mainP1", "mainP2", "mainP3", "mainJolly", "mainJolly2"];
+  const sprintFields = ["sprintP1", "sprintP2", "sprintP3", "sprintJolly"];
 
-  const getSelectedSprintDrivers = () => {
-    return [formData.sprintP1, formData.sprintP2, formData.sprintP3, formData.sprintJolly]
-      .filter(Boolean).map(d => d.value);
-  };
+  const handleSave = async () => {
+    if (!formData.mainP1 || !formData.mainP2 || !formData.mainP3 || !formData.mainJolly) {
+      setMessage({ type: "warning", text: t("errors.incompleteForm") });
+      return;
+    }
 
-  const getAvailableMainOptions = (currentField) => {
-    const selectedDrivers = getSelectedMainDrivers();
-    const currentValue = formData[currentField]?.value;
-    return driverOptions.filter(opt =>
-      !selectedDrivers.includes(opt.value) || opt.value === currentValue
-    );
-  };
-
-  const getAvailableSprintOptions = (currentField) => {
-    const selectedDrivers = getSelectedSprintDrivers();
-    const currentValue = formData[currentField]?.value;
-    return driverOptions.filter(opt =>
-      !selectedDrivers.includes(opt.value) || opt.value === currentValue
-    );
-  };
-
-  const validateForm = () => {
-    const errors = [];
-    if (!selectedUser) errors.push(t("admin.selectUser"));
-    if (!selectedRace) errors.push(t("admin.selectRace"));
-    if (!formData.mainP1) errors.push(`P1 ${t("formations.required")}`);
-    if (!formData.mainP2) errors.push(`P2 ${t("formations.required")}`);
-    if (!formData.mainP3) errors.push(`P3 ${t("formations.required")}`);
-    if (!formData.mainJolly) errors.push(`${t("formations.joker")} ${t("formations.required")}`);
-
-    const mainDrivers = [
-      formData.mainP1?.value, formData.mainP2?.value, formData.mainP3?.value,
-      formData.mainJolly?.value, formData.mainJolly2?.value
-    ].filter(Boolean);
+    // Check duplicates
+    const mainDrivers = mainFields.map((f) => formData[f]?.value).filter(Boolean);
     if (new Set(mainDrivers).size !== mainDrivers.length) {
-      errors.push(t("errors.duplicateDriver"));
-    }
-
-    if (hasSprint) {
-      const sprintDrivers = [
-        formData.sprintP1?.value, formData.sprintP2?.value,
-        formData.sprintP3?.value, formData.sprintJolly?.value
-      ].filter(Boolean);
-      if (sprintDrivers.length > 0 && new Set(sprintDrivers).size !== sprintDrivers.length) {
-        errors.push(t("errors.duplicateDriver"));
-      }
-    }
-
-    return errors;
-  };
-
-  const isFieldInvalid = (fieldName) => {
-    if (!touched || !selectedUser || !selectedRace) return false;
-    const requiredFields = ['mainP1', 'mainP2', 'mainP3', 'mainJolly'];
-    return requiredFields.includes(fieldName) && !formData[fieldName];
-  };
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    setTouched(true);
-
-    const errors = validateForm();
-    if (errors.length > 0) {
-      setMessage({ type: "danger", text: errors.join(". ") + "." });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setMessage({ type: "warning", text: t("errors.duplicateDriver") });
       return;
     }
 
@@ -229,11 +160,9 @@ export default function FormationsManager({ participants, races, loading, onData
     setMessage(null);
 
     try {
-      const user = participants.find((p) => p.id === selectedUser);
-
       const payload = {
-        user: user?.name || selectedUser,
-        userId: selectedUser,
+        user: editingUser.name,
+        userId: editingUser.id,
         mainP1: formData.mainP1.value,
         mainP2: formData.mainP2.value,
         mainP3: formData.mainP3.value,
@@ -249,23 +178,15 @@ export default function FormationsManager({ participants, races, loading, onData
       if (isLateSubmission) {
         payload.isLate = true;
         payload.latePenalty = -3;
-        await updateDoc(doc(db, "ranking", selectedUser), {
-          usedLateSubmission: true
-        });
+        await updateDoc(doc(db, "ranking", editingUser.id), { usedLateSubmission: true });
       }
 
-      await setDoc(doc(db, "races", selectedRace.id, "submissions", selectedUser), payload, {
-        merge: true,
-      });
+      const isNew = !submissions[editingUser.id];
+      await setDoc(doc(db, "races", selectedRace.id, "submissions", editingUser.id), payload, { merge: true });
 
-      setMessage({
-        type: "success",
-        text: existingFormation ? t("admin.formationUpdated") : t("admin.formationAdded"),
-      });
-      setTouched(false);
-      setRacesWithFormations(prev => new Set([...prev, selectedRace.id]));
-      await loadFormation();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setMessage({ type: "success", text: isNew ? t("admin.formationAdded") : t("admin.formationUpdated") });
+      await loadSubmissions();
+      setTimeout(() => { setShowEditModal(false); setMessage(null); }, 1200);
     } catch (err) {
       error(err);
       setMessage({ type: "danger", text: `${t("common.error")}: ${err.message}` });
@@ -274,206 +195,254 @@ export default function FormationsManager({ participants, races, loading, onData
     }
   };
 
-  const driverOptions = DRIVERS.map((d) => ({ value: d, label: d }));
-  const hasSprint = Boolean(selectedRace?.qualiSprintUTC);
+  // ─── Delete ───
+  const confirmDelete = (participant) => {
+    setDeletingUser(participant);
+    setShowDeleteConfirm(true);
+  };
 
-  // Custom styles for react-select with dark mode support
+  const handleDelete = async () => {
+    if (!deletingUser || !selectedRace) return;
+    setSaving(true);
+    try {
+      await deleteDoc(doc(db, "races", selectedRace.id, "submissions", deletingUser.id));
+      await loadSubmissions();
+      setShowDeleteConfirm(false);
+      setDeletingUser(null);
+    } catch (err) {
+      error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ─── Select styles ───
   const selectStyles = {
     control: (base, state) => ({
       ...base,
-      backgroundColor: isDark ? '#2d3748' : '#fff',
-      borderColor: state.isFocused ? '#dc3545' : isDark ? '#4a5568' : '#ced4da',
-      boxShadow: state.isFocused ? '0 0 0 0.2rem rgba(220,53,69,.25)' : 'none',
-      '&:hover': { borderColor: '#dc3545' },
+      backgroundColor: isDark ? "var(--bg-tertiary)" : "#fff",
+      borderColor: state.isFocused ? "var(--accent-red)" : isDark ? "var(--border-color)" : "#ced4da",
+      boxShadow: state.isFocused ? "0 0 0 0.2rem rgba(220,53,69,.25)" : "none",
+      "&:hover": { borderColor: "var(--accent-red)" },
+      minHeight: 36,
     }),
     menu: (base) => ({
       ...base,
-      backgroundColor: isDark ? '#2d3748' : '#fff',
-      border: isDark ? '1px solid #4a5568' : '1px solid #ced4da',
+      backgroundColor: isDark ? "var(--bg-tertiary)" : "#fff",
+      border: `1px solid ${isDark ? "var(--border-color)" : "#ced4da"}`,
+      zIndex: 9999,
     }),
     option: (base, state) => ({
       ...base,
-      backgroundColor: state.isFocused ? (isDark ? '#4a5568' : '#f8f9fa') : (isDark ? '#2d3748' : '#fff'),
-      color: isDark ? '#e2e8f0' : '#212529',
-      '&:active': { backgroundColor: isDark ? '#4a5568' : '#e2e6ea' },
+      backgroundColor: state.isFocused ? (isDark ? "var(--bg-secondary)" : "#f8f9fa") : "transparent",
+      color: "var(--text-primary)",
     }),
-    singleValue: (base) => ({ ...base, color: isDark ? '#e2e8f0' : '#212529' }),
-    input: (base) => ({ ...base, color: isDark ? '#e2e8f0' : '#212529' }),
-    placeholder: (base) => ({ ...base, color: isDark ? '#a0aec0' : '#6c757d' }),
+    singleValue: (base) => ({ ...base, color: "var(--text-primary)" }),
+    input: (base) => ({ ...base, color: "var(--text-primary)" }),
+    placeholder: (base) => ({ ...base, color: "var(--text-muted)" }),
   };
-
-  const invalidSelectStyles = {
-    ...selectStyles,
-    control: (base, state) => ({
-      ...selectStyles.control(base, state),
-      borderColor: '#dc3545',
-      boxShadow: '0 0 0 0.2rem rgba(220,53,69,.25)',
-    }),
-  };
-
-  const bgCard = isDark ? 'var(--bg-secondary)' : '#ffffff';
-  const bgHeader = isDark ? 'var(--bg-tertiary)' : '#ffffff';
 
   if (loading) {
-    return (
-      <div className="text-center py-5">
-        <Spinner animation="border" />
-      </div>
-    );
+    return <div className="text-center py-5"><Spinner animation="border" /></div>;
   }
 
-  const renderSelect = (field, label, required, optionsFn, isSprint = false) => (
-    <Form.Group className="mb-2">
-      <Form.Label>{label} {required && '*'} {isFieldInvalid(field) && <span className="text-danger">({t("formations.required")})</span>}</Form.Label>
+  const renderDriverSelect = (field, label, required, fieldGroup) => (
+    <Form.Group className="mb-2" key={field}>
+      <Form.Label className="small fw-semibold mb-1">
+        {label} {required && <span className="text-danger">*</span>}
+      </Form.Label>
       <Select
-        options={optionsFn(field)}
+        options={getAvailableOptions(field, fieldGroup)}
         value={formData[field]}
         onChange={(sel) => setFormData({ ...formData, [field]: sel })}
-        placeholder={t("formations.selectUser")}
-        styles={isFieldInvalid(field) ? invalidSelectStyles : selectStyles}
+        placeholder={t("common.select")}
+        styles={selectStyles}
         isClearable={!required}
-        noOptionsMessage={() => t("errors.duplicateDriver")}
-        aria-label={`Select driver for ${label}`}
+        menuPortalTarget={document.body}
+        menuPosition="fixed"
       />
     </Form.Group>
   );
 
   return (
-    <Row className="g-4">
-      <Col xs={12}>
-        {message && (
-          <Alert variant={message.type} dismissible onClose={() => setMessage(null)}>
-            {message.text}
-          </Alert>
-        )}
-      </Col>
+    <>
+      {/* Race selector */}
+      <div className="mb-3">
+        <h6 className="mb-2 fw-bold" style={{ color: "var(--text-primary)" }}>
+          {t("admin.manageFormations")}
+        </h6>
+        <Form.Select
+          size="sm"
+          value={selectedRace?.id || ""}
+          onChange={(e) => {
+            const race = races.find((r) => r.id === e.target.value);
+            setSelectedRace(race || null);
+          }}
+        >
+          <option value="">{t("formations.selectRace")}</option>
+          {races.map((r) => {
+            const hasResults = Boolean(r.officialResults);
+            const cancelled = r.cancelledMain;
+            const sprint = Boolean(r.qualiSprintUTC);
+            let label = `R${r.round} — ${r.name}`;
+            const tags = [];
+            if (sprint) tags.push("Sprint");
+            if (hasResults) tags.push(t("admin.hasResults"));
+            if (cancelled) tags.push(t("admin.raceCancelled"));
+            if (tags.length) label += ` [${tags.join(", ")}]`;
+            return <option key={r.id} value={r.id}>{label}</option>;
+          })}
+        </Form.Select>
+      </div>
 
-      <Col xs={12}>
-        <Card className="shadow" style={{ backgroundColor: bgCard }}>
-          <Card.Header style={{ backgroundColor: bgHeader }}>
-            <h5 className="mb-0">
-              {existingFormation ? `✏️ ${t("admin.editFormationTitle")}` : `➕ ${t("admin.addFormation")}`}
-            </h5>
-          </Card.Header>
-          <Card.Body>
-            <Form onSubmit={handleSave}>
-              {/* User Selection */}
-              <Form.Group className="mb-3">
-                <Form.Label>{t("formations.selectUser")} *</Form.Label>
-                <Form.Select
-                  value={selectedUser}
-                  onChange={(e) => setSelectedUser(e.target.value)}
-                  required
-                  aria-label="Select user to manage formation for"
-                >
-                  <option value="">{t("formations.selectUser")}</option>
-                  {participants.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
+      {/* User list with submission status */}
+      {selectedRace && (
+        <>
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <small className="text-muted fw-semibold">
+              R{selectedRace.round} — {selectedRace.name}
+            </small>
+            <Badge bg="secondary" style={{ fontSize: "0.7rem" }}>
+              {Object.keys(submissions).length}/{participants.length}
+            </Badge>
+          </div>
 
-              {/* Race Selection */}
-              <Form.Group className="mb-3">
-                <Form.Label>{t("formations.selectRace")} *</Form.Label>
-                <Form.Select
-                  value={selectedRace?.id || ""}
-                  onChange={(e) => {
-                    const race = races.find((r) => r.id === e.target.value);
-                    setSelectedRace(race || null);
-                  }}
-                  required
-                  aria-label="Select race to manage formation for"
-                >
-                  <option value="">{t("formations.selectRace")}</option>
-                  {races.map((r) => {
-                    const hasFormation = racesWithFormations.has(r.id);
-                    const isCalculated = r.pointsCalculated;
-                    const isSprint = r.qualiSprintUTC;
-                    let indicators = [];
-                    if (isSprint) indicators.push("🏃");
-                    if (hasFormation) indicators.push("✓");
-                    if (isCalculated) indicators.push("📊");
-                    const label = `${r.round}. ${r.name}${indicators.length > 0 ? ` ${indicators.join(" ")}` : ""}`;
-                    return <option key={r.id} value={r.id}>{label}</option>;
-                  })}
-                </Form.Select>
-                <Form.Text className="text-muted">
-                  🏃 = {t("formations.sprint")} | ✓ = {t("formations.editFormation")} | 📊 = {t("common.points")}
-                </Form.Text>
-              </Form.Group>
+          {loadingSubs ? (
+            <div className="text-center py-4"><Spinner animation="border" size="sm" /></div>
+          ) : (
+            <ListGroup variant="flush" style={{ borderRadius: 8, overflow: "hidden", border: `1px solid ${borderColor}` }}>
+              {participants.map((p) => {
+                const sub = submissions[p.id];
+                const hasSubmission = Boolean(sub);
+                return (
+                  <ListGroup.Item
+                    key={p.id}
+                    className="px-3 py-2"
+                    style={{ backgroundColor: bgCard, color: "var(--text-primary)", borderColor }}
+                  >
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <span className="fw-semibold">{p.name}</span>
+                        <div className="d-flex align-items-center gap-2 mt-1">
+                          {hasSubmission ? (
+                            <>
+                              <Badge bg="success" style={{ fontSize: "0.65rem" }}>{t("admin.submitted")}</Badge>
+                              <small className="text-muted" style={{ fontSize: "0.7rem" }}>
+                                {sub.mainP1}, {sub.mainP2}, {sub.mainP3}
+                              </small>
+                              {sub.isLate && (
+                                <Badge bg="warning" text="dark" style={{ fontSize: "0.6rem" }}>
+                                  {t("formations.lateSubmission")}
+                                </Badge>
+                              )}
+                            </>
+                          ) : (
+                            <Badge bg="outline-secondary" style={{ fontSize: "0.65rem", border: `1px solid ${borderColor}`, color: "var(--text-muted)" }}>
+                              {t("admin.notSubmitted")}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="d-flex gap-1 flex-shrink-0">
+                        <Button
+                          variant={hasSubmission ? "outline-primary" : "outline-success"}
+                          size="sm"
+                          className="py-0 px-2"
+                          onClick={() => openEdit(p)}
+                          style={{ fontSize: "0.75rem" }}
+                        >
+                          {hasSubmission ? t("common.edit") : "+ " + t("common.add")}
+                        </Button>
+                        {hasSubmission && (
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            className="py-0 px-2"
+                            onClick={() => confirmDelete(p)}
+                            style={{ fontSize: "0.75rem" }}
+                          >
+                            {t("common.delete")}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </ListGroup.Item>
+                );
+              })}
+            </ListGroup>
+          )}
+        </>
+      )}
 
-              {selectedUser && selectedRace && (
-                <>
-                  <hr />
-                  <h6 className="fw-bold">{t("formations.mainRace")}</h6>
+      {/* Edit/Create Formation Modal */}
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="fs-6">
+            {submissions[editingUser?.id] ? t("admin.editFormationTitle") : t("admin.addFormation")}
+            {editingUser && <small className="text-muted ms-2">— {editingUser.name}</small>}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {message && (
+            <Alert variant={message.type} dismissible onClose={() => setMessage(null)} className="py-2">
+              {message.text}
+            </Alert>
+          )}
 
-                  {renderSelect('mainP1', 'P1', true, getAvailableMainOptions)}
-                  {renderSelect('mainP2', 'P2', true, getAvailableMainOptions)}
-                  {renderSelect('mainP3', 'P3', true, getAvailableMainOptions)}
-                  {renderSelect('mainJolly', t("formations.joker"), true, getAvailableMainOptions)}
+          <p className="small fw-bold mb-2" style={{ color: "var(--text-primary)" }}>{t("formations.mainRace")}</p>
+          {renderDriverSelect("mainP1", "P1", true, mainFields)}
+          {renderDriverSelect("mainP2", "P2", true, mainFields)}
+          {renderDriverSelect("mainP3", "P3", true, mainFields)}
+          {renderDriverSelect("mainJolly", t("formations.joker"), true, mainFields)}
+          {renderDriverSelect("mainJolly2", t("formations.joker2"), false, mainFields)}
 
-                  <Form.Group className="mb-3">
-                    <Form.Label>{t("formations.joker2")}</Form.Label>
-                    <Select
-                      options={getAvailableMainOptions('mainJolly2')}
-                      value={formData.mainJolly2}
-                      onChange={(sel) => setFormData({ ...formData, mainJolly2: sel })}
-                      placeholder={t("formations.selectUser")}
-                      styles={selectStyles}
-                      isClearable
-                      noOptionsMessage={() => t("errors.duplicateDriver")}
-                      aria-label="Select driver for second joker (optional)"
-                    />
-                  </Form.Group>
+          <Form.Check
+            type="switch"
+            label={`${t("formations.lateSubmission")} (${t("formations.latePenalty")})`}
+            checked={isLateSubmission}
+            onChange={(e) => setIsLateSubmission(e.target.checked)}
+            className="my-3"
+          />
 
-                  <Form.Group className="mb-3">
-                    <Form.Check
-                      type="checkbox"
-                      label={`⏰ ${t("formations.lateSubmission")} (${t("formations.latePenalty")})`}
-                      checked={isLateSubmission}
-                      onChange={(e) => setIsLateSubmission(e.target.checked)}
-                    />
-                  </Form.Group>
+          {hasSprint && (
+            <>
+              <hr />
+              <p className="small fw-bold mb-2" style={{ color: "var(--text-primary)" }}>
+                {t("formations.sprintOptional")}
+              </p>
+              {renderDriverSelect("sprintP1", "SP1", false, sprintFields)}
+              {renderDriverSelect("sprintP2", "SP2", false, sprintFields)}
+              {renderDriverSelect("sprintP3", "SP3", false, sprintFields)}
+              {renderDriverSelect("sprintJolly", `${t("formations.joker")} Sprint`, false, sprintFields)}
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" size="sm" onClick={() => setShowEditModal(false)} disabled={saving}>
+            {t("common.cancel")}
+          </Button>
+          <Button variant="danger" size="sm" onClick={handleSave} disabled={saving}>
+            {saving ? <Spinner animation="border" size="sm" /> : t("common.save")}
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
-                  {hasSprint && (
-                    <>
-                      <hr />
-                      <h6 className="fw-bold">{t("formations.sprintOptional")}</h6>
-                      <Alert variant="info" className="py-2 small">
-                        <strong>ℹ️</strong> {t("formations.optional")}
-                      </Alert>
-
-                      {renderSelect('sprintP1', 'SP1', false, getAvailableSprintOptions, true)}
-                      {renderSelect('sprintP2', 'SP2', false, getAvailableSprintOptions, true)}
-                      {renderSelect('sprintP3', 'SP3', false, getAvailableSprintOptions, true)}
-
-                      <Form.Group className="mb-3">
-                        <Form.Label>{t("formations.joker")} {t("formations.sprint")}</Form.Label>
-                        <Select
-                          options={getAvailableSprintOptions('sprintJolly')}
-                          value={formData.sprintJolly}
-                          onChange={(sel) => setFormData({ ...formData, sprintJolly: sel })}
-                          placeholder={t("formations.selectUser")}
-                          styles={selectStyles}
-                          isClearable
-                          noOptionsMessage={() => t("errors.duplicateDriver")}
-                          aria-label="Select driver for sprint joker"
-                        />
-                      </Form.Group>
-                    </>
-                  )}
-
-                  <Button variant="danger" type="submit" disabled={saving} className="w-100" aria-label={existingFormation ? "Update formation" : "Save new formation"}>
-                    {saving ? t("common.loading") : existingFormation ? t("common.update") : t("common.save")}
-                  </Button>
-                </>
-              )}
-            </Form>
-          </Card.Body>
-        </Card>
-      </Col>
-    </Row>
+      {/* Delete Confirmation Modal */}
+      <Modal show={showDeleteConfirm} onHide={() => setShowDeleteConfirm(false)} centered size="sm">
+        <Modal.Body className="text-center py-4">
+          <p className="fw-semibold mb-1">{t("admin.confirmDeleteFormation")}</p>
+          <p className="fw-bold mb-3">{deletingUser?.name}</p>
+          <div className="d-flex gap-2 justify-content-center">
+            <Button variant="secondary" size="sm" onClick={() => setShowDeleteConfirm(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleDelete} disabled={saving}>
+              {saving ? <Spinner animation="border" size="sm" /> : t("common.delete")}
+            </Button>
+          </div>
+        </Modal.Body>
+      </Modal>
+    </>
   );
 }
 
