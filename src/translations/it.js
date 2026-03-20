@@ -362,6 +362,10 @@ export const it = {
     qualiDeadlineHint: "Questa è la deadline per l'inserimento formazioni. Spostala se le qualifiche vengono posticipate.",
     deleteRaceConfirm: "Sei sicuro di voler eliminare questa gara? L'operazione è irreversibile e cancellerà anche tutte le formazioni associate.",
     raceDeleted: "Gara eliminata con successo",
+    addSprint: "Aggiungi Sprint",
+    removeSprint: "Rimuovi Sprint",
+    submitted: "Inserita",
+    notSubmitted: "Non inserita",
 
     // Database
     databaseOperations: "Operazioni Database",
@@ -394,6 +398,7 @@ export const it = {
     restoring: "Ripristino in corso...",
     databaseRestored: "Database ripristinato con successo!",
     restoreError: "Errore ripristino",
+    typeResetToConfirm: "Digita \"RESET\" per confermare:",
     typeRestoreToConfirm: "Digita \"RESTORE\" per confermare il ripristino:",
     irreversibleWarning: "ATTENZIONE: OPERAZIONE IRREVERSIBILE",
     restoreWarningDescription: "Il ripristino cancellerà TUTTI i dati attuali (gare, classifiche, submissions) e li sostituirà con i dati del backup selezionato. Questa operazione NON può essere annullata!",

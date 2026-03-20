@@ -1,15 +1,12 @@
 /**
  * @file AdminPanel.jsx
- * @description Admin panel for managing participants, formations, race calendar, and database operations
- * Provides comprehensive administrative tools with authentication protection
+ * @description Admin panel with tabbed interface for managing the fantasy league.
+ * Clean, professional design with consistent styling across all tabs.
  */
 
 import React, { useState, useEffect } from "react";
 import {
   Container,
-  Card,
-  Tab,
-  Nav,
   Spinner,
 } from "react-bootstrap";
 import {
@@ -18,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useLanguage } from "../hooks/useLanguage";
+import { useTheme } from "../contexts/ThemeContext";
 import { error } from "../utils/logger";
 import ParticipantsManager from "./admin/ParticipantsManager";
 import FormationsManager from "./admin/FormationsManager";
@@ -25,22 +23,24 @@ import ChampionshipManager from "./admin/ChampionshipManager";
 import CalendarManager from "./admin/CalendarManager";
 import DatabaseReset from "./admin/DatabaseReset";
 
-/**
- * Main admin panel component with tabbed interface
- * @returns {JSX.Element} Admin panel with authentication and management tabs
- */
+const TABS = [
+  { key: "participants", icon: "👥" },
+  { key: "formations", icon: "📝" },
+  { key: "championship", icon: "🏆" },
+  { key: "calendar", icon: "📅" },
+  { key: "database", icon: "💾" },
+];
+
 export default function AdminPanel() {
   const { t } = useLanguage();
+  const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useState("participants");
 
-  // Shared data to avoid multiple fetches
   const [sharedParticipants, setSharedParticipants] = useState([]);
   const [sharedRaces, setSharedRaces] = useState([]);
   const [loadingShared, setLoadingShared] = useState(false);
 
-  useEffect(() => {
-    loadSharedData();
-  }, []);
+  useEffect(() => { loadSharedData(); }, []);
 
   const loadSharedData = async () => {
     setLoadingShared(true);
@@ -49,12 +49,12 @@ export default function AdminPanel() {
         getDocs(collection(db, "ranking")),
         getDocs(collection(db, "races")),
       ]);
-
-      const partList = partSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setSharedParticipants(partList.sort((a, b) => a.name.localeCompare(b.name)));
-
-      const racesList = racesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setSharedRaces(racesList.sort((a, b) => a.round - b.round));
+      setSharedParticipants(
+        partSnap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name))
+      );
+      setSharedRaces(
+        racesSnap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.round - b.round)
+      );
     } catch (err) {
       error("Error loading shared data:", err);
     } finally {
@@ -62,86 +62,80 @@ export default function AdminPanel() {
     }
   };
 
+  const tabLabels = {
+    participants: t("admin.participants"),
+    formations: t("admin.formations"),
+    championship: t("admin.championship"),
+    calendar: t("admin.calendar"),
+    database: t("admin.database"),
+  };
+
+  const borderColor = isDark ? "var(--border-color)" : "#dee2e6";
+
   return (
-    <Container className="py-4">
-      <Card className="shadow border-danger mb-4">
-        <Card.Header className="bg-danger text-white">
-          <h4 className="mb-0">⚙️ {t("admin.title")}</h4>
-        </Card.Header>
-      </Card>
+    <Container className="py-3 px-2 px-sm-3" style={{ maxWidth: 900 }}>
+      {/* Header */}
+      <h5 className="fw-bold mb-3" style={{ color: "var(--text-primary)" }}>
+        {t("admin.title")}
+      </h5>
 
-      <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
-        <Nav variant="tabs" className="mb-4 flex-nowrap">
-          <Nav.Item>
-            <Nav.Link eventKey="participants" className="px-2 px-sm-3">
-              👥 <span className="d-none d-sm-inline">{t("admin.participants")}</span>
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link eventKey="formations" className="px-2 px-sm-3">
-              📝 <span className="d-none d-sm-inline">{t("admin.formations")}</span>
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link eventKey="championship" className="px-2 px-sm-3">
-              🏆 <span className="d-none d-sm-inline">{t("admin.championship")}</span>
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link eventKey="calendar" className="px-2 px-sm-3">
-              📅 <span className="d-none d-sm-inline">{t("admin.raceCalendar")}</span>
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link eventKey="reset" className="px-2 px-sm-3">
-              🗑️ <span className="d-none d-sm-inline">{t("admin.database")}</span>
-            </Nav.Link>
-          </Nav.Item>
-        </Nav>
+      {/* Tab bar — pill-style, horizontally scrollable on mobile */}
+      <div
+        className="d-flex gap-1 pb-2 mb-3"
+        style={{
+          overflowX: "auto",
+          WebkitOverflowScrolling: "touch",
+          borderBottom: `2px solid ${borderColor}`,
+        }}
+      >
+        {TABS.map(({ key, icon }) => {
+          const isActive = activeTab === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className="btn btn-sm flex-shrink-0"
+              style={{
+                backgroundColor: isActive ? "var(--accent-red)" : "transparent",
+                color: isActive ? "#fff" : "var(--text-secondary)",
+                border: "none",
+                borderRadius: 8,
+                padding: "6px 12px",
+                fontSize: "0.8rem",
+                fontWeight: isActive ? 600 : 400,
+                whiteSpace: "nowrap",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <span className="d-sm-none">{icon}</span>
+              <span className="d-none d-sm-inline">{icon} {tabLabels[key]}</span>
+            </button>
+          );
+        })}
+      </div>
 
-        <Tab.Content>
-          <Tab.Pane eventKey="participants">
-            <ParticipantsManager
-              participants={sharedParticipants}
-              loading={loadingShared}
-              onDataChange={loadSharedData}
-            />
-          </Tab.Pane>
-
-          <Tab.Pane eventKey="formations">
-            <FormationsManager
-              participants={sharedParticipants}
-              races={sharedRaces}
-              loading={loadingShared}
-              onDataChange={loadSharedData}
-            />
-          </Tab.Pane>
-
-          <Tab.Pane eventKey="championship">
-            <ChampionshipManager
-              participants={sharedParticipants}
-              loading={loadingShared}
-              onDataChange={loadSharedData}
-            />
-          </Tab.Pane>
-
-          <Tab.Pane eventKey="calendar">
-            <CalendarManager
-              races={sharedRaces}
-              loading={loadingShared}
-              onDataChange={loadSharedData}
-            />
-          </Tab.Pane>
-
-          <Tab.Pane eventKey="reset">
-            <DatabaseReset
-              participants={sharedParticipants}
-              races={sharedRaces}
-              onDataChange={loadSharedData}
-            />
-          </Tab.Pane>
-        </Tab.Content>
-      </Tab.Container>
+      {/* Tab content */}
+      {loadingShared && !sharedParticipants.length ? (
+        <div className="text-center py-5"><Spinner animation="border" /></div>
+      ) : (
+        <>
+          {activeTab === "participants" && (
+            <ParticipantsManager participants={sharedParticipants} loading={loadingShared} onDataChange={loadSharedData} />
+          )}
+          {activeTab === "formations" && (
+            <FormationsManager participants={sharedParticipants} races={sharedRaces} loading={loadingShared} onDataChange={loadSharedData} />
+          )}
+          {activeTab === "championship" && (
+            <ChampionshipManager participants={sharedParticipants} loading={loadingShared} onDataChange={loadSharedData} />
+          )}
+          {activeTab === "calendar" && (
+            <CalendarManager races={sharedRaces} loading={loadingShared} onDataChange={loadSharedData} />
+          )}
+          {activeTab === "database" && (
+            <DatabaseReset participants={sharedParticipants} races={sharedRaces} onDataChange={loadSharedData} />
+          )}
+        </>
+      )}
     </Container>
   );
 }

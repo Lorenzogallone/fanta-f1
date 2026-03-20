@@ -1,20 +1,19 @@
 /**
  * @file ChampionshipManager.jsx
- * @description Admin component to manage championship deadline override
- * and view/edit/delete all championship formations (piloti + costruttori).
+ * @description Championship deadline management and formation viewer/editor.
+ * Unified card design, mobile-first, consistent with the admin panel style.
  */
 
 import React, { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
 import {
-  Row,
-  Col,
-  Card,
   Button,
   Form,
   Spinner,
   Badge,
-  Table,
+  Modal,
+  ListGroup,
+  Alert,
 } from "react-bootstrap";
 import {
   doc,
@@ -33,44 +32,9 @@ import { getChampionshipDeadlineAutoMs } from "../../utils/championshipDeadline"
 import { error as logError } from "../../utils/logger";
 
 const CONFIG_DOC = doc(db, "config", "championship");
-
-/** Slim inline feedback banner — replaces Bootstrap Alert for a cleaner look */
-function InlineMsg({ msg, isDark, onClose }) {
-  if (!msg) return null;
-  const isSuccess = msg.type === "success";
-  return (
-    <div
-      className="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
-      style={{
-        backgroundColor: isSuccess
-          ? isDark ? "#0f2a1a" : "#f0fdf4"
-          : isDark ? "#2a0f0f" : "#fff5f5",
-        borderLeft: `3px solid ${isSuccess ? "#22c55e" : "#ef4444"}`,
-        fontSize: "0.85rem",
-        color: isSuccess
-          ? isDark ? "#86efac" : "#15803d"
-          : isDark ? "#fca5a5" : "#b91c1c",
-      }}
-    >
-      <span style={{ fontWeight: 600 }}>{isSuccess ? "✓" : "✕"}</span>
-      <span style={{ flex: 1 }}>{msg.text}</span>
-      <button
-        onClick={onClose}
-        style={{
-          background: "none", border: "none", cursor: "pointer",
-          fontSize: "1rem", lineHeight: 1, opacity: 0.6,
-          color: "inherit", padding: "0 2px",
-        }}
-        aria-label="Close"
-      >×</button>
-    </div>
-  );
-}
-
 const driverOptions = DRIVERS.map((d) => ({ value: d, label: d }));
 const constructorOptions = CONSTRUCTORS.map((c) => ({ value: c, label: c }));
 
-/** Format a JS Date or Firestore Timestamp to datetime-local string (local time) */
 function toDatetimeLocal(ts) {
   if (!ts) return "";
   const d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -78,7 +42,6 @@ function toDatetimeLocal(ts) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-/** Format a ms timestamp to a readable date string */
 function formatDate(ms, locale) {
   if (!ms) return "—";
   return new Date(ms).toLocaleString(locale, {
@@ -87,101 +50,83 @@ function formatDate(ms, locale) {
   });
 }
 
-/**
- * Admin championship management component.
- * @param {Object} props
- * @param {Array}  props.participants - Shared participants array (includes championshipPiloti/Costruttori)
- * @param {boolean} props.loading     - Loading state from parent
- * @param {Function} props.onDataChange - Callback to refresh shared data
- */
 export default function ChampionshipManager({ participants, loading, onDataChange }) {
   const { t, currentLanguage } = useLanguage();
   const { isDark } = useTheme();
   const dateLocale = currentLanguage === "en" ? "en-GB" : "it-IT";
 
-  /* ─────────────────────── DEADLINE ─────────────────────── */
-  const [deadlineOverride, setDeadlineOverride] = useState(null); // Firestore Timestamp | null
+  /* ── Deadline state ── */
+  const [deadlineOverride, setDeadlineOverride] = useState(null);
   const [deadlineAutoMs, setDeadlineAutoMs] = useState(null);
   const [deadlineInput, setDeadlineInput] = useState("");
   const [savingDeadline, setSavingDeadline] = useState(false);
   const [deadlineMsg, setDeadlineMsg] = useState(null);
   const [loadingDeadline, setLoadingDeadline] = useState(true);
 
-  /* ─────────────────────── FORMATIONS ─────────────────────── */
+  /* ── Formation edit state ── */
   const [editingId, setEditingId] = useState(null);
-  const [editForm, setEditForm] = useState({
-    pilots: [null, null, null],
-    constructors: [null, null, null],
-  });
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({ pilots: [null, null, null], constructors: [null, null, null] });
   const [savingEdit, setSavingEdit] = useState(false);
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
   const [formationsMsg, setFormationsMsg] = useState(null);
 
-  /* ─────────────────────── STYLES ─────────────────────── */
+  /* ── Delete state ── */
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingParticipant, setDeletingParticipant] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+
+  const borderColor = isDark ? "var(--border-color)" : "#dee2e6";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
-  const bgHeader = isDark ? "var(--bg-tertiary)" : "#f8f9fa";
 
   const selectStyles = {
     control: (base, state) => ({
       ...base,
-      backgroundColor: isDark ? "#2d3748" : "#fff",
-      borderColor: state.isFocused ? "#dc3545" : isDark ? "#4a5568" : "#ced4da",
+      backgroundColor: isDark ? "var(--bg-tertiary)" : "#fff",
+      borderColor: state.isFocused ? "var(--accent-red)" : isDark ? "var(--border-color)" : "#ced4da",
       boxShadow: state.isFocused ? "0 0 0 0.2rem rgba(220,53,69,.25)" : "none",
-      "&:hover": { borderColor: "#dc3545" },
-      minHeight: "36px",
+      "&:hover": { borderColor: "var(--accent-red)" },
+      minHeight: 36,
     }),
     menu: (base) => ({
       ...base,
-      backgroundColor: isDark ? "#2d3748" : "#fff",
-      border: isDark ? "1px solid #4a5568" : "1px solid #ced4da",
+      backgroundColor: isDark ? "var(--bg-tertiary)" : "#fff",
+      border: `1px solid ${isDark ? "var(--border-color)" : "#ced4da"}`,
       zIndex: 9999,
     }),
     option: (base, state) => ({
       ...base,
-      backgroundColor: state.isFocused
-        ? isDark ? "#4a5568" : "#f8f9fa"
-        : isDark ? "#2d3748" : "#fff",
-      color: isDark ? "#e2e8f0" : "#212529",
+      backgroundColor: state.isFocused ? (isDark ? "var(--bg-secondary)" : "#f8f9fa") : "transparent",
+      color: "var(--text-primary)",
     }),
-    singleValue: (base) => ({ ...base, color: isDark ? "#e2e8f0" : "#212529" }),
-    input: (base) => ({ ...base, color: isDark ? "#e2e8f0" : "#212529" }),
-    placeholder: (base) => ({ ...base, color: isDark ? "#a0aec0" : "#6c757d" }),
+    singleValue: (base) => ({ ...base, color: "var(--text-primary)" }),
+    input: (base) => ({ ...base, color: "var(--text-primary)" }),
+    placeholder: (base) => ({ ...base, color: "var(--text-muted)" }),
   };
 
-  /* ─────────────────────── LOAD DEADLINE ─────────────────────── */
+  /* ── Load deadline ── */
   const loadDeadline = useCallback(async () => {
     setLoadingDeadline(true);
     try {
-      const [configSnap, autoMs] = await Promise.all([
-        getDoc(CONFIG_DOC),
-        getChampionshipDeadlineAutoMs(),
-      ]);
+      const [configSnap, autoMs] = await Promise.all([getDoc(CONFIG_DOC), getChampionshipDeadlineAutoMs()]);
       setDeadlineAutoMs(autoMs);
       if (configSnap.exists()) {
-        const { deadlineOverride: ov } = configSnap.data();
-        setDeadlineOverride(ov || null);
-        const effectiveMs = ov ? ov.toDate().getTime() : autoMs;
-        setDeadlineInput(effectiveMs ? toDatetimeLocal(new Date(effectiveMs)) : "");
+        const ov = configSnap.data().deadlineOverride || null;
+        setDeadlineOverride(ov);
+        setDeadlineInput(ov ? toDatetimeLocal(ov) : autoMs ? toDatetimeLocal(new Date(autoMs)) : "");
       } else {
         setDeadlineOverride(null);
         setDeadlineInput(autoMs ? toDatetimeLocal(new Date(autoMs)) : "");
       }
-    } catch (e) {
-      logError(e);
-    } finally {
-      setLoadingDeadline(false);
-    }
+    } catch (e) { logError(e); }
+    finally { setLoadingDeadline(false); }
   }, []);
 
   useEffect(() => { loadDeadline(); }, [loadDeadline]);
 
-  /* ─────────────────────── SAVE DEADLINE ─────────────────────── */
   const handleSaveDeadline = async (e) => {
     e.preventDefault();
     if (!deadlineInput) return;
-    setSavingDeadline(true);
-    setDeadlineMsg(null);
+    setSavingDeadline(true); setDeadlineMsg(null);
     try {
       const ts = Timestamp.fromDate(new Date(deadlineInput));
       await setDoc(CONFIG_DOC, { deadlineOverride: ts }, { merge: true });
@@ -190,15 +135,11 @@ export default function ChampionshipManager({ participants, loading, onDataChang
     } catch (err) {
       logError(err);
       setDeadlineMsg({ type: "danger", text: `${t("common.error")}: ${err.message}` });
-    } finally {
-      setSavingDeadline(false);
-    }
+    } finally { setSavingDeadline(false); }
   };
 
-  /* ─────────────────────── RESET DEADLINE ─────────────────────── */
   const handleResetDeadline = async () => {
-    setSavingDeadline(true);
-    setDeadlineMsg(null);
+    setSavingDeadline(true); setDeadlineMsg(null);
     try {
       await setDoc(CONFIG_DOC, { deadlineOverride: deleteField() }, { merge: true });
       setDeadlineOverride(null);
@@ -207,12 +148,10 @@ export default function ChampionshipManager({ participants, loading, onDataChang
     } catch (err) {
       logError(err);
       setDeadlineMsg({ type: "danger", text: `${t("common.error")}: ${err.message}` });
-    } finally {
-      setSavingDeadline(false);
-    }
+    } finally { setSavingDeadline(false); }
   };
 
-  /* ─────────────────────── EDIT FORMATION ─────────────────────── */
+  /* ── Edit formation ── */
   const startEdit = (participant) => {
     const pilots = (participant.championshipPiloti || []).map(
       (v) => driverOptions.find((o) => o.value === v) || null
@@ -226,396 +165,285 @@ export default function ChampionshipManager({ participants, loading, onDataChang
     });
     setEditingId(participant.id);
     setFormationsMsg(null);
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditForm({ pilots: [null, null, null], constructors: [null, null, null] });
+    setShowEditModal(true);
   };
 
   const handleSaveEdit = async () => {
-    const { pilots, constructors } = editForm;
-    if (pilots.some((p) => !p) || constructors.some((c) => !c)) {
-      setFormationsMsg({ type: "danger", text: t("errors.incompleteForm") });
+    if (editForm.pilots.some((p) => !p) || editForm.constructors.some((c) => !c)) {
+      setFormationsMsg({ type: "warning", text: t("errors.incompleteForm") });
       return;
     }
-    setSavingEdit(true);
-    setFormationsMsg(null);
+    setSavingEdit(true); setFormationsMsg(null);
     try {
       await updateDoc(doc(db, "ranking", editingId), {
-        championshipPiloti: pilots.map((p) => p.value),
-        championshipCostruttori: constructors.map((c) => c.value),
+        championshipPiloti: editForm.pilots.map((p) => p.value),
+        championshipCostruttori: editForm.constructors.map((c) => c.value),
       });
       setFormationsMsg({ type: "success", text: t("admin.formationUpdated") });
-      cancelEdit();
+      setShowEditModal(false);
+      setEditingId(null);
       onDataChange();
     } catch (err) {
       logError(err);
       setFormationsMsg({ type: "danger", text: `${t("common.error")}: ${err.message}` });
-    } finally {
-      setSavingEdit(false);
-    }
+    } finally { setSavingEdit(false); }
   };
 
-  /* ─────────────────────── DELETE FORMATION ─────────────────────── */
-  const handleDelete = async (userId) => {
-    setDeletingId(userId);
+  /* ── Delete formation ── */
+  const openDeleteConfirm = (participant) => {
+    setDeletingParticipant(participant);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deletingParticipant) return;
+    setDeletingId(deletingParticipant.id);
     setFormationsMsg(null);
     try {
-      await updateDoc(doc(db, "ranking", userId), {
+      await updateDoc(doc(db, "ranking", deletingParticipant.id), {
         championshipPiloti: deleteField(),
         championshipCostruttori: deleteField(),
       });
       setFormationsMsg({ type: "success", text: t("admin.formationDeleted") });
-      setConfirmDeleteId(null);
+      setShowDeleteConfirm(false);
+      setDeletingParticipant(null);
       onDataChange();
     } catch (err) {
       logError(err);
       setFormationsMsg({ type: "danger", text: `${t("common.error")}: ${err.message}` });
-    } finally {
-      setDeletingId(null);
-    }
+    } finally { setDeletingId(null); }
   };
 
-  /* ─────────────────────── DERIVED DATA ─────────────────────── */
+  /* ── Derived data ── */
   const formations = participants.filter(
-    (p) =>
-      Array.isArray(p.championshipPiloti) &&
-      p.championshipPiloti.length === 3 &&
-      Array.isArray(p.championshipCostruttori) &&
-      p.championshipCostruttori.length === 3
+    (p) => Array.isArray(p.championshipPiloti) && p.championshipPiloti.length === 3
+      && Array.isArray(p.championshipCostruttori) && p.championshipCostruttori.length === 3
   );
-
-  const effectiveDeadlineMs = deadlineOverride
-    ? deadlineOverride.toDate().getTime()
-    : deadlineAutoMs;
+  const effectiveDeadlineMs = deadlineOverride ? deadlineOverride.toDate().getTime() : deadlineAutoMs;
   const isOpen = effectiveDeadlineMs ? Date.now() < effectiveDeadlineMs : true;
 
-  /* ─────────────────────── RENDER ─────────────────────── */
   if (loading) {
-    return (
-      <div className="text-center py-5">
-        <Spinner animation="border" />
-      </div>
-    );
+    return <div className="text-center py-5"><Spinner animation="border" /></div>;
   }
 
   return (
-    <Row className="g-4">
+    <>
+      {/* ── DEADLINE SECTION ── */}
+      <div className="mb-4">
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <h6 className="mb-0 fw-bold" style={{ color: "var(--text-primary)" }}>
+            {t("admin.championshipDeadline")}
+          </h6>
+          <Badge bg={isOpen ? "success" : "danger"} style={{ fontSize: "0.7rem" }}>
+            {isOpen ? t("formations.open") : t("formations.closed")}
+          </Badge>
+        </div>
 
-      {/* ── DEADLINE CARD ── */}
-      <Col xs={12}>
-        <Card className="shadow border-0" style={{ backgroundColor: bgCard }}>
-          <Card.Header className="py-2" style={{ backgroundColor: bgHeader, borderBottom: `2px solid ${isDark ? "#4a5568" : "#dee2e6"}` }}>
-            <div className="d-flex justify-content-between align-items-center">
-              <h6 className="mb-0 fw-bold">🗓️ {t("admin.championshipDeadline")}</h6>
-              <Badge bg={isOpen ? "success" : "danger"} style={{ fontSize: "0.75rem" }}>
-                {isOpen ? t("formations.open") : t("formations.closed")}
-              </Badge>
-            </div>
-          </Card.Header>
-          <Card.Body className="py-3">
-            <InlineMsg msg={deadlineMsg} isDark={isDark} onClose={() => setDeadlineMsg(null)} />
+        <div
+          className="rounded p-3"
+          style={{ backgroundColor: bgCard, border: `1px solid ${borderColor}` }}
+        >
+          {deadlineMsg && (
+            <Alert variant={deadlineMsg.type} dismissible onClose={() => setDeadlineMsg(null)} className="py-2 mb-2">
+              {deadlineMsg.text}
+            </Alert>
+          )}
 
-            {loadingDeadline ? (
-              <div className="text-center py-3"><Spinner animation="border" size="sm" /></div>
-            ) : (
-              <>
-                {/* Current effective deadline */}
-                <div className="d-flex flex-wrap align-items-center gap-2 mb-3" style={{ fontSize: "0.9rem" }}>
-                  <span className="fw-semibold">{t("admin.deadlineCurrentLabel")}:</span>
-                  <span className="fw-bold" style={{ color: isDark ? "#fbbf24" : "#d97706" }}>
-                    {formatDate(effectiveDeadlineMs, dateLocale)}
-                  </span>
-                  {deadlineOverride ? (
-                    <Badge bg="warning" text="dark" style={{ fontSize: "0.7rem" }}>⚙️ {t("admin.deadlineOverrideActive")}</Badge>
-                  ) : (
-                    <Badge bg="secondary" style={{ fontSize: "0.7rem" }}>🤖 {t("admin.deadlineAutoCalculated")}</Badge>
+          {loadingDeadline ? (
+            <div className="text-center py-3"><Spinner animation="border" size="sm" /></div>
+          ) : (
+            <>
+              <div className="d-flex flex-wrap align-items-center gap-2 mb-3" style={{ fontSize: "0.85rem" }}>
+                <span className="fw-semibold">{t("admin.deadlineCurrentLabel")}:</span>
+                <span className="fw-bold" style={{ color: isDark ? "#fbbf24" : "#d97706" }}>
+                  {formatDate(effectiveDeadlineMs, dateLocale)}
+                </span>
+                <Badge
+                  bg={deadlineOverride ? "warning" : "secondary"}
+                  text={deadlineOverride ? "dark" : undefined}
+                  style={{ fontSize: "0.65rem" }}
+                >
+                  {deadlineOverride ? t("admin.deadlineOverrideActive") : t("admin.deadlineAutoCalculated")}
+                </Badge>
+              </div>
+
+              {deadlineAutoMs && deadlineOverride && (
+                <p className="small text-muted mb-3" style={{ fontSize: "0.75rem" }}>
+                  {t("admin.deadlineAutoCalculated")}: {formatDate(deadlineAutoMs, dateLocale)}
+                </p>
+              )}
+
+              <Form onSubmit={handleSaveDeadline}>
+                <Form.Label className="mb-1 small fw-semibold text-muted">{t("admin.editDeadline")}</Form.Label>
+                <div className="d-flex align-items-center gap-2 flex-wrap">
+                  <Form.Control
+                    type="datetime-local" size="sm"
+                    value={deadlineInput}
+                    onChange={(e) => setDeadlineInput(e.target.value)}
+                    style={{ maxWidth: 220 }}
+                  />
+                  <Button variant="danger" type="submit" disabled={savingDeadline || !deadlineInput} size="sm">
+                    {savingDeadline ? <Spinner animation="border" size="sm" /> : t("common.save")}
+                  </Button>
+                  {deadlineOverride && (
+                    <Button variant="outline-secondary" size="sm" disabled={savingDeadline} onClick={handleResetDeadline}>
+                      {t("admin.resetDeadline")}
+                    </Button>
                   )}
                 </div>
+              </Form>
+            </>
+          )}
+        </div>
+      </div>
 
-                {/* Auto deadline info */}
-                {deadlineAutoMs && deadlineOverride && (
-                  <p className="small text-muted mb-3" style={{ fontSize: "0.8rem" }}>
-                    {t("admin.deadlineAutoCalculated")}: {formatDate(deadlineAutoMs, dateLocale)}
-                  </p>
-                )}
+      {/* ── FORMATIONS SECTION ── */}
+      <div>
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <h6 className="mb-0 fw-bold" style={{ color: "var(--text-primary)" }}>
+            {t("admin.manageChampionshipFormations")}
+          </h6>
+          <Badge bg="secondary" style={{ fontSize: "0.7rem" }}>
+            {formations.length}/{participants.length}
+          </Badge>
+        </div>
 
-                {/* Edit deadline form */}
-                <Form onSubmit={handleSaveDeadline}>
-                  <Form.Label className="mb-1 small fw-semibold text-muted">
-                    ✏️ {t("admin.editDeadline")}
-                  </Form.Label>
-                  <div className="d-flex align-items-center gap-2 flex-wrap">
-                    <Form.Control
-                      type="datetime-local"
-                      size="sm"
-                      value={deadlineInput}
-                      onChange={(e) => setDeadlineInput(e.target.value)}
-                      style={{
-                        backgroundColor: isDark ? "#2d3748" : undefined,
-                        color: isDark ? "#e2e8f0" : undefined,
-                        borderColor: isDark ? "#4a5568" : undefined,
-                        maxWidth: 260,
-                      }}
-                    />
-                    <Button
-                      variant="danger"
-                      type="submit"
-                      disabled={savingDeadline || !deadlineInput}
-                      size="sm"
-                    >
-                      {savingDeadline ? t("common.loading") : t("common.save")}
-                    </Button>
-                    {deadlineOverride && (
-                      <Button
-                        variant="outline-secondary"
-                        size="sm"
-                        disabled={savingDeadline}
-                        onClick={handleResetDeadline}
-                      >
-                        {t("admin.resetDeadline")}
-                      </Button>
-                    )}
-                  </div>
-                </Form>
-              </>
-            )}
-          </Card.Body>
-        </Card>
-      </Col>
+        {formationsMsg && (
+          <Alert variant={formationsMsg.type} dismissible onClose={() => setFormationsMsg(null)} className="py-2 mb-2">
+            {formationsMsg.text}
+          </Alert>
+        )}
 
-      {/* ── FORMATIONS CARD ── */}
-      <Col xs={12}>
-        <Card className="shadow border-0" style={{ backgroundColor: bgCard }}>
-          <Card.Header className="py-2" style={{ backgroundColor: bgHeader, borderBottom: `2px solid ${isDark ? "#4a5568" : "#dee2e6"}` }}>
-            <div className="d-flex justify-content-between align-items-center">
-              <h6 className="mb-0 fw-bold">
-                📋 {t("admin.manageChampionshipFormations")}
-              </h6>
-              <Badge bg="secondary" style={{ fontSize: "0.75rem" }}>
-                {formations.length} {t("admin.participants").toLowerCase()}
-              </Badge>
-            </div>
-          </Card.Header>
-          <Card.Body>
-            <InlineMsg msg={formationsMsg} isDark={isDark} onClose={() => setFormationsMsg(null)} />
-
-            {formations.length === 0 ? (
-              <div
-                className="text-center py-5"
-                style={{ color: isDark ? "#718096" : "#adb5bd" }}
+        {formations.length === 0 ? (
+          <div
+            className="text-center py-4 rounded"
+            style={{ backgroundColor: bgCard, border: `1px solid ${borderColor}`, color: "var(--text-muted)" }}
+          >
+            <p className="mb-0 small">{t("admin.noChampionshipFormations")}</p>
+          </div>
+        ) : (
+          <ListGroup variant="flush" style={{ borderRadius: 8, overflow: "hidden", border: `1px solid ${borderColor}` }}>
+            {formations.map((p) => (
+              <ListGroup.Item
+                key={p.id}
+                className="px-3 py-2"
+                style={{ backgroundColor: bgCard, color: "var(--text-primary)", borderColor }}
               >
-                <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem", opacity: 0.35 }}>📋</div>
-                <p className="mb-0 fw-semibold" style={{ color: isDark ? "#a0aec0" : "#6c757d" }}>
-                  {t("admin.noChampionshipFormations")}
-                </p>
-              </div>
-            ) : (
-              <div className="table-responsive">
-                <Table
-                  striped
-                  bordered
-                  hover
-                  size="sm"
-                  className="mb-0 align-middle"
-                  style={{ fontSize: "0.875rem" }}
-                >
-                  <thead>
-                    <tr>
-                      <th style={{ width: "20%" }}>{t("leaderboard.player")}</th>
-                      <th>{t("history.topDrivers")}</th>
-                      <th>{t("history.topConstructors")}</th>
-                      <th style={{ width: "110px" }}>{t("common.actions")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {formations.map((p) => (
-                      <React.Fragment key={p.id}>
-                        {/* ── Display row ── */}
-                        <tr>
-                          <td className="fw-semibold">{p.name}</td>
-                          <td>
-                            {p.championshipPiloti.map((d, i) => (
-                              <span key={d} className="me-2 text-nowrap">
-                                <strong>{i + 1}°</strong> {d}
-                              </span>
-                            ))}
-                          </td>
-                          <td>
-                            {p.championshipCostruttori.map((c, i) => (
-                              <span key={c} className="me-2 text-nowrap">
-                                <strong>{i + 1}°</strong> {c}
-                              </span>
-                            ))}
-                          </td>
-                          <td>
-                            <div className="d-flex gap-1">
-                              <Button
-                                variant="outline-primary"
-                                size="sm"
-                                onClick={() => editingId === p.id ? cancelEdit() : startEdit(p)}
-                                aria-label={`Edit formation for ${p.name}`}
-                              >
-                                {editingId === p.id ? "✕" : "✏️"}
-                              </Button>
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                onClick={() => setConfirmDeleteId(p.id)}
-                                disabled={deletingId === p.id}
-                                aria-label={`Delete formation for ${p.name}`}
-                              >
-                                {deletingId === p.id ? (
-                                  <Spinner animation="border" size="sm" />
-                                ) : "🗑️"}
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
+                <div className="d-flex justify-content-between align-items-start">
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <span className="fw-semibold">{p.name}</span>
+                    <div className="mt-1" style={{ fontSize: "0.78rem" }}>
+                      <div className="text-muted">
+                        <span className="fw-semibold">{t("history.topDrivers")}:</span>{" "}
+                        {p.championshipPiloti.join(", ")}
+                      </div>
+                      <div className="text-muted">
+                        <span className="fw-semibold">{t("history.topConstructors")}:</span>{" "}
+                        {p.championshipCostruttori.join(", ")}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="d-flex gap-1 flex-shrink-0 ms-2">
+                    <Button variant="outline-primary" size="sm" className="py-0 px-2" onClick={() => startEdit(p)}
+                      style={{ fontSize: "0.75rem" }}>
+                      {t("common.edit")}
+                    </Button>
+                    <Button variant="outline-danger" size="sm" className="py-0 px-2" onClick={() => openDeleteConfirm(p)}
+                      disabled={deletingId === p.id} style={{ fontSize: "0.75rem" }}>
+                      {deletingId === p.id ? <Spinner animation="border" size="sm" /> : t("common.delete")}
+                    </Button>
+                  </div>
+                </div>
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        )}
+      </div>
 
-                        {/* ── Delete confirmation row ── */}
-                        {confirmDeleteId === p.id && (
-                          <tr>
-                            <td
-                              colSpan={4}
-                              style={{
-                                backgroundColor: isDark ? "#1e1a0f" : "#fffbeb",
-                                borderLeft: "3px solid #f59e0b",
-                              }}
-                            >
-                              <div className="d-flex align-items-center gap-3 flex-wrap px-2 py-2">
-                                <span
-                                  className="small"
-                                  style={{ color: isDark ? "#fcd34d" : "#92400e" }}
-                                >
-                                  {t("admin.confirmDeleteFormation")} <strong>{p.name}</strong>?
-                                </span>
-                                <div className="d-flex gap-2">
-                                  <Button
-                                    variant="danger"
-                                    size="sm"
-                                    onClick={() => handleDelete(p.id)}
-                                    disabled={deletingId === p.id}
-                                  >
-                                    {deletingId === p.id
-                                      ? <Spinner animation="border" size="sm" />
-                                      : t("common.delete")}
-                                  </Button>
-                                  <Button
-                                    variant="outline-secondary"
-                                    size="sm"
-                                    onClick={() => setConfirmDeleteId(null)}
-                                  >
-                                    {t("common.cancel")}
-                                  </Button>
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
+      {/* ── Edit Formation Modal ── */}
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="fs-6">
+            {t("admin.editFormationTitle")}
+            <small className="text-muted ms-2">— {participants.find((p) => p.id === editingId)?.name}</small>
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {formationsMsg && (
+            <Alert variant={formationsMsg.type} dismissible onClose={() => setFormationsMsg(null)} className="py-2">
+              {formationsMsg.text}
+            </Alert>
+          )}
 
-                        {/* ── Edit row ── */}
-                        {editingId === p.id && (
-                          <tr>
-                            <td colSpan={4}>
-                              <div
-                                className="p-3 rounded"
-                                style={{
-                                  backgroundColor: isDark ? "#1a202c" : "#f8f9fa",
-                                  border: `1px solid ${isDark ? "#4a5568" : "#dee2e6"}`,
-                                }}
-                              >
-                                <Row className="g-3">
-                                  {/* Drivers */}
-                                  <Col xs={12} md={6}>
-                                    <p className="fw-bold mb-2 small">
-                                      🏎️ {t("history.topDrivers")}
-                                    </p>
-                                    {(["championshipForm.driver1", "championshipForm.driver2", "championshipForm.driver3"]).map((key, i) => (
-                                      <Form.Group key={`d${i}`} className="mb-2">
-                                        <Form.Label className="small mb-1">{t(key)}</Form.Label>
-                                        <Select
-                                          options={driverOptions.filter(
-                                            (o) => !editForm.pilots.some(
-                                              (sel, idx) => sel?.value === o.value && idx !== i
-                                            )
-                                          )}
-                                          value={editForm.pilots[i]}
-                                          onChange={(sel) => {
-                                            const next = [...editForm.pilots];
-                                            next[i] = sel;
-                                            setEditForm((f) => ({ ...f, pilots: next }));
-                                          }}
-                                          styles={selectStyles}
-                                          placeholder={t("formations.selectUser")}
-                                          noOptionsMessage={() => t("errors.duplicateDriver")}
-                                        />
-                                      </Form.Group>
-                                    ))}
-                                  </Col>
+          <p className="small fw-bold mb-2">{t("history.topDrivers")}</p>
+          {[0, 1, 2].map((i) => (
+            <Form.Group key={`d${i}`} className="mb-2">
+              <Form.Label className="small mb-1">{t(`championshipForm.driver${i + 1}`)} <span className="text-danger">*</span></Form.Label>
+              <Select
+                options={driverOptions.filter(
+                  (o) => !editForm.pilots.some((sel, idx) => sel?.value === o.value && idx !== i)
+                )}
+                value={editForm.pilots[i]}
+                onChange={(sel) => {
+                  const next = [...editForm.pilots]; next[i] = sel;
+                  setEditForm((f) => ({ ...f, pilots: next }));
+                }}
+                styles={selectStyles}
+                placeholder={t("common.select")}
+                menuPortalTarget={document.body}
+                menuPosition="fixed"
+              />
+            </Form.Group>
+          ))}
 
-                                  {/* Constructors */}
-                                  <Col xs={12} md={6}>
-                                    <p className="fw-bold mb-2 small">
-                                      🏭 {t("history.topConstructors")}
-                                    </p>
-                                    {(["championshipForm.constructor1", "championshipForm.constructor2", "championshipForm.constructor3"]).map((key, i) => (
-                                      <Form.Group key={`c${i}`} className="mb-2">
-                                        <Form.Label className="small mb-1">{t(key)}</Form.Label>
-                                        <Select
-                                          options={constructorOptions.filter(
-                                            (o) => !editForm.constructors.some(
-                                              (sel, idx) => sel?.value === o.value && idx !== i
-                                            )
-                                          )}
-                                          value={editForm.constructors[i]}
-                                          onChange={(sel) => {
-                                            const next = [...editForm.constructors];
-                                            next[i] = sel;
-                                            setEditForm((f) => ({ ...f, constructors: next }));
-                                          }}
-                                          styles={selectStyles}
-                                          placeholder={t("formations.selectUser")}
-                                          noOptionsMessage={() => t("errors.duplicateDriver")}
-                                        />
-                                      </Form.Group>
-                                    ))}
-                                  </Col>
-                                </Row>
+          <hr />
+          <p className="small fw-bold mb-2">{t("history.topConstructors")}</p>
+          {[0, 1, 2].map((i) => (
+            <Form.Group key={`c${i}`} className="mb-2">
+              <Form.Label className="small mb-1">{t(`championshipForm.constructor${i + 1}`)} <span className="text-danger">*</span></Form.Label>
+              <Select
+                options={constructorOptions.filter(
+                  (o) => !editForm.constructors.some((sel, idx) => sel?.value === o.value && idx !== i)
+                )}
+                value={editForm.constructors[i]}
+                onChange={(sel) => {
+                  const next = [...editForm.constructors]; next[i] = sel;
+                  setEditForm((f) => ({ ...f, constructors: next }));
+                }}
+                styles={selectStyles}
+                placeholder={t("common.select")}
+                menuPortalTarget={document.body}
+                menuPosition="fixed"
+              />
+            </Form.Group>
+          ))}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" size="sm" onClick={() => setShowEditModal(false)} disabled={savingEdit}>
+            {t("common.cancel")}
+          </Button>
+          <Button variant="danger" size="sm" onClick={handleSaveEdit} disabled={savingEdit}>
+            {savingEdit ? <Spinner animation="border" size="sm" /> : t("common.save")}
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
-                                <div className="d-flex gap-2 mt-2">
-                                  <Button
-                                    variant="danger"
-                                    size="sm"
-                                    onClick={handleSaveEdit}
-                                    disabled={savingEdit}
-                                  >
-                                    {savingEdit ? t("common.loading") : t("common.save")}
-                                  </Button>
-                                  <Button
-                                    variant="outline-secondary"
-                                    size="sm"
-                                    onClick={cancelEdit}
-                                    disabled={savingEdit}
-                                  >
-                                    {t("common.cancel")}
-                                  </Button>
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            )}
-          </Card.Body>
-        </Card>
-      </Col>
-    </Row>
+      {/* ── Delete Confirmation Modal ── */}
+      <Modal show={showDeleteConfirm} onHide={() => setShowDeleteConfirm(false)} centered size="sm">
+        <Modal.Body className="text-center py-4">
+          <p className="fw-semibold mb-1">{t("admin.confirmDeleteFormation")}</p>
+          <p className="fw-bold mb-3">{deletingParticipant?.name}</p>
+          <div className="d-flex gap-2 justify-content-center">
+            <Button variant="secondary" size="sm" onClick={() => setShowDeleteConfirm(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleDelete} disabled={deletingId}>
+              {deletingId ? <Spinner animation="border" size="sm" /> : t("common.delete")}
+            </Button>
+          </div>
+        </Modal.Body>
+      </Modal>
+    </>
   );
 }
 
