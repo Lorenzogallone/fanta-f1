@@ -350,6 +350,18 @@ export const it = {
     racesWillShift: "gare verranno spostate al round successivo",
     restoreRace: "Ripristina Gara",
     restoreSprint: "Ripristina Sprint",
+    racesFound: "gare trovate nel file",
+    racesImported: "gare importate",
+    previewChanges: "Anteprima Modifiche",
+    nameChanged: "Nome cambiato",
+    roundReorderPreview: "Le gare verranno riordinate in base alla nuova data:",
+    noRoundChanges: "Nessun cambio di round per le altre gare",
+    edited: "Modificata",
+    shifted: "Spostata",
+    preview: "Anteprima",
+    qualiDeadlineHint: "Questa è la deadline per l'inserimento formazioni. Spostala se le qualifiche vengono posticipate.",
+    deleteRaceConfirm: "Sei sicuro di voler eliminare questa gara? L'operazione è irreversibile e cancellerà anche tutte le formazioni associate.",
+    raceDeleted: "Gara eliminata con successo",
 
     // Database
     databaseOperations: "Operazioni Database",
