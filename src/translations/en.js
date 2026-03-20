@@ -350,6 +350,18 @@ export const en = {
     racesWillShift: "races will be shifted to the next round",
     restoreRace: "Restore Race",
     restoreSprint: "Restore Sprint",
+    racesFound: "races found in file",
+    racesImported: "races imported",
+    previewChanges: "Preview Changes",
+    nameChanged: "Name changed",
+    roundReorderPreview: "Races will be reordered based on the new date:",
+    noRoundChanges: "No round changes for other races",
+    edited: "Edited",
+    shifted: "Shifted",
+    preview: "Preview",
+    qualiDeadlineHint: "This is the deadline for lineup submissions. Move it if qualifying is postponed.",
+    deleteRaceConfirm: "Are you sure you want to delete this race? This is irreversible and will also delete all associated lineups.",
+    raceDeleted: "Race deleted successfully",
 
     // Database
     databaseOperations: "Database Operations",
