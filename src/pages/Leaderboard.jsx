@@ -51,6 +51,24 @@ export default function Leaderboard() {
         pointsByRace: d.data().pointsByRace || {},
       }));
 
+      // Helper: sum race points from pointsByRace, optionally excluding one race
+      const sumRacePts = (pbr, excludeId) =>
+        Object.entries(pbr).reduce((sum, [id, e]) => {
+          if (id === excludeId) return sum;
+          return sum + (e.mainPts || 0) + (e.sprintPts || 0);
+        }, 0);
+
+      // Helper: assign positions with tie handling (competition ranking)
+      const assignPositions = (arr) => {
+        let pos = 1;
+        const map = {};
+        arr.forEach((r, i) => {
+          if (i > 0 && r.sortPts < arr[i - 1].sortPts) pos = i + 1;
+          map[r.userId] = pos;
+        });
+        return map;
+      };
+
       // Find the last calculated race (highest round from rXX- prefix)
       const allRaceIds = new Set();
       rawRows.forEach((r) => Object.keys(r.pointsByRace).forEach((id) => allRaceIds.add(id)));
@@ -63,7 +81,7 @@ export default function Leaderboard() {
         })[0];
       }
 
-      // Current positions
+      // Current positions (from puntiTotali as displayed)
       let currentPos = 1;
       const rowsWithPositions = rawRows.map((row, index) => {
         if (index > 0 && row.pts < rawRows[index - 1].pts) {
@@ -72,24 +90,26 @@ export default function Leaderboard() {
         return { ...row, position: currentPos };
       });
 
-      // Previous positions (before last race)
-      if (lastRaceId) {
-        const prevRows = rawRows.map((r) => {
-          const raceEntry = r.pointsByRace[lastRaceId];
-          const raceTotal = raceEntry ? (raceEntry.mainPts || 0) + (raceEntry.sprintPts || 0) : 0;
-          return { userId: r.userId, prevPts: r.pts - raceTotal };
-        }).sort((a, b) => b.prevPts - a.prevPts);
+      // Position change: compare race-only rankings (excludes championship pts)
+      // so the comparison is consistent
+      if (lastRaceId && allRaceIds.size > 1) {
+        const currRace = rawRows.map((r) => ({
+          userId: r.userId,
+          sortPts: sumRacePts(r.pointsByRace, null),
+        })).sort((a, b) => b.sortPts - a.sortPts);
 
-        let prevPos = 1;
-        const prevPositionMap = {};
-        prevRows.forEach((r, i) => {
-          if (i > 0 && r.prevPts < prevRows[i - 1].prevPts) prevPos = i + 1;
-          prevPositionMap[r.userId] = prevPos;
-        });
+        const prevRace = rawRows.map((r) => ({
+          userId: r.userId,
+          sortPts: sumRacePts(r.pointsByRace, lastRaceId),
+        })).sort((a, b) => b.sortPts - a.sortPts);
+
+        const currPosMap = assignPositions(currRace);
+        const prevPosMap = assignPositions(prevRace);
 
         rowsWithPositions.forEach((r) => {
-          const prev = prevPositionMap[r.userId];
-          if (prev != null) r.posChange = prev - r.position;
+          const curr = currPosMap[r.userId];
+          const prev = prevPosMap[r.userId];
+          if (curr != null && prev != null) r.posChange = prev - curr;
         });
       }
 
