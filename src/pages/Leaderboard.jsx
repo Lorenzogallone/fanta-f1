@@ -48,8 +48,22 @@ export default function Leaderboard() {
         pts: d.data().puntiTotali,
         jolly: d.data().jolly ?? 0,
         photoURL: d.data().photoURL || "",
+        pointsByRace: d.data().pointsByRace || {},
       }));
 
+      // Find the last calculated race (highest round from rXX- prefix)
+      const allRaceIds = new Set();
+      rawRows.forEach((r) => Object.keys(r.pointsByRace).forEach((id) => allRaceIds.add(id)));
+      let lastRaceId = null;
+      if (allRaceIds.size > 0) {
+        lastRaceId = [...allRaceIds].sort((a, b) => {
+          const ra = parseInt(a.match(/^r(\d+)/)?.[1] || "0", 10);
+          const rb = parseInt(b.match(/^r(\d+)/)?.[1] || "0", 10);
+          return rb - ra;
+        })[0];
+      }
+
+      // Current positions
       let currentPos = 1;
       const rowsWithPositions = rawRows.map((row, index) => {
         if (index > 0 && row.pts < rawRows[index - 1].pts) {
@@ -57,6 +71,27 @@ export default function Leaderboard() {
         }
         return { ...row, position: currentPos };
       });
+
+      // Previous positions (before last race)
+      if (lastRaceId) {
+        const prevRows = rawRows.map((r) => {
+          const raceEntry = r.pointsByRace[lastRaceId];
+          const raceTotal = raceEntry ? (raceEntry.mainPts || 0) + (raceEntry.sprintPts || 0) : 0;
+          return { userId: r.userId, prevPts: r.pts - raceTotal };
+        }).sort((a, b) => b.prevPts - a.prevPts);
+
+        let prevPos = 1;
+        const prevPositionMap = {};
+        prevRows.forEach((r, i) => {
+          if (i > 0 && r.prevPts < prevRows[i - 1].prevPts) prevPos = i + 1;
+          prevPositionMap[r.userId] = prevPos;
+        });
+
+        rowsWithPositions.forEach((r) => {
+          const prev = prevPositionMap[r.userId];
+          if (prev != null) r.posChange = prev - r.position;
+        });
+      }
 
       setRows(rowsWithPositions);
       setLoading(false);
@@ -103,23 +138,25 @@ export default function Leaderboard() {
             style={{
               borderTop: `1px solid ${accentColor}`,
               tableLayout: "fixed",
-              minWidth: "320px",
+              minWidth: "300px",
             }}
           >
             <colgroup>
-              <col style={{ width: "28px" }} />
+              <col style={{ width: "26px" }} />
               <col />
-              <col style={{ width: "42px" }} />
-              <col style={{ width: "42px" }} />
+              <col style={{ width: "38px" }} />
+              <col style={{ width: "38px" }} />
+              <col style={{ width: "24px" }} />
               <col style={{ width: "28px" }} />
             </colgroup>
             <thead>
               <tr>
-                <th className="text-center px-1" style={{ whiteSpace: "nowrap", fontSize: "0.8rem" }}>#</th>
+                <th className="text-center px-0" style={{ whiteSpace: "nowrap", fontSize: "0.8rem" }}>#</th>
                 <th className="px-1" style={{ whiteSpace: "nowrap", fontSize: "0.8rem" }}>{t("leaderboard.player")}</th>
-                <th className="text-center px-1" style={{ whiteSpace: "nowrap", fontSize: "0.8rem" }}>{t("common.points")}</th>
-                <th className="text-center px-1" style={{ whiteSpace: "nowrap", fontSize: "0.8rem" }}>{t("leaderboard.gap")}</th>
-                <th className="text-center px-1" style={{ whiteSpace: "nowrap", fontSize: "0.8rem" }}>J</th>
+                <th className="text-center px-0" style={{ whiteSpace: "nowrap", fontSize: "0.8rem" }}>{t("common.points")}</th>
+                <th className="text-center px-0" style={{ whiteSpace: "nowrap", fontSize: "0.8rem" }}>{t("leaderboard.gap")}</th>
+                <th className="text-center px-0" style={{ whiteSpace: "nowrap", fontSize: "0.8rem" }}>J</th>
+                <th className="px-0"></th>
               </tr>
             </thead>
 
@@ -129,18 +166,21 @@ export default function Leaderboard() {
                 const gap = (leaderPts - r.pts === 0) ? "—" : `-${leaderPts - r.pts}`;
                 const isTop3 = r.position <= 3;
                 const avatarURL = r.photoURL || userProfiles[r.userId]?.photoURL || "";
+                const change = r.posChange;
+                const changeDisplay = change == null ? "" : change > 0 ? `+${change}` : change === 0 ? "=" : `${change}`;
+                const changeColor = change > 0 ? "#198754" : change < 0 ? "#dc3545" : "#6c757d";
 
                 return (
                   <tr key={r.userId} className={isTop3 ? "fw-bold" : ""}>
-                    <td className="text-center px-1" style={{ fontSize: "0.85rem", padding: "6px 2px" }}>{medal}</td>
-                    <td className="px-1" style={{ padding: "6px 4px" }}>
+                    <td className="text-center px-0" style={{ fontSize: "0.85rem", padding: "6px 2px" }}>{medal}</td>
+                    <td className="px-1" style={{ padding: "6px 2px", overflow: "hidden" }}>
                       <Link
                         to={`/participant/${r.userId}`}
                         className="d-flex align-items-center gap-1 text-truncate"
                         style={{
                           color: "inherit",
                           textDecoration: "none",
-                          fontSize: "0.88rem",
+                          fontSize: "0.85rem",
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.textDecoration = "underline";
@@ -154,17 +194,24 @@ export default function Leaderboard() {
                         <UserAvatar
                           photoURL={avatarURL}
                           name={r.name}
-                          size={22}
+                          size={20}
                         />
                         <span className="text-truncate">{r.name}</span>
                       </Link>
                     </td>
-                    <td className="text-center px-1 fw-semibold" style={{ fontSize: "0.85rem", padding: "6px 2px" }}>{r.pts}</td>
-                    <td className="text-center px-1 text-muted" style={{ fontSize: "0.75rem", padding: "6px 2px" }}>{gap}</td>
-                    <td className="text-center px-1" style={{ padding: "6px 2px" }}>
-                      <span style={{ fontSize: "0.7rem", color: r.jolly ? "#198754" : "#6c757d", fontWeight: "bold" }}>
+                    <td className="text-center px-0 fw-semibold" style={{ fontSize: "0.82rem", padding: "6px 1px" }}>{r.pts}</td>
+                    <td className="text-center px-0 text-muted" style={{ fontSize: "0.72rem", padding: "6px 1px" }}>{gap}</td>
+                    <td className="text-center px-0" style={{ padding: "6px 1px" }}>
+                      <span style={{ fontSize: "0.68rem", color: r.jolly ? "#198754" : "#6c757d", fontWeight: "bold" }}>
                         {r.jolly}
                       </span>
+                    </td>
+                    <td className="text-center px-0" style={{ padding: "6px 1px" }}>
+                      {changeDisplay && (
+                        <span style={{ fontSize: "0.65rem", fontWeight: 700, color: changeColor }}>
+                          {change > 0 ? "▲" : change < 0 ? "▼" : "•"}<span style={{ fontSize: "0.6rem" }}>{Math.abs(change) || ""}</span>
+                        </span>
+                      )}
                     </td>
                   </tr>
                 );

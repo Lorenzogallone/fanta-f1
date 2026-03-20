@@ -344,7 +344,7 @@ export default function History() {
                     fontSize: "0.9rem",
                   }}
                 >
-                  🏁 {t("history.racesTab")}
+                  {t("history.racesTab")}
                 </Nav.Link>
               </Nav.Item>
               {hasChampionship && (

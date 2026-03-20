@@ -485,6 +485,11 @@ export default function CalendarManager({ races, loading, onDataChange }) {
 
           {!showPreview ? (
             <Form>
+              {Boolean(editingRace?.officialResults) && (
+                <Alert variant="info" className="py-2 small mb-3">
+                  {t("admin.hasResults")} — {t("admin.datesLockedHint")}
+                </Alert>
+              )}
               <Form.Group className="mb-3">
                 <Form.Label className="small fw-semibold">{t("admin.raceName")} *</Form.Label>
                 <Form.Control type="text" size="sm" value={editFormData.name}
@@ -493,12 +498,14 @@ export default function CalendarManager({ races, loading, onDataChange }) {
               <Form.Group className="mb-3">
                 <Form.Label className="small fw-semibold">{t("admin.raceDateTimeUTC")} *</Form.Label>
                 <Form.Control type="datetime-local" size="sm" value={editFormData.raceDateTimeUTC}
-                  onChange={(e) => setEditFormData({ ...editFormData, raceDateTimeUTC: e.target.value })} required />
+                  onChange={(e) => setEditFormData({ ...editFormData, raceDateTimeUTC: e.target.value })}
+                  required disabled={Boolean(editingRace?.officialResults)} />
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label className="small fw-semibold">{t("admin.qualiDateTimeUTC")} *</Form.Label>
                 <Form.Control type="datetime-local" size="sm" value={editFormData.qualiDateTimeUTC}
-                  onChange={(e) => setEditFormData({ ...editFormData, qualiDateTimeUTC: e.target.value })} required />
+                  onChange={(e) => setEditFormData({ ...editFormData, qualiDateTimeUTC: e.target.value })}
+                  required disabled={Boolean(editingRace?.officialResults)} />
                 <Form.Text className="text-muted" style={{ fontSize: "0.72rem" }}>{t("admin.qualiDeadlineHint")}</Form.Text>
               </Form.Group>
 
@@ -520,46 +527,25 @@ export default function CalendarManager({ races, loading, onDataChange }) {
                   <Form.Group className="mb-2">
                     <Form.Label className="small fw-semibold">{t("admin.sprintQualiDateTimeUTC")}</Form.Label>
                     <Form.Control type="datetime-local" size="sm" value={editFormData.sprintQualiDateTimeUTC}
-                      onChange={(e) => setEditFormData({ ...editFormData, sprintQualiDateTimeUTC: e.target.value })} />
+                      onChange={(e) => setEditFormData({ ...editFormData, sprintQualiDateTimeUTC: e.target.value })}
+                      disabled={Boolean(editingRace?.officialResults)} />
                   </Form.Group>
                   <Form.Group className="mb-3">
                     <Form.Label className="small fw-semibold">{t("admin.sprintDateTimeUTC")}</Form.Label>
                     <Form.Control type="datetime-local" size="sm" value={editFormData.sprintDateTimeUTC}
-                      onChange={(e) => setEditFormData({ ...editFormData, sprintDateTimeUTC: e.target.value })} />
+                      onChange={(e) => setEditFormData({ ...editFormData, sprintDateTimeUTC: e.target.value })}
+                      disabled={Boolean(editingRace?.officialResults)} />
                   </Form.Group>
                 </>
               )}
 
-              <hr />
-              {/* Cancel/Restore */}
-              <div className="d-flex flex-wrap gap-2">
-                {!editingRace?.cancelledMain ? (
-                  <Button variant="outline-danger" size="sm" onClick={() => handleCancelRace("main")}>
-                    {t("admin.cancelMainRace")}
-                  </Button>
-                ) : (
-                  <div className="d-flex align-items-center gap-2">
-                    <Badge bg="danger">{t("admin.raceCancelled")}</Badge>
-                    <Button variant="outline-success" size="sm" onClick={() => handleRestoreRace("main")} disabled={uploading}>
-                      {t("admin.restoreRace")}
-                    </Button>
-                  </div>
-                )}
-                {(editingRace?.qualiSprintUTC || showSprintFields) && (
-                  !editingRace?.cancelledSprint ? (
-                    <Button variant="outline-warning" size="sm" onClick={() => handleCancelRace("sprint")}>
-                      {t("admin.cancelSprint")}
-                    </Button>
-                  ) : (
-                    <div className="d-flex align-items-center gap-2">
-                      <Badge bg="warning" text="dark">{t("admin.sprintCancelled")}</Badge>
-                      <Button variant="outline-success" size="sm" onClick={() => handleRestoreRace("sprint")} disabled={uploading}>
-                        {t("admin.restoreSprint")}
-                      </Button>
-                    </div>
-                  )
-                )}
-              </div>
+              {/* Status badges */}
+              {(editingRace?.cancelledMain || editingRace?.cancelledSprint) && (
+                <div className="d-flex flex-wrap gap-2 mt-2">
+                  {editingRace?.cancelledMain && <Badge bg="danger">{t("admin.raceCancelled")}</Badge>}
+                  {editingRace?.cancelledSprint && <Badge bg="warning" text="dark">{t("admin.sprintCancelled")}</Badge>}
+                </div>
+              )}
             </Form>
           ) : (
             /* ── Preview ── */
@@ -611,13 +597,34 @@ export default function CalendarManager({ races, loading, onDataChange }) {
             </div>
           )}
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="flex-wrap gap-1">
           {!showPreview ? (
             <>
-              <Button variant="outline-danger" size="sm" onClick={handleDeleteRace} disabled={uploading} className="me-auto">
-                {t("common.delete")}
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => setShowEditModal(false)}>{t("common.cancel")}</Button>
+              <div className="d-flex gap-1 me-auto">
+                <Button variant="outline-danger" size="sm" onClick={handleDeleteRace} disabled={uploading}>
+                  {t("common.delete")}
+                </Button>
+                {!editingRace?.cancelledMain ? (
+                  <Button variant="outline-secondary" size="sm" onClick={() => handleCancelRace("main")} disabled={uploading}>
+                    {t("admin.cancelMainRace")}
+                  </Button>
+                ) : (
+                  <Button variant="outline-success" size="sm" onClick={() => handleRestoreRace("main")} disabled={uploading}>
+                    {t("admin.restoreRace")}
+                  </Button>
+                )}
+                {(editingRace?.qualiSprintUTC || showSprintFields) && (
+                  !editingRace?.cancelledSprint ? (
+                    <Button variant="outline-secondary" size="sm" onClick={() => handleCancelRace("sprint")} disabled={uploading}>
+                      {t("admin.cancelSprint")}
+                    </Button>
+                  ) : (
+                    <Button variant="outline-success" size="sm" onClick={() => handleRestoreRace("sprint")} disabled={uploading}>
+                      {t("admin.restoreSprint")}
+                    </Button>
+                  )
+                )}
+              </div>
               <Button variant="danger" size="sm" onClick={handleShowPreview} disabled={uploading || editingRace?.cancelledMain}>
                 {t("admin.preview")}
               </Button>
