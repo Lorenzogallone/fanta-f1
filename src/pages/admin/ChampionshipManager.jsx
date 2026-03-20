@@ -215,10 +215,10 @@ export default function ChampionshipManager({ participants, loading, onDataChang
   };
 
   /* ── Derived data ── */
-  const formations = participants.filter(
-    (p) => Array.isArray(p.championshipPiloti) && p.championshipPiloti.length === 3
-      && Array.isArray(p.championshipCostruttori) && p.championshipCostruttori.length === 3
-  );
+  const hasFormation = (p) =>
+    Array.isArray(p.championshipPiloti) && p.championshipPiloti.length === 3
+    && Array.isArray(p.championshipCostruttori) && p.championshipCostruttori.length === 3;
+  const formationsCount = participants.filter(hasFormation).length;
   const effectiveDeadlineMs = deadlineOverride ? deadlineOverride.toDate().getTime() : deadlineAutoMs;
   const isOpen = effectiveDeadlineMs ? Date.now() < effectiveDeadlineMs : true;
 
@@ -304,7 +304,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
             {t("admin.manageChampionshipFormations")}
           </h6>
           <Badge bg="secondary" style={{ fontSize: "0.7rem" }}>
-            {formations.length}/{participants.length}
+            {formationsCount}/{participants.length}
           </Badge>
         </div>
 
@@ -314,7 +314,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
           </Alert>
         )}
 
-        {formations.length === 0 ? (
+        {participants.length === 0 ? (
           <div
             className="text-center py-4 rounded"
             style={{ backgroundColor: bgCard, border: `1px solid ${borderColor}`, color: "var(--text-muted)" }}
@@ -323,39 +323,53 @@ export default function ChampionshipManager({ participants, loading, onDataChang
           </div>
         ) : (
           <ListGroup variant="flush" style={{ borderRadius: 8, overflow: "hidden", border: `1px solid ${borderColor}` }}>
-            {formations.map((p) => (
-              <ListGroup.Item
-                key={p.id}
-                className="px-3 py-2"
-                style={{ backgroundColor: bgCard, color: "var(--text-primary)", borderColor }}
-              >
-                <div className="d-flex justify-content-between align-items-start">
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <span className="fw-semibold">{p.name}</span>
-                    <div className="mt-1" style={{ fontSize: "0.78rem" }}>
-                      <div className="text-muted">
-                        <span className="fw-semibold">{t("history.topDrivers")}:</span>{" "}
-                        {p.championshipPiloti.join(", ")}
-                      </div>
-                      <div className="text-muted">
-                        <span className="fw-semibold">{t("history.topConstructors")}:</span>{" "}
-                        {p.championshipCostruttori.join(", ")}
+            {participants.map((p) => {
+              const has = hasFormation(p);
+              return (
+                <ListGroup.Item
+                  key={p.id}
+                  className="px-3 py-2"
+                  style={{ backgroundColor: bgCard, color: "var(--text-primary)", borderColor }}
+                >
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <span className="fw-semibold">{p.name}</span>
+                      <div className="d-flex align-items-center gap-2 mt-1">
+                        {has ? (
+                          <>
+                            <Badge bg="success" style={{ fontSize: "0.65rem" }}>{t("admin.submitted")}</Badge>
+                            <small className="text-muted" style={{ fontSize: "0.7rem" }}>
+                              {p.championshipPiloti.join(", ")}
+                            </small>
+                          </>
+                        ) : (
+                          <Badge bg="outline-secondary" style={{ fontSize: "0.65rem", border: `1px solid ${borderColor}`, color: "var(--text-muted)" }}>
+                            {t("admin.notSubmitted")}
+                          </Badge>
+                        )}
                       </div>
                     </div>
+                    <div className="d-flex gap-1 flex-shrink-0">
+                      <Button
+                        variant={has ? "outline-primary" : "outline-success"}
+                        size="sm"
+                        className="py-0 px-2"
+                        onClick={() => startEdit(p)}
+                        style={{ fontSize: "0.75rem" }}
+                      >
+                        {has ? t("common.edit") : "+ " + t("common.add")}
+                      </Button>
+                      {has && (
+                        <Button variant="outline-danger" size="sm" className="py-0 px-2" onClick={() => openDeleteConfirm(p)}
+                          disabled={deletingId === p.id} style={{ fontSize: "0.75rem" }}>
+                          {deletingId === p.id ? <Spinner animation="border" size="sm" /> : t("common.delete")}
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div className="d-flex gap-1 flex-shrink-0 ms-2">
-                    <Button variant="outline-primary" size="sm" className="py-0 px-2" onClick={() => startEdit(p)}
-                      style={{ fontSize: "0.75rem" }}>
-                      {t("common.edit")}
-                    </Button>
-                    <Button variant="outline-danger" size="sm" className="py-0 px-2" onClick={() => openDeleteConfirm(p)}
-                      disabled={deletingId === p.id} style={{ fontSize: "0.75rem" }}>
-                      {deletingId === p.id ? <Spinner animation="border" size="sm" /> : t("common.delete")}
-                    </Button>
-                  </div>
-                </div>
-              </ListGroup.Item>
-            ))}
+                </ListGroup.Item>
+              );
+            })}
           </ListGroup>
         )}
       </div>

@@ -362,6 +362,7 @@ export const it = {
     qualiDeadlineHint: "Questa è la deadline per l'inserimento formazioni. Spostala se le qualifiche vengono posticipate.",
     deleteRaceConfirm: "Sei sicuro di voler eliminare questa gara? L'operazione è irreversibile e cancellerà anche tutte le formazioni associate.",
     raceDeleted: "Gara eliminata con successo",
+    datesLockedHint: "Le date non sono modificabili perché la gara è già stata calcolata",
     addSprint: "Aggiungi Sprint",
     removeSprint: "Rimuovi Sprint",
     submitted: "Inserita",

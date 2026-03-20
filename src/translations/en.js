@@ -362,6 +362,7 @@ export const en = {
     qualiDeadlineHint: "This is the deadline for lineup submissions. Move it if qualifying is postponed.",
     deleteRaceConfirm: "Are you sure you want to delete this race? This is irreversible and will also delete all associated lineups.",
     raceDeleted: "Race deleted successfully",
+    datesLockedHint: "Dates cannot be changed because the race has already been calculated",
     addSprint: "Add Sprint",
     removeSprint: "Remove Sprint",
     submitted: "Submitted",

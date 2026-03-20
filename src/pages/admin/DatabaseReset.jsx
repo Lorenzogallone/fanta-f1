@@ -189,33 +189,29 @@ export default function DatabaseReset({ participants, races, onDataChange }) {
               const timestamp = backup.metadata?.timestamp?.toDate?.() || new Date();
               return (
                 <ListGroup.Item key={backup.id} className="px-3 py-2" style={{ backgroundColor: bgCard, color: "var(--text-primary)", borderColor }}>
-                  <div className="d-flex justify-content-between align-items-start">
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div className="d-flex align-items-center gap-2">
-                        <Badge bg={backup.metadata?.type === "manual" ? "success" : "primary"} style={{ fontSize: "0.6rem" }}>
-                          {backup.metadata?.type || "manual"}
-                        </Badge>
-                        <small className="text-muted">{timestamp.toLocaleString("it-IT")}</small>
-                      </div>
-                      <div className="mt-1 small text-muted">
-                        {backup.metadata?.totalRaces || backup.races?.length || 0} {t("formations.races").toLowerCase()} · {backup.metadata?.totalParticipants || backup.ranking?.length || 0} {t("admin.participants").toLowerCase()}
-                      </div>
-                    </div>
-                    <div className="d-flex gap-1 flex-shrink-0 ms-2">
-                      <Button size="sm" variant="outline-primary" className="py-0 px-2"
-                        onClick={() => downloadBackupAsJSON(backup, backup.id)} style={{ fontSize: "0.7rem" }}>
-                        {t("admin.downloadBackup")}
-                      </Button>
-                      <Button size="sm" variant="outline-warning" className="py-0 px-2"
-                        onClick={() => { setSelectedBackup(backup); setConfirmText(""); setShowRestoreModal(true); }}
-                        style={{ fontSize: "0.7rem" }}>
-                        {t("admin.restore")}
-                      </Button>
-                      <Button size="sm" variant="outline-danger" className="py-0 px-2"
-                        onClick={() => handleDeleteBackup(backup.id)} style={{ fontSize: "0.7rem" }}>
-                        {t("common.delete")}
-                      </Button>
-                    </div>
+                  <div className="d-flex align-items-center gap-2 mb-1">
+                    <Badge bg={backup.metadata?.type === "manual" ? "success" : "primary"} style={{ fontSize: "0.6rem" }}>
+                      {backup.metadata?.type || "manual"}
+                    </Badge>
+                    <small className="text-muted">{timestamp.toLocaleString("it-IT")}</small>
+                  </div>
+                  <div className="small text-muted mb-2">
+                    {backup.metadata?.totalRaces || backup.races?.length || 0} {t("formations.races").toLowerCase()} · {backup.metadata?.totalParticipants || backup.ranking?.length || 0} {t("admin.participants").toLowerCase()}
+                  </div>
+                  <div className="d-flex flex-wrap gap-1">
+                    <Button size="sm" variant="outline-primary" className="py-0 px-2"
+                      onClick={() => downloadBackupAsJSON(backup, backup.id)} style={{ fontSize: "0.7rem" }}>
+                      {t("admin.downloadBackup")}
+                    </Button>
+                    <Button size="sm" variant="outline-warning" className="py-0 px-2"
+                      onClick={() => { setSelectedBackup(backup); setConfirmText(""); setShowRestoreModal(true); }}
+                      style={{ fontSize: "0.7rem" }}>
+                      {t("admin.restore")}
+                    </Button>
+                    <Button size="sm" variant="outline-danger" className="py-0 px-2"
+                      onClick={() => handleDeleteBackup(backup.id)} style={{ fontSize: "0.7rem" }}>
+                      {t("common.delete")}
+                    </Button>
                   </div>
                 </ListGroup.Item>
               );
