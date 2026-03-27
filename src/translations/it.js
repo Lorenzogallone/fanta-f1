@@ -319,6 +319,9 @@ export const it = {
     manageChampionshipFormations: "Formazioni Campionato",
     noChampionshipFormations: "Nessuna formazione campionato inviata",
     confirmDeleteFormation: "Elimina la formazione campionato di",
+    confirmSaveFormation: "Conferma salvataggio formazione per",
+    confirmSaveDeadline: "Conferma salvataggio scadenza",
+    confirmResetDeadline: "Ripristinare la scadenza al valore automatico?",
 
     // Calendar
     manageCalendar: "Gestione Calendario",

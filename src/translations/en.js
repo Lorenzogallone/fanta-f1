@@ -319,6 +319,9 @@ export const en = {
     manageChampionshipFormations: "Championship Formations",
     noChampionshipFormations: "No championship formations submitted yet",
     confirmDeleteFormation: "Delete championship formation for",
+    confirmSaveFormation: "Confirm saving lineup for",
+    confirmSaveDeadline: "Confirm saving deadline",
+    confirmResetDeadline: "Reset deadline to auto-calculated value?",
 
     // Calendar
     manageCalendar: "Manage Calendar",
