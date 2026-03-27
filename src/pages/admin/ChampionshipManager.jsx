@@ -24,16 +24,45 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "../../services/firebase";
-import { DRIVERS, CONSTRUCTORS } from "../../constants/racing";
+import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS } from "../../constants/racing";
 import Select from "react-select";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../hooks/useLanguage";
 import { getChampionshipDeadlineAutoMs } from "../../utils/championshipDeadline";
 import { error as logError } from "../../utils/logger";
+import "../../styles/customSelect.css";
 
 const CONFIG_DOC = doc(db, "config", "championship");
-const driverOptions = DRIVERS.map((d) => ({ value: d, label: d }));
-const constructorOptions = CONSTRUCTORS.map((c) => ({ value: c, label: c }));
+
+const driverOptions = DRIVERS.map((d) => ({
+  value: d,
+  label: (
+    <div className="select-option">
+      <img
+        src={TEAM_LOGOS[DRIVER_TEAM[d]]}
+        className="option-logo"
+        alt={`${DRIVER_TEAM[d]} team logo`}
+        loading="lazy"
+      />
+      <span className="option-text">{d}</span>
+    </div>
+  ),
+}));
+
+const constructorOptions = CONSTRUCTORS.map((c) => ({
+  value: c,
+  label: (
+    <div className="select-option">
+      <img
+        src={TEAM_LOGOS[c]}
+        className="option-logo"
+        alt={`${c} logo`}
+        loading="lazy"
+      />
+      <span className="option-text">{c}</span>
+    </div>
+  ),
+}));
 
 function toDatetimeLocal(ts) {
   if (!ts) return "";
@@ -63,12 +92,19 @@ export default function ChampionshipManager({ participants, loading, onDataChang
   const [deadlineMsg, setDeadlineMsg] = useState(null);
   const [loadingDeadline, setLoadingDeadline] = useState(true);
 
+  /* ── Deadline confirmation ── */
+  const [showSaveDeadlineConfirm, setShowSaveDeadlineConfirm] = useState(false);
+  const [showResetDeadlineConfirm, setShowResetDeadlineConfirm] = useState(false);
+
   /* ── Formation edit state ── */
   const [editingId, setEditingId] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({ pilots: [null, null, null], constructors: [null, null, null] });
   const [savingEdit, setSavingEdit] = useState(false);
   const [formationsMsg, setFormationsMsg] = useState(null);
+
+  /* ── Formation save confirmation ── */
+  const [showSaveFormationConfirm, setShowSaveFormationConfirm] = useState(false);
 
   /* ── Delete state ── */
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -123,8 +159,8 @@ export default function ChampionshipManager({ participants, loading, onDataChang
 
   useEffect(() => { loadDeadline(); }, [loadDeadline]);
 
-  const handleSaveDeadline = async (e) => {
-    e.preventDefault();
+  const handleSaveDeadline = async () => {
+    setShowSaveDeadlineConfirm(false);
     if (!deadlineInput) return;
     setSavingDeadline(true); setDeadlineMsg(null);
     try {
@@ -139,6 +175,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
   };
 
   const handleResetDeadline = async () => {
+    setShowResetDeadlineConfirm(false);
     setSavingDeadline(true); setDeadlineMsg(null);
     try {
       await setDoc(CONFIG_DOC, { deadlineOverride: deleteField() }, { merge: true });
@@ -168,11 +205,16 @@ export default function ChampionshipManager({ participants, loading, onDataChang
     setShowEditModal(true);
   };
 
-  const handleSaveEdit = async () => {
+  const requestSaveFormation = () => {
     if (editForm.pilots.some((p) => !p) || editForm.constructors.some((c) => !c)) {
       setFormationsMsg({ type: "warning", text: t("errors.incompleteForm") });
       return;
     }
+    setShowSaveFormationConfirm(true);
+  };
+
+  const handleSaveEdit = async () => {
+    setShowSaveFormationConfirm(false);
     setSavingEdit(true); setFormationsMsg(null);
     try {
       await updateDoc(doc(db, "ranking", editingId), {
@@ -221,6 +263,8 @@ export default function ChampionshipManager({ participants, loading, onDataChang
   const formationsCount = participants.filter(hasFormation).length;
   const effectiveDeadlineMs = deadlineOverride ? deadlineOverride.toDate().getTime() : deadlineAutoMs;
   const isOpen = effectiveDeadlineMs ? Date.now() < effectiveDeadlineMs : true;
+
+  const editingParticipantName = participants.find((p) => p.id === editingId)?.name;
 
   if (loading) {
     return <div className="text-center py-5"><Spinner animation="border" /></div>;
@@ -273,7 +317,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
                 </p>
               )}
 
-              <Form onSubmit={handleSaveDeadline}>
+              <Form onSubmit={(e) => { e.preventDefault(); setShowSaveDeadlineConfirm(true); }}>
                 <Form.Label className="mb-1 small fw-semibold text-muted">{t("admin.editDeadline")}</Form.Label>
                 <div className="d-flex align-items-center gap-2 flex-wrap">
                   <Form.Control
@@ -286,7 +330,12 @@ export default function ChampionshipManager({ participants, loading, onDataChang
                     {savingDeadline ? <Spinner animation="border" size="sm" /> : t("common.save")}
                   </Button>
                   {deadlineOverride && (
-                    <Button variant="outline-secondary" size="sm" disabled={savingDeadline} onClick={handleResetDeadline}>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      disabled={savingDeadline}
+                      onClick={() => setShowResetDeadlineConfirm(true)}
+                    >
                       {t("admin.resetDeadline")}
                     </Button>
                   )}
@@ -336,12 +385,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
                       <span className="fw-semibold">{p.name}</span>
                       <div className="d-flex align-items-center gap-2 mt-1">
                         {has ? (
-                          <>
-                            <Badge bg="success" style={{ fontSize: "0.65rem" }}>{t("admin.submitted")}</Badge>
-                            <small className="text-muted" style={{ fontSize: "0.7rem" }}>
-                              {p.championshipPiloti.join(", ")}
-                            </small>
-                          </>
+                          <Badge bg="success" style={{ fontSize: "0.65rem" }}>{t("admin.submitted")}</Badge>
                         ) : (
                           <Badge bg="outline-secondary" style={{ fontSize: "0.65rem", border: `1px solid ${borderColor}`, color: "var(--text-muted)" }}>
                             {t("admin.notSubmitted")}
@@ -379,7 +423,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
         <Modal.Header closeButton>
           <Modal.Title className="fs-6">
             {t("admin.editFormationTitle")}
-            <small className="text-muted ms-2">— {participants.find((p) => p.id === editingId)?.name}</small>
+            <small className="text-muted ms-2">— {editingParticipantName}</small>
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -436,10 +480,26 @@ export default function ChampionshipManager({ participants, loading, onDataChang
           <Button variant="secondary" size="sm" onClick={() => setShowEditModal(false)} disabled={savingEdit}>
             {t("common.cancel")}
           </Button>
-          <Button variant="danger" size="sm" onClick={handleSaveEdit} disabled={savingEdit}>
+          <Button variant="danger" size="sm" onClick={requestSaveFormation} disabled={savingEdit}>
             {savingEdit ? <Spinner animation="border" size="sm" /> : t("common.save")}
           </Button>
         </Modal.Footer>
+      </Modal>
+
+      {/* ── Save Formation Confirmation Modal ── */}
+      <Modal show={showSaveFormationConfirm} onHide={() => setShowSaveFormationConfirm(false)} centered size="sm">
+        <Modal.Body className="text-center py-4">
+          <p className="fw-semibold mb-1">{t("admin.confirmSaveFormation") || "Conferma salvataggio"}</p>
+          <p className="fw-bold mb-3">{editingParticipantName}</p>
+          <div className="d-flex gap-2 justify-content-center">
+            <Button variant="secondary" size="sm" onClick={() => setShowSaveFormationConfirm(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleSaveEdit}>
+              {t("common.confirm") || t("common.save")}
+            </Button>
+          </div>
+        </Modal.Body>
       </Modal>
 
       {/* ── Delete Confirmation Modal ── */}
@@ -453,6 +513,37 @@ export default function ChampionshipManager({ participants, loading, onDataChang
             </Button>
             <Button variant="danger" size="sm" onClick={handleDelete} disabled={deletingId}>
               {deletingId ? <Spinner animation="border" size="sm" /> : t("common.delete")}
+            </Button>
+          </div>
+        </Modal.Body>
+      </Modal>
+
+      {/* ── Save Deadline Confirmation Modal ── */}
+      <Modal show={showSaveDeadlineConfirm} onHide={() => setShowSaveDeadlineConfirm(false)} centered size="sm">
+        <Modal.Body className="text-center py-4">
+          <p className="fw-semibold mb-1">{t("admin.confirmSaveDeadline") || "Conferma salvataggio scadenza"}</p>
+          <p className="fw-bold mb-3">{deadlineInput ? new Date(deadlineInput).toLocaleString(dateLocale) : ""}</p>
+          <div className="d-flex gap-2 justify-content-center">
+            <Button variant="secondary" size="sm" onClick={() => setShowSaveDeadlineConfirm(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleSaveDeadline}>
+              {t("common.confirm") || t("common.save")}
+            </Button>
+          </div>
+        </Modal.Body>
+      </Modal>
+
+      {/* ── Reset Deadline Confirmation Modal ── */}
+      <Modal show={showResetDeadlineConfirm} onHide={() => setShowResetDeadlineConfirm(false)} centered size="sm">
+        <Modal.Body className="text-center py-4">
+          <p className="fw-semibold mb-1">{t("admin.confirmResetDeadline") || "Conferma reset scadenza"}</p>
+          <div className="d-flex gap-2 justify-content-center">
+            <Button variant="secondary" size="sm" onClick={() => setShowResetDeadlineConfirm(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleResetDeadline}>
+              {t("common.confirm") || t("admin.resetDeadline")}
             </Button>
           </div>
         </Modal.Body>

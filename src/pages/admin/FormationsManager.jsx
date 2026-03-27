@@ -24,13 +24,27 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "../../services/firebase";
-import { DRIVERS } from "../../constants/racing";
+import { DRIVERS, DRIVER_TEAM, TEAM_LOGOS } from "../../constants/racing";
 import Select from "react-select";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../hooks/useLanguage";
 import { error } from "../../utils/logger";
+import "../../styles/customSelect.css";
 
-const driverOptions = DRIVERS.map((d) => ({ value: d, label: d }));
+const driverOptions = DRIVERS.map((d) => ({
+  value: d,
+  label: (
+    <div className="select-option">
+      <img
+        src={TEAM_LOGOS[DRIVER_TEAM[d]]}
+        className="option-logo"
+        alt={`${DRIVER_TEAM[d]} team logo`}
+        loading="lazy"
+      />
+      <span className="option-text">{d}</span>
+    </div>
+  ),
+}));
 
 export default function FormationsManager({ participants, races, loading, onDataChange }) {
   const { t } = useLanguage();
@@ -52,6 +66,9 @@ export default function FormationsManager({ participants, races, loading, onData
     sprintJolly: null,
   });
   const [isLateSubmission, setIsLateSubmission] = useState(false);
+
+  // Save confirmation
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
   // Delete confirmation
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -143,19 +160,21 @@ export default function FormationsManager({ participants, races, loading, onData
   const mainFields = ["mainP1", "mainP2", "mainP3", "mainJolly", "mainJolly2"];
   const sprintFields = ["sprintP1", "sprintP2", "sprintP3", "sprintJolly"];
 
-  const handleSave = async () => {
+  const requestSave = () => {
     if (!formData.mainP1 || !formData.mainP2 || !formData.mainP3 || !formData.mainJolly) {
       setMessage({ type: "warning", text: t("errors.incompleteForm") });
       return;
     }
-
-    // Check duplicates
     const mainDrivers = mainFields.map((f) => formData[f]?.value).filter(Boolean);
     if (new Set(mainDrivers).size !== mainDrivers.length) {
       setMessage({ type: "warning", text: t("errors.duplicateDriver") });
       return;
     }
+    setShowSaveConfirm(true);
+  };
 
+  const handleSave = async () => {
+    setShowSaveConfirm(false);
     setSaving(true);
     setMessage(null);
 
@@ -327,9 +346,6 @@ export default function FormationsManager({ participants, races, loading, onData
                           {hasSubmission ? (
                             <>
                               <Badge bg="success" style={{ fontSize: "0.65rem" }}>{t("admin.submitted")}</Badge>
-                              <small className="text-muted" style={{ fontSize: "0.7rem" }}>
-                                {sub.mainP1}, {sub.mainP2}, {sub.mainP3}
-                              </small>
                               {sub.isLate && (
                                 <Badge bg="warning" text="dark" style={{ fontSize: "0.6rem" }}>
                                   {t("formations.lateSubmission")}
@@ -421,10 +437,26 @@ export default function FormationsManager({ participants, races, loading, onData
           <Button variant="secondary" size="sm" onClick={() => setShowEditModal(false)} disabled={saving}>
             {t("common.cancel")}
           </Button>
-          <Button variant="danger" size="sm" onClick={handleSave} disabled={saving}>
+          <Button variant="danger" size="sm" onClick={requestSave} disabled={saving}>
             {saving ? <Spinner animation="border" size="sm" /> : t("common.save")}
           </Button>
         </Modal.Footer>
+      </Modal>
+
+      {/* Save Confirmation Modal */}
+      <Modal show={showSaveConfirm} onHide={() => setShowSaveConfirm(false)} centered size="sm">
+        <Modal.Body className="text-center py-4">
+          <p className="fw-semibold mb-1">{t("admin.confirmSaveFormation") || "Conferma salvataggio"}</p>
+          <p className="fw-bold mb-3">{editingUser?.name}</p>
+          <div className="d-flex gap-2 justify-content-center">
+            <Button variant="secondary" size="sm" onClick={() => setShowSaveConfirm(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleSave}>
+              {t("common.confirm") || t("common.save")}
+            </Button>
+          </div>
+        </Modal.Body>
       </Modal>
 
       {/* Delete Confirmation Modal */}
