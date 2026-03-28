@@ -215,7 +215,7 @@ useEffect(() => {
 
   // Race submission validation helpers
   const nowMS = Date.now();
-  const allowedRace = race && nowMS > race.raceUTC.seconds*1000 + 90*60*1000;
+  const allowedRace = race && nowMS > race.raceUTC.seconds*1000 + 60*60*1000; // 1 ora dopo la gara
   const mainFilled  = formRace.P1&&formRace.P2&&formRace.P3;
   const hasSprint   = Boolean(race?.qualiSprintUTC);
   const sprintFilled= !hasSprint || (formRace.SP1&&formRace.SP2&&formRace.SP3);
@@ -258,7 +258,7 @@ useEffect(() => {
     } else {
       // No results in DB → try fetching from API only if race has finished
       const raceStartMs = race.raceUTC.seconds * 1000;
-      const raceFinishedEstimate = raceStartMs + 3 * 60 * 60 * 1000; // race start + 3 hours
+      const raceFinishedEstimate = raceStartMs + 60 * 60 * 1000; // 1 ora dopo l'inizio gara
 
       if (Date.now() < raceFinishedEstimate) {
         // Race hasn't finished yet — don't fetch from API
