@@ -196,13 +196,33 @@ async function getAllFcmTokens() {
 
 /**
  * Checks if a notification has already been sent (deduplication).
- * @param {string} docId
+ * Also checks the legacy format (without year prefix) and migrates it
+ * automatically so old data is preserved without manual intervention.
+ *
+ * @param {string} docId  New format: "2026_raceId_quali_1h"
  * @returns {Promise<boolean>}
  */
 async function isAlreadySent(docId) {
-  const docRef = db.collection("notificationsSent").doc(docId);
-  const doc = await docRef.get();
-  return doc.exists;
+  const col = db.collection("notificationsSent");
+
+  // Check new year-prefixed format first
+  const newDoc = await col.doc(docId).get();
+  if (newDoc.exists) return true;
+
+  // Check legacy format (without year prefix, e.g. "raceId_quali_1h")
+  const legacyId = docId.replace(/^\d{4}_/, "");
+  if (legacyId === docId) return false; // no year prefix to strip
+
+  const legacyDoc = await col.doc(legacyId).get();
+  if (!legacyDoc.exists) return false;
+
+  // Migrate: copy to new format and delete old document
+  const batch = db.batch();
+  batch.set(col.doc(docId), { ...legacyDoc.data(), migratedFrom: legacyId });
+  batch.delete(col.doc(legacyId));
+  await batch.commit();
+  console.log(`Migrato notificationsSent: ${legacyId} → ${docId}`);
+  return true;
 }
 
 /**
