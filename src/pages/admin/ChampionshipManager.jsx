@@ -129,6 +129,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
       border: `1px solid ${isDark ? "var(--border-color)" : "#ced4da"}`,
       zIndex: 9999,
     }),
+    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
     option: (base, state) => ({
       ...base,
       backgroundColor: state.isFocused ? (isDark ? "var(--bg-secondary)" : "#f8f9fa") : "transparent",
