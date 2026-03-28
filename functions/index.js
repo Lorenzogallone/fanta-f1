@@ -96,28 +96,22 @@ function formatDateCET(dateUTC) {
 }
 
 /**
- * Reads all races from Firestore.
- * @returns {Promise<Array>}
+ * Returns the current season year based on CET date.
+ * Used to namespace dedup docIds so they don't collide across seasons.
+ * @returns {number}
  */
-async function getAllRaces() {
-  const snapshot = await db.collection("races").get();
-  return snapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      name: data.name,
-      qualiUTC: data.qualiUTC ? data.qualiUTC.toDate() : null,
-      qualiSprintUTC: data.qualiSprintUTC ? data.qualiSprintUTC.toDate() : null,
-      cancelledMain: data.cancelledMain || false,
-      cancelledSprint: data.cancelledSprint || false,
-    };
-  });
+function getCurrentSeasonYear() {
+  const now = new Date();
+  return parseInt(
+    now.toLocaleString("en-US", { timeZone: TIMEZONE, year: "numeric" }),
+    10
+  );
 }
 
 /**
  * Reads only races whose session deadline falls within the given time window.
- * Much cheaper than getAllRaces() for frequent scheduled checks — typically
- * returns 0 documents and costs 0 reads outside of race weekends.
+ * Much cheaper than reading all races — typically returns 0 documents and
+ * costs 0 reads outside of race weekends.
  *
  * @param {"main"|"sprint"} sessionType
  * @param {Date} windowStart
@@ -142,6 +136,46 @@ async function getRacesInWindow(sessionType, windowStart, windowEnd) {
       cancelledSprint: data.cancelledSprint || false,
     };
   });
+}
+
+/**
+ * Reads races for evening notification: queries both main and sprint deadlines
+ * within the window and merges results (deduped by doc id).
+ *
+ * @param {Date} windowStart
+ * @param {Date} windowEnd
+ * @returns {Promise<Array>}
+ */
+async function getRacesInWindowBoth(windowStart, windowEnd) {
+  const [mainSnap, sprintSnap] = await Promise.all([
+    db.collection("races")
+      .where("qualiUTC", ">=", windowStart)
+      .where("qualiUTC", "<", windowEnd)
+      .get(),
+    db.collection("races")
+      .where("qualiSprintUTC", ">=", windowStart)
+      .where("qualiSprintUTC", "<", windowEnd)
+      .get(),
+  ]);
+
+  const seen = new Set();
+  const races = [];
+  for (const snap of [mainSnap, sprintSnap]) {
+    for (const doc of snap.docs) {
+      if (seen.has(doc.id)) continue;
+      seen.add(doc.id);
+      const data = doc.data();
+      races.push({
+        id: doc.id,
+        name: data.name,
+        qualiUTC: data.qualiUTC ? data.qualiUTC.toDate() : null,
+        qualiSprintUTC: data.qualiSprintUTC ? data.qualiSprintUTC.toDate() : null,
+        cancelledMain: data.cancelledMain || false,
+        cancelledSprint: data.cancelledSprint || false,
+      });
+    }
+  }
+  return races;
 }
 
 /**
@@ -337,7 +371,8 @@ async function checkAndNotifySession(
     if (skipNight && isNightTimeCET(deadlineUTC)) continue;
 
     const sessionKey = sessionType === "sprint" ? "sprintQuali" : "quali";
-    const docId = `${race.id}_${sessionKey}_${intervalLabel}`;
+    const year = getCurrentSeasonYear();
+    const docId = `${year}_${race.id}_${sessionKey}_${intervalLabel}`;
     if (!(await isAlreadySent(docId))) {
       const { title, body } = buildNotification(
         sessionType,
@@ -357,16 +392,18 @@ async function checkAndNotifySession(
 }
 
 /**
- * Checks for nighttime sessions (CET < 07:00) whose deadline falls within
+ * Checks for nighttime sessions (CET < 09:00) whose deadline falls within
  * the next ~10 hours and sends the advance evening notification.
  * Intended to run once daily at 21:00 CET.
+ * Uses windowed queries to avoid reading all race documents.
  */
 async function checkAndNotifyEvening() {
   const now = new Date();
   // Window: from now up to 10 hours ahead (21:00 CET -> 07:00 CET next day)
   const windowEnd = new Date(now.getTime() + 10 * 60 * 60 * 1000);
 
-  const races = await getAllRaces();
+  const races = await getRacesInWindowBoth(now, windowEnd);
+  const year = getCurrentSeasonYear();
 
   for (const race of races) {
     for (const sessionType of ["main", "sprint"]) {
@@ -383,7 +420,7 @@ async function checkAndNotifyEvening() {
       const deadlineMs = deadlineUTC.getTime();
       if (deadlineMs > now.getTime() && deadlineMs <= windowEnd.getTime()) {
         const sessionKey = sessionType === "sprint" ? "sprintQuali" : "quali";
-        const docId = `${race.id}_${sessionKey}_evening`;
+        const docId = `${year}_${race.id}_${sessionKey}_evening`;
         if (!(await isAlreadySent(docId))) {
           const { title, body } = buildNotification(
             sessionType,
@@ -406,22 +443,32 @@ async function checkAndNotifyEvening() {
 
 /**
  * Calcola la scadenza del campionato (metà stagione) lato server.
- * Replica la logica di src/utils/championshipDeadline.js usando l'Admin SDK.
+ * Usa una query count + mirata per evitare di leggere tutti i documenti.
  * La scadenza corrisponde all'orario di inizio della gara di metà stagione.
  *
  * @returns {Promise<Date|null>}
  */
 async function getChampionshipDeadlineUTC() {
   try {
-    const snapshot = await db.collection("races").orderBy("round", "asc").get();
-    const races = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    // Count total races without reading documents (free operation)
+    const countSnap = await db.collection("races").count().get();
+    const totalRaces = countSnap.data().count;
 
-    if (races.length === 0) return new Date("2025-09-07T23:59:00Z");
+    if (totalRaces === 0) return new Date("2025-09-07T23:59:00Z");
 
-    const midRound = Math.ceil(races.length / 2);
-    const midRace = races.find((r) => r.round === midRound);
+    const midRound = Math.ceil(totalRaces / 2);
 
-    if (midRace && midRace.raceUTC) return midRace.raceUTC.toDate();
+    // Read only the mid-season race (1 read instead of all)
+    const midSnap = await db
+      .collection("races")
+      .where("round", "==", midRound)
+      .limit(1)
+      .get();
+
+    if (!midSnap.empty) {
+      const midRace = midSnap.docs[0].data();
+      if (midRace.raceUTC) return midRace.raceUTC.toDate();
+    }
 
     return new Date("2025-09-07T23:59:00Z");
   } catch (err) {
@@ -446,7 +493,8 @@ async function checkAndNotifyChampionshipEvening() {
   const deadlineMs = deadlineUTC.getTime();
   if (deadlineMs <= now.getTime() || deadlineMs > windowEnd.getTime()) return;
 
-  const docId = "championship_evening";
+  const year = getCurrentSeasonYear();
+  const docId = `${year}_championship_evening`;
   if (await isAlreadySent(docId)) return;
 
   const time = formatTimeCET(deadlineUTC);
@@ -476,9 +524,13 @@ exports.sendQualiReminder1h = onSchedule(
     region: "europe-west1",
   },
   async () => {
-    console.log("Controllo sessioni diurne in scadenza tra ~1 ora...");
-    await checkAndNotifySession("main",   60, CHECK_INTERVAL_1H_MS, "1h", true);
-    await checkAndNotifySession("sprint", 60, CHECK_INTERVAL_1H_MS, "1h", true);
+    try {
+      console.log("Controllo sessioni diurne in scadenza tra ~1 ora...");
+      await checkAndNotifySession("main",   60, CHECK_INTERVAL_1H_MS, "1h", true);
+      await checkAndNotifySession("sprint", 60, CHECK_INTERVAL_1H_MS, "1h", true);
+    } catch (err) {
+      console.error("Errore sendQualiReminder1h:", err);
+    }
   }
 );
 
@@ -493,9 +545,13 @@ exports.sendQualiReminder5min = onSchedule(
     region: "europe-west1",
   },
   async () => {
-    console.log("Controllo sessioni in scadenza tra ~5 minuti...");
-    await checkAndNotifySession("main",   5, CHECK_INTERVAL_5MIN_MS, "5min", false);
-    await checkAndNotifySession("sprint", 5, CHECK_INTERVAL_5MIN_MS, "5min", false);
+    try {
+      console.log("Controllo sessioni in scadenza tra ~5 minuti...");
+      await checkAndNotifySession("main",   5, CHECK_INTERVAL_5MIN_MS, "5min", false);
+      await checkAndNotifySession("sprint", 5, CHECK_INTERVAL_5MIN_MS, "5min", false);
+    } catch (err) {
+      console.error("Errore sendQualiReminder5min:", err);
+    }
   }
 );
 
@@ -511,9 +567,13 @@ exports.sendQualiReminderEvening = onSchedule(
     region: "europe-west1",
   },
   async () => {
-    console.log("Controllo sessioni notturne per la notifica serale delle 21:00...");
-    await checkAndNotifyEvening();
-    await checkAndNotifyChampionshipEvening();
+    try {
+      console.log("Controllo sessioni notturne per la notifica serale delle 21:00...");
+      await checkAndNotifyEvening();
+      await checkAndNotifyChampionshipEvening();
+    } catch (err) {
+      console.error("Errore sendQualiReminderEvening:", err);
+    }
   }
 );
 
