@@ -256,54 +256,70 @@ useEffect(() => {
       });
       setFetchingResults(false);
     } else {
-      // No results in DB → try fetching from API
-      try {
-        // Extract season and round from race date
-        const raceDate = new Date(race.raceUTC.seconds * 1000);
-        const season = raceDate.getFullYear();
-        const round = race.round;
+      // No results in DB → try fetching from API only if race has finished
+      const raceStartMs = race.raceUTC.seconds * 1000;
+      const raceFinishedEstimate = raceStartMs + 3 * 60 * 60 * 1000; // race start + 3 hours
 
-        setMsgRace({variant:"info", msg: t("calculate.fetchingFromAPI", { race: race.name }).replace("{race}", race.name)});
+      if (Date.now() < raceFinishedEstimate) {
+        // Race hasn't finished yet — don't fetch from API
+        setFormRace({
+          P1:null, P2:null, P3:null,
+          SP1:null, SP2:null, SP3:null
+        });
+        setMsgRace({
+          variant:"info",
+          msg: t("calculate.raceNotFinished", "La gara non è ancora terminata. I risultati saranno disponibili dopo la fine della gara.")
+        });
+        setFetchingResults(false);
+      } else {
+        // Race should be finished → try fetching from API
+        try {
+          const raceDate = new Date(raceStartMs);
+          const season = raceDate.getFullYear();
+          const round = race.round;
 
-        const apiResults = await fetchRaceResults(season, round);
+          setMsgRace({variant:"info", msg: t("calculate.fetchingFromAPI", { race: race.name }).replace("{race}", race.name)});
 
-        if (apiResults) {
-          // Pre-fill with API results
-          setFormRace({
-            P1 : toOpt(apiResults.main.P1),
-            P2 : toOpt(apiResults.main.P2),
-            P3 : toOpt(apiResults.main.P3),
-            SP1: apiResults.sprint ? toOpt(apiResults.sprint.SP1) : null,
-            SP2: apiResults.sprint ? toOpt(apiResults.sprint.SP2) : null,
-            SP3: apiResults.sprint ? toOpt(apiResults.sprint.SP3) : null,
-          });
-          setMsgRace({
-            variant:"success",
-            msg: t("calculate.apiResultsLoaded")
-          });
-        } else {
-          // No results available in DB or API
+          const apiResults = await fetchRaceResults(season, round);
+
+          if (apiResults) {
+            // Pre-fill with API results
+            setFormRace({
+              P1 : toOpt(apiResults.main.P1),
+              P2 : toOpt(apiResults.main.P2),
+              P3 : toOpt(apiResults.main.P3),
+              SP1: apiResults.sprint ? toOpt(apiResults.sprint.SP1) : null,
+              SP2: apiResults.sprint ? toOpt(apiResults.sprint.SP2) : null,
+              SP3: apiResults.sprint ? toOpt(apiResults.sprint.SP3) : null,
+            });
+            setMsgRace({
+              variant:"success",
+              msg: t("calculate.apiResultsLoaded")
+            });
+          } else {
+            // No results available in DB or API
+            setFormRace({
+              P1:null, P2:null, P3:null,
+              SP1:null, SP2:null, SP3:null
+            });
+            setMsgRace({
+              variant:"warning",
+              msg: t("calculate.apiNoResults")
+            });
+          }
+        } catch (err) {
+          error("Errore fetch API:", err);
           setFormRace({
             P1:null, P2:null, P3:null,
             SP1:null, SP2:null, SP3:null
           });
           setMsgRace({
             variant:"warning",
-            msg: t("calculate.apiNoResults")
+            msg: t("calculate.apiError")
           });
+        } finally {
+          setFetchingResults(false);
         }
-      } catch (err) {
-        error("Errore fetch API:", err);
-        setFormRace({
-          P1:null, P2:null, P3:null,
-          SP1:null, SP2:null, SP3:null
-        });
-        setMsgRace({
-          variant:"warning",
-          msg: t("calculate.apiError")
-        });
-      } finally {
-        setFetchingResults(false);
       }
     }
 

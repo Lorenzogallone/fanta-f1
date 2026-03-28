@@ -209,53 +209,50 @@ export async function fetchSprint(season, round) {
 
     if (!sprintResults || sprintResults.length === 0) return null;
 
-    // Leader time for gap calculation - find first driver with valid time
-    let leaderTime = null;
-    let leaderTimeMs = 0;
-    for (const result of sprintResults) {
-      if (result.Time?.time) {
-        leaderTime = result.Time.time;
-        leaderTimeMs = timeToMs(leaderTime);
-        break;
-      }
-    }
-
     return sprintResults.map((result) => {
       const driverTime = result.Time?.time;
-      const driverTimeMs = driverTime ? timeToMs(driverTime) : 0;
+      const statusStr = result.status || "";
 
-      // Calculate gap with improved handling
+      // Determine gap display for sprint
+      // Sprint API may provide gap in Time.time, or in status field, or not at all
       let gap = "—";
       if (result.position === "1") {
-        // Leader always shows dash
         gap = "—";
-      } else if (leaderTimeMs > 0 && driverTimeMs > 0) {
-        // Both leader and driver have valid times - calculate gap
-        gap = calculateGap(leaderTimeMs, driverTimeMs);
-      } else if (driverTime && !leaderTime) {
-        // Driver has time but leader doesn't (edge case) - show time as gap
-        gap = `+${driverTime}`;
-      } else if (result.status && result.status !== "Finished") {
-        // Show short status for DNF/retired drivers
+      } else if (driverTime && driverTime.startsWith("+")) {
+        // Gap provided in Time.time (e.g., "+3.042")
+        gap = driverTime;
+      } else if (statusStr.startsWith("+")) {
+        // Gap provided in status field (e.g., "+3.042" or "+1 Lap")
+        gap = statusStr;
+      } else if (statusStr && statusStr !== "Finished") {
+        // DNF/retired status
         const statusMap = {
           "Retired": "RET",
           "Accident": "ACC",
           "Collision": "COL",
+          "Collision damage": "COL",
           "Spun off": "OFF",
           "Engine": "ENG",
           "Disqualified": "DSQ",
+          "Power Unit": "PU",
+          "Hydraulics": "HYD",
+          "Brakes": "BRK",
+          "Gearbox": "GBX",
+          "Suspension": "SUS",
+          "Electrical": "ELE",
+          "Damage": "DMG",
         };
-        gap = statusMap[result.status] || result.status.substring(0, 3).toUpperCase();
+        gap = statusMap[statusStr] || statusStr.substring(0, 3).toUpperCase();
       }
 
       return {
         position: result.position,
         driver: normalizeDriverName(result.Driver, result.Constructor),
         constructor: result.Constructor?.name,
-        time: result.Time?.time || "—",
+        time: result.position === "1" ? (driverTime || "—") : "—",
         gap,
         points: result.points || "0",
-        status: result.status,
+        status: statusStr,
       };
     });
   } catch (err) {
@@ -265,14 +262,53 @@ export async function fetchSprint(season, round) {
 }
 
 /**
- * Fetches sprint qualifying results from OpenF1 API
+ * Fetches sprint qualifying results
+ * Tries Jolpica/Ergast API first, falls back to OpenF1 API
  * @param {number} season - Season year
  * @param {number} round - Race round number
  * @returns {Promise<Array|null>} Array of sprint qualifying results or null
  */
 export async function fetchSprintQualifying(season, round) {
+  // STEP 1: Try Jolpica/Ergast API (may support sprint qualifying in newer versions)
   try {
-    // Get all sessions for the year
+    const url = `${ERGAST_API_BASE_URL}/${season}/${round}/sprint/qualifying.json`;
+    const response = await fetch(url);
+
+    if (response.ok) {
+      const data = await response.json();
+      const races = data.MRData?.RaceTable?.Races;
+
+      if (races && races.length > 0) {
+        const qualiResults = races[0].SprintQualifyingResults || races[0].QualifyingResults;
+
+        if (qualiResults && qualiResults.length > 0) {
+          const leaderTime = qualiResults[0].SQ3 || qualiResults[0].SQ2 || qualiResults[0].SQ1
+            || qualiResults[0].Q3 || qualiResults[0].Q2 || qualiResults[0].Q1;
+          const leaderTimeMs = timeToMs(leaderTime);
+
+          info(`[Sprint Quali] Loaded ${qualiResults.length} results from Jolpica API`);
+          return qualiResults.map((result) => {
+            const bestTime = result.SQ3 || result.SQ2 || result.SQ1
+              || result.Q3 || result.Q2 || result.Q1;
+            const bestTimeMs = timeToMs(bestTime);
+
+            return {
+              position: result.position,
+              driver: normalizeDriverName(result.Driver, result.Constructor),
+              constructor: result.Constructor?.name,
+              time: bestTime || "—",
+              gap: calculateGap(leaderTimeMs, bestTimeMs),
+            };
+          });
+        }
+      }
+    }
+  } catch (err) {
+    info(`[Sprint Quali] Jolpica endpoint not available: ${err.message}`);
+  }
+
+  // STEP 2: Fallback to OpenF1 API
+  try {
     const sessionsUrl = `${OPENF1_API_BASE_URL}/sessions?year=${season}`;
     const sessionsResponse = await rateLimitedFetch(sessionsUrl);
 
@@ -282,6 +318,10 @@ export async function fetchSprintQualifying(season, round) {
     }
 
     const sessions = await sessionsResponse.json();
+    if (!sessions || sessions.length === 0) {
+      info(`[Sprint Quali] No sessions found for ${season} on OpenF1`);
+      return null;
+    }
 
     // Group sessions by meeting and sort by date
     const meetingMap = {};
@@ -311,19 +351,23 @@ export async function fetchSprintQualifying(season, round) {
     ).join(', ');
     info(`[Sprint Quali] Available sessions for ${season} R${round}: ${availableSessions}`);
 
-    // Try different names for sprint qualifying
+    // Try different names for sprint qualifying (comprehensive list for all F1 naming conventions)
     const sprintQualifyingNames = [
       "Sprint Shootout",
       "Sprint Qualifying",
       "Sprint Quali",
-      "Shootout"
+      "Shootout",
+      "SQ",                       // possible abbreviated name
+      "Sprint Race Qualifying",   // possible future naming
     ];
 
     let targetSession = null;
     for (const name of sprintQualifyingNames) {
-      targetSession = targetMeeting.sessions.find(s => s.session_name === name);
+      targetSession = targetMeeting.sessions.find(
+        s => s.session_name === name || s.session_name?.toLowerCase() === name.toLowerCase()
+      );
       if (targetSession) {
-        info(`[Sprint Quali] Found session with name: "${name}"`);
+        info(`[Sprint Quali] Found session with name: "${targetSession.session_name}"`);
         break;
       }
     }
@@ -335,6 +379,17 @@ export async function fetchSprintQualifying(season, round) {
       );
       if (targetSession) {
         info(`[Sprint Quali] Found Sprint session with Qualifying type`);
+      }
+    }
+
+    // Try partial match: any session containing "sprint" AND ("quali" or "shootout")
+    if (!targetSession) {
+      targetSession = targetMeeting.sessions.find(s => {
+        const name = (s.session_name || "").toLowerCase();
+        return name.includes("sprint") && (name.includes("quali") || name.includes("shootout"));
+      });
+      if (targetSession) {
+        info(`[Sprint Quali] Found session via partial match: "${targetSession.session_name}"`);
       }
     }
 
