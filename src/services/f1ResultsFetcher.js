@@ -65,6 +65,15 @@ async function fetchFromOpenF1(season, round) {
       return null;
     }
 
+    // Check if this race session has actually started (don't fetch future races)
+    if (raceSession.date_start) {
+      const sessionDate = new Date(raceSession.date_start);
+      if (sessionDate > new Date()) {
+        warn(`[OpenF1] Race session for ${season} R${round} is in the future (${raceSession.date_start}), skipping`);
+        return null;
+      }
+    }
+
     const sessionKey = raceSession.session_key;
     log(`[OpenF1] Found race session with key ${sessionKey}`);
 
