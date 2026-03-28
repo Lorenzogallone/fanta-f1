@@ -13,7 +13,7 @@
 
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, Timestamp } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 
 initializeApp();
@@ -120,10 +120,12 @@ function getCurrentSeasonYear() {
  */
 async function getRacesInWindow(sessionType, windowStart, windowEnd) {
   const field = sessionType === "sprint" ? "qualiSprintUTC" : "qualiUTC";
+  const startTs = Timestamp.fromDate(windowStart);
+  const endTs = Timestamp.fromDate(windowEnd);
   const snapshot = await db
     .collection("races")
-    .where(field, ">=", windowStart)
-    .where(field, "<", windowEnd)
+    .where(field, ">=", startTs)
+    .where(field, "<", endTs)
     .get();
   return snapshot.docs.map((doc) => {
     const data = doc.data();
@@ -147,14 +149,16 @@ async function getRacesInWindow(sessionType, windowStart, windowEnd) {
  * @returns {Promise<Array>}
  */
 async function getRacesInWindowBoth(windowStart, windowEnd) {
+  const startTs = Timestamp.fromDate(windowStart);
+  const endTs = Timestamp.fromDate(windowEnd);
   const [mainSnap, sprintSnap] = await Promise.all([
     db.collection("races")
-      .where("qualiUTC", ">=", windowStart)
-      .where("qualiUTC", "<", windowEnd)
+      .where("qualiUTC", ">=", startTs)
+      .where("qualiUTC", "<", endTs)
       .get(),
     db.collection("races")
-      .where("qualiSprintUTC", ">=", windowStart)
-      .where("qualiSprintUTC", "<", windowEnd)
+      .where("qualiSprintUTC", ">=", startTs)
+      .where("qualiSprintUTC", "<", endTs)
       .get(),
   ]);
 
@@ -380,6 +384,10 @@ async function checkAndNotifySession(
   // Costs 0 reads when no race is imminent (the common case).
   const races = await getRacesInWindow(sessionType, targetTime, targetEnd);
 
+  console.log(
+    `[${sessionType}/${intervalLabel}] window ${targetTime.toISOString()} – ${targetEnd.toISOString()} → ${races.length} gare trovate`
+  );
+
   for (const race of races) {
     const deadlineUTC =
       sessionType === "sprint" ? race.qualiSprintUTC : race.qualiUTC;
@@ -424,6 +432,10 @@ async function checkAndNotifyEvening() {
 
   const races = await getRacesInWindowBoth(now, windowEnd);
   const year = getCurrentSeasonYear();
+
+  console.log(
+    `[evening] window ${now.toISOString()} – ${windowEnd.toISOString()} → ${races.length} gare trovate`
+  );
 
   for (const race of races) {
     for (const sessionType of ["main", "sprint"]) {
