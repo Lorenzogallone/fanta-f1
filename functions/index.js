@@ -1,6 +1,7 @@
 /**
  * @file Cloud Functions for FantaF1 Push Notifications
  * @description Scheduled functions that send qualifying reminders.
+ * @version 2.1.0
  *
  * Notification schedule per session type (Main Race and Sprint treated separately):
  *   - Giorno prima (tutti): mattina alle 09:00 CET
