@@ -37,19 +37,6 @@ const BONUS_JOLLY_MAIN = POINTS.BONUS_JOLLY_MAIN;
 const BONUS_JOLLY_SPRINT = POINTS.BONUS_JOLLY_SPRINT;
 
 /**
- * Deadline status badge component
- * @param {Object} props - Component props
- * @param {boolean} props.open - Whether deadline is open
- * @param {Function} props.t - Translation function
- * @returns {JSX.Element} Status badge
- */
-const DeadlineBadge = ({ open, t }) => (
-  <Badge bg={open ? "success" : "danger"}>
-    {open ? ` ${t("calculate.ready")} ` : ` ${t("calculate.locked")} `}
-  </Badge>
-);
-
-/**
  * Double points indicator badge
  * @param {Object} props - Component props
  * @param {Function} props.t - Translation function
@@ -268,7 +255,7 @@ useEffect(() => {
         });
         setMsgRace({
           variant:"info",
-          msg: t("calculate.raceNotFinished", "La gara non è ancora terminata. I risultati saranno disponibili dopo la fine della gara.")
+          msg: t("calculate.raceNotFinished")
         });
         setFetchingResults(false);
       } else {
@@ -485,7 +472,7 @@ useEffect(() => {
                 <Card className="shadow">
                   <Card.Header className="bg-white d-flex justify-content-between">
                     <h5 className="mb-0">
-                      {t("calculate.calculateRacePoints")} <DeadlineBadge open={allowedRace} t={t} />
+                      {t("calculate.calculateRacePoints")}
                     </h5>
                     {isLast && <DoubleBadge t={t} />}
                   </Card.Header>

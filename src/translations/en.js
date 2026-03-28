@@ -434,6 +434,7 @@ export const en = {
     doublePoints: "Double points!",
     ready: "READY",
     locked: "LOCKED",
+    raceNotFinished: "The race has not finished yet. Results will be available after the race ends.",
     errorLoadingRaces: "Error loading races.",
     errorLoadingSubmissions: "Unable to load submissions.",
     fetchingFromAPI: "🔄 Loading results from API for {race}...",

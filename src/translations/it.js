@@ -434,6 +434,7 @@ export const it = {
     doublePoints: "Punti doppi!",
     ready: "PRONTA",
     locked: "BLOCCATA",
+    raceNotFinished: "La gara non è ancora terminata. I risultati saranno disponibili dopo la fine della gara.",
     errorLoadingRaces: "Errore nel caricamento delle gare.",
     errorLoadingSubmissions: "Impossibile caricare submissions.",
     fetchingFromAPI: "🔄 Caricamento risultati da API per {race}...",
