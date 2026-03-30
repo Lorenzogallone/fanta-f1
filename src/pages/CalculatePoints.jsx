@@ -360,9 +360,13 @@ useEffect(() => {
       await saveRankingSnapshot("race", race.id);
       setMsgRace({variant:"success",msg:res});
       setFormRace({P1:null,P2:null,P3:null,SP1:null,SP2:null,SP3:null});
-      /* refresh preview */
+      /* refresh preview — update race object so RaceHistoryCard sees officialResults */
       const rDoc = await getDoc(doc(db,"races",race.id));
-      setOfficial(rDoc.data().officialResults ?? null);
+      const updatedRaceData = rDoc.data();
+      setOfficial(updatedRaceData.officialResults ?? null);
+      const updatedRace = { ...race, ...updatedRaceData };
+      setRace(updatedRace);
+      setRaces(prev => prev.map(r => r.id === race.id ? updatedRace : r));
       const sSnap= await getDocs(collection(db,"races",race.id,"submissions"));
       setSubs(sSnap.docs.map(d=>({id:d.id,...d.data()})));
       /* scroll alla lista */
@@ -463,8 +467,33 @@ useEffect(() => {
           alignItems: "center", justifyContent: "center",
           color: "#fff",
         }}>
-          <img src="/FantaF1_Logo.png" alt="FantaF1" style={{ width: 100, marginBottom: 24, opacity: 0.95 }} />
-          <Spinner animation="border" variant="danger" style={{ width: "2.5rem", height: "2.5rem" }} className="mb-3" />
+          <svg viewBox="0 0 500 250" width="220" xmlns="http://www.w3.org/2000/svg" fill="none" style={{ marginBottom: 24 }}>
+            <style>{`
+              .calc-splash-draw {
+                stroke-dasharray: 3000;
+                stroke-dashoffset: 3000;
+                fill-opacity: 0;
+                stroke: #ff4d5a;
+                fill: #ff4d5a;
+                animation: calcLogoLoop 2.4s ease-in-out infinite;
+              }
+              @keyframes calcLogoLoop {
+                0% { stroke-dashoffset: 3000; fill-opacity: 0; }
+                55% { stroke-dashoffset: 0; fill-opacity: 1; }
+                78% { stroke-dashoffset: 0; fill-opacity: 1; }
+                100% { stroke-dashoffset: 3000; fill-opacity: 0; }
+              }
+            `}</style>
+            <text className="calc-splash-draw" x="250" y="95" textAnchor="middle"
+              fontFamily="'Arial Black', 'Helvetica Neue', Arial, sans-serif" fontWeight="900" fontStyle="italic"
+              fontSize="90" strokeWidth="2" paintOrder="stroke">Fanta</text>
+            <path className="calc-splash-draw" strokeWidth="2" strokeLinejoin="round"
+              d="M 50 190 L 100 140 Q 130 110 160 110 L 375 110 L 347 138 L 160 138 Q 137 138 115 160 L 85 190 Z" />
+            <path className="calc-splash-draw" strokeWidth="2" strokeLinejoin="round"
+              d="M 100 190 L 115 175 Q 137 153 160 153 L 305 153 L 277 181 L 170 181 Q 144 181 135 190 Z" />
+            <path className="calc-splash-draw" strokeWidth="2" strokeLinejoin="round"
+              d="M 400 110 L 440 110 L 360 190 L 320 190 Z" />
+          </svg>
           <h5 className="mb-1">{t("calculate.calculatingPoints")}</h5>
           <small className="text-muted">{t("calculate.pleaseWait")}</small>
         </div>
