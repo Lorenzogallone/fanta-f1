@@ -1,16 +1,21 @@
 /**
  * @file useTimezone.js
- * @description Hook for user timezone preference with localStorage persistence.
- * Provides timezone value and a setter, plus a formatDateTime utility.
+ * @description Hook for user timezone preference.
+ * Priority: Firestore (users/{uid}.timezone) > localStorage > "Europe/Rome"
+ * Saves to both Firestore and localStorage on change.
+ * Falls back to localStorage-only for unauthenticated users.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../services/firebase";
+import { useAuth } from "./useAuth";
 
 const STORAGE_KEY = "fanta-f1-timezone";
 const DEFAULT_TZ = "Europe/Rome";
 
 /**
- * Common timezone options grouped by region.
+ * Common timezone options.
  * Each entry: { value: IANA timezone, label: display name, flag }
  */
 export const TIMEZONE_OPTIONS = [
@@ -37,51 +42,46 @@ export const TIMEZONE_OPTIONS = [
   { value: "Australia/Sydney", label: "Sydney (AEST)", flag: "🇦🇺" },
 ];
 
+function getLocalTz() {
+  try {
+    return localStorage.getItem(STORAGE_KEY) || DEFAULT_TZ;
+  } catch {
+    return DEFAULT_TZ;
+  }
+}
+
 /**
  * Hook for timezone preference.
- * @returns {{ timezone: string, setTimezone: (tz: string) => void, formatDateTime: Function }}
+ * @returns {{ timezone: string, setTimezone: (tz: string) => void }}
  */
 export function useTimezone() {
-  const [timezone, setTimezoneState] = useState(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEY) || DEFAULT_TZ;
-    } catch {
-      return DEFAULT_TZ;
-    }
-  });
+  const { user, userProfile, updateUserProfile } = useAuth();
 
-  const setTimezone = useCallback((tz) => {
-    setTimezoneState(tz);
-    try {
-      localStorage.setItem(STORAGE_KEY, tz);
-    } catch {
-      // localStorage not available
+  // Initialise from localStorage so the first render already has a value
+  const [timezone, setTimezoneState] = useState(getLocalTz);
+
+  // When the Firestore profile loads, sync its timezone to local state
+  useEffect(() => {
+    if (userProfile?.timezone) {
+      setTimezoneState(userProfile.timezone);
+      try { localStorage.setItem(STORAGE_KEY, userProfile.timezone); } catch { /* ignore */ }
     }
-  }, []);
+  }, [userProfile?.timezone]);
 
   /**
-   * Format a Firestore timestamp or Date to localized date/time string.
-   * @param {Object|Date|number} timestamp - Firestore Timestamp, Date, or ms
-   * @param {string} locale - e.g. "it-IT" or "en-GB"
-   * @param {Object} options - Intl.DateTimeFormat options (without timeZone)
-   * @returns {string} Formatted date/time string
+   * Change timezone, persist to Firestore (if logged in) and localStorage.
    */
-  const formatDateTime = useCallback((timestamp, locale, options = {}) => {
-    if (!timestamp) return "—";
-    let date;
-    if (timestamp.toDate) {
-      date = timestamp.toDate();
-    } else if (timestamp.seconds) {
-      date = new Date(timestamp.seconds * 1000);
-    } else if (timestamp instanceof Date) {
-      date = timestamp;
-    } else if (typeof timestamp === "number") {
-      date = new Date(timestamp);
-    } else {
-      return "—";
-    }
-    return date.toLocaleString(locale, { ...options, timeZone: timezone });
-  }, [timezone]);
+  const setTimezone = useCallback(async (tz) => {
+    setTimezoneState(tz);
+    try { localStorage.setItem(STORAGE_KEY, tz); } catch { /* ignore */ }
 
-  return { timezone, setTimezone, formatDateTime };
+    if (user?.uid) {
+      try {
+        await updateDoc(doc(db, "users", user.uid), { timezone: tz });
+        updateUserProfile({ timezone: tz });
+      } catch { /* non-critical */ }
+    }
+  }, [user, updateUserProfile]);
+
+  return { timezone, setTimezone };
 }
