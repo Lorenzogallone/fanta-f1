@@ -17,6 +17,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { useTimezone, TIMEZONE_OPTIONS } from "../hooks/useTimezone";
 import { uploadProfileImage, removeProfileImage, updateProfile } from "../services/profileService";
 import UserAvatar from "../components/UserAvatar";
 import NotificationSettings from "../components/NotificationSettings";
@@ -25,6 +26,7 @@ export default function ProfilePage() {
   const { user, userProfile, checkNicknameAvailable, updateUserProfile } = useAuth();
   const { isDark, toggleTheme, themeMode, setMode } = useTheme();
   const { t, currentLanguage, changeLanguage, availableLanguages } = useLanguage();
+  const { timezone, setTimezone } = useTimezone();
 
   const [nickname, setNickname] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -179,7 +181,7 @@ export default function ProfilePage() {
   const memberSince = userProfile?.createdAt
     ? new Date(userProfile.createdAt.seconds * 1000).toLocaleDateString(
         currentLanguage === "en" ? "en-GB" : "it-IT",
-        { day: "2-digit", month: "long", year: "numeric" }
+        { day: "2-digit", month: "long", year: "numeric", timeZone: timezone }
       )
     : "—";
 
@@ -468,6 +470,31 @@ export default function ProfilePage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Timezone */}
+          <div className="d-flex align-items-center justify-content-between mb-3">
+            <span style={{ color: textColor, fontSize: "0.9rem" }}>
+              {t("profile.timezone")}
+            </span>
+            <Form.Select
+              size="sm"
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              style={{
+                maxWidth: 220,
+                fontSize: "0.82rem",
+                borderColor: isDark ? "#6c757d" : "#dee2e6",
+                backgroundColor: isDark ? "var(--bg-tertiary)" : "#fff",
+                color: textColor,
+              }}
+            >
+              {TIMEZONE_OPTIONS.map((tz) => (
+                <option key={tz.value} value={tz.value}>
+                  {tz.flag} {tz.label}
+                </option>
+              ))}
+            </Form.Select>
           </div>
 
           {/* Notifications */}

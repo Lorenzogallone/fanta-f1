@@ -3,7 +3,7 @@
  * @description Real-time leaderboard component displaying current rankings with user avatars
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, Table, Spinner, Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { collection, query, orderBy, onSnapshot, getDocs } from "firebase/firestore";
@@ -22,7 +22,10 @@ export default function Leaderboard() {
   const { isDark } = useTheme();
   const { t } = useLanguage();
 
-  // Load user profiles for avatar display
+  // Race ordering ref for proper last-race detection (handles both ICS and manual ID formats)
+  const raceOrderRef = useRef(null);
+
+  // Load user profiles and race ordering in parallel
   useEffect(() => {
     (async () => {
       try {
@@ -37,6 +40,14 @@ export default function Leaderboard() {
         // Non-critical: avatars will fallback to initials
       }
     })();
+    // Fetch race date ordering once
+    getDocs(query(collection(db, "races"), orderBy("raceUTC", "asc")))
+      .then((snap) => {
+        const map = {};
+        snap.docs.forEach((d, i) => { map[d.id] = i + 1; });
+        raceOrderRef.current = map;
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -51,13 +62,6 @@ export default function Leaderboard() {
         pointsByRace: d.data().pointsByRace || {},
       }));
 
-      // Helper: sum race points from pointsByRace, optionally excluding one race
-      const sumRacePts = (pbr, excludeId) =>
-        Object.entries(pbr).reduce((sum, [id, e]) => {
-          if (id === excludeId) return sum;
-          return sum + (e.mainPts || 0) + (e.sprintPts || 0);
-        }, 0);
-
       // Helper: assign positions with tie handling (competition ranking)
       const assignPositions = (arr) => {
         let pos = 1;
@@ -69,16 +73,21 @@ export default function Leaderboard() {
         return map;
       };
 
-      // Find the last calculated race (highest round from rXX- prefix)
+      // Find the last calculated race using date-based ordering (preferred) or ID parsing (fallback)
       const allRaceIds = new Set();
       rawRows.forEach((r) => Object.keys(r.pointsByRace).forEach((id) => allRaceIds.add(id)));
       let lastRaceId = null;
       if (allRaceIds.size > 0) {
-        lastRaceId = [...allRaceIds].sort((a, b) => {
-          const ra = parseInt(a.match(/^r(\d+)/)?.[1] || "0", 10);
-          const rb = parseInt(b.match(/^r(\d+)/)?.[1] || "0", 10);
-          return rb - ra;
-        })[0];
+        const order = raceOrderRef.current;
+        if (order && Object.keys(order).length > 0) {
+          lastRaceId = [...allRaceIds].sort((a, b) => (order[b] || 0) - (order[a] || 0))[0];
+        } else {
+          lastRaceId = [...allRaceIds].sort((a, b) => {
+            const ra = parseInt(a.match(/^r(\d+)/)?.[1] || "0", 10);
+            const rb = parseInt(b.match(/^r(\d+)/)?.[1] || "0", 10);
+            return rb - ra;
+          })[0];
+        }
       }
 
       // Current positions (from puntiTotali as displayed)
@@ -90,18 +99,22 @@ export default function Leaderboard() {
         return { ...row, position: currentPos };
       });
 
-      // Position change: compare race-only rankings (excludes championship pts)
-      // so the comparison is consistent
+      // Position change: use puntiTotali (consistent with displayed ranking)
+      // Compare current total vs total minus last race's points
       if (lastRaceId && allRaceIds.size > 1) {
         const currRace = rawRows.map((r) => ({
           userId: r.userId,
-          sortPts: sumRacePts(r.pointsByRace, null),
+          sortPts: r.pts,
         })).sort((a, b) => b.sortPts - a.sortPts);
 
-        const prevRace = rawRows.map((r) => ({
-          userId: r.userId,
-          sortPts: sumRacePts(r.pointsByRace, lastRaceId),
-        })).sort((a, b) => b.sortPts - a.sortPts);
+        const prevRace = rawRows.map((r) => {
+          const lastEntry = r.pointsByRace[lastRaceId];
+          const lastPts = lastEntry ? (lastEntry.mainPts || 0) + (lastEntry.sprintPts || 0) : 0;
+          return {
+            userId: r.userId,
+            sortPts: r.pts - lastPts,
+          };
+        }).sort((a, b) => b.sortPts - a.sortPts);
 
         const currPosMap = assignPositions(currRace);
         const prevPosMap = assignPositions(prevRace);

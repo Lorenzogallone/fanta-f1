@@ -23,6 +23,7 @@ import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../const
 import RaceHistoryCard from "../components/RaceHistoryCard";
 import Select from "react-select";
 import { useLanguage } from "../hooks/useLanguage";
+import { useTimezone } from "../hooks/useTimezone";
 import { error } from "../utils/logger";
 import "../styles/customSelect.css";
 
@@ -120,6 +121,7 @@ const DriverWithLogo = ({ name }) => {
  */
 function CalculatePointsContent() {
   const { t } = useLanguage();
+  const { timezone } = useTimezone();
   const [activeTab, setActiveTab] = useState("race");
   const previewRef = useRef(null);
 
@@ -538,7 +540,7 @@ useEffect(() => {
                       >
                         {races.map(r=>(
                           <option key={r.id} value={r.id}>
-                            {r.round}. {r.name} – {new Date(r.raceUTC.seconds*1000).toLocaleDateString()}
+                            {r.round}. {r.name} – {new Date(r.raceUTC.seconds*1000).toLocaleDateString(undefined, { timeZone: timezone })}
                           </option>
                         ))}
                       </Form.Select>

@@ -601,6 +601,7 @@ export const it = {
     imageTooLarge: "Immagine troppo grande (max 5MB)",
     theme: "Tema",
     language: "Lingua",
+    timezone: "Fuso orario",
     notifications: "Notifiche",
     uploadingImage: "Caricamento immagine...",
     savingProfile: "Salvataggio...",

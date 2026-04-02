@@ -38,6 +38,7 @@ import RaceHistoryCard from "../components/RaceHistoryCard";
 import { DRIVERS, DRIVER_TEAM, TEAM_LOGOS, TIME_CONSTANTS } from "../constants/racing";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { useLanguage } from "../hooks/useLanguage";
+import { useTimezone } from "../hooks/useTimezone";
 import { useAuth } from "../hooks/useAuth";
 import { error } from "../utils/logger";
 import { getLateWindowInfo } from "../utils/lateSubmissionHelper";
@@ -66,6 +67,7 @@ const driverOpts = drivers.map((d) => ({
 export default function FormationApp() {
   const colors = useThemeColors();
   const { t, currentLanguage } = useLanguage();
+  const { timezone } = useTimezone();
   const { user, userProfile } = useAuth();
   const dateLocale = currentLanguage === "en" ? "en-GB" : "it-IT";
 
@@ -758,9 +760,9 @@ export default function FormationApp() {
         </h5>
         <p className="small text-muted mb-3">
           {t("formations.submitBy")}:{" "}
-          {new Date(deadlineMs).toLocaleDateString(dateLocale, { day: "numeric", month: "long", year: "numeric" })}
+          {new Date(deadlineMs).toLocaleDateString(dateLocale, { day: "numeric", month: "long", year: "numeric", timeZone: timezone })}
           {" – "}
-          {new Date(deadlineMs).toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" })}
+          {new Date(deadlineMs).toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit", timeZone: timezone })}
         </p>
       </>
     );
