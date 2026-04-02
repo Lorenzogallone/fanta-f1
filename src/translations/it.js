@@ -214,7 +214,7 @@ export const it = {
     noResultsYet: "Risultati non ancora disponibili",
     noResultsYetDescription: "Le sessioni di questa gara non sono ancora state completate. I risultati verranno mostrati non appena disponibili.",
     scheduleTab: "Calendario",
-    allTimesInCET: "Orari in CET (Central European Time)",
+    allTimesIn: "Orari in",
     nextRace: "Prossima",
     upcoming: "In programma",
     completedRace: "Completata",

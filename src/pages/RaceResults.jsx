@@ -40,6 +40,7 @@ import { DRIVER_TEAM, TEAM_LOGOS, getDriverTeamDynamic, getTeamLogoDynamic } fro
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
+import { getTimezoneDisplay } from "../utils/timezoneUtils";
 import { log, error } from "../utils/logger";
 
 /**
@@ -1030,7 +1031,7 @@ export default function RaceResults() {
               {activeTab === "schedule" && (
                 <>
                   <p className="text-muted mb-4" style={{ fontSize: "0.9rem" }}>
-                    🕐 {t("raceResults.allTimesInCET")}
+                    🕐 {t("raceResults.allTimesIn")} {getTimezoneDisplay(timezone)}
                   </p>
 
                   {races.length === 0 ? (
