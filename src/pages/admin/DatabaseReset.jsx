@@ -24,6 +24,7 @@ import {
 import { db } from "../../services/firebase";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../hooks/useLanguage";
+import { useTimezone } from "../../hooks/useTimezone";
 import { error } from "../../utils/logger";
 import {
   createAndSaveBackup,
@@ -36,6 +37,7 @@ import {
 export default function DatabaseReset({ participants, races, onDataChange }) {
   const { t } = useLanguage();
   const { isDark } = useTheme();
+  const { timezone } = useTimezone();
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetType, setResetType] = useState("");
   const [resetting, setResetting] = useState(false);
@@ -193,7 +195,7 @@ export default function DatabaseReset({ participants, races, onDataChange }) {
                     <Badge bg={backup.metadata?.type === "manual" ? "success" : "primary"} style={{ fontSize: "0.6rem" }}>
                       {backup.metadata?.type || "manual"}
                     </Badge>
-                    <small className="text-muted">{timestamp.toLocaleString("it-IT")}</small>
+                    <small className="text-muted">{timestamp.toLocaleString("it-IT", { timeZone: timezone })}</small>
                   </div>
                   <div className="small text-muted mb-2">
                     {backup.metadata?.totalRaces || backup.races?.length || 0} {t("formations.races").toLowerCase()} · {backup.metadata?.totalParticipants || backup.ranking?.length || 0} {t("admin.participants").toLowerCase()}
@@ -276,7 +278,7 @@ export default function DatabaseReset({ participants, races, onDataChange }) {
                 </div>
                 <div className="d-flex justify-content-between mb-1">
                   <span className="text-muted">{t("admin.creationDate")}:</span>
-                  <span>{(selectedBackup.metadata?.timestamp?.toDate?.() || new Date()).toLocaleString("it-IT")}</span>
+                  <span>{(selectedBackup.metadata?.timestamp?.toDate?.() || new Date()).toLocaleString("it-IT", { timeZone: timezone })}</span>
                 </div>
                 <div className="d-flex justify-content-between mb-1">
                   <span className="text-muted">{t("admin.racesCount")}:</span>

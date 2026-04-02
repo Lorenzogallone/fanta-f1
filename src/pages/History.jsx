@@ -36,6 +36,7 @@ import RaceHistoryCard from "../components/RaceHistoryCard";
 import { TEAM_LOGOS, POINTS, getDriverTeamDynamic, getTeamLogoDynamic } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { useTimezone } from "../hooks/useTimezone";
 import { useAuth } from "../hooks/useAuth";
 import { getChampionshipDeadlineMs } from "../utils/championshipDeadline";
 import { error } from "../utils/logger";
@@ -152,6 +153,7 @@ export default function History() {
   const [championshipDeadlineMs, setChampionshipDeadlineMs] = useState(null);
   const { isDark } = useTheme();
   const { t } = useLanguage();
+  const { timezone } = useTimezone();
   const { user } = useAuth();
 
   /**
@@ -400,7 +402,7 @@ export default function History() {
                           {t("history.round")} {selectedRace.round} - {selectedRace.name}
                         </h5>
                         <small className="text-muted">
-                          {selectedRace.raceUTC && new Date(selectedRace.raceUTC.seconds * 1000).toLocaleDateString()}
+                          {selectedRace.raceUTC && new Date(selectedRace.raceUTC.seconds * 1000).toLocaleDateString(undefined, { timeZone: timezone })}
                         </small>
                       </div>
                       <Spinner animation="border" variant={isDark ? "light" : "primary"} style={{ width: '3rem', height: '3rem' }} />

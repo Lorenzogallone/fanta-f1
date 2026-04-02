@@ -23,6 +23,7 @@ import ChampionshipSubmissions from "../components/ChampionshipSubmissions";
 import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { useTimezone } from "../hooks/useTimezone";
 import { useAuth } from "../hooks/useAuth";
 import { error } from "../utils/logger";
 import "../styles/customSelect.css";
@@ -79,6 +80,7 @@ const asConstructorOptions = (constructorsList) =>
 export default function ChampionshipForm() {
   const { isDark } = useTheme();
   const { t, currentLanguage } = useLanguage();
+  const { timezone } = useTimezone();
   const { user, userProfile } = useAuth();
   const dateLocale = currentLanguage === "en" ? "en-GB" : "it-IT";
 
@@ -136,9 +138,10 @@ export default function ChampionshipForm() {
         if (ms) {
           setDeadlineMs(ms);
           setDeadlineText(
-            new Date(ms).toLocaleDateString(dateLocale, {
+            new Date(ms).toLocaleString(dateLocale, {
               day: "2-digit", month: "2-digit", year: "numeric",
               hour: "2-digit", minute: "2-digit",
+              timeZone: timezone,
             })
           );
         }

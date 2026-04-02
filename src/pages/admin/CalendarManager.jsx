@@ -30,6 +30,7 @@ import {
 import { db } from "../../services/firebase";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../hooks/useLanguage";
+import { useTimezone } from "../../hooks/useTimezone";
 import { error } from "../../utils/logger";
 
 const tsToLocal = (ts) => {
@@ -39,21 +40,22 @@ const tsToLocal = (ts) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-const fmtDate = (ts) => {
-  if (!ts) return "—";
-  return new Date(ts.seconds * 1000).toLocaleDateString("it-IT", { day: "2-digit", month: "short" });
-};
-
-const fmtFull = (ts) => {
-  if (!ts) return "—";
-  const d = new Date(ts.seconds * 1000);
-  return d.toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })
-    + " " + d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
-};
-
 export default function CalendarManager({ races, loading, onDataChange }) {
   const { t } = useLanguage();
   const { isDark } = useTheme();
+  const { timezone } = useTimezone();
+
+  const fmtDate = (ts) => {
+    if (!ts) return "—";
+    return new Date(ts.seconds * 1000).toLocaleDateString("it-IT", { day: "2-digit", month: "short", timeZone: timezone });
+  };
+
+  const fmtFull = (ts) => {
+    if (!ts) return "—";
+    const d = new Date(ts.seconds * 1000);
+    return d.toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "short", year: "numeric", timeZone: timezone })
+      + " " + d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: timezone });
+  };
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState(null);
 
@@ -556,9 +558,9 @@ export default function CalendarManager({ races, loading, onDataChange }) {
                   <strong>{editingRace.name}</strong> → <strong>{editFormData.name}</strong>
                   {editFormData.name !== editingRace.name && <Badge bg="info" className="ms-1" style={{ fontSize: "0.6rem" }}>{t("admin.nameChanged")}</Badge>}
                   <br />
-                  <span className="text-muted">{t("admin.raceDateTimeUTC")}:</span> {fmtFull(editingRace.raceUTC)} → {new Date(editFormData.raceDateTimeUTC).toLocaleString("it-IT")}
+                  <span className="text-muted">{t("admin.raceDateTimeUTC")}:</span> {fmtFull(editingRace.raceUTC)} → {new Date(editFormData.raceDateTimeUTC).toLocaleString("it-IT", { timeZone: timezone })}
                   <br />
-                  <span className="text-muted">{t("admin.qualiDateTimeUTC")}:</span> {fmtFull(editingRace.qualiUTC)} → {new Date(editFormData.qualiDateTimeUTC).toLocaleString("it-IT")}
+                  <span className="text-muted">{t("admin.qualiDateTimeUTC")}:</span> {fmtFull(editingRace.qualiUTC)} → {new Date(editFormData.qualiDateTimeUTC).toLocaleString("it-IT", { timeZone: timezone })}
                 </div>
               )}
               {previewData && previewData.some((r) => r.changed) && (

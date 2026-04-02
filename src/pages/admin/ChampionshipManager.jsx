@@ -28,6 +28,7 @@ import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS } from "../../constants/
 import Select from "react-select";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../hooks/useLanguage";
+import { useTimezone } from "../../hooks/useTimezone";
 import { getChampionshipDeadlineAutoMs } from "../../utils/championshipDeadline";
 import { error as logError } from "../../utils/logger";
 import "../../styles/customSelect.css";
@@ -71,17 +72,19 @@ function toDatetimeLocal(ts) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function formatDate(ms, locale) {
+function formatDate(ms, locale, tz) {
   if (!ms) return "—";
   return new Date(ms).toLocaleString(locale, {
     day: "2-digit", month: "2-digit", year: "numeric",
     hour: "2-digit", minute: "2-digit",
+    ...(tz ? { timeZone: tz } : {}),
   });
 }
 
 export default function ChampionshipManager({ participants, loading, onDataChange }) {
   const { t, currentLanguage } = useLanguage();
   const { isDark } = useTheme();
+  const { timezone } = useTimezone();
   const dateLocale = currentLanguage === "en" ? "en-GB" : "it-IT";
 
   /* ── Deadline state ── */
@@ -301,7 +304,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
               <div className="d-flex flex-wrap align-items-center gap-2 mb-3" style={{ fontSize: "0.85rem" }}>
                 <span className="fw-semibold">{t("admin.deadlineCurrentLabel")}:</span>
                 <span className="fw-bold" style={{ color: isDark ? "#fbbf24" : "#d97706" }}>
-                  {formatDate(effectiveDeadlineMs, dateLocale)}
+                  {formatDate(effectiveDeadlineMs, dateLocale, timezone)}
                 </span>
                 <Badge
                   bg={deadlineOverride ? "warning" : "secondary"}
@@ -314,7 +317,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
 
               {deadlineAutoMs && deadlineOverride && (
                 <p className="small text-muted mb-3" style={{ fontSize: "0.75rem" }}>
-                  {t("admin.deadlineAutoCalculated")}: {formatDate(deadlineAutoMs, dateLocale)}
+                  {t("admin.deadlineAutoCalculated")}: {formatDate(deadlineAutoMs, dateLocale, timezone)}
                 </p>
               )}
 
@@ -523,7 +526,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
       <Modal show={showSaveDeadlineConfirm} onHide={() => setShowSaveDeadlineConfirm(false)} centered size="sm">
         <Modal.Body className="text-center py-4">
           <p className="fw-semibold mb-1">{t("admin.confirmSaveDeadline") || "Conferma salvataggio scadenza"}</p>
-          <p className="fw-bold mb-3">{deadlineInput ? new Date(deadlineInput).toLocaleString(dateLocale) : ""}</p>
+          <p className="fw-bold mb-3">{deadlineInput ? new Date(deadlineInput).toLocaleString(dateLocale, { timeZone: timezone }) : ""}</p>
           <div className="d-flex gap-2 justify-content-center">
             <Button variant="secondary" size="sm" onClick={() => setShowSaveDeadlineConfirm(false)}>
               {t("common.cancel")}

@@ -39,6 +39,7 @@ import {
 import { DRIVER_TEAM, TEAM_LOGOS, getDriverTeamDynamic, getTeamLogoDynamic } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { useTimezone } from "../hooks/useTimezone";
 import { log, error } from "../utils/logger";
 
 /**
@@ -108,6 +109,7 @@ TeamWithLogo.propTypes = {
 export default function RaceResults() {
   const { isDark } = useTheme();
   const { t, currentLanguage } = useLanguage();
+  const { timezone } = useTimezone();
   const navigate = useNavigate();
 
   const [races, setRaces] = useState([]);
@@ -139,15 +141,15 @@ export default function RaceResults() {
   const locale = currentLanguage === "it" ? "it-IT" : "en-US";
 
   /**
-   * Format a Firestore timestamp to CET date/time components
+   * Format a Firestore timestamp to date/time components in user's timezone
    */
   const formatToCET = (timestamp) => {
     if (!timestamp) return null;
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp.seconds * 1000);
     return {
-      dayOfWeek: date.toLocaleDateString(locale, { weekday: "short", timeZone: "Europe/Rome" }),
-      dateStr: date.toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: "Europe/Rome" }),
-      time: date.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" }),
+      dayOfWeek: date.toLocaleDateString(locale, { weekday: "short", timeZone: timezone }),
+      dateStr: date.toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: timezone }),
+      time: date.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: timezone }),
       raw: date,
     };
   };
@@ -378,7 +380,7 @@ export default function RaceResults() {
 
             setSessions({
               raceName: selectedRaceToLoad.name,
-              date: selectedRaceToLoad.raceUTC.toDate().toLocaleDateString(),
+              date: selectedRaceToLoad.raceUTC.toDate().toLocaleDateString(locale, { timeZone: timezone }),
               season,
               round,
               noData: !hasAnySession,
@@ -479,7 +481,7 @@ export default function RaceResults() {
 
         setSessions({
           raceName: race.name,
-          date: race.raceUTC.toDate().toLocaleDateString(),
+          date: race.raceUTC.toDate().toLocaleDateString(locale, { timeZone: timezone }),
           season,
           round,
           noData: !hasAnySession,
@@ -521,7 +523,7 @@ export default function RaceResults() {
 
       setSessions({
         raceName: race.name,
-        date: race.raceUTC.toDate().toLocaleDateString(),
+        date: race.raceUTC.toDate().toLocaleDateString(locale, { timeZone: timezone }),
         season,
         round,
         noData: !hasAnySession,

@@ -17,6 +17,7 @@ import { db } from "../services/firebase";
 import { DRIVER_TEAM, TEAM_LOGOS, POINTS, getDriverTeamDynamic, getTeamLogoDynamic } from "../constants/racing";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { useTimezone } from "../hooks/useTimezone";
 import { error } from "../utils/logger";
 
 /**
@@ -90,6 +91,7 @@ function RaceHistoryCard({
 }) {
   const { isDark } = useTheme();
   const { t } = useLanguage();
+  const { timezone } = useTimezone();
   const [subs, setSubs] = useState([]);
   const [loadingSub, setLoadingSub] = useState(true);
   const [errorSub, setErrorSub] = useState(null);
@@ -223,7 +225,7 @@ function RaceHistoryCard({
         >
           <h5 className="mb-0" style={{ color: cancelledMain ? "#6c757d" : accentColor }}>
             {race.round}. {race.name} —{" "}
-            {new Date(race.raceUTC.seconds * 1000).toLocaleDateString()}
+            {new Date(race.raceUTC.seconds * 1000).toLocaleDateString(undefined, { timeZone: timezone })}
             {cancelledMain && (
               <Badge bg="danger" className="ms-2">
                 ⛔ {t("history.cancelled")}
