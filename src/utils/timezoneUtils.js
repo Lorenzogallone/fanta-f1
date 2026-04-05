@@ -29,7 +29,9 @@ const TIMEZONE_ABBREVIATIONS = {
   "Asia/Tokyo": "JST",
   "Asia/Shanghai": "CST",
   "Asia/Singapore": "SGT",
+  "Asia/Kolkata": "IST",
   "Australia/Sydney": "AEST",
+  "Pacific/Auckland": "NZST",
 };
 
 /**
@@ -56,7 +58,9 @@ const TIMEZONE_NAMES = {
   "Asia/Tokyo": "Japan Standard Time",
   "Asia/Shanghai": "China Standard Time",
   "Asia/Singapore": "Singapore Standard Time",
+  "Asia/Kolkata": "India Standard Time",
   "Australia/Sydney": "Australian Eastern Standard Time",
+  "Pacific/Auckland": "New Zealand Standard Time",
 };
 
 /**
