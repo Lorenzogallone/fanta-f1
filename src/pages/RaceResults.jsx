@@ -40,7 +40,7 @@ import { DRIVER_TEAM, TEAM_LOGOS, getDriverTeamDynamic, getTeamLogoDynamic } fro
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
-import { getTimezoneDisplay } from "../utils/timezoneUtils";
+import { getTimezoneDisplay, getTimezoneAbbreviation } from "../utils/timezoneUtils";
 import { log, error } from "../utils/logger";
 
 /**
@@ -144,7 +144,7 @@ export default function RaceResults() {
   /**
    * Format a Firestore timestamp to date/time components in user's timezone
    */
-  const formatToCET = (timestamp) => {
+  const formatToUserTz = (timestamp) => {
     if (!timestamp) return null;
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp.seconds * 1000);
     return {
@@ -669,7 +669,7 @@ export default function RaceResults() {
                         <div className="small mt-1">
                           {t("raceResults.canStillSubmitMain")}
                           {selectedRace.qualiUTC && (
-                            <> — {t("raceResults.deadlineAt")} {formatToCET(selectedRace.qualiUTC)?.time} ({formatToCET(selectedRace.qualiUTC)?.dateStr})</>
+                            <> — {t("raceResults.deadlineAt")} {formatToUserTz(selectedRace.qualiUTC)?.time} ({formatToUserTz(selectedRace.qualiUTC)?.dateStr})</>
                           )}
                         </div>
                       )}
@@ -677,7 +677,7 @@ export default function RaceResults() {
                         <div className="small mt-1">
                           {t("raceResults.canStillSubmitSprint")}
                           {selectedRace.qualiSprintUTC && (
-                            <> — {t("raceResults.deadlineAt")} {formatToCET(selectedRace.qualiSprintUTC)?.time} ({formatToCET(selectedRace.qualiSprintUTC)?.dateStr})</>
+                            <> — {t("raceResults.deadlineAt")} {formatToUserTz(selectedRace.qualiSprintUTC)?.time} ({formatToUserTz(selectedRace.qualiSprintUTC)?.dateStr})</>
                           )}
                         </div>
                       )}
@@ -1047,14 +1047,14 @@ export default function RaceResults() {
 
                         const sessionRows = [];
                         if (isSprint) {
-                          const sqFmt = formatToCET(race.qualiSprintUTC);
+                          const sqFmt = formatToUserTz(race.qualiSprintUTC);
                           if (sqFmt) sessionRows.push({ label: t("raceResults.sprintQualifying"), ...sqFmt, icon: "⚡" });
-                          const spFmt = formatToCET(race.sprintUTC);
+                          const spFmt = formatToUserTz(race.sprintUTC);
                           if (spFmt) sessionRows.push({ label: t("raceResults.sprint"), ...spFmt, icon: "⚡" });
                         }
-                        const qFmt = formatToCET(race.qualiUTC);
+                        const qFmt = formatToUserTz(race.qualiUTC);
                         if (qFmt) sessionRows.push({ label: t("raceResults.qualifying"), ...qFmt, icon: "🏎️" });
-                        const rFmt = formatToCET(race.raceUTC);
+                        const rFmt = formatToUserTz(race.raceUTC);
                         if (rFmt) sessionRows.push({ label: t("raceResults.race"), ...rFmt, icon: "🏆" });
 
                         let countdownText;
@@ -1105,7 +1105,7 @@ export default function RaceResults() {
                                   <tr>
                                     <th style={{ color: accentColor, padding: "0.6rem 0.75rem" }}>{t("raceResults.sessionSchedule")}</th>
                                     <th style={{ color: accentColor, padding: "0.6rem 0.75rem" }}>{t("common.date")}</th>
-                                    <th className="text-end" style={{ color: accentColor, padding: "0.6rem 0.75rem" }}>CET</th>
+                                    <th className="text-end" style={{ color: accentColor, padding: "0.6rem 0.75rem" }}>{getTimezoneAbbreviation(timezone)}</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -1139,8 +1139,8 @@ export default function RaceResults() {
                           <div className="schedule-race-list">
                             {scheduleData.upcoming.slice(1).map((race) => {
                               const isSprint = !!race.qualiSprintUTC;
-                              const qFmt = formatToCET(race.qualiUTC);
-                              const rFmt = formatToCET(race.raceUTC);
+                              const qFmt = formatToUserTz(race.qualiUTC);
+                              const rFmt = formatToUserTz(race.raceUTC);
 
                               return (
                                 <Card
@@ -1172,8 +1172,8 @@ export default function RaceResults() {
                                     <Table hover className="mb-0" size="sm" variant={isDark ? "dark" : undefined} style={{ fontSize: "0.85rem" }}>
                                       <tbody>
                                         {isSprint && (() => {
-                                          const sqFmt = formatToCET(race.qualiSprintUTC);
-                                          const spFmt = formatToCET(race.sprintUTC);
+                                          const sqFmt = formatToUserTz(race.qualiSprintUTC);
+                                          const spFmt = formatToUserTz(race.sprintUTC);
                                           return (
                                             <>
                                               {sqFmt && (
@@ -1236,8 +1236,8 @@ export default function RaceResults() {
                                 </thead>
                                 <tbody>
                                   {scheduleData.past.map((race) => {
-                                    const qFmt = formatToCET(race.qualiUTC);
-                                    const rFmt = formatToCET(race.raceUTC);
+                                    const qFmt = formatToUserTz(race.qualiUTC);
+                                    const rFmt = formatToUserTz(race.raceUTC);
                                     return (
                                       <tr key={race.id} style={{ opacity: 0.7 }}>
                                         <td style={{ padding: "0.5rem 0.75rem" }}>{race.round}</td>

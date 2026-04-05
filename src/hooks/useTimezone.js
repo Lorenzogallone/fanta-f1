@@ -39,7 +39,9 @@ export const TIMEZONE_OPTIONS = [
   { value: "Asia/Tokyo", label: "Tokyo (JST)", flag: "🇯🇵" },
   { value: "Asia/Shanghai", label: "Shanghai (CST)", flag: "🇨🇳" },
   { value: "Asia/Singapore", label: "Singapore (SGT)", flag: "🇸🇬" },
+  { value: "Asia/Kolkata", label: "India (IST)", flag: "🇮🇳" },
   { value: "Australia/Sydney", label: "Sydney (AEST)", flag: "🇦🇺" },
+  { value: "Pacific/Auckland", label: "Auckland (NZST)", flag: "🇳🇿" },
 ];
 
 function getLocalTz() {

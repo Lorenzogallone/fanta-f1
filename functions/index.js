@@ -1,13 +1,14 @@
 /**
  * @file Cloud Functions for FantaF1 Push Notifications
  * @description Scheduled functions that send qualifying reminders.
- * @version 2.1.0
+ * @version 3.0.0
  *
  * Notification schedule per session type (Main Race and Sprint treated separately):
- *   - Giorno prima (tutti): mattina alle 09:00 CET
- *   - Daytime session  (CET >= 07:00): 1 ora prima + 5 minuti prima
- *   - Nighttime session (CET < 07:00): sera precedente alle 21:00 + 5 minuti prima
+ *   - Daytime session  (user tz >= 09:00): 1 ora prima + 5 minuti prima
+ *   - Nighttime session (user tz < 09:00): sera precedente alle 21:00 (user tz) + 5 minuti prima
  *
+ * Timezone-aware: notifications adapt to each user's configured timezone.
+ * Fallback: users without a timezone preference default to Europe/Rome (CET).
  * All notification text is in Italian, professional tone, no emoji.
  */
 /* eslint-env node */
@@ -28,8 +29,18 @@ const CHECK_INTERVAL_1H_MS = 10 * 60 * 1000;
 /** How often the 5min check runs (every 1 minute) */
 const CHECK_INTERVAL_5MIN_MS = 1 * 60 * 1000;
 
-/** Timezone used for CET night-time detection */
+/** Default timezone (fallback when user has no preference) */
 const TIMEZONE = "Europe/Rome";
+
+/** All supported timezones (mirrors TIMEZONE_OPTIONS in useTimezone.js) */
+const SUPPORTED_TIMEZONES = [
+  "Europe/Rome", "Europe/London", "Europe/Paris", "Europe/Berlin",
+  "Europe/Madrid", "Europe/Zurich", "Europe/Amsterdam", "Europe/Brussels",
+  "Europe/Vienna", "Europe/Athens", "Europe/Lisbon",
+  "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
+  "America/Sao_Paulo", "Asia/Dubai", "Asia/Tokyo", "Asia/Shanghai",
+  "Asia/Singapore", "Asia/Kolkata", "Australia/Sydney", "Pacific/Auckland",
+];
 
 /**
  * URL base dell'app. Usato per costruire URL assoluti delle icone nelle notifiche:
@@ -47,36 +58,45 @@ const NOTIFICATION_BADGE = `${SITE_URL}/FantaF1_Logo_192.png`;
 // ─── Helper Functions ────────────────────────────────────────────────────────
 
 /**
- * Returns the CET hour (0–23) for a given UTC Date object.
+ * Returns the hour (0–23) for a given UTC Date in the specified timezone.
  * @param {Date} dateUTC
+ * @param {string} tz  IANA timezone (e.g., "Europe/Rome")
  * @returns {number}
  */
-function getCETHour(dateUTC) {
-  const cetStr = dateUTC.toLocaleString("en-US", {
-    timeZone: TIMEZONE,
+function getHourInTz(dateUTC, tz) {
+  const str = dateUTC.toLocaleString("en-US", {
+    timeZone: tz,
     hour: "numeric",
     hour12: false,
   });
-  return parseInt(cetStr, 10);
+  return parseInt(str, 10);
 }
 
+/** @deprecated Use getHourInTz(dateUTC, tz) */
+function getCETHour(dateUTC) { return getHourInTz(dateUTC, TIMEZONE); }
+
 /**
- * Returns true when the session falls in the "nighttime" band (CET hour < 7).
+ * Returns true when the session falls in the "nighttime" band (local hour < 9).
  * @param {Date} dateUTC
+ * @param {string} tz  IANA timezone
  * @returns {boolean}
  */
-function isNightTimeCET(dateUTC) {
-  return getCETHour(dateUTC) < 9;
+function isNightTime(dateUTC, tz) {
+  return getHourInTz(dateUTC, tz) < 9;
 }
 
+/** @deprecated Use isNightTime(dateUTC, tz) */
+function isNightTimeCET(dateUTC) { return isNightTime(dateUTC, TIMEZONE); }
+
 /**
- * Formats a UTC Date as "HH:MM" in CET.
+ * Formats a UTC Date as "HH:MM" in the given timezone.
  * @param {Date} dateUTC
+ * @param {string} tz  IANA timezone
  * @returns {string}
  */
-function formatTimeCET(dateUTC) {
+function formatTime(dateUTC, tz) {
   return dateUTC.toLocaleString("it-IT", {
-    timeZone: TIMEZONE,
+    timeZone: tz,
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -84,16 +104,56 @@ function formatTimeCET(dateUTC) {
 }
 
 /**
- * Formats a UTC Date as "6 aprile" (day + month) in CET.
+ * Formats a UTC Date as "6 aprile" (day + month) in the given timezone.
  * @param {Date} dateUTC
+ * @param {string} tz  IANA timezone
  * @returns {string}
  */
-function formatDateCET(dateUTC) {
+function formatDate(dateUTC, tz) {
   return dateUTC.toLocaleString("it-IT", {
-    timeZone: TIMEZONE,
+    timeZone: tz,
     day: "numeric",
     month: "long",
   });
+}
+
+/**
+ * Returns the timezone abbreviation (e.g., "CET", "EST", "JST") at a given moment.
+ * Handles DST automatically (e.g., returns "CEST" during summer for Europe/Rome).
+ * @param {Date} dateUTC
+ * @param {string} tz  IANA timezone
+ * @returns {string}
+ */
+function getTzAbbr(dateUTC, tz) {
+  return dateUTC.toLocaleString("en-US", { timeZone: tz, timeZoneName: "short" })
+    .split(" ").pop();
+}
+
+/**
+ * Returns a UTC offset key for grouping timezones (e.g., "UTC+01:00").
+ * Timezones with the same offset share the same notification text.
+ * @param {Date} dateUTC
+ * @param {string} tz  IANA timezone
+ * @returns {string}
+ */
+function getUtcOffsetKey(dateUTC, tz) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    timeZoneName: "longOffset",
+  }).formatToParts(dateUTC);
+  const offsetPart = parts.find((p) => p.type === "timeZoneName");
+  return (offsetPart ? offsetPart.value : "GMT").replace("GMT", "UTC");
+}
+
+/**
+ * Returns the list of supported timezones where the current local hour equals targetHour.
+ * Used to short-circuit the evening function when no timezone has hour 21.
+ * @param {number} targetHour
+ * @returns {string[]}
+ */
+function getTimezonesAtHour(targetHour) {
+  const now = new Date();
+  return SUPPORTED_TIMEZONES.filter((tz) => getHourInTz(now, tz) === targetHour);
 }
 
 /**
@@ -200,6 +260,28 @@ async function getAllFcmTokens() {
 }
 
 /**
+ * Gets FCM tokens grouped by user timezone.
+ * Same Firestore read as getAllFcmTokens — zero additional cost.
+ * @returns {Promise<Map<string, string[]>>}  Map<IANA timezone, unique tokens>
+ */
+async function getUsersGroupedByTimezone() {
+  const snapshot = await db.collection("users").get();
+  const groups = new Map();
+  for (const doc of snapshot.docs) {
+    const data = doc.data();
+    if (!data.fcmTokens || !Array.isArray(data.fcmTokens) || data.fcmTokens.length === 0) continue;
+    const tz = data.timezone || TIMEZONE;
+    if (!groups.has(tz)) groups.set(tz, []);
+    groups.get(tz).push(...data.fcmTokens);
+  }
+  // Dedup tokens within each group
+  for (const [tz, tokens] of groups) {
+    groups.set(tz, [...new Set(tokens)]);
+  }
+  return groups;
+}
+
+/**
  * Checks if a notification has already been sent (deduplication).
  * Also checks the legacy format (without year prefix) and migrates it
  * automatically so old data is preserved without manual intervention.
@@ -274,17 +356,16 @@ async function cleanupInvalidTokens(invalidTokens) {
 }
 
 /**
- * Sends a push notification to all registered devices.
+ * Internal: sends a push notification to a specific set of tokens.
+ * @param {string[]} tokens
  * @param {string} title
  * @param {string} body
  * @param {string} tag
  * @returns {Promise<{successCount: number, failureCount: number}>}
  */
-async function sendToAll(title, body, tag) {
-  const tokens = await getAllFcmTokens();
-
+async function _sendPush(tokens, title, body, tag) {
   if (tokens.length === 0) {
-    console.log("Nessun token FCM trovato, invio saltato");
+    console.log("Nessun token FCM, invio saltato");
     return { successCount: 0, failureCount: 0 };
   }
 
@@ -330,6 +411,23 @@ async function sendToAll(title, body, tag) {
   return { successCount, failureCount };
 }
 
+/**
+ * Sends a push notification to ALL registered devices.
+ * Used by the 5min function (no timezone logic needed).
+ */
+async function sendToAll(title, body, tag) {
+  const tokens = await getAllFcmTokens();
+  return _sendPush(tokens, title, body, tag);
+}
+
+/**
+ * Sends a push notification to a specific set of tokens.
+ * Used by timezone-aware functions (1h, evening).
+ */
+async function sendToTokens(tokens, title, body, tag) {
+  return _sendPush(tokens, title, body, tag);
+}
+
 // ─── Notification Body Builders ───────────────────────────────────────────────
 
 /**
@@ -339,16 +437,18 @@ async function sendToAll(title, body, tag) {
  * @param {"1h"|"5min"|"evening"} interval
  * @param {Date}   deadlineUTC  Qualifying deadline (UTC)
  * @param {string} raceName
+ * @param {string} [tz]  IANA timezone for formatting (used by evening notifications)
  * @returns {{ title: string, body: string }}
  */
-function buildNotification(sessionType, interval, deadlineUTC, raceName) {
+function buildNotification(sessionType, interval, deadlineUTC, raceName, tz = TIMEZONE) {
   const sessionLabel = sessionType === "sprint" ? "Sprint" : "Gara";
 
   let body;
   if (interval === "evening") {
-    const time = formatTimeCET(deadlineUTC);
-    const date = formatDateCET(deadlineUTC);
-    body = `Formazione ${sessionLabel} — GP ${raceName}. Schiera entro le ${time} del ${date} CET.`;
+    const time = formatTime(deadlineUTC, tz);
+    const date = formatDate(deadlineUTC, tz);
+    const abbr = getTzAbbr(deadlineUTC, tz);
+    body = `Formazione ${sessionLabel} — GP ${raceName}. Schiera entro le ${time} del ${date} ${abbr}.`;
   } else if (interval === "1h") {
     body = `Circa 1 ora alla deadline formazione ${sessionLabel} — GP ${raceName}.`;
   } else {
@@ -364,11 +464,17 @@ function buildNotification(sessionType, interval, deadlineUTC, raceName) {
  * Checks all sessions of a given type for an upcoming deadline within a time window
  * and sends notifications where needed.
  *
+ * When skipNight is true (1h reminder), the notification is sent only to users
+ * whose timezone makes the session "daytime" (local hour >= 9). Users in
+ * nighttime timezones will receive the evening notification instead.
+ *
+ * When skipNight is false (5min reminder), sends to ALL users regardless of timezone.
+ *
  * @param {"main"|"sprint"} sessionType
  * @param {number}  minutesBefore  Minutes before deadline to trigger
  * @param {number}  windowMs       Width of the detection window (matches schedule interval)
  * @param {string}  intervalLabel  Dedup suffix: "1h" | "5min"
- * @param {boolean} skipNight      If true, skip nighttime sessions (CET hour < 7)
+ * @param {boolean} skipNight      If true, per-user nighttime skip
  */
 async function checkAndNotifySession(
   sessionType,
@@ -397,39 +503,65 @@ async function checkAndNotifySession(
 
     if (!deadlineUTC || cancelled) continue;
 
-    if (skipNight && isNightTimeCET(deadlineUTC)) continue;
-
     const sessionKey = sessionType === "sprint" ? "sprintQuali" : "quali";
     const year = getCurrentSeasonYear();
-    const docId = `${year}_${race.id}_${sessionKey}_${intervalLabel}`;
-    if (!(await isAlreadySent(docId))) {
-      const { title, body } = buildNotification(
-        sessionType,
-        intervalLabel,
-        deadlineUTC,
-        race.name
-      );
-      await sendToAll(title, body, docId);
-      await markAsSent(docId, {
-        raceId: race.id,
-        raceName: race.name,
-        type: sessionType === "sprint" ? "sprintQualifying" : "qualifying",
-        interval: intervalLabel,
-      });
+
+    if (skipNight) {
+      // Per-timezone: send only to users where the session is daytime
+      const tzGroups = await getUsersGroupedByTimezone();
+
+      // Group tokens by UTC offset (timezones with same offset share notification)
+      const offsetGroups = new Map(); // offsetKey -> tokens[]
+      for (const [tz, tokens] of tzGroups) {
+        if (isNightTime(deadlineUTC, tz)) continue; // skip nighttime users
+        const offsetKey = getUtcOffsetKey(deadlineUTC, tz);
+        if (!offsetGroups.has(offsetKey)) offsetGroups.set(offsetKey, []);
+        offsetGroups.get(offsetKey).push(...tokens);
+      }
+
+      for (const [offsetKey, tokens] of offsetGroups) {
+        const docId = `${year}_${race.id}_${sessionKey}_${intervalLabel}_${offsetKey}`;
+        if (await isAlreadySent(docId)) continue;
+        const { title, body } = buildNotification(
+          sessionType, intervalLabel, deadlineUTC, race.name
+        );
+        await sendToTokens(tokens, title, body, docId);
+        await markAsSent(docId, {
+          raceId: race.id, raceName: race.name,
+          type: sessionType === "sprint" ? "sprintQualifying" : "qualifying",
+          interval: intervalLabel,
+        });
+      }
+    } else {
+      // 5min: send to everyone, no timezone logic
+      const docId = `${year}_${race.id}_${sessionKey}_${intervalLabel}`;
+      if (!(await isAlreadySent(docId))) {
+        const { title, body } = buildNotification(
+          sessionType, intervalLabel, deadlineUTC, race.name
+        );
+        await sendToAll(title, body, docId);
+        await markAsSent(docId, {
+          raceId: race.id, raceName: race.name,
+          type: sessionType === "sprint" ? "sprintQualifying" : "qualifying",
+          interval: intervalLabel,
+        });
+      }
     }
   }
 }
 
 /**
- * Checks for nighttime sessions (CET < 09:00) whose deadline falls within
- * the next ~10 hours and sends the advance evening notification.
- * Intended to run once daily at 21:00 CET.
- * Uses windowed queries to avoid reading all race documents.
+ * Checks for sessions that are "nighttime" in the given target timezones and sends
+ * evening notifications to users in those timezones.
+ * Runs hourly; the caller provides which timezones currently have local hour 21.
+ *
+ * @param {string[]} targetTimezones  Timezones where local hour is 21
+ * @param {Map<string, string[]>} tzGroups  Users grouped by timezone
  */
-async function checkAndNotifyEvening() {
+async function checkAndNotifyEvening(targetTimezones, tzGroups) {
   const now = new Date();
-  // Window: from now up to 10 hours ahead (21:00 CET -> 07:00 CET next day)
-  const windowEnd = new Date(now.getTime() + 10 * 60 * 60 * 1000);
+  // Window: from now up to 12 hours ahead (covers overnight sessions)
+  const windowEnd = new Date(now.getTime() + 12 * 60 * 60 * 1000);
 
   const races = await getRacesInWindowBoth(now, windowEnd);
   const year = getCurrentSeasonYear();
@@ -437,6 +569,16 @@ async function checkAndNotifyEvening() {
   console.log(
     `[evening] window ${now.toISOString()} – ${windowEnd.toISOString()} → ${races.length} gare trovate`
   );
+
+  // Group target timezones by UTC offset (same offset = same notification text)
+  const offsetToTimezones = new Map(); // offsetKey -> tz[]
+  for (const tz of targetTimezones) {
+    // Use a reference date in the window for offset calculation
+    const refDate = now;
+    const offsetKey = getUtcOffsetKey(refDate, tz);
+    if (!offsetToTimezones.has(offsetKey)) offsetToTimezones.set(offsetKey, []);
+    offsetToTimezones.get(offsetKey).push(tz);
+  }
 
   for (const race of races) {
     for (const sessionType of ["main", "sprint"]) {
@@ -447,28 +589,36 @@ async function checkAndNotifyEvening() {
 
       if (!deadlineUTC || cancelled) continue;
 
-      // Only nighttime sessions
-      if (!isNightTimeCET(deadlineUTC)) continue;
-
       const deadlineMs = deadlineUTC.getTime();
-      if (deadlineMs > now.getTime() && deadlineMs <= windowEnd.getTime()) {
-        const sessionKey = sessionType === "sprint" ? "sprintQuali" : "quali";
-        const docId = `${year}_${race.id}_${sessionKey}_evening`;
-        if (!(await isAlreadySent(docId))) {
-          const { title, body } = buildNotification(
-            sessionType,
-            "evening",
-            deadlineUTC,
-            race.name
-          );
-          await sendToAll(title, body, docId);
-          await markAsSent(docId, {
-            raceId: race.id,
-            raceName: race.name,
-            type: sessionType === "sprint" ? "sprintQualifying" : "qualifying",
-            interval: "evening",
-          });
+      if (deadlineMs <= now.getTime() || deadlineMs > windowEnd.getTime()) continue;
+
+      const sessionKey = sessionType === "sprint" ? "sprintQuali" : "quali";
+
+      for (const [offsetKey, timezones] of offsetToTimezones) {
+        // Check if the session is nighttime in this offset group
+        // (use first timezone as representative — same offset = same hour)
+        if (!isNightTime(deadlineUTC, timezones[0])) continue;
+
+        // Collect tokens for all timezones in this offset group
+        const tokens = [];
+        for (const tz of timezones) {
+          if (tzGroups.has(tz)) tokens.push(...tzGroups.get(tz));
         }
+        if (tokens.length === 0) continue;
+
+        const docId = `${year}_${race.id}_${sessionKey}_evening_${offsetKey}`;
+        if (await isAlreadySent(docId)) continue;
+
+        // Build notification with timezone-local formatting
+        const { title, body } = buildNotification(
+          sessionType, "evening", deadlineUTC, race.name, timezones[0]
+        );
+        await sendToTokens(tokens, title, body, docId);
+        await markAsSent(docId, {
+          raceId: race.id, raceName: race.name,
+          type: sessionType === "sprint" ? "sprintQualifying" : "qualifying",
+          interval: "evening",
+        });
       }
     }
   }
@@ -513,10 +663,13 @@ async function getChampionshipDeadlineUTC() {
 /**
  * Controlla se la scadenza per la submission delle classifiche piloti e costruttori
  * di metà stagione cade nelle prossime 24 ore e invia una notifica serale di promemoria.
- * Viene chiamata insieme a checkAndNotifyEvening (ore 21:00 CET) per non aggiungere
- * nuove Cloud Function a pagamento.
+ * Viene chiamata insieme a checkAndNotifyEvening per non aggiungere nuove Cloud Function.
+ * Timezone-aware: sends per-offset-group with localized time.
+ *
+ * @param {string[]} targetTimezones  Timezones where local hour is 21
+ * @param {Map<string, string[]>} tzGroups  Users grouped by timezone
  */
-async function checkAndNotifyChampionshipEvening() {
+async function checkAndNotifyChampionshipEvening(targetTimezones, tzGroups) {
   const now = new Date();
   const windowEnd = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
@@ -527,28 +680,48 @@ async function checkAndNotifyChampionshipEvening() {
   if (deadlineMs <= now.getTime() || deadlineMs > windowEnd.getTime()) return;
 
   const year = getCurrentSeasonYear();
-  const docId = `${year}_championship_evening`;
-  if (await isAlreadySent(docId)) return;
 
-  const time = formatTimeCET(deadlineUTC);
-  const date = formatDateCET(deadlineUTC);
-  const title = "Classifica Campionato";
-  const body = `Formazione Campionato — schiera piloti e costruttori entro le ${time} del ${date} CET.`;
+  // Group target timezones by UTC offset
+  const offsetToTimezones = new Map();
+  for (const tz of targetTimezones) {
+    const offsetKey = getUtcOffsetKey(now, tz);
+    if (!offsetToTimezones.has(offsetKey)) offsetToTimezones.set(offsetKey, []);
+    offsetToTimezones.get(offsetKey).push(tz);
+  }
 
-  await sendToAll(title, body, docId);
-  await markAsSent(docId, {
-    type: "championship",
-    interval: "evening",
-    deadlineUTC: deadlineUTC,
-  });
+  for (const [offsetKey, timezones] of offsetToTimezones) {
+    const docId = `${year}_championship_evening_${offsetKey}`;
+    if (await isAlreadySent(docId)) continue;
+
+    // Collect tokens for this offset group
+    const tokens = [];
+    for (const tz of timezones) {
+      if (tzGroups.has(tz)) tokens.push(...tzGroups.get(tz));
+    }
+    if (tokens.length === 0) continue;
+
+    const representativeTz = timezones[0];
+    const time = formatTime(deadlineUTC, representativeTz);
+    const date = formatDate(deadlineUTC, representativeTz);
+    const abbr = getTzAbbr(deadlineUTC, representativeTz);
+    const title = "Classifica Campionato";
+    const body = `Formazione Campionato — schiera piloti e costruttori entro le ${time} del ${date} ${abbr}.`;
+
+    await sendToTokens(tokens, title, body, docId);
+    await markAsSent(docId, {
+      type: "championship",
+      interval: "evening",
+      deadlineUTC: deadlineUTC,
+    });
+  }
 }
 
 // ─── Scheduled Cloud Functions ───────────────────────────────────────────────
 
 /**
  * Runs every 10 minutes.
- * Sends a "1 ora prima" reminder for DAYTIME sessions only (CET >= 09:00).
- * Nighttime sessions receive an advance notification at 21:00 CET the evening before.
+ * Sends a "1 ora prima" reminder for sessions that are DAYTIME in the user's timezone.
+ * Nighttime users (local hour < 9) are skipped — they get the evening notification.
  */
 exports.sendQualiReminder1h = onSchedule(
   {
@@ -558,7 +731,7 @@ exports.sendQualiReminder1h = onSchedule(
   },
   async () => {
     try {
-      console.log("Controllo sessioni diurne in scadenza tra ~1 ora...");
+      console.log("Controllo sessioni in scadenza tra ~1 ora (per-timezone)...");
       await checkAndNotifySession("main",   60, CHECK_INTERVAL_1H_MS, "1h", true);
       await checkAndNotifySession("sprint", 60, CHECK_INTERVAL_1H_MS, "1h", true);
     } catch (err) {
@@ -589,21 +762,32 @@ exports.sendQualiReminder5min = onSchedule(
 );
 
 /**
- * Runs every day at 21:00 CET.
- * Sends advance notifications for any nighttime qualifying session (CET < 09:00)
- * scheduled within the following ~12 hours.
+ * Runs every hour (was daily at 21:00 CET).
+ * Short-circuits immediately if no supported timezone has local hour 21.
+ * When a timezone group has hour 21, sends evening notifications to users in that
+ * timezone for any nighttime session (local hour < 9) in the next ~12 hours.
+ * Also sends championship deadline reminders.
  */
 exports.sendQualiReminderEvening = onSchedule(
   {
-    schedule: "0 21 * * *",
+    schedule: "0 * * * *",
     timeZone: TIMEZONE,
     region: "europe-west1",
   },
   async () => {
     try {
-      console.log("Controllo sessioni notturne per la notifica serale delle 21:00...");
-      await checkAndNotifyEvening();
-      await checkAndNotifyChampionshipEvening();
+      const targetTimezones = getTimezonesAtHour(21);
+      if (targetTimezones.length === 0) {
+        console.log("Nessun fuso orario alle 21:00, skip");
+        return;
+      }
+      console.log(`Fusi orari alle 21:00: ${targetTimezones.join(", ")}`);
+
+      // Single Firestore read for user timezone groups (reused by both functions)
+      const tzGroups = await getUsersGroupedByTimezone();
+
+      await checkAndNotifyEvening(targetTimezones, tzGroups);
+      await checkAndNotifyChampionshipEvening(targetTimezones, tzGroups);
     } catch (err) {
       console.error("Errore sendQualiReminderEvening:", err);
     }
