@@ -39,6 +39,21 @@ export default function ParticipantsManager({ participants, loading, onDataChang
   const borderColor = isDark ? "var(--border-color)" : "#dee2e6";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
 
+  /**
+   * Pretty-print the auth provider id stored in the users collection.
+   * @param {string|null} providerId - Firebase provider id (e.g. "google.com", "password")
+   * @returns {{label: string, variant: string, icon: string}}
+   */
+  const renderProvider = (providerId) => {
+    if (providerId === "google.com") {
+      return { label: "Google", variant: "primary", icon: "🇬" };
+    }
+    if (providerId === "password") {
+      return { label: t("admin.providerPassword"), variant: "secondary", icon: "✉️" };
+    }
+    return { label: t("admin.providerUnknown"), variant: "outline-secondary", icon: "❔" };
+  };
+
   const openAddDialog = () => {
     setFormData({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
     setMessage(null);
@@ -150,37 +165,57 @@ export default function ParticipantsManager({ participants, loading, onDataChang
         <Alert variant="info">{t("leaderboard.noData")}</Alert>
       ) : (
         <ListGroup variant="flush" style={{ borderRadius: 8, overflow: "hidden", border: `1px solid ${borderColor}` }}>
-          {participants.map((p) => (
-            <ListGroup.Item
-              key={p.id}
-              className="px-3 py-2"
-              action
-              onClick={() => openEditDialog(p)}
-              style={{ backgroundColor: bgCard, color: "var(--text-primary)", borderColor }}
-            >
-              <div className="d-flex justify-content-between align-items-center">
-                <div style={{ minWidth: 0 }}>
-                  <span className="fw-semibold">{p.name}</span>
-                  <div className="d-flex align-items-center gap-2 mt-1">
-                    <small className="text-muted">{p.puntiTotali || 0} {t("common.points").toLowerCase()}</small>
-                    <Badge
-                      bg={isDark ? "dark" : "light"}
-                      text={isDark ? "light" : "dark"}
-                      style={{ fontSize: "0.65rem", border: `1px solid ${borderColor}` }}
-                    >
-                      {t("leaderboard.jokers")}: {p.jolly || 0}
-                    </Badge>
-                    {p.usedLateSubmission && (
-                      <Badge bg="warning" text="dark" style={{ fontSize: "0.65rem" }}>
-                        {t("admin.lateSubmissionUsed")}
-                      </Badge>
+          {participants.map((p) => {
+            const provider = renderProvider(p.authProvider);
+            return (
+              <ListGroup.Item
+                key={p.id}
+                className="px-3 py-2"
+                action
+                onClick={() => openEditDialog(p)}
+                style={{ backgroundColor: bgCard, color: "var(--text-primary)", borderColor }}
+              >
+                <div className="d-flex justify-content-between align-items-center">
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <span className="fw-semibold">{p.name}</span>
+                    {p.email && (
+                      <div
+                        className="text-muted text-truncate"
+                        style={{ fontSize: "0.75rem", maxWidth: "100%" }}
+                        title={p.email}
+                      >
+                        {p.email}
+                      </div>
                     )}
+                    <div className="d-flex align-items-center flex-wrap gap-2 mt-1">
+                      <small className="text-muted">{p.puntiTotali || 0} {t("common.points").toLowerCase()}</small>
+                      <Badge
+                        bg={isDark ? "dark" : "light"}
+                        text={isDark ? "light" : "dark"}
+                        style={{ fontSize: "0.65rem", border: `1px solid ${borderColor}` }}
+                      >
+                        {t("leaderboard.jokers")}: {p.jolly || 0}
+                      </Badge>
+                      <Badge
+                        bg={provider.variant}
+                        style={{ fontSize: "0.65rem" }}
+                        title={t("admin.authProvider")}
+                      >
+                        <span className="me-1" aria-hidden="true">{provider.icon}</span>
+                        {provider.label}
+                      </Badge>
+                      {p.usedLateSubmission && (
+                        <Badge bg="warning" text="dark" style={{ fontSize: "0.65rem" }}>
+                          {t("admin.lateSubmissionUsed")}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
+                  <span className="text-muted ms-2" style={{ fontSize: "0.85rem" }}>›</span>
                 </div>
-                <span className="text-muted" style={{ fontSize: "0.85rem" }}>›</span>
-              </div>
-            </ListGroup.Item>
-          ))}
+              </ListGroup.Item>
+            );
+          })}
         </ListGroup>
       )}
 
@@ -263,7 +298,24 @@ export default function ParticipantsManager({ participants, loading, onDataChang
                     color: "var(--text-secondary)",
                   }}
                 >
-                  ID: <strong>{currentParticipant.id}</strong>
+                  <div>ID: <strong>{currentParticipant.id}</strong></div>
+                  {currentParticipant.email && (
+                    <div className="text-truncate" title={currentParticipant.email}>
+                      {t("admin.email")}: <strong>{currentParticipant.email}</strong>
+                    </div>
+                  )}
+                  <div className="d-flex align-items-center gap-2 mt-1">
+                    <span>{t("admin.authProvider")}:</span>
+                    {(() => {
+                      const provider = renderProvider(currentParticipant.authProvider);
+                      return (
+                        <Badge bg={provider.variant} style={{ fontSize: "0.7rem" }}>
+                          <span className="me-1" aria-hidden="true">{provider.icon}</span>
+                          {provider.label}
+                        </Badge>
+                      );
+                    })()}
+                  </div>
                 </div>
 
                 <Form.Group className="mb-3">

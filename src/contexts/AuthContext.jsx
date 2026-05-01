@@ -199,6 +199,7 @@ export function AuthProvider({ children }) {
         nickname,
         firstName,
         lastName,
+        provider: "password",
         createdAt: Timestamp.now(),
       };
       await setDoc(doc(db, "users", cred.user.uid), profile);
@@ -229,6 +230,7 @@ export function AuthProvider({ children }) {
       nickname,
       firstName,
       lastName,
+      provider: user.providerData?.[0]?.providerId || "google.com",
       createdAt: Timestamp.now(),
     };
     await setDoc(doc(db, "users", user.uid), profile);

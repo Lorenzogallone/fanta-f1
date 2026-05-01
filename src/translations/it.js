@@ -292,6 +292,10 @@ export const it = {
     participantAdded: "Partecipante aggiunto con successo",
     participantUpdated: "Partecipante modificato con successo",
     participantDeleted: "Partecipante eliminato con successo",
+    email: "Email",
+    authProvider: "Provider di accesso",
+    providerPassword: "Email/Password",
+    providerUnknown: "Sconosciuto",
 
     // Formations
     manageFormations: "Gestione Formazioni",
