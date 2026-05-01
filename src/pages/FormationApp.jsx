@@ -42,6 +42,7 @@ import { useTimezone } from "../hooks/useTimezone";
 import { useAuth } from "../hooks/useAuth";
 import { error } from "../utils/logger";
 import { getLateWindowInfo } from "../utils/lateSubmissionHelper";
+import { bilingual, bilingualWithSuffix } from "../utils/bilingualMessages";
 import "../styles/customSelect.css";
 
 // Constants imported from centralized file
@@ -79,6 +80,7 @@ export default function FormationApp() {
   const [busy, setBusy] = useState(true);
   const [permError, setPermError] = useState(false);
   const [flash, setFlash] = useState(null);
+  const [inlineError, setInlineError] = useState(/** @type {Array<{it:string,en:string}>|null} */ (null));
   const [touched, setTouched] = useState(false); // For visual feedback
 
   const [savingMode, setSavingMode] = useState/** @type{"main"|"sprint"|null} */(null);
@@ -180,8 +182,12 @@ export default function FormationApp() {
   const fullMain = form.P1 && form.P2 && form.P3 && form.jolly;
   const fullSpr = form.sprintP1 && form.sprintP2 && form.sprintP3 && form.sprintJolly;
 
-  const disabledMain = !(form.userId && form.raceId && mainOpen && fullMain) || Boolean(race?.cancelledMain);
-  const disabledSprint = !(form.userId && form.raceId && sprOpen && fullSpr && isSprintRace) || Boolean(race?.cancelledSprint);
+  // Buttons are kept enabled for "soft" validation errors (missing fields,
+  // duplicate drivers) so that the click can surface a visible bilingual
+  // error message near the button. Hard-blocking states (no auth, no race
+  // selected, deadline closed, cancelled race) still disable the buttons.
+  const disabledMain = !(form.userId && form.raceId && mainOpen) || Boolean(race?.cancelledMain);
+  const disabledSprint = !(form.userId && form.raceId && sprOpen && isSprintRace) || Boolean(race?.cancelledSprint);
 
   /**
    * Get duplicate drivers in main race selection
@@ -242,6 +248,7 @@ export default function FormationApp() {
       }));
       setIsEditMode(false);
       setTouched(false);
+      setInlineError(null);
     }
   };
 
@@ -298,55 +305,54 @@ export default function FormationApp() {
   }, [form.userId, form.raceId]);
 
   /**
-   * Validate formation before submission
+   * Validate formation before submission. Each error is returned as a
+   * bilingual `{ it, en }` entry so it can be rendered in both Italian and
+   * English near the submit buttons (where mobile users will actually see it).
    * @param {string} mode - Submission mode ("main" or "sprint")
    * @param {number} timestamp - Current timestamp
-   * @returns {string[]} Array of validation error messages
+   * @returns {Array<{it:string,en:string}>} Bilingual validation errors
    */
   const validate = (mode, timestamp) => {
     const err = [];
-    if (!form.userId) err.push(t("errors.incompleteForm"));
-    if (!form.raceId) err.push(t("errors.incompleteForm"));
+    if (!form.userId || !form.raceId) err.push(bilingual("errors.incompleteForm"));
 
     // Use helper to get late window info with shared timestamp
     const lateInfo = getLateWindowInfo(mode, race, timestamp);
 
     if (mode === "main") {
-      // Check if race is cancelled
       if (race.cancelledMain) {
-        err.push(`⛔ ${t("errors.raceCancelled")}`);
+        err.push(bilingual("errors.raceCancelled"));
         return err;
       }
 
       // Allow if: deadline open OR in late window AND hasn't used it yet
       if (!lateInfo.isOpen && !lateInfo.isInLateWindow) {
-        err.push(t("errors.deadlineClosed"));
+        err.push(bilingual("errors.deadlineClosed"));
       } else if (lateInfo.isInLateWindow && userUsedLateSubmission) {
-        err.push(`❌ ${t("errors.lateSubmissionUsed")}`);
+        err.push(bilingual("errors.lateSubmissionUsed"));
       }
 
-      if (!fullMain) err.push(t("errors.incompleteForm"));
+      if (!fullMain) err.push(bilingual("errors.incompleteForm"));
       if (hasMainDuplicates)
-        err.push(`${t("formations.duplicateWarning")}: ${mainDuplicates.join(", ")}`);
+        err.push(bilingualWithSuffix("formations.duplicateWarning", mainDuplicates.join(", ")));
     } else {
       // SPRINT
-      if (!isSprintRace) err.push(t("errors.incompleteForm"));
+      if (!isSprintRace) err.push(bilingual("errors.incompleteForm"));
 
-      // Check if sprint is cancelled
       if (race.cancelledSprint) {
-        err.push(`⛔ ${t("errors.raceCancelled")}`);
+        err.push(bilingual("errors.raceCancelled"));
         return err;
       }
 
       if (!lateInfo.isOpen && !lateInfo.isInLateWindow) {
-        err.push(t("errors.deadlineClosed"));
+        err.push(bilingual("errors.deadlineClosed"));
       } else if (lateInfo.isInLateWindow && userUsedLateSubmission) {
-        err.push(`❌ ${t("errors.lateSubmissionUsed")}`);
+        err.push(bilingual("errors.lateSubmissionUsed"));
       }
 
-      if (!fullSpr) err.push(t("errors.incompleteForm"));
+      if (!fullSpr) err.push(bilingual("errors.incompleteForm"));
       if (hasSprintDuplicates)
-        err.push(`${t("formations.duplicateWarning")}: ${sprintDuplicates.join(", ")}`);
+        err.push(bilingualWithSuffix("formations.duplicateWarning", sprintDuplicates.join(", ")));
     }
     return err;
   };
@@ -358,6 +364,7 @@ export default function FormationApp() {
   const save = async (e) => {
     e.preventDefault();
     setFlash(null);
+    setInlineError(null);
     setTouched(true);
     const mode = savingMode;
     if (!mode || !race) return;
@@ -368,8 +375,14 @@ export default function FormationApp() {
     // Validate with the same timestamp
     const errs = validate(mode, timestamp);
     if (errs.length) {
-      setFlash({ type: "danger", msg: errs.join(" ") });
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      setInlineError(errs);
+      // Scroll the error into view — buttons sit at the bottom of the form
+      // so this lands the alert just above them on mobile too.
+      requestAnimationFrame(() => {
+        document
+          .getElementById("formation-inline-error")
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
       return;
     }
 
@@ -657,6 +670,34 @@ export default function FormationApp() {
                   return showSprintFirst ? <>{sprintSection}{mainSection}</> : <>{mainSection}{sprintSection}</>;
                 })()}
 
+                {/* Inline bilingual validation error — anchored right above
+                    the buttons so it remains visible on mobile, where the
+                    submit row is at the bottom of the screen. */}
+                {inlineError && inlineError.length > 0 && (
+                  <Alert
+                    id="formation-inline-error"
+                    variant="danger"
+                    dismissible
+                    onClose={() => setInlineError(null)}
+                    className="mt-3 mb-0"
+                    role="alert"
+                    aria-live="assertive"
+                  >
+                    {inlineError.map((e, i) => (
+                      <div key={i} className={i > 0 ? "mt-2" : ""}>
+                        <div>
+                          <span className="me-2" aria-hidden="true">🇮🇹</span>
+                          {e.it}
+                        </div>
+                        <div>
+                          <span className="me-2" aria-hidden="true">🇬🇧</span>
+                          {e.en}
+                        </div>
+                      </div>
+                    ))}
+                  </Alert>
+                )}
+
                 {/* BOTTONI */}
                 <Row className="g-2 mt-3">
                   <Col xs={isSprintRace ? 6 : 12}>
@@ -665,7 +706,7 @@ export default function FormationApp() {
                       className="w-100"
                       type="submit"
                       formNoValidate
-                      disabled={disabledMain || hasMainDuplicates}
+                      disabled={disabledMain}
                       onClick={() => setSavingMode("main")}
                       aria-label={isEditMode ? "Edit main race formation" : "Save main race formation"}
                     >
@@ -679,7 +720,7 @@ export default function FormationApp() {
                         className="w-100"
                         type="submit"
                         formNoValidate
-                        disabled={disabledSprint || hasSprintDuplicates}
+                        disabled={disabledSprint}
                         onClick={() => setSavingMode("sprint")}
                         aria-label={isEditMode ? "Edit sprint formation" : "Save sprint formation"}
                       >

@@ -45,12 +45,31 @@ export default function AdminPanel() {
   const loadSharedData = async () => {
     setLoadingShared(true);
     try {
-      const [partSnap, racesSnap] = await Promise.all([
+      const [partSnap, racesSnap, usersSnap] = await Promise.all([
         getDocs(collection(db, "ranking")),
         getDocs(collection(db, "races")),
+        getDocs(collection(db, "users")),
       ]);
+
+      // Build a uid → { email, provider, ... } lookup so admin views can show
+      // contact / sign-up info without needing a second roundtrip per user.
+      const usersById = {};
+      usersSnap.docs.forEach((d) => {
+        usersById[d.id] = d.data();
+      });
+
       setSharedParticipants(
-        partSnap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name))
+        partSnap.docs
+          .map((d) => {
+            const userInfo = usersById[d.id];
+            return {
+              id: d.id,
+              ...d.data(),
+              email: userInfo?.email || null,
+              authProvider: userInfo?.provider || null,
+            };
+          })
+          .sort((a, b) => a.name.localeCompare(b.name))
       );
       setSharedRaces(
         racesSnap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.round - b.round)

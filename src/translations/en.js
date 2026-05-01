@@ -292,6 +292,10 @@ export const en = {
     participantAdded: "Participant added successfully",
     participantUpdated: "Participant updated successfully",
     participantDeleted: "Participant deleted successfully",
+    email: "Email",
+    authProvider: "Sign-in provider",
+    providerPassword: "Email/Password",
+    providerUnknown: "Unknown",
 
     // Formations
     manageFormations: "Manage Lineups",
