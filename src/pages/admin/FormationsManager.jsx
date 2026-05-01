@@ -29,6 +29,7 @@ import Select from "react-select";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../hooks/useLanguage";
 import { error } from "../../utils/logger";
+import { bilingual } from "../../utils/bilingualMessages";
 import "../../styles/customSelect.css";
 
 const driverOptions = DRIVERS.map((d) => ({
@@ -59,6 +60,7 @@ export default function FormationsManager({ participants, races, loading, onData
   const [editingUser, setEditingUser] = useState(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
+  const [inlineError, setInlineError] = useState(/** @type {Array<{it:string,en:string}>|null} */ (null));
   const [formData, setFormData] = useState({
     mainP1: null, mainP2: null, mainP3: null,
     mainJolly: null, mainJolly2: null,
@@ -121,6 +123,7 @@ export default function FormationsManager({ participants, races, loading, onData
   const openEdit = (participant) => {
     setEditingUser(participant);
     setMessage(null);
+    setInlineError(null);
     const sub = submissions[participant.id];
     if (sub) {
       setFormData({
@@ -161,15 +164,19 @@ export default function FormationsManager({ participants, races, loading, onData
   const sprintFields = ["sprintP1", "sprintP2", "sprintP3", "sprintJolly"];
 
   const requestSave = () => {
+    const errs = [];
     if (!formData.mainP1 || !formData.mainP2 || !formData.mainP3 || !formData.mainJolly) {
-      setMessage({ type: "warning", text: t("errors.incompleteForm") });
-      return;
+      errs.push(bilingual("errors.incompleteForm"));
     }
     const mainDrivers = mainFields.map((f) => formData[f]?.value).filter(Boolean);
     if (new Set(mainDrivers).size !== mainDrivers.length) {
-      setMessage({ type: "warning", text: t("errors.duplicateDriver") });
+      errs.push(bilingual("errors.duplicateDriver"));
+    }
+    if (errs.length) {
+      setInlineError(errs);
       return;
     }
+    setInlineError(null);
     setShowSaveConfirm(true);
   };
 
@@ -177,6 +184,7 @@ export default function FormationsManager({ participants, races, loading, onData
     setShowSaveConfirm(false);
     setSaving(true);
     setMessage(null);
+    setInlineError(null);
 
     try {
       const payload = {
@@ -434,13 +442,38 @@ export default function FormationsManager({ participants, races, loading, onData
             </>
           )}
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" size="sm" onClick={() => setShowEditModal(false)} disabled={saving}>
-            {t("common.cancel")}
-          </Button>
-          <Button variant="danger" size="sm" onClick={requestSave} disabled={saving}>
-            {saving ? <Spinner animation="border" size="sm" /> : t("common.save")}
-          </Button>
+        <Modal.Footer className="flex-column align-items-stretch">
+          {inlineError && inlineError.length > 0 && (
+            <Alert
+              variant="danger"
+              dismissible
+              onClose={() => setInlineError(null)}
+              className="py-2 mb-2 w-100"
+              role="alert"
+              aria-live="assertive"
+            >
+              {inlineError.map((e, i) => (
+                <div key={i} className={i > 0 ? "mt-2 small" : "small"}>
+                  <div>
+                    <span className="me-2" aria-hidden="true">🇮🇹</span>
+                    {e.it}
+                  </div>
+                  <div>
+                    <span className="me-2" aria-hidden="true">🇬🇧</span>
+                    {e.en}
+                  </div>
+                </div>
+              ))}
+            </Alert>
+          )}
+          <div className="d-flex gap-2 justify-content-end">
+            <Button variant="secondary" size="sm" onClick={() => setShowEditModal(false)} disabled={saving}>
+              {t("common.cancel")}
+            </Button>
+            <Button variant="danger" size="sm" onClick={requestSave} disabled={saving}>
+              {saving ? <Spinner animation="border" size="sm" /> : t("common.save")}
+            </Button>
+          </div>
         </Modal.Footer>
       </Modal>
 
