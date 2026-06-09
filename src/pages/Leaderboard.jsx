@@ -3,7 +3,7 @@
  * @description Real-time leaderboard component displaying current rankings with user avatars
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Table, Spinner, Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { collection, query, orderBy, onSnapshot, getDocs } from "firebase/firestore";
@@ -19,11 +19,9 @@ export default function Leaderboard() {
   const [rows, setRows] = useState([]);
   const [userProfiles, setUserProfiles] = useState({});
   const [loading, setLoading] = useState(true);
+  const [raceOrder, setRaceOrder] = useState(null);
   const { isDark } = useTheme();
   const { t } = useLanguage();
-
-  // Race ordering ref for proper last-race detection (handles both ICS and manual ID formats)
-  const raceOrderRef = useRef(null);
 
   // Load user profiles and race ordering in parallel
   useEffect(() => {
@@ -45,7 +43,7 @@ export default function Leaderboard() {
       .then((snap) => {
         const map = {};
         snap.docs.forEach((d, i) => { map[d.id] = i + 1; });
-        raceOrderRef.current = map;
+        setRaceOrder(map);
       })
       .catch(() => {});
   }, []);
@@ -78,9 +76,8 @@ export default function Leaderboard() {
       rawRows.forEach((r) => Object.keys(r.pointsByRace).forEach((id) => allRaceIds.add(id)));
       let lastRaceId = null;
       if (allRaceIds.size > 0) {
-        const order = raceOrderRef.current;
-        if (order && Object.keys(order).length > 0) {
-          lastRaceId = [...allRaceIds].sort((a, b) => (order[b] || 0) - (order[a] || 0))[0];
+        if (raceOrder && Object.keys(raceOrder).length > 0) {
+          lastRaceId = [...allRaceIds].sort((a, b) => (raceOrder[b] || 0) - (raceOrder[a] || 0))[0];
         } else {
           lastRaceId = [...allRaceIds].sort((a, b) => {
             const ra = parseInt(a.match(/^r(\d+)/)?.[1] || "0", 10);
@@ -131,7 +128,7 @@ export default function Leaderboard() {
       hideSplash();
     });
     return () => unsub();
-  }, []);
+  }, [raceOrder]);
 
   const leaderPts = rows[0]?.pts ?? 0;
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
