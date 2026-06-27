@@ -21,7 +21,8 @@ import {
   deleteDoc,
   updateDoc,
 } from "firebase/firestore";
-import { db } from "../../services/firebase";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { db, auth } from "../../services/firebase";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../hooks/useLanguage";
 import { error } from "../../utils/logger";
@@ -120,6 +121,25 @@ export default function ParticipantsManager({ participants, loading, onDataChang
     } catch (err) {
       error(err);
       setMessage({ type: "danger", text: t("common.error") });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!currentParticipant?.email) return;
+    const confirmed = window.confirm(
+      `${t("admin.sendPasswordResetConfirm")} ${currentParticipant.email}?`
+    );
+    if (!confirmed) return;
+    setSaving(true);
+    setMessage(null);
+    try {
+      await sendPasswordResetEmail(auth, currentParticipant.email);
+      setMessage({ type: "success", text: `${t("admin.passwordResetSent")} ${currentParticipant.email}` });
+    } catch (err) {
+      error(err);
+      setMessage({ type: "danger", text: t("admin.passwordResetError") });
     } finally {
       setSaving(false);
     }
@@ -316,6 +336,18 @@ export default function ParticipantsManager({ participants, loading, onDataChang
                       );
                     })()}
                   </div>
+                  {currentParticipant.authProvider === "password" && currentParticipant.email && (
+                    <div className="mt-2">
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        onClick={handlePasswordReset}
+                        disabled={saving}
+                      >
+                        ✉️ {t("admin.sendPasswordReset")}
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 <Form.Group className="mb-3">

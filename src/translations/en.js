@@ -296,6 +296,10 @@ export const en = {
     authProvider: "Sign-in provider",
     providerPassword: "Email/Password",
     providerUnknown: "Unknown",
+    sendPasswordReset: "Send password reset email",
+    passwordResetSent: "Reset email sent to",
+    passwordResetError: "Error sending reset email",
+    sendPasswordResetConfirm: "Send a password reset email to",
 
     // Formations
     manageFormations: "Manage Lineups",
