@@ -296,6 +296,10 @@ export const it = {
     authProvider: "Provider di accesso",
     providerPassword: "Email/Password",
     providerUnknown: "Sconosciuto",
+    sendPasswordReset: "Invia email reset password",
+    passwordResetSent: "Email di reset inviata a",
+    passwordResetError: "Errore nell'invio dell'email di reset",
+    sendPasswordResetConfirm: "Inviare un'email di reset password a",
 
     // Formations
     manageFormations: "Gestione Formazioni",
