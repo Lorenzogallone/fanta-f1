@@ -69,6 +69,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    /* ===================== CONFIGURAZIONE (CONFIG) =======================
+     * Collezione: /config/{docId}
+     * Configurazioni globali (es. config/championship con deadlineOverride)
+     * Lettura per utenti autenticati, scrittura solo admin
+     * ==================================================================== */
+    match /config/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
     /* ===================== BACKUP DATABASE ================================
      * Collezione: /backups/{backupId}
      * Backup completi del database
