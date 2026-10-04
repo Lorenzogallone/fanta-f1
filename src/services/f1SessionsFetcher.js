@@ -268,9 +268,10 @@ export async function fetchSprint(season, round) {
  * @param {number} season - Season year
  * @param {number} round - Official race round number
  * @param {Date|Object|string} [raceDate] - Race date, used to match the OpenF1 meeting
+ * @param {number} [officialRound] - Official round stored on the race
  * @returns {Promise<Array|null>} Array of sprint qualifying results or null
  */
-export async function fetchSprintQualifying(season, round, raceDate) {
+export async function fetchSprintQualifying(season, round, raceDate, officialRound) {
   // STEP 1: Try Jolpica/Ergast API (may support sprint qualifying in newer versions)
   try {
     const url = `${ERGAST_API_BASE_URL}/${season}/${round}/sprint/qualifying.json`;
@@ -311,7 +312,7 @@ export async function fetchSprintQualifying(season, round, raceDate) {
 
   // STEP 2: Fallback to OpenF1 API
   try {
-    const meetingSessions = await findOpenF1Meeting(season, { raceDate, round, fetchFn: rateLimitedFetch });
+    const meetingSessions = await findOpenF1Meeting(season, { raceDate, round, officialRound, fetchFn: rateLimitedFetch });
     if (!meetingSessions) {
       warn(`[Sprint Quali] No meeting found for ${season} R${round}`);
       return null;
@@ -486,12 +487,13 @@ export async function fetchRace(season, round) {
  * @param {number} season - Season year
  * @param {number} localRound - Race round number stored in the app
  * @param {Date|Object|string} [raceDate] - Race date (UTC), used to match the official round
+ * @param {number} [officialRound] - Official round stored on the race (preferred)
  * @returns {Promise<Object>} Object with all session data
  */
-export async function fetchAllSessions(season, localRound, raceDate) {
+export async function fetchAllSessions(season, localRound, raceDate, officialRound) {
   try {
-    // Match the official round by date (local rounds can differ from the official calendar)
-    const round = await resolveOfficialRound(season, localRound, raceDate);
+    // Stored officialRound, else match by date (local rounds can differ from the official calendar)
+    const round = await resolveOfficialRound(season, localRound, raceDate, officialRound);
     if (round === null) {
       warn(`No official race matches ${season} local R${localRound}, skipping API fetch`);
       return {
@@ -517,7 +519,7 @@ export async function fetchAllSessions(season, localRound, raceDate) {
     let sprintQualifying = null;
     if (sprint !== null) {
       try {
-        sprintQualifying = await fetchSprintQualifying(season, round, raceDate);
+        sprintQualifying = await fetchSprintQualifying(season, round, raceDate, officialRound);
         if (sprintQualifying) {
           log(`✅ Sprint Qualifying loaded for ${season} R${round}`);
         }

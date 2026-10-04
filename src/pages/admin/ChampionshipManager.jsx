@@ -4,7 +4,7 @@
  * Unified card design, mobile-first, consistent with the admin panel style.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import PropTypes from "prop-types";
 import {
   Button,
@@ -24,7 +24,8 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "../../services/firebase";
-import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS } from "../../constants/racing";
+import { useF1Data } from "../../hooks/useF1Data";
+import { buildDriverOptions, buildTeamOptions, findOptionOrCreate } from "../../utils/f1SelectOptions";
 import Select from "react-select";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../hooks/useLanguage";
@@ -34,36 +35,6 @@ import { error as logError } from "../../utils/logger";
 import "../../styles/customSelect.css";
 
 const CONFIG_DOC = doc(db, "config", "championship");
-
-const driverOptions = DRIVERS.map((d) => ({
-  value: d,
-  label: (
-    <div className="select-option">
-      <img
-        src={TEAM_LOGOS[DRIVER_TEAM[d]]}
-        className="option-logo"
-        alt={`${DRIVER_TEAM[d]} team logo`}
-        loading="lazy"
-      />
-      <span className="option-text">{d}</span>
-    </div>
-  ),
-}));
-
-const constructorOptions = CONSTRUCTORS.map((c) => ({
-  value: c,
-  label: (
-    <div className="select-option">
-      <img
-        src={TEAM_LOGOS[c]}
-        className="option-logo"
-        alt={`${c} logo`}
-        loading="lazy"
-      />
-      <span className="option-text">{c}</span>
-    </div>
-  ),
-}));
 
 function toDatetimeLocal(ts) {
   if (!ts) return "";
@@ -84,6 +55,13 @@ function formatDate(ms, locale, tz) {
 export default function ChampionshipManager({ participants, loading, onDataChange }) {
   const { t, currentLanguage } = useLanguage();
   const { isDark } = useTheme();
+  // Admin can pick any active driver/team (reserves included)
+  const { activeDrivers, activeTeams, getDriverTeam, getTeamLogo, getDriverLogo } = useF1Data();
+  const driverOptions = useMemo(
+    () => buildDriverOptions(activeDrivers, getDriverTeam, getTeamLogo),
+    [activeDrivers, getDriverTeam, getTeamLogo]
+  );
+  const constructorOptions = useMemo(() => buildTeamOptions(activeTeams), [activeTeams]);
   const { timezone } = useTimezone();
   const dateLocale = currentLanguage === "en" ? "en-GB" : "it-IT";
 
@@ -195,10 +173,10 @@ export default function ChampionshipManager({ participants, loading, onDataChang
   /* ── Edit formation ── */
   const startEdit = (participant) => {
     const pilots = (participant.championshipPiloti || []).map(
-      (v) => driverOptions.find((o) => o.value === v) || null
+      (v) => findOptionOrCreate(driverOptions, v, getDriverLogo)
     );
     const constructors = (participant.championshipCostruttori || []).map(
-      (v) => constructorOptions.find((o) => o.value === v) || null
+      (v) => findOptionOrCreate(constructorOptions, v, getTeamLogo)
     );
     setEditForm({
       pilots: [pilots[0] || null, pilots[1] || null, pilots[2] || null],

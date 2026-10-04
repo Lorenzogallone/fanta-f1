@@ -24,7 +24,8 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "../../services/firebase";
-import { DRIVERS, DRIVER_TEAM, TEAM_LOGOS } from "../../constants/racing";
+import { useF1Data } from "../../hooks/useF1Data";
+import { buildDriverOptions, findOptionOrCreate } from "../../utils/f1SelectOptions";
 import Select from "react-select";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../hooks/useLanguage";
@@ -32,24 +33,15 @@ import { error } from "../../utils/logger";
 import { bilingual } from "../../utils/bilingualMessages";
 import "../../styles/customSelect.css";
 
-const driverOptions = DRIVERS.map((d) => ({
-  value: d,
-  label: (
-    <div className="select-option">
-      <img
-        src={TEAM_LOGOS[DRIVER_TEAM[d]]}
-        className="option-logo"
-        alt={`${DRIVER_TEAM[d]} team logo`}
-        loading="lazy"
-      />
-      <span className="option-text">{d}</span>
-    </div>
-  ),
-}));
-
 export default function FormationsManager({ participants, races, loading, onDataChange }) {
   const { t } = useLanguage();
   const { isDark } = useTheme();
+  // Admin can pick any active driver (reserves included)
+  const { activeDrivers, getDriverTeam, getTeamLogo, getDriverLogo } = useF1Data();
+  const driverOptions = useMemo(
+    () => buildDriverOptions(activeDrivers, getDriverTeam, getTeamLogo),
+    [activeDrivers, getDriverTeam, getTeamLogo]
+  );
 
   const [selectedRace, setSelectedRace] = useState(null);
   const [submissions, setSubmissions] = useState({});     // userId → submission data
@@ -139,7 +131,7 @@ export default function FormationsManager({ participants, races, loading, onData
     setShowEditModal(true);
   };
 
-  const findOpt = (name) => name ? driverOptions.find((o) => o.value === name) || null : null;
+  const findOpt = (name) => findOptionOrCreate(driverOptions, name, getDriverLogo);
 
   const resetForm = () => {
     setFormData({

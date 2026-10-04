@@ -52,14 +52,15 @@ async function fetchOpenF1Top3(sessionKey) {
  * @param {number} season - Season year
  * @param {number} round - Official race round number
  * @param {Date|Object|string} [raceDate] - Race date, used to match the meeting
+ * @param {number} [officialRound] - Official round stored on the race
  * @returns {Promise<Object|null>} Race results or null
  */
-async function fetchFromOpenF1(season, round, raceDate) {
+async function fetchFromOpenF1(season, round, raceDate, officialRound) {
   try {
     log(`[OpenF1] Fetching race results for ${season} R${round}...`);
 
     // Step 1: Find the meeting by race date (robust to testing/cancelled meetings)
-    const meetingSessions = await findOpenF1Meeting(season, { raceDate, round, fetchFn: rateLimitedFetch });
+    const meetingSessions = await findOpenF1Meeting(season, { raceDate, round, officialRound, fetchFn: rateLimitedFetch });
     if (!meetingSessions) {
       warn(`[OpenF1] No meeting found for ${season} R${round}`);
       return null;
@@ -136,15 +137,17 @@ function normalizeDriverName(driver, constructor = null) {
 /**
  * Fetches results for a specific race
  * First tries Jolpica/Ergast API, then falls back to OpenF1 for recent races.
- * When raceDate is given the race is matched by date, so local round numbers
- * that differ from the official calendar still work.
+ * Uses the stored officialRound when available; otherwise, when raceDate is
+ * given, the race is matched by date, so local round numbers that differ from
+ * the official calendar still work.
  * @param {number} season - Season year (e.g., 2025)
  * @param {number} localRound - Race round number stored in the app
  * @param {Date|Object|string} [raceDate] - Race date (UTC)
+ * @param {number} [officialRound] - Official round stored on the race
  * @returns {Promise<Object|null>} Object with race and sprint results, or null if unavailable
  */
-export async function fetchRaceResults(season, localRound, raceDate) {
-  const round = await resolveOfficialRound(season, localRound, raceDate);
+export async function fetchRaceResults(season, localRound, raceDate, officialRound) {
+  const round = await resolveOfficialRound(season, localRound, raceDate, officialRound);
   log(`🔄 Fetching results for ${season} Round ${round ?? `? (local R${localRound})`}...`);
 
   // STEP 1: Try Jolpica/Ergast API first (more reliable for historical data)
@@ -224,7 +227,7 @@ export async function fetchRaceResults(season, localRound, raceDate) {
   warn(`⚠️ Trying OpenF1 API fallback...`);
 
   try {
-    const openF1Result = await fetchFromOpenF1(season, round, raceDate);
+    const openF1Result = await fetchFromOpenF1(season, round, raceDate, officialRound);
 
     if (openF1Result) {
       log(`✅ Results fetched from OpenF1 fallback:`, openF1Result);

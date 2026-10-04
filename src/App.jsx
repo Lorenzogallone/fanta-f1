@@ -16,6 +16,7 @@ import { useTheme } from "./contexts/ThemeContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { AuthProvider } from "./contexts/AuthContext";
+import { F1DataProvider } from "./contexts/F1DataContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Navigation from "./components/Navigation";
 import Footer from "./components/Footer";
@@ -24,8 +25,6 @@ import AdminRoute from "./components/AdminRoute";
 import CompleteProfileModal from "./components/CompleteProfileModal";
 import InstallPwaBanner from "./components/InstallPwaBanner";
 import NotificationPromptModal from "./components/NotificationPromptModal";
-import { syncFromAPI } from "./services/f1DataResolver.js";
-import { warn } from "./utils/logger";
 import { hideSplash } from "./utils/splash";
 import "./styles/theme.css";
 
@@ -82,12 +81,7 @@ function ThemedToaster() {
 }
 
 export default function App() {
-  // Sincronizza dati piloti/team da API all'avvio (background)
   useEffect(() => {
-    syncFromAPI().catch(err => {
-      warn('Background sync failed:', err);
-    });
-
     // Fallback: forcefully hide the splash screen after 3.5 seconds
     // to ensure users are never permanently blocked if a page fails to hide it
     const fallbackTimer = setTimeout(() => {
@@ -111,6 +105,7 @@ export default function App() {
       <LanguageProvider>
         <ThemeProvider>
           <AuthProvider>
+            <F1DataProvider>
             <Router>
               <Navigation />
               <ThemedToaster />
@@ -157,6 +152,7 @@ export default function App() {
 
               <Footer />
             </Router>
+            </F1DataProvider>
           </AuthProvider>
         </ThemeProvider>
       </LanguageProvider>

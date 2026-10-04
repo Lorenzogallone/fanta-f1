@@ -3,7 +3,7 @@
  * @description Championship formation submission form with driver and constructor predictions
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Container,
   Row,
@@ -20,58 +20,14 @@ import { collection, getDocs, doc, getDoc, updateDoc } from "firebase/firestore"
 import { db } from "../services/firebase";
 import { getChampionshipDeadlineMs } from "../utils/championshipDeadline";
 import ChampionshipSubmissions from "../components/ChampionshipSubmissions";
-import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
+import { useF1Data } from "../hooks/useF1Data";
+import { buildDriverOptions, buildTeamOptions, findOptionOrCreate } from "../utils/f1SelectOptions";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
 import { useAuth } from "../hooks/useAuth";
 import { error } from "../utils/logger";
 import "../styles/customSelect.css";
-
-// Constants imported from centralized file
-const drivers = DRIVERS;
-const constructors = CONSTRUCTORS;
-const driverTeam = DRIVER_TEAM;
-const teamLogos = TEAM_LOGOS;
-
-/**
- * Helper to create driver options with team logos
- * @param {string[]} driversList - List of driver names
- * @returns {Object[]} Select options with logos
- */
-const asDriverOptions = (driversList) =>
-  driversList.map((name) => {
-    const team = driverTeam[name];
-    const logo = teamLogos[team];
-    return {
-      value: name,
-      label: (
-        <div className="select-option">
-          {logo && <img className="option-logo" src={logo} alt={team} loading="lazy" />}
-          <span className="option-text">{name}</span>
-        </div>
-      ),
-    };
-  });
-
-/**
- * Helper to create constructor options with team logos
- * @param {string[]} constructorsList - List of constructor names
- * @returns {Object[]} Select options with logos
- */
-const asConstructorOptions = (constructorsList) =>
-  constructorsList.map((name) => {
-    const logo = teamLogos[name];
-    return {
-      value: name,
-      label: (
-        <div className="select-option">
-          {logo && <img className="option-logo" src={logo} alt={name} loading="lazy" />}
-          <span className="option-text">{name}</span>
-        </div>
-      ),
-    };
-  });
 
 /**
  * Championship formation form component
@@ -82,6 +38,13 @@ export default function ChampionshipForm() {
   const { t, currentLanguage } = useLanguage();
   const { timezone } = useTimezone();
   const { user, userProfile } = useAuth();
+  // Only selectable drivers and active teams can be picked
+  const { selectableDrivers, activeTeams, getDriverTeam, getTeamLogo, getDriverLogo } = useF1Data();
+  const driverOptions = useMemo(
+    () => buildDriverOptions(selectableDrivers, getDriverTeam, getTeamLogo),
+    [selectableDrivers, getDriverTeam, getTeamLogo]
+  );
+  const constructorOptions = useMemo(() => buildTeamOptions(activeTeams), [activeTeams]);
   const dateLocale = currentLanguage === "en" ? "en-GB" : "it-IT";
 
   // Translation key mappings for driver and constructor labels
@@ -171,8 +134,6 @@ export default function ChampionshipForm() {
           const { championshipPiloti, championshipCostruttori } = data;
 
           // Find corresponding select option objects
-          const driverOpts = asDriverOptions(drivers);
-          const constructorOpts = asConstructorOptions(constructors);
 
           if (
             Array.isArray(championshipPiloti) &&
@@ -182,18 +143,15 @@ export default function ChampionshipForm() {
           ) {
             setForm((f) => ({
               ...f,
-              D1: driverOpts.find((o) => o.value === championshipPiloti[0]) || null,
-              D2: driverOpts.find((o) => o.value === championshipPiloti[1]) || null,
-              D3: driverOpts.find((o) => o.value === championshipPiloti[2]) || null,
+              D1: findOptionOrCreate(driverOptions, championshipPiloti[0], getDriverLogo),
+              D2: findOptionOrCreate(driverOptions, championshipPiloti[1], getDriverLogo),
+              D3: findOptionOrCreate(driverOptions, championshipPiloti[2], getDriverLogo),
               C1:
-                constructorOpts.find((o) => o.value === championshipCostruttori[0]) ||
-                null,
+                findOptionOrCreate(constructorOptions, championshipCostruttori[0], getTeamLogo),
               C2:
-                constructorOpts.find((o) => o.value === championshipCostruttori[1]) ||
-                null,
+                findOptionOrCreate(constructorOptions, championshipCostruttori[1], getTeamLogo),
               C3:
-                constructorOpts.find((o) => o.value === championshipCostruttori[2]) ||
-                null,
+                findOptionOrCreate(constructorOptions, championshipCostruttori[2], getTeamLogo),
             }));
             setIsEdit(true);
           } else {
@@ -321,7 +279,7 @@ export default function ChampionshipForm() {
                   <Form.Group key={f} className="mb-3">
                     <Form.Label>{t(driverLabels[f])}</Form.Label>
                     <Select
-                      options={asDriverOptions(drivers)}
+                      options={driverOptions}
                       value={form[f]}
                       onChange={(sel) => onSel(sel, f)}
                       placeholder={t(driverLabels[f])}
@@ -338,7 +296,7 @@ export default function ChampionshipForm() {
                   <Form.Group key={f} className="mb-3">
                     <Form.Label>{t(constructorLabels[f])}</Form.Label>
                     <Select
-                      options={asConstructorOptions(constructors)}
+                      options={constructorOptions}
                       value={form[f]}
                       onChange={(sel) => onSel(sel, f)}
                       placeholder={t(constructorLabels[f])}

@@ -36,7 +36,7 @@ import {
   fetchDriverStandings,
   fetchConstructorStandings,
 } from "../services/f1SessionsFetcher";
-import { DRIVER_TEAM, TEAM_LOGOS, getDriverTeamDynamic, getTeamLogoDynamic } from "../constants/racing";
+import { useF1Data } from "../hooks/useF1Data";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
@@ -47,9 +47,10 @@ import { log, error } from "../utils/logger";
  * Component to display driver with team logo
  */
 function DriverWithLogo({ name }) {
+  const { getDriverTeam, getTeamLogo } = useF1Data();
   if (!name) return <>—</>;
-  const team = getDriverTeamDynamic(name);
-  const logoSrc = team ? getTeamLogoDynamic(team) : null;
+  const team = getDriverTeam(name);
+  const logoSrc = team ? getTeamLogo(team) : null;
   return (
     <span className="d-flex align-items-center">
       {logoSrc && (
@@ -78,8 +79,9 @@ DriverWithLogo.propTypes = {
  * Component to display team with logo
  */
 function TeamWithLogo({ name }) {
+  const { getTeamLogo } = useF1Data();
   if (!name) return <>—</>;
-  const logoSrc = TEAM_LOGOS[name];
+  const logoSrc = getTeamLogo(name);
   return (
     <span className="d-flex align-items-center">
       {logoSrc && (
@@ -376,7 +378,7 @@ export default function RaceResults() {
           const round = selectedRaceToLoad.round;
 
           try {
-            const sessionData = await fetchAllSessions(season, round, selectedRaceToLoad.raceUTC);
+            const sessionData = await fetchAllSessions(season, round, selectedRaceToLoad.raceUTC, selectedRaceToLoad.officialRound);
             const hasAnySession = sessionData.hasQualifying || sessionData.hasSprint || sessionData.hasRace;
 
             setSessions({
@@ -512,7 +514,7 @@ export default function RaceResults() {
       setLoadingSessions(true);
       setSessions(null);
 
-      const sessionData = await fetchAllSessions(season, round, race.raceUTC);
+      const sessionData = await fetchAllSessions(season, round, race.raceUTC, race.officialRound);
 
       const hasAnySession = sessionData.hasQualifying || sessionData.hasSprint || sessionData.hasRace;
 

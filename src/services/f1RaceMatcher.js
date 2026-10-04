@@ -3,10 +3,10 @@
  * Maps an app race (identified by its date) to the official round on Jolpica
  * and to the meeting on OpenF1.
  *
- * Races are matched by DATE, never by the round stored in Firestore: the
- * official calendar can be renumbered (cancelled or added races) and races
- * can be added manually by the admin, so local round numbers may not match
- * the official ones.
+ * Races store the official round in `officialRound` (set by the calendar
+ * sync). When it is missing, races are matched by DATE, never by the `round`
+ * stored in Firestore: that is only the display order and can differ from
+ * the official calendar (cancelled or manually added races).
  */
 
 import { log, warn } from '../utils/logger';
@@ -118,14 +118,19 @@ export async function findOfficialRace(season, raceDate) {
 
 /**
  * Resolves the official round for an app race.
- * Without a date the local round is trusted. With a date, only a race matched
- * by date is accepted: returning the local round could load another GP.
+ * A stored `officialRound` always wins. Otherwise, without a date the local
+ * round is trusted; with a date, only a race matched by date is accepted:
+ * returning the local round could load another GP.
  * @param {number} season - Season year
  * @param {number} localRound - Round stored in the app
  * @param {Date|Object|string} [raceDate] - App race date (UTC)
+ * @param {number} [officialRound] - Official round stored on the race
  * @returns {Promise<number|null>} Official round, or null if no race matches the date
  */
-export async function resolveOfficialRound(season, localRound, raceDate) {
+export async function resolveOfficialRound(season, localRound, raceDate, officialRound) {
+  if (officialRound != null && Number.isInteger(Number(officialRound))) {
+    return Number(officialRound);
+  }
   if (!raceDate) return localRound;
   const official = await findOfficialRace(season, raceDate);
   if (!official) return null;
@@ -155,11 +160,15 @@ async function getOfficialRaceDate(season, round) {
  * @param {Object} options
  * @param {Date|Object|string} [options.raceDate] - App race date (UTC)
  * @param {number} [options.round] - Official round (used if no date)
+ * @param {number} [options.officialRound] - Stored official round: its official date is used first
  * @param {Function} [options.fetchFn] - Fetch implementation (e.g. rate-limited)
  * @returns {Promise<Array|null>} Sessions of the meeting or null
  */
-export async function findOpenF1Meeting(season, { raceDate, round, fetchFn = fetch } = {}) {
-  const target = toDate(raceDate) || (round ? await getOfficialRaceDate(season, round) : null);
+export async function findOpenF1Meeting(season, { raceDate, round, officialRound, fetchFn = fetch } = {}) {
+  const target =
+    (officialRound ? await getOfficialRaceDate(season, officialRound) : null) ||
+    toDate(raceDate) ||
+    (round ? await getOfficialRaceDate(season, round) : null);
   if (!target) {
     warn(`[RaceMatcher] Cannot match OpenF1 meeting: no date for ${season} R${round}`);
     return null;

@@ -15,7 +15,7 @@
 
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore, Timestamp } = require("firebase-admin/firestore");
+const { getFirestore, Timestamp, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 
 initializeApp();
@@ -70,6 +70,16 @@ function getHourInTz(dateUTC, tz) {
     hour12: false,
   });
   return parseInt(str, 10);
+}
+
+/**
+ * Returns the weekday ("Mon", "Tue", ...) in the given timezone.
+ * @param {Date} dateUTC
+ * @param {string} tz  IANA timezone
+ * @returns {string}
+ */
+function getWeekdayInTz(dateUTC, tz) {
+  return dateUTC.toLocaleString("en-US", { timeZone: tz, weekday: "short" });
 }
 
 /** @deprecated Use getHourInTz(dateUTC, tz) */
@@ -716,6 +726,71 @@ async function checkAndNotifyChampionshipEvening(targetTimezones, tzGroups) {
   }
 }
 
+// ─── F1 data sync (calendar + drivers) ──────────────────────────────────────
+
+/** Weekly slot of the F1 sync (Europe/Rome), run by the hourly evening job */
+const F1_SYNC_WEEKDAY = "Mon";
+const F1_SYNC_HOUR = 5;
+
+/** Max writes per Firestore batch */
+const BATCH_LIMIT = 450;
+
+/**
+ * Syncs the calendar and the drivers with Jolpica.
+ * Cheap by design: when the API data hash matches the last sync it stops
+ * after 1 read and 1 write. Never deletes; locked fields and races with
+ * saved results are left alone (see functions/shared/calendarSync.mjs).
+ * @returns {Promise<Object|null>} Summary, or null if nothing changed upstream
+ */
+async function runF1Sync() {
+  const { fetchJolpicaSnapshot, computeF1Sync, SYNC_STATUS_DOC } =
+    await import("./shared/f1Sync.mjs");
+
+  const season = getCurrentSeasonYear();
+  // Throws on network errors or an empty schedule: nothing is written then
+  const snapshot = await fetchJolpicaSnapshot(season);
+
+  const statusRef = db.collection(SYNC_STATUS_DOC.collection).doc(SYNC_STATUS_DOC.id);
+  const status = await statusRef.get();
+  if (status.exists && status.data().apiHash === snapshot.hash) {
+    console.log(`Sync F1: dati API invariati (${snapshot.hash}), skip`);
+    await statusRef.set({ lastCheckAt: FieldValue.serverTimestamp() }, { merge: true });
+    return null;
+  }
+
+  const readAll = async (name) =>
+    (await db.collection(name).get()).docs.map((d) => ({ id: d.id, ...d.data() }));
+  const [races, drivers, teams] = await Promise.all([
+    readAll("races"), readAll("drivers"), readAll("teams"),
+  ]);
+
+  const { writes, summary } = computeF1Sync({ snapshot, races, drivers, teams });
+
+  for (let i = 0; i < writes.length; i += BATCH_LIMIT) {
+    const batch = db.batch();
+    for (const w of writes.slice(i, i + BATCH_LIMIT)) {
+      batch.set(db.collection(w.collection).doc(w.id), {
+        ...w.data,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+    }
+    await batch.commit();
+  }
+
+  await statusRef.set({
+    lastRunAt: FieldValue.serverTimestamp(),
+    lastCheckAt: FieldValue.serverTimestamp(),
+    // Without drivers the sync was partial: keep re-running until migrated
+    apiHash: summary.drivers.skipped ? null : snapshot.hash,
+    season,
+    source: "scheduled",
+    summary,
+  }, { merge: true });
+
+  console.log("Sync F1 completata:", JSON.stringify(summary));
+  return summary;
+}
+
 // ─── Scheduled Cloud Functions ───────────────────────────────────────────────
 
 /**
@@ -767,6 +842,8 @@ exports.sendQualiReminder5min = onSchedule(
  * When a timezone group has hour 21, sends evening notifications to users in that
  * timezone for any nighttime session (local hour < 9) in the next ~12 hours.
  * Also sends championship deadline reminders.
+ * Once a week (Monday 05:00 Europe/Rome) it also runs the F1 calendar/drivers
+ * sync, so the sync needs no extra Cloud Scheduler job.
  */
 exports.sendQualiReminderEvening = onSchedule(
   {
@@ -775,6 +852,15 @@ exports.sendQualiReminderEvening = onSchedule(
     region: "europe-west1",
   },
   async () => {
+    const now = new Date();
+    if (getWeekdayInTz(now, TIMEZONE) === F1_SYNC_WEEKDAY && getHourInTz(now, TIMEZONE) === F1_SYNC_HOUR) {
+      try {
+        await runF1Sync();
+      } catch (err) {
+        console.error("Errore sync F1:", err);
+      }
+    }
+
     try {
       const targetTimezones = getTimezonesAtHour(21);
       if (targetTimezones.length === 0) {
