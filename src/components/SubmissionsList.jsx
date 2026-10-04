@@ -11,14 +11,10 @@ import {
   collection, query, orderBy, getDocs,
 } from "firebase/firestore";
 import { db } from "../services/firebase";
-import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
+import { useF1Data } from "../hooks/useF1Data";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { error } from "../utils/logger";
-
-// Use centralized constants
-const driverTeam = DRIVER_TEAM;
-const teamLogos = TEAM_LOGOS;
 
 /**
  * Displays driver name with team logo or dash if not provided.
@@ -27,9 +23,10 @@ const teamLogos = TEAM_LOGOS;
  * @returns {JSX.Element} Driver cell with logo
  */
 function DriverCell({ driverName }) {
+  const { getDriverTeam, getTeamLogo } = useF1Data();
   if (!driverName) return <>—</>;
-  const team = driverTeam[driverName];
-  const logo = teamLogos[team];
+  const team = getDriverTeam(driverName);
+  const logo = team ? getTeamLogo(team) : null;
   return (
     <span className="d-flex align-items-center">
       {logo && (

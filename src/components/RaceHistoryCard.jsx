@@ -14,7 +14,8 @@ import {
 } from "react-bootstrap";
 import { collection, getDocs, onSnapshot } from "firebase/firestore";
 import { db } from "../services/firebase";
-import { DRIVER_TEAM, TEAM_LOGOS, POINTS, getDriverTeamDynamic, getTeamLogoDynamic } from "../constants/racing";
+import { POINTS } from "../constants/racing";
+import { useF1Data } from "../hooks/useF1Data";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
@@ -42,9 +43,10 @@ function formatDriverName(name) {
  * @returns {JSX.Element} Driver name with team logo
  */
 function DriverWithLogo({ name, short = false }) {
+  const { getDriverTeam, getTeamLogo } = useF1Data();
   if (!name) return <>—</>;
-  const team = getDriverTeamDynamic(name);
-  const logoSrc = team ? getTeamLogoDynamic(team) : null;
+  const team = getDriverTeam(name);
+  const logoSrc = team ? getTeamLogo(team) : null;
   const displayName = short ? formatDriverName(name) : name;
   return (
     <span className="d-flex align-items-center">

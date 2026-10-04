@@ -3,6 +3,10 @@
  * Parses F1 calendar ICS files and extracts race events
  */
 
+// Same slug rules as the calendar sync (functions/shared)
+import { makeSlug } from "../../functions/shared/syncUtils.mjs";
+export { makeSlug };
+
 /**
  * Converts ICS date string (YYYYMMDDTHHMMSS or timestamp format) to Date object
  * @param {string} str - Date in ICS format
@@ -36,20 +40,6 @@ function parseVEvent(eventBlock) {
     summary: summaryMatch ? summaryMatch[1].trim() : "",
     start: dtStartMatch ? parseICSDate(dtStartMatch[1].trim()) : null,
   };
-}
-
-/**
- * Converts a race name to a URL-friendly slug
- * @param {string} str - Race name
- * @returns {string} URL slug
- */
-export function makeSlug(str) {
-  return str
-    .toLowerCase()
-    .normalize("NFD") // Decompose accents
-    .replace(/[\u0300-\u036f]/g, "") // Remove accents
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
 }
 
 /**

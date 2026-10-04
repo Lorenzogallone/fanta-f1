@@ -4,7 +4,7 @@
  * Main formation management for races and sprints with late submission handling
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Container,
   Row,
@@ -35,7 +35,9 @@ import {
 import Select from "react-select";
 import { db } from "../services/firebase";
 import RaceHistoryCard from "../components/RaceHistoryCard";
-import { DRIVERS, DRIVER_TEAM, TEAM_LOGOS, TIME_CONSTANTS } from "../constants/racing";
+import { TIME_CONSTANTS } from "../constants/racing";
+import { useF1Data } from "../hooks/useF1Data";
+import { buildDriverOptions, findOptionOrCreate } from "../utils/f1SelectOptions";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
@@ -44,22 +46,6 @@ import { error } from "../utils/logger";
 import { getLateWindowInfo } from "../utils/lateSubmissionHelper";
 import { bilingual, bilingualWithSuffix } from "../utils/bilingualMessages";
 import "../styles/customSelect.css";
-
-// Constants imported from centralized file
-const drivers = DRIVERS;
-const driverTeam = DRIVER_TEAM;
-const teamLogos = TEAM_LOGOS;
-
-// Pre-build driver options with team logos
-const driverOpts = drivers.map((d) => ({
-  value: d,
-  label: (
-    <div className="select-option">
-      <img src={teamLogos[driverTeam[d]]} className="option-logo" alt={`${driverTeam[d]} team logo`} loading="lazy" />
-      <span className="option-text">{d}</span>
-    </div>
-  ),
-}));
 
 /**
  * Formation management component for race and sprint submissions
@@ -70,6 +56,12 @@ export default function FormationApp() {
   const { t, currentLanguage } = useLanguage();
   const { timezone } = useTimezone();
   const { user, userProfile } = useAuth();
+  // Only selectable drivers (reserves can't be picked in formations)
+  const { selectableDrivers, getDriverTeam, getTeamLogo, getDriverLogo } = useF1Data();
+  const driverOpts = useMemo(
+    () => buildDriverOptions(selectableDrivers, getDriverTeam, getTeamLogo),
+    [selectableDrivers, getDriverTeam, getTeamLogo]
+  );
   const dateLocale = currentLanguage === "en" ? "en-GB" : "it-IT";
 
   // Main state
@@ -281,7 +273,7 @@ export default function FormationApp() {
         return;
       }
       const d = snap.data();
-      const opt = (v) => driverOpts.find((o) => o.value === v) ?? null;
+      const opt = (v) => findOptionOrCreate(driverOpts, v, getDriverLogo);
 
       // Track if existing submission had jolly2
       const hadJolly2 = Boolean(d.mainJolly2);

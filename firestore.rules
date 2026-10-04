@@ -79,6 +79,22 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    /* ===================== PILOTI E TEAM =================================
+     * Collezioni: /drivers/{driverId}, /teams/{teamId}
+     * Piloti e team usati in formazioni e risultati (gestiti dall'admin,
+     * aggiornati dalla sincronizzazione con le API via Admin SDK)
+     * Lettura per utenti autenticati, scrittura solo admin
+     * ==================================================================== */
+    match /drivers/{driverId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /teams/{teamId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
     /* ===================== BACKUP DATABASE ================================
      * Collezione: /backups/{backupId}
      * Backup completi del database

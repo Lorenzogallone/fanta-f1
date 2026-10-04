@@ -21,6 +21,7 @@ import ParticipantsManager from "./admin/ParticipantsManager";
 import FormationsManager from "./admin/FormationsManager";
 import ChampionshipManager from "./admin/ChampionshipManager";
 import CalendarManager from "./admin/CalendarManager";
+import DriversManager from "./admin/DriversManager";
 import DatabaseReset from "./admin/DatabaseReset";
 
 const TABS = [
@@ -28,6 +29,7 @@ const TABS = [
   { key: "formations", icon: "📝" },
   { key: "championship", icon: "🏆" },
   { key: "calendar", icon: "📅" },
+  { key: "drivers", icon: "🏎️" },
   { key: "database", icon: "💾" },
 ];
 
@@ -42,6 +44,10 @@ export default function AdminPanel() {
 
   useEffect(() => { loadSharedData(); }, []);
 
+  /**
+   * Reloads participants and races
+   * @returns {Promise<Array<Object>|undefined>} The fresh races (sorted by round)
+   */
   const loadSharedData = async () => {
     setLoadingShared(true);
     try {
@@ -71,9 +77,9 @@ export default function AdminPanel() {
           })
           .sort((a, b) => a.name.localeCompare(b.name))
       );
-      setSharedRaces(
-        racesSnap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.round - b.round)
-      );
+      const races = racesSnap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.round - b.round);
+      setSharedRaces(races);
+      return races;
     } catch (err) {
       error("Error loading shared data:", err);
     } finally {
@@ -86,6 +92,7 @@ export default function AdminPanel() {
     formations: t("admin.formations"),
     championship: t("admin.championship"),
     calendar: t("admin.calendar"),
+    drivers: t("admin.drivers"),
     database: t("admin.database"),
   };
 
@@ -150,6 +157,7 @@ export default function AdminPanel() {
           {activeTab === "calendar" && (
             <CalendarManager races={sharedRaces} loading={loadingShared} onDataChange={loadSharedData} />
           )}
+          {activeTab === "drivers" && <DriversManager />}
           {activeTab === "database" && (
             <DatabaseReset participants={sharedParticipants} races={sharedRaces} onDataChange={loadSharedData} />
           )}

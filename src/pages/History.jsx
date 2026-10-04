@@ -33,7 +33,8 @@ import {
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 import RaceHistoryCard from "../components/RaceHistoryCard";
-import { TEAM_LOGOS, POINTS, getDriverTeamDynamic, getTeamLogoDynamic } from "../constants/racing";
+import { POINTS } from "../constants/racing";
+import { useF1Data } from "../hooks/useF1Data";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
@@ -48,9 +49,10 @@ import { error } from "../utils/logger";
  * @returns {JSX.Element} Driver name with team logo
  */
 function DriverWithLogo({ name }) {
+  const { getDriverTeam, getTeamLogo } = useF1Data();
   if (!name) return <>—</>;
-  const team = getDriverTeamDynamic(name);
-  const logoSrc = team ? getTeamLogoDynamic(team) : null;
+  const team = getDriverTeam(name);
+  const logoSrc = team ? getTeamLogo(team) : null;
   return (
     <span className="d-flex align-items-center">
       {logoSrc && (
@@ -82,8 +84,9 @@ DriverWithLogo.propTypes = {
  * @returns {JSX.Element} Team name with logo
  */
 function TeamWithLogo({ name }) {
+  const { getTeamLogo } = useF1Data();
   if (!name) return <>—</>;
-  const logoSrc = TEAM_LOGOS[name];
+  const logoSrc = getTeamLogo(name);
   return (
     <span className="d-flex align-items-center">
       {logoSrc && (

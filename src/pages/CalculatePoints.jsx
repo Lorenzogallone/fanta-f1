@@ -4,7 +4,7 @@
  * Handles both race results entry and points calculation with automatic F1 API fetching
  */
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import {
   Card, Form, Button, Alert, Spinner, Container,
   Row, Col, Badge, Tab, Nav, Table
@@ -19,7 +19,9 @@ import { calculateChampionshipPoints } from "../services/championshipPointsCalcu
 import { saveRankingSnapshot } from "../services/rankingSnapshot";
 import { fetchRaceResults } from "../services/f1ResultsFetcher";
 import { createAndSaveBackup } from "../services/backupService";
-import { DRIVERS, CONSTRUCTORS, DRIVER_TEAM, TEAM_LOGOS, POINTS } from "../constants/racing";
+import { POINTS } from "../constants/racing";
+import { useF1Data } from "../hooks/useF1Data";
+import { buildDriverOptions, buildTeamOptions, findOptionOrCreate } from "../utils/f1SelectOptions";
 import RaceHistoryCard from "../components/RaceHistoryCard";
 import Select from "react-select";
 import { useLanguage } from "../hooks/useLanguage";
@@ -27,11 +29,6 @@ import { useTimezone } from "../hooks/useTimezone";
 import { error } from "../utils/logger";
 import "../styles/customSelect.css";
 
-// Constants imported from centralized file
-const drivers = DRIVERS;
-const constructors = CONSTRUCTORS;
-const driverTeam = DRIVER_TEAM;
-const teamLogos = TEAM_LOGOS;
 const PTS_MAIN = POINTS.MAIN;
 const PTS_SPRINT = POINTS.SPRINT;
 const BONUS_JOLLY_MAIN = POINTS.BONUS_JOLLY_MAIN;
@@ -61,50 +58,21 @@ const DoubleBadge = ({ t }) => (
 );
 
 /**
- * Helper to create driver option with logo
- * @param {string} d - Driver name
- * @returns {Object} Select option with logo
- */
-const asDriverOpt = d => ({
-  value: d,
-  label: (
-    <div className="select-option">
-      <img src={teamLogos[driverTeam[d]]} className="option-logo" alt={`${driverTeam[d]} team logo`} loading="lazy" />
-      <span className="option-text">{d}</span>
-    </div>
-  ),
-});
-/**
- * Helper to create constructor option with logo
- * @param {string} c - Constructor name
- * @returns {Object} Select option with logo
- */
-const asConstructorOpt = c => ({
-  value: c,
-  label: (
-    <div className="select-option">
-      <img src={teamLogos[c]} className="option-logo" alt={`${c} team logo`} loading="lazy" />
-      <span className="option-text">{c}</span>
-    </div>
-  ),
-});
-const driverOptions      = drivers.map(asDriverOpt);
-const constructorOptions = constructors.map(asConstructorOpt);
-
-/**
  * Component to display driver name with team logo
  * @param {Object} props - Component props
  * @param {string} props.name - Driver name
  * @returns {JSX.Element} Driver name with logo
  */
 const DriverWithLogo = ({ name }) => {
+  const { getDriverTeam, getTeamLogo } = useF1Data();
   if (!name) return <>—</>;
-  const team = driverTeam[name];
+  const team = getDriverTeam(name);
+  const logo = team ? getTeamLogo(team) : null;
   return (
     <span className="d-flex align-items-center">
-      {team && (
+      {logo && (
         <img
-          src={teamLogos[team]}
+          src={logo}
           alt={`${team} team logo`}
           loading="lazy"
           style={{ height: 18, width: 18, objectFit: "contain", marginRight: 4 }}
@@ -122,6 +90,13 @@ const DriverWithLogo = ({ name }) => {
 function CalculatePointsContent() {
   const { t } = useLanguage();
   const { timezone } = useTimezone();
+  // Results accept every active driver: a reserve can finish on the podium
+  const { activeDrivers, activeTeams, getDriverTeam, getTeamLogo, getDriverLogo } = useF1Data();
+  const driverOptions = useMemo(
+    () => buildDriverOptions(activeDrivers, getDriverTeam, getTeamLogo),
+    [activeDrivers, getDriverTeam, getTeamLogo]
+  );
+  const constructorOptions = useMemo(() => buildTeamOptions(activeTeams), [activeTeams]);
   const [activeTab, setActiveTab] = useState("race");
   const previewRef = useRef(null);
 
@@ -241,10 +216,7 @@ useEffect(() => {
     setOfficial(off);
 
     // Helper to convert driver name to select option
-    const toOpt = name =>
-      name
-        ? driverOptions.find(o => o.value === name) || { value: name, label: name }
-        : null;
+    const toOpt = name => findOptionOrCreate(driverOptions, name, getDriverLogo);
 
     // If official results exist in DB, use them
     if (off) {
@@ -282,7 +254,7 @@ useEffect(() => {
 
           setMsgRace({variant:"info", msg: t("calculate.fetchingFromAPI", { race: race.name }).replace("{race}", race.name)});
 
-          const apiResults = await fetchRaceResults(season, round);
+          const apiResults = await fetchRaceResults(season, round, raceDate, race.officialRound);
 
           if (apiResults) {
             // Pre-fill with API results

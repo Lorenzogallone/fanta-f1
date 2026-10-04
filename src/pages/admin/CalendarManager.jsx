@@ -1,8 +1,10 @@
 /**
  * @file CalendarManager.jsx
- * @description Race calendar management — ICS import, full race editing with
- * date-based round reordering and change preview. Sprint add/remove toggle.
- * Unified admin panel design, mobile-first.
+ * @description Race calendar management — sync with the official calendar
+ * (CalendarSyncPanel), ICS import, full race editing with date-based round
+ * reordering and change preview. Sprint add/remove toggle.
+ * Fields edited by hand are added to the race's `locked` list, so the sync
+ * won't overwrite them. `round` is only the display order (sorted by date).
  */
 
 import React, { useState, useMemo } from "react";
@@ -26,12 +28,23 @@ import {
   getDocs,
   collection,
   Timestamp,
+  arrayUnion,
 } from "firebase/firestore";
 import { db } from "../../services/firebase";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../hooks/useLanguage";
 import { useTimezone } from "../../hooks/useTimezone";
 import { error } from "../../utils/logger";
+import CalendarSyncPanel from "./CalendarSyncPanel";
+import { saveRoundOrder } from "../../services/calendarSyncService";
+import { makeSlug } from "../../../functions/shared/f1Sync.mjs";
+
+/** Seconds of a Timestamp/Date (null if missing), to detect edited fields */
+const toSec = (v) => {
+  if (!v) return null;
+  if (typeof v.seconds === "number") return v.seconds;
+  return Math.floor(new Date(v).getTime() / 1000);
+};
 
 const tsToLocal = (ts) => {
   if (!ts) return "";
@@ -74,7 +87,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
   // Add Race
   const [showAddModal, setShowAddModal] = useState(false);
   const [addFormData, setAddFormData] = useState({
-    round: "", name: "", raceDateTimeUTC: "", qualiDateTimeUTC: "",
+    name: "", raceDateTimeUTC: "", qualiDateTimeUTC: "",
     sprintQualiDateTimeUTC: "", sprintDateTimeUTC: "",
   });
   const [addSaving, setAddSaving] = useState(false);
@@ -146,9 +159,11 @@ export default function CalendarManager({ races, loading, onDataChange }) {
         }, { merge: true });
       }
       await batch.commit();
+      // Imported rounds don't know about cancelled/manual races: reorder by date
+      const fresh = await onDataChange();
+      if (Array.isArray(fresh) && (await saveRoundOrder(fresh)) > 0) await onDataChange();
       setMessage({ type: "success", text: `${parsedRaces.length} ${t("admin.racesImported")}` });
       setParsedRaces([]);
-      await onDataChange();
     } catch (err) {
       error(err);
       setMessage({ type: "danger", text: `${t("common.error")}: ${err.message}` });
@@ -157,7 +172,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
 
   // ─── Add Race ───
   const openAddModal = () => {
-    setAddFormData({ round: "", name: "", raceDateTimeUTC: "", qualiDateTimeUTC: "", sprintQualiDateTimeUTC: "", sprintDateTimeUTC: "" });
+    setAddFormData({ name: "", raceDateTimeUTC: "", qualiDateTimeUTC: "", sprintQualiDateTimeUTC: "", sprintDateTimeUTC: "" });
     setAddShowSprint(false);
     setMessage(null);
     setShowAddModal(true);
@@ -165,33 +180,34 @@ export default function CalendarManager({ races, loading, onDataChange }) {
 
   const handleAddRace = async (e) => {
     e.preventDefault();
-    if (!addFormData.round || !addFormData.name || !addFormData.raceDateTimeUTC || !addFormData.qualiDateTimeUTC) {
+    if (!addFormData.name || !addFormData.raceDateTimeUTC || !addFormData.qualiDateTimeUTC) {
       setMessage({ type: "warning", text: t("errors.incompleteForm") });
       return;
     }
     setAddSaving(true); setMessage(null);
     try {
-      const newRound = parseInt(addFormData.round);
-      const racesToShift = races.filter((r) => r.round >= newRound);
-      if (racesToShift.length > 0) {
-        const sorted = [...racesToShift].sort((a, b) => b.round - a.round);
-        const batch = writeBatch(db);
-        for (const r of sorted) batch.update(doc(db, "races", r.id), { round: r.round + 1 });
-        await batch.commit();
-      }
-      const nameSlug = addFormData.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-      const raceId = `r${String(newRound).padStart(2, "0")}-${nameSlug}`;
+      const raceDate = new Date(addFormData.raceDateTimeUTC);
+      // Display round = position by date; the whole calendar is reordered after saving
+      const newRound = races.filter((r) => toSec(r.raceUTC) !== null && toSec(r.raceUTC) < raceDate.getTime() / 1000).length + 1;
+      let raceId = `r${String(newRound).padStart(2, "0")}-${makeSlug(addFormData.name)}`;
+      if (races.some((r) => r.id === raceId)) raceId = `${raceId}-${Date.now().toString(36)}`;
       const sprintQualiDate = addFormData.sprintQualiDateTimeUTC ? new Date(addFormData.sprintQualiDateTimeUTC) : null;
       const sprintDate = addFormData.sprintDateTimeUTC ? new Date(addFormData.sprintDateTimeUTC) : null;
+      // Everything entered by hand is locked against the sync
+      const locked = ["name", "raceUTC", "qualiUTC",
+        ...(sprintQualiDate ? ["qualiSprintUTC"] : []), ...(sprintDate ? ["sprintUTC"] : [])];
       await setDoc(doc(db, "races", raceId), {
+        id: raceId,
         name: addFormData.name, round: newRound,
-        raceUTC: Timestamp.fromDate(new Date(addFormData.raceDateTimeUTC)),
+        raceUTC: Timestamp.fromDate(raceDate),
         qualiUTC: Timestamp.fromDate(new Date(addFormData.qualiDateTimeUTC)),
         ...(sprintQualiDate ? { qualiSprintUTC: Timestamp.fromDate(sprintQualiDate) } : {}),
         ...(sprintDate ? { sprintUTC: Timestamp.fromDate(sprintDate) } : {}),
+        locked,
       });
+      const fresh = await onDataChange();
+      if (Array.isArray(fresh) && (await saveRoundOrder(fresh)) > 0) await onDataChange();
       setMessage({ type: "success", text: t("admin.raceAdded") });
-      await onDataChange();
       setTimeout(() => setShowAddModal(false), 1200);
     } catch (err) {
       error(err);
@@ -285,6 +301,14 @@ export default function CalendarManager({ races, loading, onDataChange }) {
       if (showSprintFields && newSprintDate) raceUpdates.sprintUTC = Timestamp.fromDate(newSprintDate);
       else if (!showSprintFields || !newSprintDate) raceUpdates.sprintUTC = null;
 
+      // Fields changed by hand are locked: the sync won't overwrite them
+      const editedFields = [];
+      if (raceUpdates.name !== editingRace.name) editedFields.push("name");
+      for (const f of ["raceUTC", "qualiUTC", "qualiSprintUTC", "sprintUTC"]) {
+        if (toSec(raceUpdates[f]) !== toSec(editingRace[f])) editedFields.push(f);
+      }
+      if (editedFields.length) raceUpdates.locked = arrayUnion(...editedFields);
+
       batch.update(doc(db, "races", editingRace.id), raceUpdates);
       for (const r of races) {
         if (r.id !== editingRace.id && r.round !== newRounds[r.id]) {
@@ -313,14 +337,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
         await batch.commit();
       }
       await deleteDoc(doc(db, "races", editingRace.id));
-      const remaining = races.filter((r) => r.id !== editingRace.id).sort((a, b) =>
-        (a.raceUTC ? a.raceUTC.seconds : 0) - (b.raceUTC ? b.raceUTC.seconds : 0)
-      );
-      if (remaining.length > 0) {
-        const batch = writeBatch(db);
-        remaining.forEach((r, i) => { if (r.round !== i + 1) batch.update(doc(db, "races", r.id), { round: i + 1 }); });
-        await batch.commit();
-      }
+      await saveRoundOrder(races.filter((r) => r.id !== editingRace.id));
       setMessage({ type: "success", text: t("admin.raceDeleted") });
       setShowEditModal(false); setEditingRace(null);
       await onDataChange();
@@ -330,12 +347,15 @@ export default function CalendarManager({ races, loading, onDataChange }) {
     } finally { setUploading(false); }
   };
 
-  if (loading) {
+  if (loading && races.length === 0) {
     return <div className="text-center py-5"><Spinner animation="border" /></div>;
   }
 
   return (
     <>
+      {/* ── Sync with the official calendar ── */}
+      <CalendarSyncPanel races={races} onDataChange={onDataChange} />
+
       {/* ── ICS Import ── */}
       <div className="mb-4">
         <h6 className="mb-2 fw-bold" style={{ color: "var(--text-primary)" }}>
@@ -388,6 +408,16 @@ export default function CalendarManager({ races, loading, onDataChange }) {
                       <span className="text-muted small fw-bold" style={{ minWidth: 28 }}>R{r.round}</span>
                       <span className="fw-semibold text-truncate">{r.name}</span>
                     </div>
+                    {(r.officialRound || r.locked?.length > 0) && (
+                      <div className="d-flex align-items-center gap-1 mt-1">
+                        {r.officialRound && <Badge bg="dark" style={{ fontSize: "0.6rem" }}>F1 R{r.officialRound}</Badge>}
+                        {r.locked?.length > 0 && (
+                          <Badge bg="secondary" style={{ fontSize: "0.6rem" }} title={r.locked.join(", ")}>
+                            🔒 {r.locked.map((f) => t(`f1Sync.short.${f}`)).join(", ")}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                     <div className="d-flex align-items-center gap-2 mt-1">
                       <small className="text-muted">{fmtDate(r.raceUTC)}</small>
                       {hasSprint && !r.cancelledSprint && <Badge bg="warning" text="dark" style={{ fontSize: "0.6rem" }}>Sprint</Badge>}
@@ -413,23 +443,12 @@ export default function CalendarManager({ races, loading, onDataChange }) {
         <Form onSubmit={handleAddRace}>
           <Modal.Body>
             {message && <Alert variant={message.type} dismissible onClose={() => setMessage(null)} className="py-2">{message.text}</Alert>}
-            <div className="d-flex gap-2 mb-3">
-              <Form.Group style={{ width: 80 }}>
-                <Form.Label className="small fw-semibold">{t("admin.raceRound")} *</Form.Label>
-                <Form.Control type="number" size="sm" min="1" max="30" value={addFormData.round}
-                  onChange={(e) => setAddFormData({ ...addFormData, round: e.target.value })} required />
-              </Form.Group>
-              <Form.Group className="flex-fill">
-                <Form.Label className="small fw-semibold">{t("admin.raceName")} *</Form.Label>
-                <Form.Control type="text" size="sm" placeholder="e.g. Bahrain Grand Prix" value={addFormData.name}
-                  onChange={(e) => setAddFormData({ ...addFormData, name: e.target.value })} required />
-              </Form.Group>
-            </div>
-            {addFormData.round && races.filter((r) => r.round >= parseInt(addFormData.round)).length > 0 && (
-              <Alert variant="warning" className="py-1 small mb-2">
-                {races.filter((r) => r.round >= parseInt(addFormData.round)).length} {t("admin.racesWillShift")}
-              </Alert>
-            )}
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-semibold">{t("admin.raceName")} *</Form.Label>
+              <Form.Control type="text" size="sm" placeholder="e.g. Gran Premio del Bahrein" value={addFormData.name}
+                onChange={(e) => setAddFormData({ ...addFormData, name: e.target.value })} required />
+              <Form.Text className="text-muted" style={{ fontSize: "0.72rem" }}>{t("f1Sync.addRaceHint")}</Form.Text>
+            </Form.Group>
             <Form.Group className="mb-2">
               <Form.Label className="small fw-semibold">{t("admin.raceDateTimeUTC")} *</Form.Label>
               <Form.Control type="datetime-local" size="sm" value={addFormData.raceDateTimeUTC}
@@ -553,6 +572,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
             /* ── Preview ── */
             <div>
               <h6 className="fw-bold mb-3">{t("admin.previewChanges")}</h6>
+              <p className="small text-muted mb-2">🔒 {t("f1Sync.editLocksHint")}</p>
               {editingRace && (
                 <div className="rounded p-2 mb-3 small" style={{ backgroundColor: isDark ? "var(--bg-tertiary)" : "#f0f4f8", border: `1px solid ${borderColor}` }}>
                   <strong>{editingRace.name}</strong> → <strong>{editFormData.name}</strong>

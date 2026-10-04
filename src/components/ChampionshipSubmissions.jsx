@@ -7,14 +7,10 @@ import PropTypes from "prop-types";
 import { Card, Table, Spinner, Alert, Image } from "react-bootstrap";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
-import { DRIVER_TEAM, TEAM_LOGOS } from "../constants/racing";
+import { useF1Data } from "../hooks/useF1Data";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { error as logError } from "../utils/logger";
-
-// Use centralized constants
-const driverTeam = DRIVER_TEAM;
-const teamLogos = TEAM_LOGOS;
 
 /**
  * Shows all submitted championship lineups with top 3 drivers and constructors.
@@ -25,6 +21,7 @@ const teamLogos = TEAM_LOGOS;
 export default function ChampionshipSubmissions({ refresh, currentUserId = null, deadlineMs = null }) {
   const { isDark } = useTheme();
   const { t } = useLanguage();
+  const { getDriverTeam, getTeamLogo } = useF1Data();
   const [subs, setSubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -137,8 +134,8 @@ export default function ChampionshipSubmissions({ refresh, currentUserId = null,
                   <td>{s.name}</td>
                   <td>
                     {s.pilots.map((p, i) => {
-                      const team = driverTeam[p];
-                      const logo = teamLogos[team];
+                      const team = getDriverTeam(p);
+                      const logo = team ? getTeamLogo(team) : null;
                       return (
                         <span
                           key={p}
@@ -161,7 +158,7 @@ export default function ChampionshipSubmissions({ refresh, currentUserId = null,
                   </td>
                   <td>
                     {s.constructors.map((c, i) => {
-                      const logo = teamLogos[c];
+                      const logo = getTeamLogo(c);
                       return (
                         <span
                           key={c}

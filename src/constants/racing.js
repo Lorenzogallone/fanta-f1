@@ -1,97 +1,11 @@
 /**
  * @file racing.js
- * @description Centralized constants for drivers, teams, and scoring
- * Avoids duplication across multiple components
+ * @description Scoring and timing constants.
  *
- * NOTE: This file now uses f1DataResolver for dynamic driver/team resolution
- * Static constants are kept for backward compatibility
+ * Drivers and teams are no longer hard-coded here: they live in the Firestore
+ * `drivers` / `teams` collections (see contexts/F1DataContext.jsx), with
+ * src/data/f1-data.json as initial data and fallback.
  */
-
-import f1DataResolver from '../services/f1DataResolver.js';
-
-/* ==================== DRIVERS ==================== */
-export const DRIVERS = [
-  "Lando Norris",
-  "Oscar Piastri",
-  "Max Verstappen",
-  "Isack Hadjar",
-  "Charles Leclerc",
-  "Lewis Hamilton",
-  "George Russell",
-  "Andrea Kimi Antonelli",
-  "Fernando Alonso",
-  "Lance Stroll",
-  "Alexander Albon",
-  "Carlos Sainz Jr.",
-  "Liam Lawson",
-  "Arvid Lindblad",
-  "Pierre Gasly",
-  "Franco Colapinto",
-  "Esteban Ocon",
-  "Oliver Bearman",
-  "Nico Hülkenberg",
-  "Gabriel Bortoleto",
-  "Sergio Pérez",
-  "Valtteri Bottas",
-];
-
-/* ==================== CONSTRUCTORS ==================== */
-export const CONSTRUCTORS = [
-  "McLaren",
-  "Ferrari",
-  "Red Bull",
-  "Mercedes",
-  "Aston Martin",
-  "Williams",
-  "Racing Bulls",
-  "Alpine",
-  "Haas",
-  "Audi",
-  "Cadillac",
-];
-
-/* ==================== DRIVER → TEAM MAPPING ==================== */
-export const DRIVER_TEAM = {
-  "Lando Norris": "McLaren",
-  "Oscar Piastri": "McLaren",
-  "Max Verstappen": "Red Bull",
-  "Isack Hadjar": "Red Bull",
-  "Charles Leclerc": "Ferrari",
-  "Lewis Hamilton": "Ferrari",
-  "George Russell": "Mercedes",
-  "Andrea Kimi Antonelli": "Mercedes",
-  "Fernando Alonso": "Aston Martin",
-  "Lance Stroll": "Aston Martin",
-  "Alexander Albon": "Williams",
-  "Carlos Sainz Jr.": "Williams",
-  "Carlos Sainz": "Williams", // Alias without Jr for API compatibility
-  "Liam Lawson": "Racing Bulls",
-  "Arvid Lindblad": "Racing Bulls",
-  "Pierre Gasly": "Alpine",
-  "Franco Colapinto": "Alpine",
-  "Esteban Ocon": "Haas",
-  "Oliver Bearman": "Haas",
-  "Nico Hülkenberg": "Audi",
-  "Gabriel Bortoleto": "Audi",
-  "Sergio Pérez": "Cadillac",
-  "Sergio Perez": "Cadillac", // Alias without accent for API compatibility
-  "Valtteri Bottas": "Cadillac",
-};
-
-/* ==================== TEAM LOGOS (paths in /public) ==================== */
-export const TEAM_LOGOS = {
-  McLaren: "/mclaren.webp",
-  Ferrari: "/ferrari.webp",
-  "Red Bull": "/redbull.webp",
-  Mercedes: "/mercedes.webp",
-  "Aston Martin": "/aston.webp",
-  Williams: "/williams.webp",
-  "Racing Bulls": "/vcarb.webp",
-  Alpine: "/alpine.webp",
-  Haas: "/haas.webp",
-  Audi: "/audi.webp",
-  Cadillac: "/cadillac.webp",
-};
 
 /* ==================== SCORING SYSTEM ==================== */
 export const POINTS = {
@@ -117,10 +31,6 @@ export const POINTS = {
   PENALTY_EMPTY_LIST: -3,
 };
 
-/* ==================== DRIVER SELECT OPTIONS ==================== */
-// Pre-computed to avoid duplication in AdminPanel and FormationApp
-export const DRIVER_OPTIONS = DRIVERS.map((d) => ({ value: d, label: d }));
-
 /* ==================== TIME CONSTANTS ==================== */
 export const TIME_CONSTANTS = {
   // Minutes of grace period after race to submit results
@@ -132,77 +42,3 @@ export const TIME_CONSTANTS = {
   // Late submission penalty
   LATE_SUBMISSION_PENALTY: -3,
 };
-
-/* ==================== DYNAMIC HELPER FUNCTIONS ==================== */
-/**
- * Gets a driver's team (with dynamic fallback from API)
- * @param {string} driverName - Driver name
- * @returns {string|null} Team name or null
- */
-export function getDriverTeamDynamic(driverName) {
-  // First try with static mapping (faster)
-  if (DRIVER_TEAM[driverName]) {
-    return DRIVER_TEAM[driverName];
-  }
-
-  // Fallback: use resolver (includes API cache and unknowns)
-  const team = f1DataResolver.getDriverTeam(driverName);
-  return team?.displayName || null;
-}
-
-/**
- * Gets a team's logo (with dynamic fallback)
- * @param {string} teamName - Team name
- * @returns {string|null} Logo path or null
- */
-export function getTeamLogoDynamic(teamName) {
-  // First try with static mapping
-  if (TEAM_LOGOS[teamName]) {
-    return TEAM_LOGOS[teamName];
-  }
-
-  // Fallback: use resolver
-  return f1DataResolver.getTeamLogo(teamName);
-}
-
-/**
- * Gets all drivers (static + from API cache)
- * @returns {Array<string>} List of driver names
- */
-export function getAllDriversDynamic() {
-  const allDrivers = f1DataResolver.getAllDrivers();
-  return allDrivers.map(d => d.displayName);
-}
-
-/**
- * Gets all teams (static + from API cache)
- * @returns {Array<string>} List of team names
- */
-export function getAllTeamsDynamic() {
-  const allTeams = f1DataResolver.getAllTeams();
-  return allTeams.map(t => t.displayName);
-}
-
-/**
- * Checks if a driver exists (static or dynamic)
- * @param {string} driverName - Driver name
- * @returns {boolean}
- */
-export function isDriverValid(driverName) {
-  if (DRIVERS.includes(driverName)) return true;
-
-  const allDrivers = getAllDriversDynamic();
-  return allDrivers.includes(driverName);
-}
-
-/**
- * Checks if a team exists (static or dynamic)
- * @param {string} teamName - Team name
- * @returns {boolean}
- */
-export function isTeamValid(teamName) {
-  if (CONSTRUCTORS.includes(teamName)) return true;
-
-  const allTeams = getAllTeamsDynamic();
-  return allTeams.includes(teamName);
-}
