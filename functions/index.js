@@ -11,7 +11,6 @@
  * Fallback: users without a timezone preference default to Europe/Rome (CET).
  * All notification text is in Italian, professional tone, no emoji.
  */
-/* eslint-env node */
 
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
@@ -82,9 +81,6 @@ function getWeekdayInTz(dateUTC, tz) {
   return dateUTC.toLocaleString("en-US", { timeZone: tz, weekday: "short" });
 }
 
-/** @deprecated Use getHourInTz(dateUTC, tz) */
-function getCETHour(dateUTC) { return getHourInTz(dateUTC, TIMEZONE); }
-
 /**
  * Returns true when the session falls in the "nighttime" band (local hour < 9).
  * @param {Date} dateUTC
@@ -94,9 +90,6 @@ function getCETHour(dateUTC) { return getHourInTz(dateUTC, TIMEZONE); }
 function isNightTime(dateUTC, tz) {
   return getHourInTz(dateUTC, tz) < 9;
 }
-
-/** @deprecated Use isNightTime(dateUTC, tz) */
-function isNightTimeCET(dateUTC) { return isNightTime(dateUTC, TIMEZONE); }
 
 /**
  * Formats a UTC Date as "HH:MM" in the given timezone.
@@ -643,18 +636,22 @@ async function checkAndNotifyEvening(targetTimezones, tzGroups) {
  */
 async function getChampionshipDeadlineUTC() {
   try {
+    // Admin override (same rule as the app: config/championship.deadlineOverride)
+    const configSnap = await db.collection("config").doc("championship").get();
+    const override = configSnap.exists ? configSnap.data().deadlineOverride : null;
+    if (override) return override.toDate();
+
     // Count total races without reading documents (free operation)
     const countSnap = await db.collection("races").count().get();
     const totalRaces = countSnap.data().count;
 
-    if (totalRaces === 0) return new Date("2025-09-07T23:59:00Z");
+    if (totalRaces === 0) return null;
 
-    const midRound = Math.ceil(totalRaces / 2);
-
-    // Read only the mid-season race (1 read instead of all)
+    // Read only the mid-season race (by position, same as the app)
     const midSnap = await db
       .collection("races")
-      .where("round", "==", midRound)
+      .orderBy("round", "asc")
+      .offset(Math.ceil(totalRaces / 2) - 1)
       .limit(1)
       .get();
 
@@ -663,7 +660,7 @@ async function getChampionshipDeadlineUTC() {
       if (midRace.raceUTC) return midRace.raceUTC.toDate();
     }
 
-    return new Date("2025-09-07T23:59:00Z");
+    return null;
   } catch (err) {
     console.error("Errore nel calcolo della scadenza campionato:", err);
     return null;

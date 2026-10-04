@@ -206,10 +206,37 @@ const calculateRacePoints = (submission, official, cancelledSprint = false) => {
         sprintPoints += POINTS.BONUS_JOLLY_SPRINT;
       }
     }
+
+    // Late submission penalty for the sprint lineup
+    if (submission.isLateSprint) {
+      sprintPoints += (submission.latePenaltySprint || -3);
+    }
+  }
+
+  // Double points (e.g. final race)
+  if (official.doublePoints) {
+    mainPoints *= 2;
+    if (sprintPoints !== null) sprintPoints *= 2;
   }
 
   const total = mainPoints + (sprintPoints || 0);
   return { mainPoints, sprintPoints, total };
+};
+
+/**
+ * Points for a race: prefers the values stored by the points calculator
+ * (ranking.pointsByRace, the source of the leaderboard total) and falls back
+ * to computing them from the submission.
+ */
+const getRacePoints = (race, pointsByRace) => {
+  const stored = pointsByRace?.[race.raceId];
+  if (stored) {
+    const hasSprint = !!race.officialResults?.SP1 && !race.cancelledSprint;
+    const mainPoints = stored.mainPts || 0;
+    const sprintPoints = hasSprint ? stored.sprintPts || 0 : null;
+    return { mainPoints, sprintPoints, total: mainPoints + (stored.sprintPts || 0) };
+  }
+  return calculateRacePoints(race.submission, race.officialResults, race.cancelledSprint);
 };
 
 /**
@@ -223,6 +250,7 @@ const calculateRacePoints = (submission, official, cancelledSprint = false) => {
  * @param {string} [props.firstName] - Player's first name
  * @param {string} [props.lastName] - Player's last name
  * @param {string} [props.photoURL] - Player's profile photo URL
+ * @param {Object} [props.pointsByRace] - Stored per-race points (ranking.pointsByRace)
  * @returns {JSX.Element}
  */
 function PlayerStatsView({
@@ -236,6 +264,7 @@ function PlayerStatsView({
   lastName,
   photoURL,
   positionData = [], // [{ round, name, position }] — championship position per race
+  pointsByRace = null, // ranking.pointsByRace — authoritative per-race points
 }) {
   const { isDark } = useTheme();
   const { t } = useLanguage();
@@ -258,32 +287,6 @@ function PlayerStatsView({
     : "0.0";
 
   const fullName = firstName && lastName ? `${firstName} ${lastName}` : null;
-
-  // Prepare chart data if we have races and history
-  let chartRaces = [];
-  let chartHistory = [];
-
-  if (showCharts && raceHistory.length > 0) {
-    let cumulativePoints = 0;
-    chartRaces = [];
-    chartHistory = [];
-
-    [...raceHistory].reverse().forEach((race) => {
-      const points = calculateRacePoints(race.submission, race.officialResults, race.cancelledSprint);
-      cumulativePoints += points.total;
-
-      chartRaces.push({
-        id: race.raceId,
-        name: race.raceName,
-        round: race.round,
-      });
-
-      chartHistory.push({
-        cumulativePoints,
-        racePoints: points.total,
-      });
-    });
-  }
 
   return (
     <>
@@ -484,7 +487,7 @@ function PlayerStatsView({
                   </thead>
                   <tbody>
                     {[...raceHistory].reverse().map((race) => {
-                      const points = calculateRacePoints(race.submission, race.officialResults, race.cancelledSprint);
+                      const points = getRacePoints(race, pointsByRace);
                       const mainColor = pointsColor(points.mainPoints);
                       const sprintColor = points.sprintPoints !== null ? pointsColor(points.sprintPoints) : null;
                       const totalColor = pointsColor(points.total);
@@ -543,7 +546,7 @@ function PlayerStatsView({
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart
                     data={positionData.map((d) => ({
-                      name: `R${d.round}`,
+                      name: d.label || `R${d.round}`,
                       fullName: d.name,
                       position: d.position,
                     }))}
@@ -614,6 +617,7 @@ PlayerStatsView.propTypes = {
   photoURL: PropTypes.string,
   positionData: PropTypes.arrayOf(PropTypes.shape({
     round: PropTypes.number,
+    label: PropTypes.string,
     name: PropTypes.string,
     position: PropTypes.number,
   })),

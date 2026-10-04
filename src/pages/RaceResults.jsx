@@ -41,7 +41,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
 import { getTimezoneDisplay, getTimezoneAbbreviation } from "../utils/timezoneUtils";
-import { log, error } from "../utils/logger";
+import { log, error as logError } from "../utils/logger";
 
 /**
  * Component to display driver with team logo
@@ -415,12 +415,12 @@ export default function RaceResults() {
 
             setLoadingSessions(false); // Sessions loaded
           } catch (err) {
-            error("Error loading race sessions:", err);
+            logError("Error loading race sessions:", err);
             setLoadingSessions(false); // Stop loading even on error
           }
         }
       } catch (e) {
-        error("Error loading races:", e);
+        logError("Error loading races:", e);
         setError(t("errors.generic"));
         setLoadingRaces(false);
         setLoadingSessions(false);
@@ -444,8 +444,8 @@ export default function RaceResults() {
           ]);
           setDriverStandings(drivers);
           setConstructorStandings(constructors);
-        } catch (error) {
-          error("Error loading standings:", error);
+        } catch (err) {
+          logError("Error loading standings:", err);
         } finally {
           setLoadingStandings(false);
         }
@@ -549,7 +549,7 @@ export default function RaceResults() {
       }
       setActiveKeys(defaultKeys);
     } catch (e) {
-      error("Error loading sessions:", e);
+      logError("Error loading sessions:", e);
       setError(t("errors.generic"));
     } finally {
       setLoadingSessions(false);

@@ -17,14 +17,12 @@ export async function getChampionshipDeadlineAutoMs() {
     const racesSnap = await getDocs(racesQuery);
     const races = racesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
-    if (races.length === 0) return new Date("2025-09-07T23:59:00").getTime();
+    if (races.length === 0) return null;
 
-    const midRound = Math.ceil(races.length / 2);
-    const midRace = races.find((r) => r.round === midRound);
+    // Mid-season race: by position in the calendar (robust to gaps in rounds)
+    const midRace = races[Math.ceil(races.length / 2) - 1];
 
-    if (midRace?.raceUTC) return midRace.raceUTC.toDate().getTime();
-
-    return new Date("2025-09-07T23:59:00").getTime();
+    return midRace?.raceUTC ? midRace.raceUTC.toDate().getTime() : null;
   } catch {
     return null;
   }

@@ -120,6 +120,7 @@ export default function ParticipantDetail() {
           userId,
           name: userData.name,
           puntiTotali: userData.puntiTotali || 0,
+          pointsByRace: userData.pointsByRace || {},
           jolly: userData.jolly ?? 0,
           championshipPiloti: showChampionship ? (userData.championshipPiloti || []) : [],
           championshipCostruttori: showChampionship ? (userData.championshipCostruttori || []) : [],
@@ -186,7 +187,8 @@ export default function ParticipantDetail() {
                 .filter(d => d.position !== undefined)
                 .map(d => ({
                   round: d.raceRound,
-                  name: d.raceName,
+                  label: d.raceLabel,
+                  name: d.isChampionship ? t("statistics.championshipStep") : d.raceName,
                   position: d.position,
                 }))
             );
@@ -247,6 +249,7 @@ export default function ParticipantDetail() {
           showCharts={false}
           showBackButton={true}
           positionData={positionData}
+          pointsByRace={participant?.pointsByRace}
         />
         <div className="text-center mt-4">
           <Spinner animation="border" size="sm" style={{ color: accentColor }} />
@@ -276,6 +279,7 @@ export default function ParticipantDetail() {
         showCharts={true}
         showBackButton={true}
         positionData={positionData}
+        pointsByRace={participant?.pointsByRace}
       />
     </Container>
   );

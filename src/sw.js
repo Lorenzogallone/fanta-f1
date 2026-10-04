@@ -23,110 +23,37 @@ cleanupOutdatedCaches();
 // SPA: route all navigation requests to index.html
 registerRoute(new NavigationRoute(createHandlerBoundToURL("index.html")));
 
-// ── Firebase Cloud Messaging ─────────────────────────────────────────
-// We use the compat SDK because the modular SDK doesn't work in SW context
-// with importScripts. These are loaded from the CDN.
-importScripts(
-  "https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js",
-  "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging-compat.js"
-);
-
-// Firebase config is passed from the main thread via the query string of the
-// SW registration URL or via a postMessage. We use a simple self.__FIREBASE_CONFIG
-// variable that is set by either mechanism.
+// ── Push notifications ───────────────────────────────────────────────
+// FCM delivers standard Web Push messages, so we handle the "push" event
+// ourselves and show exactly ONE notification per message.
 //
-// Fallback: listen for a "FIREBASE_CONFIG" message from the main thread.
-let firebaseConfigReady = null;
-let resolveFirebaseConfig = null;
-
-// Try to read config from the SW URL query string (?config=<base64>)
-const swUrl = new URL(self.location.href);
-const configParam = swUrl.searchParams.get("config");
-
-if (configParam) {
-  try {
-    self.__FIREBASE_CONFIG = JSON.parse(atob(configParam));
-  } catch (_) {
-    // Will wait for postMessage fallback
-  }
-}
-
-if (!self.__FIREBASE_CONFIG) {
-  firebaseConfigReady = new Promise((resolve) => {
-    resolveFirebaseConfig = resolve;
-  });
-
-  self.addEventListener("message", (event) => {
-    if (event.data?.type === "FIREBASE_CONFIG" && event.data.config) {
-      self.__FIREBASE_CONFIG = event.data.config;
-      if (resolveFirebaseConfig) resolveFirebaseConfig();
-    }
-  });
-}
-
-/**
- * Lazily initialise Firebase Messaging inside the SW.
- * Returns null if config is not available yet.
- */
-let messagingInstance = null;
-
-function getOrInitMessaging() {
-  if (messagingInstance) return messagingInstance;
-  if (!self.__FIREBASE_CONFIG) return null;
-
-  firebase.initializeApp(self.__FIREBASE_CONFIG);
-  messagingInstance = firebase.messaging();
-  return messagingInstance;
-}
-
-// ── Push event (works even before Firebase initialises) ──────────────
-// This is the low-level push listener that fires for every incoming push.
-// Firebase compat SDK hooks into this too, but having our own ensures
-// notifications are shown even if Firebase init is delayed.
+// We intentionally do NOT load the Firebase Messaging SDK here: with a
+// `notification` payload the SDK already displays the notification on its
+// own, so also showing it from onBackgroundMessage produced duplicates
+// (especially on iOS, where `tag` does not replace an existing notification).
+// Getting the FCM token in the page only needs this SW registration.
 self.addEventListener("push", (event) => {
-  // Let Firebase handle it if messaging is initialised
-  if (messagingInstance) return;
+  let payload = {};
+  try {
+    payload = event.data?.json() ?? {};
+  } catch {
+    payload = { notification: { body: event.data?.text() ?? "" } };
+  }
 
-  const data = event.data?.json?.() ?? {};
-  const notification = data.notification || {};
-  const title = notification.title || "";
+  const notification = payload.notification || {};
+  const data = payload.data || {};
+  const title = notification.title || "FantaF1";
   const options = {
     body: notification.body || "",
     icon: notification.icon || "/FantaF1_Logo_192.png",
-    badge: "/FantaF1_Logo_192.png",
-    data: data.data || {},
+    badge: notification.badge || "/FantaF1_Logo_192.png",
+    data: { ...data, url: data.url || payload.fcmOptions?.link || "/" },
     vibrate: [100, 50, 200],
-    tag: data.data?.tag || "fantaf1-notification",
+    tag: notification.tag || data.tag || "fantaf1-notification",
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
 });
-
-// ── Firebase onBackgroundMessage (richer notifications) ──────────────
-// Initialise as soon as config is available.
-async function initBackgroundMessaging() {
-  if (firebaseConfigReady) await firebaseConfigReady;
-
-  const messaging = getOrInitMessaging();
-  if (!messaging) return;
-
-  messaging.onBackgroundMessage((payload) => {
-    const { title, body, icon } = payload.notification || {};
-    const notificationTitle = title || "";
-    const notificationOptions = {
-      body: body || "",
-      icon: icon || "/FantaF1_Logo_192.png",
-      badge: "/FantaF1_Logo_192.png",
-      data: payload.data || {},
-      vibrate: [100, 50, 200],
-      tag: payload.data?.tag || "fantaf1-notification",
-    };
-
-    self.registration.showNotification(notificationTitle, notificationOptions);
-  });
-}
-
-initBackgroundMessaging();
 
 // ── Notification click handler ───────────────────────────────────────
 self.addEventListener("notificationclick", (event) => {
@@ -140,7 +67,9 @@ self.addEventListener("notificationclick", (event) => {
       .then((clientList) => {
         for (const client of clientList) {
           if (client.url.includes(self.location.origin) && "focus" in client) {
-            return client.focus();
+            return client.focus().then((focused) =>
+              focused && "navigate" in focused ? focused.navigate(urlToOpen) : focused
+            );
           }
         }
         return clients.openWindow(urlToOpen);

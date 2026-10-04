@@ -16,7 +16,7 @@ import {
   Spinner,
 } from "react-bootstrap";
 import Select from "react-select";
-import { collection, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { getChampionshipDeadlineMs } from "../utils/championshipDeadline";
 import ChampionshipSubmissions from "../components/ChampionshipSubmissions";
@@ -82,7 +82,8 @@ export default function ChampionshipForm() {
   const [deadlineMs, setDeadlineMs] = useState(null);
   const [deadlineText, setDeadlineText] = useState("");
   const [loadingDeadline, setLoadingDeadline] = useState(true);
-  const pastDeadline = deadlineMs ? Date.now() > deadlineMs : false;
+  // Unknown deadline (loading error, empty calendar) → closed, never open forever
+  const pastDeadline = deadlineMs ? Date.now() > deadlineMs : !loadingDeadline;
 
   // Auto-set userId from authenticated user
   useEffect(() => {

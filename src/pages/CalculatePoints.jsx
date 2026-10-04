@@ -11,7 +11,7 @@ import {
 } from "react-bootstrap";
 import {
   collection, query, orderBy, getDocs,
-  doc, setDoc, getDoc, Timestamp
+  doc, getDoc, Timestamp
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { isLastRace, calculatePointsForRace } from "../services/pointsCalculator";
@@ -23,6 +23,7 @@ import { POINTS } from "../constants/racing";
 import { useF1Data } from "../hooks/useF1Data";
 import { buildDriverOptions, buildTeamOptions, findOptionOrCreate } from "../utils/f1SelectOptions";
 import RaceHistoryCard from "../components/RaceHistoryCard";
+import ChampionshipSubmissions from "../components/ChampionshipSubmissions";
 import Select from "react-select";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
@@ -118,6 +119,8 @@ function CalculatePointsContent() {
   const [loadingSubs, setLoadingSubs] = useState(true);
   const [rankingMap,setRankingMap] = useState({});
   const [errSubs,   setErrSubs]    = useState(null);
+  // Raw setters, wrapped by the auto-fetch effect to drop stale async results
+  const stateSetters = { setFormRace, setMsgRace, setFetchingResults, setSubs, setLoadingSubs, setErrSubs, setOfficial };
 
   // Championship state
   const [formChamp,setFormChamp]   = useState({
@@ -125,6 +128,7 @@ function CalculatePointsContent() {
   });
   const [savingChamp,setSavingChamp]=useState(false);
   const [msgChamp,setMsgChamp]     = useState(null);
+  const [champRefresh,setChampRefresh] = useState(0);
 
   /**
    * Load race list (selects first race not yet calculated)
@@ -163,6 +167,13 @@ useEffect(() => {
    */
   useEffect(()=>{
     if(!race) return;
+    // Ignore results that arrive after the admin selected another race
+    let cancelled = false;
+    const guard = (fn) => (...args) => { if (!cancelled) fn(...args); };
+    const setOfficial = guard(stateSetters.setOfficial);
+    const setSubs = guard(stateSetters.setSubs);
+    const setLoadingSubs = guard(stateSetters.setLoadingSubs);
+    const setErrSubs = guard(stateSetters.setErrSubs);
     (async()=>{
       setLoadingSubs(true); setErrSubs(null);
       try{
@@ -187,6 +198,7 @@ useEffect(() => {
       }catch(e){ setErrSubs(t("calculate.errorLoadingSubmissions")); }
       finally   { setLoadingSubs(false); }
     })();
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[race]);
 
@@ -205,6 +217,18 @@ useEffect(() => {
  */
 useEffect(() => {
   if (!race) return;
+
+  // If the admin switches race while this one is still loading, ignore the
+  // late results: they must never end up in the form of the newly selected race.
+  let cancelled = false;
+  const guard = (fn) => (...args) => { if (!cancelled) fn(...args); };
+  const setFormRace = guard(stateSetters.setFormRace);
+  const setMsgRace = guard(stateSetters.setMsgRace);
+  const setFetchingResults = guard(stateSetters.setFetchingResults);
+  const setSubs = guard(stateSetters.setSubs);
+  const setLoadingSubs = guard(stateSetters.setLoadingSubs);
+  const setErrSubs = guard(stateSetters.setErrSubs);
+  const setOfficial = guard(stateSetters.setOfficial);
 
   (async () => {
     setFetchingResults(true);
@@ -242,7 +266,7 @@ useEffect(() => {
         });
         setMsgRace({
           variant:"info",
-          msg: t("calculate.raceNotFinished", "La gara non è ancora terminata. I risultati saranno disponibili dopo la fine della gara.")
+          msg: t("calculate.raceNotFinished")
         });
         setFetchingResults(false);
       } else {
@@ -310,6 +334,8 @@ useEffect(() => {
     setLoadingSubs(false);
     setFetchingResults(false);
   });
+
+  return () => { cancelled = true; };
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [race]);
 
@@ -317,19 +343,12 @@ useEffect(() => {
     e.preventDefault(); if(!canSubmitRace) return;
     setSavingRace(true); setMsgRace(null);
     try{
-      await setDoc(doc(db,"races",race.id),{
-        officialResults:{
-          P1:formRace.P1.value,P2:formRace.P2.value,P3:formRace.P3.value,
-          SP1:formRace.SP1?.value||null,SP2:formRace.SP2?.value||null,SP3:formRace.SP3?.value||null,
-          doublePoints:isLast,savedAt:Timestamp.now()
-        }},{merge:true});
-      setMsgRace({variant:"info",msg: t("calculate.resultsSaved")});
-      const res = await calculatePointsForRace(race.id);
-      await setDoc(
-        doc(db, "races", race.id),
-        { pointsCalculated: true },
-        { merge: true }
-      );
+      // Results, points and ranking are saved together (all-or-nothing)
+      const res = await calculatePointsForRace(race.id, {
+        P1:formRace.P1.value,P2:formRace.P2.value,P3:formRace.P3.value,
+        SP1:formRace.SP1?.value||null,SP2:formRace.SP2?.value||null,SP3:formRace.SP3?.value||null,
+        doublePoints:isLast,savedAt:Timestamp.now()
+      });
       // Save ranking snapshot after calculation
       await saveRankingSnapshot("race", race.id);
       setMsgRace({variant:"success",msg:res});
@@ -372,17 +391,16 @@ useEffect(() => {
     e.preventDefault(); if(!champReady) return;
     setSavingChamp(true); setMsgChamp(null);
     try{
-      await setDoc(doc(db,"championship","results"),{
+      // Results and points are saved together (all-or-nothing)
+      const res = await calculateChampionshipPoints({
         P1:formChamp.CP1.value,P2:formChamp.CP2.value,P3:formChamp.CP3.value,
         C1:formChamp.CC1.value,C2:formChamp.CC2.value,C3:formChamp.CC3.value,
         savedAt:Timestamp.now()
-      },{merge:true});
-      setMsgChamp({variant:"info",msg: t("calculate.resultsSaved")});
-      // The function reads the results from Firestore (just saved above)
-      const res = await calculateChampionshipPoints();
+      });
       // Save ranking snapshot after championship calculation
       await saveRankingSnapshot("championship", null);
       setMsgChamp({variant:"success",msg:res});
+      setChampRefresh(Date.now());
 
       // Create automatic backup after successful calculation (non-blocking)
       createAndSaveBackup("auto_championship", {
@@ -635,6 +653,10 @@ useEffect(() => {
                     </Form>
                   </Card.Body>
                 </Card>
+              </Col>
+              {/* ---------- LINEUPS ---------- */}
+              <Col xs={12} lg={10}>
+                <ChampionshipSubmissions refresh={champRefresh} showPoints={true} />
               </Col>
             </Row>
           </Tab.Pane>

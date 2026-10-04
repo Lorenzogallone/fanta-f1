@@ -74,8 +74,10 @@ export function AuthProvider({ children }) {
         return null;
       }
     } catch {
+      // Read failed (e.g. offline): don't ask to complete the profile, that
+      // would overwrite the existing document. It will be read again later.
       setUserProfile(null);
-      setNeedsProfile(true);
+      setNeedsProfile(false);
       return null;
     }
   }, []);
@@ -233,7 +235,8 @@ export function AuthProvider({ children }) {
       provider: user.providerData?.[0]?.providerId || "google.com",
       createdAt: Timestamp.now(),
     };
-    await setDoc(doc(db, "users", user.uid), profile);
+    // merge: never drop fields of an existing document (photo, notification tokens…)
+    await setDoc(doc(db, "users", user.uid), profile, { merge: true });
     await ensureRankingEntry(user.uid, nickname);
     setUserProfile(profile);
     setNeedsProfile(false);

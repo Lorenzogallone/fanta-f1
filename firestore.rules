@@ -19,6 +19,55 @@ service cloud.firestore {
              request.auth.token.get('admin', false) == true;
     }
 
+    /* ---------- Formazioni: campi e scadenze ----------
+     * Un giocatore può scrivere solo i campi della propria formazione (non i
+     * punti calcolati) ed entro la scadenza (qualifiche) + finestra "late" di
+     * 10 minuti. Dopo la scadenza la formazione deve essere marcata come
+     * ritardataria con la relativa penalità. 1 minuto di tolleranza per
+     * differenze di orologio tra dispositivo e server.
+     */
+    function submissionChangedKeys() {
+      return resource == null
+        ? request.resource.data.keys().toSet()
+        : request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    function withinDeadline(deadline, lateFlag, penaltyField) {
+      return deadline != null
+        && request.time < deadline + duration.value(11, 'm')
+        && (request.time < deadline + duration.value(1, 'm')
+            || (request.resource.data.get(lateFlag, false) == true
+                && request.resource.data.get(penaltyField, 0) == -3));
+    }
+
+    function validOwnSubmission(raceId, userId) {
+      let changed = submissionChangedKeys();
+      let race = get(/databases/$(database)/documents/races/$(raceId)).data;
+      return request.resource.data.get('userId', userId) == userId
+        && changed.hasOnly(['userId', 'user', 'submittedAt', 'isLate', 'latePenalty',
+                            'isLateSprint', 'latePenaltySprint',
+                            'mainP1', 'mainP2', 'mainP3', 'mainJolly', 'mainJolly2',
+                            'sprintP1', 'sprintP2', 'sprintP3', 'sprintJolly'])
+        && (!changed.hasAny(['mainP1', 'mainP2', 'mainP3', 'mainJolly', 'mainJolly2'])
+            || withinDeadline(race.get('qualiUTC', null), 'isLate', 'latePenalty'))
+        && (!changed.hasAny(['sprintP1', 'sprintP2', 'sprintP3', 'sprintJolly'])
+            || withinDeadline(race.get('qualiSprintUTC', null), 'isLateSprint', 'latePenaltySprint'))
+        // adding the double joker requires spending a jolly in the same batch
+        // (ledger entry for this race); changing its driver is free
+        && (!changed.hasAny(['mainJolly2'])
+            || request.resource.data.get('mainJolly2', null) == null
+            || (resource != null && resource.data.get('mainJolly2', null) != null)
+            || getAfter(/databases/$(database)/documents/ranking/$(userId))
+                 .data.get('jolly2Races', {}).get(raceId, false) == true)
+        // a late penalty can be added by the player, never removed or changed
+        && (!changed.hasAny(['isLate', 'latePenalty'])
+            || (request.resource.data.get('isLate', false) == true
+                && request.resource.data.get('latePenalty', 0) == -3))
+        && (!changed.hasAny(['isLateSprint', 'latePenaltySprint'])
+            || (request.resource.data.get('isLateSprint', false) == true
+                && request.resource.data.get('latePenaltySprint', 0) == -3));
+    }
+
     /* ===================== UTENTI (USERS) ================================
      * Collezione: /users/{userId}
      * Profilo utente con nickname, nome, cognome, email
@@ -36,9 +85,69 @@ service cloud.firestore {
      * ==================================================================== */
     match /ranking/{userId} {
       allow read: if isAuthenticated();
-      allow create: if isOwner(userId) || isAdmin();
-      allow update: if isOwner(userId) || isAdmin();
+      // A new player starts from zero: points and jolly are assigned by the admin
+      allow create: if isAdmin() || (isOwner(userId) && validNewRanking());
+      // Players may only change their own non-score fields (punti, pointsByRace,
+      // championshipPts are written only by the admin's points calculation)
+      allow update: if isAdmin() || (isOwner(userId) && validOwnRankingUpdate());
       allow delete: if isAdmin();
+    }
+
+    function validNewRanking() {
+      let d = request.resource.data;
+      return d.get('puntiTotali', 0) == 0
+        && d.get('jolly', 0) == 0
+        && d.get('championshipPts', 0) == 0
+        && d.get('pointsByRace', {}).size() == 0
+        && d.get('usedLateSubmission', false) == false;
+    }
+
+    function validOwnRankingUpdate() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return changed.hasOnly(['name', 'photoURL', 'usedLateSubmission', 'jolly',
+                              'jolly2Races', 'jollyRaceId',
+                              'championshipPiloti', 'championshipCostruttori'])
+        // the late submission can be used once: it can't be reset
+        && (!changed.hasAny(['usedLateSubmission'])
+            || request.resource.data.usedLateSubmission == true)
+        // jolly: only through the double joker ledger (see validJollyChange)
+        && (!changed.hasAny(['jolly', 'jolly2Races']) || validJollyChange());
+    }
+
+    /* Double joker ledger: ranking.jolly2Races = { raceId: true } for every
+     * race where the player spent a jolly on the double joker. The client
+     * writes it in the same batch as the submission, naming the race in
+     * jollyRaceId:
+     * - spend (-1): the race is added and the submission has mainJolly2;
+     * - refund (+1): the race is removed and the submission no longer has
+     *   mainJolly2. A refund is possible only once per jolly spent.
+     * - legacy refund (+1): double jokers added before the ledger existed have
+     *   no entry; the refund is allowed when this batch removes mainJolly2
+     *   from a submission that had it (adding it back requires a spend).
+     */
+    function validJollyChange() {
+      let before = resource.data.get('jolly2Races', {}).keys().toSet();
+      let after = request.resource.data.get('jolly2Races', {}).keys().toSet();
+      let raceId = request.resource.data.get('jollyRaceId', '');
+      let delta = request.resource.data.get('jolly', 0) - resource.data.get('jolly', 0);
+      let subPath = /databases/$(database)/documents/races/$(raceId)/submissions/$(request.auth.uid);
+      let sub = getAfter(subPath).data;
+      return request.resource.data.jolly is int
+        && request.resource.data.jolly >= 0
+        && ((delta == -1
+              && after.difference(before) == [raceId].toSet()
+              && before.difference(after).size() == 0
+              && sub.get('mainJolly2', null) != null)
+            || (delta == 1
+              && before.difference(after) == [raceId].toSet()
+              && after.difference(before).size() == 0
+              && sub.get('mainJolly2', null) == null)
+            || (delta == 1
+              && before == after
+              && !(raceId in after)
+              && exists(subPath)
+              && get(subPath).data.get('mainJolly2', null) != null
+              && sub.get('mainJolly2', null) == null));
     }
 
     /* ===================== GARE (RACES) ==================================
@@ -55,7 +164,8 @@ service cloud.firestore {
        * =================================================================== */
       match /submissions/{userId} {
         allow read: if isAuthenticated();
-        allow create, update: if isOwner(userId) || isAdmin();
+        allow create, update: if isAdmin()
+          || (isOwner(userId) && validOwnSubmission(raceId, userId));
         allow delete: if isAdmin();
       }
     }

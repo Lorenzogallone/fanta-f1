@@ -14,7 +14,7 @@ import { db } from "../services/firebase";
 import { useF1Data } from "../hooks/useF1Data";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
-import { error } from "../utils/logger";
+import { error as logError } from "../utils/logger";
 
 /**
  * Displays driver name with team logo or dash if not provided.
@@ -80,7 +80,7 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
         const snap = await getDocs(q);
         setSubs(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       } catch (e) {
-        error(e);
+        logError(e);
         setErr("Unable to load lineups.");
       } finally {
         setLoad(false);
@@ -145,7 +145,7 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
                   <div className="d-flex justify-content-between align-items-center mb-2">
                     <h6 className="mb-0" style={{ color: accentColor }}>
                       {i + 1}. {s.user}
-                      {s.isLate && (
+                      {(s.isLate || s.isLateSprint) && (
                         <Badge bg="warning" text="dark" className="ms-2">
                           ⏰ {t("formations.lateSubmission")} (-3)
                         </Badge>
@@ -197,7 +197,7 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
                     <td>{i + 1}</td>
                     <td>
                       {s.user}
-                      {s.isLate && (
+                      {(s.isLate || s.isLateSprint) && (
                         <Badge bg="warning" text="dark" className="ms-1">
                           ⏰ -3
                         </Badge>

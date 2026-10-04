@@ -21,6 +21,8 @@ import {
   setDoc,
   deleteDoc,
   updateDoc,
+  deleteField,
+  FieldPath,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "../../services/firebase";
@@ -60,6 +62,7 @@ export default function FormationsManager({ participants, races, loading, onData
     sprintJolly: null,
   });
   const [isLateSubmission, setIsLateSubmission] = useState(false);
+  const [isLateSprint, setIsLateSprint] = useState(false);
 
   // Save confirmation
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
@@ -125,6 +128,7 @@ export default function FormationsManager({ participants, races, loading, onData
         sprintJolly: findOpt(sub.sprintJolly),
       });
       setIsLateSubmission(sub.isLate ?? false);
+      setIsLateSprint(sub.isLateSprint ?? false);
     } else {
       resetForm();
     }
@@ -141,6 +145,7 @@ export default function FormationsManager({ participants, races, loading, onData
       sprintJolly: null,
     });
     setIsLateSubmission(false);
+    setIsLateSprint(false);
   };
 
   const getSelectedDrivers = (fields) =>
@@ -194,14 +199,18 @@ export default function FormationsManager({ participants, races, loading, onData
         submittedAt: Timestamp.now(),
       };
 
-      if (isLateSubmission) {
-        payload.isLate = true;
-        payload.latePenalty = -3;
+      // Late penalties are per race (main / sprint); unchecking removes them
+      payload.isLate = isLateSubmission;
+      payload.latePenalty = isLateSubmission ? -3 : deleteField();
+      payload.isLateSprint = isLateSprint;
+      payload.latePenaltySprint = isLateSprint ? -3 : deleteField();
+      if (isLateSubmission || isLateSprint) {
         await updateDoc(doc(db, "ranking", editingUser.id), { usedLateSubmission: true });
       }
 
       const isNew = !submissions[editingUser.id];
       await setDoc(doc(db, "races", selectedRace.id, "submissions", editingUser.id), payload, { merge: true });
+      await syncJollyLedger(editingUser.id, Boolean(payload.mainJolly2));
 
       setMessage({ type: "success", text: isNew ? t("admin.formationAdded") : t("admin.formationUpdated") });
       await loadSubmissions();
@@ -211,6 +220,23 @@ export default function FormationsManager({ participants, races, loading, onData
       setMessage({ type: "danger", text: `${t("common.error")}: ${err.message}` });
     } finally {
       setSaving(false);
+    }
+  };
+
+  /**
+   * Keeps the player's double joker ledger (ranking.jolly2Races) in line with
+   * the lineup edited by the admin, so the player can still spend / get back
+   * the joker for this race. Joker counts are managed by the admin manually.
+   */
+  const syncJollyLedger = async (userId, hasJolly2) => {
+    try {
+      await updateDoc(
+        doc(db, "ranking", userId),
+        new FieldPath("jolly2Races", selectedRace.id),
+        hasJolly2 ? true : deleteField()
+      );
+    } catch (err) {
+      error("Failed to update jolly ledger:", err);
     }
   };
 
@@ -225,6 +251,7 @@ export default function FormationsManager({ participants, races, loading, onData
     setSaving(true);
     try {
       await deleteDoc(doc(db, "races", selectedRace.id, "submissions", deletingUser.id));
+      await syncJollyLedger(deletingUser.id, false);
       await loadSubmissions();
       setShowDeleteConfirm(false);
       setDeletingUser(null);
@@ -347,7 +374,7 @@ export default function FormationsManager({ participants, races, loading, onData
                           {hasSubmission ? (
                             <>
                               <Badge bg="success" style={{ fontSize: "0.65rem" }}>{t("admin.submitted")}</Badge>
-                              {sub.isLate && (
+                              {(sub.isLate || sub.isLateSprint) && (
                                 <Badge bg="warning" text="dark" style={{ fontSize: "0.6rem" }}>
                                   {t("formations.lateSubmission")}
                                 </Badge>
@@ -431,6 +458,14 @@ export default function FormationsManager({ participants, races, loading, onData
               {renderDriverSelect("sprintP2", "SP2", false, sprintFields)}
               {renderDriverSelect("sprintP3", "SP3", false, sprintFields)}
               {renderDriverSelect("sprintJolly", `${t("formations.joker")} Sprint`, false, sprintFields)}
+
+              <Form.Check
+                type="switch"
+                label={`${t("formations.lateSubmission")} Sprint (${t("formations.latePenalty")})`}
+                checked={isLateSprint}
+                onChange={(e) => setIsLateSprint(e.target.checked)}
+                className="my-3"
+              />
             </>
           )}
         </Modal.Body>

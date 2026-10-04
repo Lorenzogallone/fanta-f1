@@ -25,11 +25,12 @@ import {
   orderBy,
   getDocs,
   doc,
-  setDoc,
-  updateDoc,
   onSnapshot,
   getDoc,
   increment,
+  deleteField,
+  writeBatch,
+  FieldPath,
   Timestamp,
 } from "firebase/firestore";
 import Select from "react-select";
@@ -165,9 +166,9 @@ export default function FormationApp() {
 
   // Race and sprint deadline status helpers
   const now = Date.now();
-  const qualiMs = race?.qualiUTC.seconds * 1000;
+  const qualiMs = race?.qualiUTC?.seconds * 1000;
   const sprMs = race?.qualiSprintUTC?.seconds * 1000;
-  const mainOpen = race && now < qualiMs;
+  const mainOpen = Boolean(race?.qualiUTC) && now < qualiMs;
   const sprOpen = race?.qualiSprintUTC && now < sprMs;
   const isSprintRace = Boolean(race?.qualiSprintUTC);
 
@@ -410,7 +411,9 @@ export default function FormationApp() {
         mainP2: form.P2.value,
         mainP3: form.P3.value,
         mainJolly: form.jolly.value,
-        ...(form.jolly2 ? { mainJolly2: form.jolly2.value } : {}),
+        // Removing the double joker must delete the field, otherwise the merge
+        // keeps the old value (and the joker would be refunded while still in use)
+        mainJolly2: form.jolly2 ? form.jolly2.value : deleteField(),
       });
     } else {
       Object.assign(payload, {
@@ -427,40 +430,66 @@ export default function FormationApp() {
     }
 
     // Aggiungi flag late submission se necessario
-    if (isLate) {
+    // The late penalty applies only to the race it was submitted late for
+    if (isLate && mode === "main") {
       payload.isLate = true;
       payload.latePenalty = TIME_CONSTANTS.LATE_SUBMISSION_PENALTY;
+    } else if (isLate) {
+      payload.isLateSprint = true;
+      payload.latePenaltySprint = TIME_CONSTANTS.LATE_SUBMISSION_PENALTY;
     }
 
     try {
-      await setDoc(doc(db, "races", form.raceId, "submissions", form.userId), payload, { merge: true });
+      // Submission, late flag and double joker are saved together (one batch):
+      // the security rules check the joker against the saved submission.
+      const subRef = doc(db, "races", form.raceId, "submissions", form.userId);
+      const rankRef = doc(db, "ranking", form.userId);
+      const batch = writeBatch(db);
+      batch.set(subRef, payload, { merge: true });
+
+      // Ranking changes go in a single update: [fieldPath, value, ...]
+      const rankUpdate = [];
 
       // Se late submission, marca utente come "ha usato"
       if (isLate) {
-        await updateDoc(doc(db, "ranking", form.userId), {
-          usedLateSubmission: true
-        });
-        setUserUsedLateSubmission(true);
+        rankUpdate.push("usedLateSubmission", true);
       }
 
-      // Gestione jolly2 - logic for adding/removing double joker
+      // Gestione jolly2 - ledger ranking.jolly2Races = { raceId: true }
+      let jollyChange = 0;
       if (mode === "main") {
         const hasJolly2Now = Boolean(form.jolly2);
         const hadJolly2Before = existingJolly2;
+        const jollyRace = new FieldPath("jolly2Races", form.raceId);
 
         if (hasJolly2Now && !hadJolly2Before) {
-          // Adding jolly2 for the first time → decrement
-          await updateDoc(doc(db, "ranking", form.userId), { jolly: increment(-1) });
-          setUserJolly((p) => p - 1);
-          setExistingJolly2(true);
+          // Adding jolly2 → spend a joker for this race
+          rankUpdate.push(jollyRace, true, "jolly", increment(-1), "jollyRaceId", form.raceId);
+          jollyChange = -1;
         } else if (!hasJolly2Now && hadJolly2Before) {
-          // Removing jolly2 → refund the joker
-          await updateDoc(doc(db, "ranking", form.userId), { jolly: increment(1) });
-          setUserJolly((p) => p + 1);
-          setExistingJolly2(false);
+          // Removing jolly2 → refund the joker spent for this race. Lineups
+          // saved before the ledger existed have no entry: plain refund.
+          const rankSnap = await getDoc(rankRef);
+          if (rankSnap.data()?.jolly2Races?.[form.raceId]) {
+            rankUpdate.push(jollyRace, deleteField(), "jolly", increment(1), "jollyRaceId", form.raceId);
+          } else {
+            rankUpdate.push("jolly", increment(1), "jollyRaceId", form.raceId);
+          }
+          jollyChange = 1;
         }
-        // If hasJolly2Now && hadJolly2Before → no change needed
-        // If !hasJolly2Now && !hadJolly2Before → no change needed
+      }
+
+      if (rankUpdate.length > 0) {
+        const [firstField, firstValue, ...rest] = rankUpdate;
+        batch.update(rankRef, firstField, firstValue, ...rest);
+      }
+
+      await batch.commit();
+
+      if (isLate) setUserUsedLateSubmission(true);
+      if (mode === "main") {
+        setUserJolly((p) => p + jollyChange);
+        setExistingJolly2(Boolean(form.jolly2));
       }
 
       setFlash({

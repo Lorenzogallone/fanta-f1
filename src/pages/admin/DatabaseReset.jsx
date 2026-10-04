@@ -19,9 +19,10 @@ import {
 import {
   collection,
   getDocs,
-  writeBatch,
+  doc,
 } from "firebase/firestore";
 import { db } from "../../services/firebase";
+import { commitWrites } from "../../services/pointsCalculator";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../hooks/useLanguage";
 import { useTimezone } from "../../hooks/useTimezone";
@@ -118,24 +119,29 @@ export default function DatabaseReset({ participants, races, onDataChange }) {
     if (confirmText !== "RESET") return;
     setResetting(true); setMessage(null);
     try {
-      const batch = writeBatch(db);
+      // Writes are split in batches of max 450 (Firestore limit is 500)
+      const writes = [];
       if (resetType === "submissions" || resetType === "all") {
         const racesSnap = await getDocs(collection(db, "races"));
         for (const raceDoc of racesSnap.docs) {
           const subsSnap = await getDocs(collection(db, "races", raceDoc.id, "submissions"));
-          subsSnap.docs.forEach((subDoc) => batch.delete(subDoc.ref));
+          subsSnap.docs.forEach((subDoc) => writes.push((b) => b.delete(subDoc.ref)));
         }
       }
       if (resetType === "ranking" || resetType === "all") {
         const rankSnap = await getDocs(collection(db, "ranking"));
         rankSnap.docs.forEach((userDoc) => {
-          batch.update(userDoc.ref, {
+          writes.push((b) => b.update(userDoc.ref, {
             puntiTotali: 0, jolly: 0, pointsByRace: {},
             championshipPts: 0, championshipPiloti: [], championshipCostruttori: [],
-          });
+            // new season: late submission available again, no jolly history
+            usedLateSubmission: false, jolly2Races: {}, championshipJollyAwarded: 0,
+          }));
         });
+        // Last season's championship results must not affect the new one
+        writes.push((b) => b.delete(doc(db, "championship", "results")));
       }
-      await batch.commit();
+      await commitWrites(writes);
       setMessage({ type: "success", text: t("success.deleted") });
       setShowResetModal(false); setConfirmText("");
     } catch (err) {
