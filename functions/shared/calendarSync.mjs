@@ -23,6 +23,7 @@ import {
 /** Fields kept in sync with the official calendar (and lockable) */
 export const SYNC_FIELDS = ["name", "raceUTC", "qualiUTC", "sprintUTC", "qualiSprintUTC"];
 export const DATE_FIELDS = ["raceUTC", "qualiUTC", "sprintUTC", "qualiSprintUTC"];
+const REQUIRED_DATE_FIELDS = ["raceUTC", "qualiUTC"];
 
 /**
  * Compares a stored field with the official value
@@ -140,6 +141,10 @@ export function computeCalendarDiff(dbRaces, apiRaces, now = new Date()) {
       const from = race[field] ?? null;
       const to = api[field] ?? null;
       if (sameValue(field, from, to)) continue;
+      // Race and qualifying dates always exist: a missing value in the API is
+      // incomplete data, never a reason to wipe the stored date (the lineup
+      // deadline depends on it). Sprint dates may legitimately disappear.
+      if (to == null && REQUIRED_DATE_FIELDS.includes(field)) continue;
       updates.push({
         id: race.id,
         raceName: race.name,

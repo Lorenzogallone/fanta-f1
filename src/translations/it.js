@@ -231,6 +231,7 @@ export const it = {
 
   // Statistics
   statistics: {
+    championshipStep: "Punti campionato (formazioni piloti e scuderie)",
     title: "Statistiche Campionato",
     currentRanking: "Classifica Attuale",
     generalRanking: "Classifica Generale",
@@ -446,6 +447,7 @@ export const it = {
     errorLoadingRaces: "Errore nel caricamento delle gare.",
     errorLoadingSubmissions: "Impossibile caricare submissions.",
     fetchingFromAPI: "🔄 Caricamento risultati da API per {race}...",
+    raceNotFinished: "La gara non è ancora terminata. I risultati saranno disponibili dopo la fine della gara.",
     apiResultsLoaded: "✅ Risultati caricati. Controlla e conferma.",
     apiNoResults: "⚠️ Risultati non ancora disponibili per questa gara. Inserisci manualmente.",
     apiError: "⚠️ Impossibile caricare risultati da API. Inserisci manualmente.",

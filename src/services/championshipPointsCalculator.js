@@ -84,12 +84,16 @@ export async function calculateChampionshipPoints() {
     // Step 7: Prepare ranking update (include jolly if applicable)
     const updateData = {
       championshipPts: totalChampionshipPoints,
+      championshipJollyAwarded: jollyBonus,
       puntiTotali: increment(delta),
     };
 
-    // Add jolly bonus if applicable
-    if (jollyBonus > 0) {
-      updateData.jolly = increment(jollyBonus);
+    // Jolly bonus: on a recalculation only the difference is applied. Data saved
+    // before this field existed is assumed to have been awarded consistently.
+    const prevJollyBonus = data.championshipJollyAwarded ?? (prevPts !== 0 ? jollyBonus : 0);
+    const jollyDelta = jollyBonus - prevJollyBonus;
+    if (jollyDelta !== 0) {
+      updateData.jolly = increment(jollyDelta);
     }
 
     writes.push(

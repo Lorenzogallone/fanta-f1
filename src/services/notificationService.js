@@ -9,12 +9,18 @@
  * - Notification.requestPermission() must be called directly from a user gesture
  */
 
-import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { doc, updateDoc, arrayRemove, runTransaction } from "firebase/firestore";
 import { db, app } from "./firebase";
 import { warn, error as logError } from "../utils/logger";
 
 /** VAPID public key for Web Push (set in .env) */
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+
+const TOKEN_KEY = "fanta-f1-fcm-token";
+const ENABLED_KEY = "fanta-f1-notifications-enabled";
+const LAST_SYNC_KEY = "fanta-f1-fcm-last-sync";
+/** Re-confirm the token in Firestore at most once per week (self-healing). */
+const RESYNC_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * Checks if the app is running as an installed PWA (standalone mode).
@@ -65,28 +71,19 @@ function waitForServiceWorker(timeoutMs = 10000) {
 }
 
 /**
- * Sends the Firebase config to the active service worker so it can
- * initialise Firebase Messaging for background push handling.
- * @param {ServiceWorkerRegistration} [reg]
+ * Retrieves the FCM token bound to the app's service worker registration.
+ * Requires notification permission to be already granted.
+ * @param {ServiceWorkerRegistration} registration
+ * @returns {Promise<string|null>}
  */
-async function sendConfigToServiceWorker(reg) {
-  if (!reg) reg = await waitForServiceWorker(5000);
-  if (!reg?.active) return;
-
-  const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID,
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
-  };
-
-  reg.active.postMessage({
-    type: "FIREBASE_CONFIG",
-    config: firebaseConfig,
+async function fetchFcmToken(registration) {
+  const { getMessaging, getToken } = await import("firebase/messaging");
+  const messaging = getMessaging(app);
+  const token = await getToken(messaging, {
+    vapidKey: VAPID_KEY,
+    serviceWorkerRegistration: registration,
   });
+  return token || null;
 }
 
 /**
@@ -125,26 +122,19 @@ export async function requestNotificationPermission(userId) {
       return { success: false, error: "no_service_worker" };
     }
 
-    await sendConfigToServiceWorker(registration);
-
-    const { getMessaging, getToken } = await import("firebase/messaging");
-    const messaging = getMessaging(app);
-
-    const token = await getToken(messaging, {
-      vapidKey: VAPID_KEY,
-      serviceWorkerRegistration: registration,
-    });
-
+    const token = await fetchFcmToken(registration);
     if (!token) {
       return { success: false, error: "no_token" };
     }
 
-    // Save token to Firestore
-    await saveFcmToken(userId, token);
+    // Save token to Firestore, replacing this device's previous token (if any)
+    // so the same device never ends up registered twice.
+    await saveFcmToken(userId, token, localStorage.getItem(TOKEN_KEY));
 
     // Store locally for quick state checks
-    localStorage.setItem("fanta-f1-fcm-token", token);
-    localStorage.setItem("fanta-f1-notifications-enabled", "true");
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(ENABLED_KEY, "true");
+    localStorage.setItem(LAST_SYNC_KEY, String(Date.now()));
 
     return { success: true, token };
   } catch (err) {
@@ -154,35 +144,62 @@ export async function requestNotificationPermission(userId) {
 }
 
 /**
- * Saves an FCM token to the user's Firestore document.
+ * Saves an FCM token to the user's Firestore document. If this device had a
+ * different token before (token rotation, re-enable), the old one is removed
+ * in the same transaction so the device receives each notification once.
  * @param {string} userId
  * @param {string} token
+ * @param {string|null} [previousToken]
  */
-async function saveFcmToken(userId, token) {
+async function saveFcmToken(userId, token, previousToken = null) {
   const userRef = doc(db, "users", userId);
-  await updateDoc(userRef, {
-    fcmTokens: arrayUnion(token),
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(userRef);
+    const current = Array.isArray(snap.data()?.fcmTokens) ? snap.data().fcmTokens : [];
+    const next = current.filter((t) => t !== previousToken && t !== token);
+    next.push(token);
+    const unchanged = next.length === current.length && next.every((t) => current.includes(t));
+    if (!unchanged) tx.update(userRef, { fcmTokens: next });
   });
 }
 
 /**
- * Disables notifications: removes the FCM token from Firestore and clears local state.
+ * Disables notifications: invalidates this device's FCM token, removes it from
+ * Firestore and clears local state.
  * @param {string} userId
  * @returns {Promise<{success: boolean}>}
  */
 export async function disableNotifications(userId) {
   try {
-    const token = localStorage.getItem("fanta-f1-fcm-token");
+    const tokens = new Set([localStorage.getItem(TOKEN_KEY)]);
 
-    if (token && userId) {
+    // Invalidate this device's token on FCM too, so a stale copy (e.g. still
+    // stored under another account) can no longer deliver to this device.
+    // getToken first binds messaging to the app's SW registration (otherwise
+    // deleteToken would try to register a default SW that doesn't exist).
+    try {
+      const registration = await waitForServiceWorker(5000);
+      if (registration && getNotificationPermission() === "granted" && VAPID_KEY) {
+        const current = await fetchFcmToken(registration);
+        tokens.add(current);
+        const { getMessaging, deleteToken } = await import("firebase/messaging");
+        await deleteToken(getMessaging(app));
+      }
+    } catch (err) {
+      warn("Failed to delete FCM token:", err);
+    }
+
+    tokens.delete(null);
+    if (tokens.size > 0 && userId) {
       const userRef = doc(db, "users", userId);
       await updateDoc(userRef, {
-        fcmTokens: arrayRemove(token),
+        fcmTokens: arrayRemove(...tokens),
       });
     }
 
-    localStorage.removeItem("fanta-f1-fcm-token");
-    localStorage.removeItem("fanta-f1-notifications-enabled");
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(ENABLED_KEY);
+    localStorage.removeItem(LAST_SYNC_KEY);
 
     return { success: true };
   } catch (err) {
@@ -197,36 +214,36 @@ export async function disableNotifications(userId) {
  */
 export function isNotificationsEnabled() {
   return (
-    localStorage.getItem("fanta-f1-notifications-enabled") === "true" &&
+    localStorage.getItem(ENABLED_KEY) === "true" &&
     getNotificationPermission() === "granted"
   );
 }
 
 /**
- * Sets up foreground message listener to show in-app notifications.
- * Also sends Firebase config to the SW for background push handling.
+ * Keeps this device's FCM token up to date for users who already enabled
+ * notifications. FCM tokens can rotate: when that happens the new token
+ * replaces the old one in Firestore, so the user keeps receiving notifications
+ * without duplicates. Runs silently (no permission prompt).
+ * @param {string} userId
  */
-export async function setupForegroundListener() {
+export async function syncFcmToken(userId) {
   try {
-    // Always send config to SW so background push works
-    await sendConfigToServiceWorker();
+    if (!userId || !VAPID_KEY || !isNotificationsEnabled()) return;
 
-    if (!isNotificationsEnabled()) return;
+    const registration = await waitForServiceWorker(10000);
+    if (!registration) return;
 
-    const { getMessaging, onMessage } = await import("firebase/messaging");
-    const messaging = getMessaging(app);
+    const token = await fetchFcmToken(registration);
+    if (!token) return;
 
-    onMessage(messaging, (payload) => {
-      if (payload.notification) {
-        const { title, body } = payload.notification;
-        new Notification(title, {
-          body,
-          icon: "/FantaF1_Logo_big.png",
-          badge: "/FantaF1_Logo_big.png",
-        });
-      }
-    });
+    const storedToken = localStorage.getItem(TOKEN_KEY);
+    const lastSync = Number(localStorage.getItem(LAST_SYNC_KEY)) || 0;
+    if (token === storedToken && Date.now() - lastSync < RESYNC_INTERVAL_MS) return;
+
+    await saveFcmToken(userId, token, storedToken);
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(LAST_SYNC_KEY, String(Date.now()));
   } catch (err) {
-    warn("Failed to set up foreground listener:", err);
+    warn("Failed to sync FCM token:", err);
   }
 }

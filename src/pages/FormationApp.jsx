@@ -30,6 +30,7 @@ import {
   onSnapshot,
   getDoc,
   increment,
+  deleteField,
   Timestamp,
 } from "firebase/firestore";
 import Select from "react-select";
@@ -165,9 +166,9 @@ export default function FormationApp() {
 
   // Race and sprint deadline status helpers
   const now = Date.now();
-  const qualiMs = race?.qualiUTC.seconds * 1000;
+  const qualiMs = race?.qualiUTC?.seconds * 1000;
   const sprMs = race?.qualiSprintUTC?.seconds * 1000;
-  const mainOpen = race && now < qualiMs;
+  const mainOpen = Boolean(race?.qualiUTC) && now < qualiMs;
   const sprOpen = race?.qualiSprintUTC && now < sprMs;
   const isSprintRace = Boolean(race?.qualiSprintUTC);
 
@@ -410,7 +411,9 @@ export default function FormationApp() {
         mainP2: form.P2.value,
         mainP3: form.P3.value,
         mainJolly: form.jolly.value,
-        ...(form.jolly2 ? { mainJolly2: form.jolly2.value } : {}),
+        // Removing the double joker must delete the field, otherwise the merge
+        // keeps the old value (and the joker would be refunded while still in use)
+        mainJolly2: form.jolly2 ? form.jolly2.value : deleteField(),
       });
     } else {
       Object.assign(payload, {

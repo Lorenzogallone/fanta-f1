@@ -31,6 +31,7 @@ import {
   isNotificationSupported,
   isNotificationsEnabled,
   requestNotificationPermission,
+  syncFcmToken,
 } from "../services/notificationService";
 
 const STORAGE_KEY = "fanta-f1-notification-prompt-dismissed";
@@ -40,6 +41,12 @@ export default function NotificationPromptModal() {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Users who already enabled notifications: keep this device's token fresh
+  // (handles FCM token rotation without duplicates).
+  useEffect(() => {
+    if (user?.uid) syncFcmToken(user.uid);
+  }, [user?.uid]);
 
   useEffect(() => {
     if (!user) return;

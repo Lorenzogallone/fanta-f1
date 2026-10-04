@@ -23,6 +23,7 @@ import { POINTS } from "../constants/racing";
 import { useF1Data } from "../hooks/useF1Data";
 import { buildDriverOptions, buildTeamOptions, findOptionOrCreate } from "../utils/f1SelectOptions";
 import RaceHistoryCard from "../components/RaceHistoryCard";
+import ChampionshipSubmissions from "../components/ChampionshipSubmissions";
 import Select from "react-select";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
@@ -118,6 +119,8 @@ function CalculatePointsContent() {
   const [loadingSubs, setLoadingSubs] = useState(true);
   const [rankingMap,setRankingMap] = useState({});
   const [errSubs,   setErrSubs]    = useState(null);
+  // Raw setters, wrapped by the auto-fetch effect to drop stale async results
+  const stateSetters = { setFormRace, setMsgRace, setFetchingResults, setSubs, setLoadingSubs, setErrSubs };
 
   // Championship state
   const [formChamp,setFormChamp]   = useState({
@@ -125,6 +128,7 @@ function CalculatePointsContent() {
   });
   const [savingChamp,setSavingChamp]=useState(false);
   const [msgChamp,setMsgChamp]     = useState(null);
+  const [champRefresh,setChampRefresh] = useState(0);
 
   /**
    * Load race list (selects first race not yet calculated)
@@ -206,6 +210,17 @@ useEffect(() => {
 useEffect(() => {
   if (!race) return;
 
+  // If the admin switches race while this one is still loading, ignore the
+  // late results: they must never end up in the form of the newly selected race.
+  let cancelled = false;
+  const guard = (fn) => (...args) => { if (!cancelled) fn(...args); };
+  const setFormRace = guard(stateSetters.setFormRace);
+  const setMsgRace = guard(stateSetters.setMsgRace);
+  const setFetchingResults = guard(stateSetters.setFetchingResults);
+  const setSubs = guard(stateSetters.setSubs);
+  const setLoadingSubs = guard(stateSetters.setLoadingSubs);
+  const setErrSubs = guard(stateSetters.setErrSubs);
+
   (async () => {
     setFetchingResults(true);
     setMsgRace(null);
@@ -242,7 +257,7 @@ useEffect(() => {
         });
         setMsgRace({
           variant:"info",
-          msg: t("calculate.raceNotFinished", "La gara non è ancora terminata. I risultati saranno disponibili dopo la fine della gara.")
+          msg: t("calculate.raceNotFinished")
         });
         setFetchingResults(false);
       } else {
@@ -310,6 +325,8 @@ useEffect(() => {
     setLoadingSubs(false);
     setFetchingResults(false);
   });
+
+  return () => { cancelled = true; };
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [race]);
 
@@ -383,6 +400,7 @@ useEffect(() => {
       // Save ranking snapshot after championship calculation
       await saveRankingSnapshot("championship", null);
       setMsgChamp({variant:"success",msg:res});
+      setChampRefresh(Date.now());
 
       // Create automatic backup after successful calculation (non-blocking)
       createAndSaveBackup("auto_championship", {
@@ -635,6 +653,10 @@ useEffect(() => {
                     </Form>
                   </Card.Body>
                 </Card>
+              </Col>
+              {/* ---------- LINEUPS ---------- */}
+              <Col xs={12} lg={10}>
+                <ChampionshipSubmissions refresh={champRefresh} showPoints={true} />
               </Col>
             </Row>
           </Tab.Pane>

@@ -231,6 +231,7 @@ export const en = {
 
   // Statistics
   statistics: {
+    championshipStep: "Championship points (driver and constructor lineups)",
     title: "Championship Statistics",
     currentRanking: "Current Ranking",
     generalRanking: "General Ranking",
@@ -446,6 +447,7 @@ export const en = {
     errorLoadingRaces: "Error loading races.",
     errorLoadingSubmissions: "Unable to load submissions.",
     fetchingFromAPI: "🔄 Loading results from API for {race}...",
+    raceNotFinished: "The race has not finished yet. Results will be available once the race is over.",
     apiResultsLoaded: "✅ Results loaded. Please review and confirm.",
     apiNoResults: "⚠️ Results not yet available for this race. Enter manually.",
     apiError: "⚠️ Unable to load results from API. Enter manually.",

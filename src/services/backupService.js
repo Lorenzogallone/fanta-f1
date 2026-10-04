@@ -13,7 +13,6 @@ import {
   deleteDoc,
   query,
   orderBy,
-  limit,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { log, error } from "../utils/logger";

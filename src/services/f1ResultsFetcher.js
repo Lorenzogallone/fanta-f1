@@ -198,7 +198,7 @@ export async function fetchRaceResults(season, localRound, raceDate, officialRou
                 }
               }
             }
-          } catch (err) {
+          } catch {
             log(`ℹ️ No sprint for Round ${round}`);
           }
 
@@ -294,7 +294,7 @@ export async function areResultsAvailable(season, round) {
     const races = data.MRData?.RaceTable?.Races;
 
     return races && races.length > 0 && races[0].Results && races[0].Results.length >= 3;
-  } catch (error) {
+  } catch {
     return false;
   }
 }

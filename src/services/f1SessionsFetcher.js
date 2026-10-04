@@ -606,7 +606,7 @@ export async function areSessionsAvailable(season, round) {
       sessions.hasSprint ||
       sessions.hasRace
     );
-  } catch (error) {
+  } catch {
     return false;
   }
 }

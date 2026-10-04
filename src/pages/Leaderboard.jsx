@@ -45,7 +45,7 @@ export default function Leaderboard() {
         snap.docs.forEach((d, i) => { map[d.id] = i + 1; });
         setRaceOrder(map);
       })
-      .catch(() => {});
+      .catch(() => setRaceOrder({}));
   }, []);
 
   useEffect(() => {
@@ -54,10 +54,11 @@ export default function Leaderboard() {
       const rawRows = snap.docs.map((d) => ({
         userId: d.id,
         name: d.data().name,
-        pts: d.data().puntiTotali,
+        pts: d.data().puntiTotali || 0,
         jolly: d.data().jolly ?? 0,
         photoURL: d.data().photoURL || "",
         pointsByRace: d.data().pointsByRace || {},
+        championshipPts: d.data().championshipPts || 0,
       }));
 
       // Helper: assign positions with tie handling (competition ranking)
@@ -71,20 +72,15 @@ export default function Leaderboard() {
         return map;
       };
 
-      // Find the last calculated race using date-based ordering (preferred) or ID parsing (fallback)
+      // Find the last calculated race by date. Until the race order is known
+      // we don't show position changes at all, rather than guessing from IDs.
       const allRaceIds = new Set();
       rawRows.forEach((r) => Object.keys(r.pointsByRace).forEach((id) => allRaceIds.add(id)));
       let lastRaceId = null;
-      if (allRaceIds.size > 0) {
-        if (raceOrder && Object.keys(raceOrder).length > 0) {
-          lastRaceId = [...allRaceIds].sort((a, b) => (raceOrder[b] || 0) - (raceOrder[a] || 0))[0];
-        } else {
-          lastRaceId = [...allRaceIds].sort((a, b) => {
-            const ra = parseInt(a.match(/^r(\d+)/)?.[1] || "0", 10);
-            const rb = parseInt(b.match(/^r(\d+)/)?.[1] || "0", 10);
-            return rb - ra;
-          })[0];
-        }
+      if (raceOrder && Object.keys(raceOrder).length > 0 && allRaceIds.size > 0) {
+        lastRaceId = [...allRaceIds].reduce((best, id) =>
+          (raceOrder[id] || 0) > (raceOrder[best] || 0) ? id : best
+        );
       }
 
       // Current positions (from puntiTotali as displayed)
@@ -96,22 +92,26 @@ export default function Leaderboard() {
         return { ...row, position: currentPos };
       });
 
-      // Position change: use puntiTotali (consistent with displayed ranking)
-      // Compare current total vs total minus last race's points
-      if (lastRaceId && allRaceIds.size > 1) {
+      // Position change since the last scoring event. The end-of-season
+      // championship points (driver/constructor lineups) are assigned after the
+      // last race, so once they exist they are the last event; otherwise it's
+      // the last calculated race. "Before" = current total minus that event.
+      const championshipAssigned = rawRows.some((r) => r.championshipPts !== 0);
+      const lastEventPts = (r) => {
+        if (championshipAssigned) return r.championshipPts;
+        const lastEntry = r.pointsByRace[lastRaceId];
+        return lastEntry ? (lastEntry.mainPts || 0) + (lastEntry.sprintPts || 0) : 0;
+      };
+      if (championshipAssigned || (lastRaceId && allRaceIds.size > 1)) {
         const currRace = rawRows.map((r) => ({
           userId: r.userId,
           sortPts: r.pts,
         })).sort((a, b) => b.sortPts - a.sortPts);
 
-        const prevRace = rawRows.map((r) => {
-          const lastEntry = r.pointsByRace[lastRaceId];
-          const lastPts = lastEntry ? (lastEntry.mainPts || 0) + (lastEntry.sprintPts || 0) : 0;
-          return {
-            userId: r.userId,
-            sortPts: r.pts - lastPts,
-          };
-        }).sort((a, b) => b.sortPts - a.sortPts);
+        const prevRace = rawRows.map((r) => ({
+          userId: r.userId,
+          sortPts: r.pts - lastEventPts(r),
+        })).sort((a, b) => b.sortPts - a.sortPts);
 
         const currPosMap = assignPositions(currRace);
         const prevPosMap = assignPositions(prevRace);

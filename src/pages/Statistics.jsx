@@ -128,7 +128,7 @@ export default function Statistics() {
 
     const points = filteredRaces.map((race, idx) => {
       const raceIndex = startIndex + idx;
-      const dataPoint = { name: `R${race.round}`, fullName: race.name };
+      const dataPoint = { name: race.label, fullName: race.isChampionship ? t("statistics.championshipStep") : race.name };
       topPlayers.forEach(player => {
         const history = statistics.playersData[player.userId] || [];
         const raceData = history[raceIndex];
@@ -139,7 +139,7 @@ export default function Statistics() {
 
     const positions = filteredRaces.map((race, idx) => {
       const raceIndex = startIndex + idx;
-      const dataPoint = { name: `R${race.round}`, fullName: race.name };
+      const dataPoint = { name: race.label, fullName: race.isChampionship ? t("statistics.championshipStep") : race.name };
       topPlayers.forEach(player => {
         const history = statistics.playersData[player.userId] || [];
         const raceData = history[raceIndex];
@@ -149,7 +149,7 @@ export default function Statistics() {
     });
 
     return { pointsChartData: points, positionChartData: positions };
-  }, [statistics, racesFilter, topPlayers]);
+  }, [statistics, racesFilter, topPlayers, t]);
 
   useEffect(() => {
     // Load ranking and statistics in parallel for faster initial render
@@ -257,6 +257,7 @@ export default function Statistics() {
           firstName: profileData.firstName || "",
           lastName: profileData.lastName || "",
           photoURL: profileData.photoURL || "",
+          pointsByRace: userData.pointsByRace || {},
           raceHistory: [],
           totalCompletedRaces: 0,
         };
@@ -929,6 +930,7 @@ export default function Statistics() {
                 lastName={playerStats.lastName}
                 photoURL={playerStats.photoURL}
                 raceHistory={playerStats.raceHistory}
+                pointsByRace={playerStats.pointsByRace}
                 totalCompletedRaces={playerStats.totalCompletedRaces}
                 showCharts={!loadingRaceHistory}
                 loadingHistory={loadingRaceHistory}
@@ -939,7 +941,8 @@ export default function Statistics() {
                         .filter(d => d.position !== undefined)
                         .map(d => ({
                           round: d.raceRound,
-                          name: d.raceName,
+                          label: d.raceLabel,
+                          name: d.isChampionship ? t("statistics.championshipStep") : d.raceName,
                           position: d.position,
                         }))
                     : []

@@ -89,6 +89,7 @@ export async function calculatePointsForRace(raceId, official) {
 
     // Calculate MAIN race points
     let mainPts;
+    let perfectPodium = false;
     if (!s.mainP1) {
       mainPts = PENALTY_EMPTY_LIST;
     } else {
@@ -99,11 +100,10 @@ export async function calculatePointsForRace(raceId, official) {
       if (s.mainP3 === P3) basePts += PTS_MAIN[3];
 
       // Special rule: perfect podium (29 base points) → becomes 30 + earn an extra jolly
+      // (the jolly is awarded below, only once per race even when recalculated)
       if (basePts === 29) {
         basePts += 1; // 29 → 30
-        batchWrites.push(
-          updateDoc(doc(db, "ranking", userId), { jolly: increment(1) })
-        );
+        perfectPodium = true;
       }
 
       // Add jolly bonuses on top of base points
@@ -151,22 +151,33 @@ export async function calculatePointsForRace(raceId, official) {
     // Update ranking with complete points map
     const rankRef  = doc(db, "ranking", userId);
     const rankSnap = await getDoc(rankRef);
-    const oldPB    = rankSnap.exists() ? rankSnap.data().pointsByRace || {} : {};
+    // Participant removed from the game: keep the submission, skip the ranking
+    if (!rankSnap.exists()) continue;
+    const oldPB    = rankSnap.data().pointsByRace || {};
+    const champPts = rankSnap.data().championshipPts || 0;
+
+    // Perfect podium jolly: award it once per race. On a recalculation only the
+    // difference is applied (e.g. results corrected). Entries saved before this
+    // flag existed are assumed to have been awarded consistently.
+    const prevEntry = oldPB[raceId];
+    const prevPerfect = prevEntry ? (prevEntry.perfectPodium ?? perfectPodium) : false;
+    const jollyDelta = (perfectPodium ? 1 : 0) - (prevPerfect ? 1 : 0);
 
     const newPointsByRace = {
       ...oldPB,
-      [raceId]: { mainPts, sprintPts },
+      [raceId]: { mainPts, sprintPts, perfectPodium },
     };
 
     const newTotal = Object.values(newPointsByRace).reduce(
       (sum, { mainPts: m = 0, sprintPts: sp = 0 }) => sum + m + sp,
       0
-    );
+    ) + champPts; // keep championship points already awarded
 
     batchWrites.push(
       updateDoc(rankRef, {
         pointsByRace: newPointsByRace,
         puntiTotali:  newTotal,
+        ...(jollyDelta !== 0 ? { jolly: increment(jollyDelta) } : {}),
       })
     );
   }
@@ -189,20 +200,25 @@ export async function calculatePointsForRace(raceId, official) {
     }
 
     const oldPB = userDoc.data().pointsByRace || {};
+    const champPts = userDoc.data().championshipPts || 0;
+    // Lineup removed after a previous calculation with a perfect podium: take
+    // back that jolly
+    const revokeJolly = oldPB[raceId]?.perfectPodium === true;
     const newPointsByRace = {
       ...oldPB,
-      [raceId]: { mainPts, sprintPts },
+      [raceId]: { mainPts, sprintPts, perfectPodium: false },
     };
 
     const newTotal = Object.values(newPointsByRace).reduce(
       (sum, { mainPts: m = 0, sprintPts: sp = 0 }) => sum + m + sp,
       0
-    );
+    ) + champPts; // keep championship points already awarded
 
     batchWrites.push(
       updateDoc(doc(db, "ranking", userId), {
         pointsByRace: newPointsByRace,
         puntiTotali:  newTotal,
+        ...(revokeJolly ? { jolly: increment(-1) } : {}),
       })
     );
   }

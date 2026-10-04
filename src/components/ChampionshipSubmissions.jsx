@@ -18,7 +18,7 @@ import { error as logError } from "../utils/logger";
  * @param {number} props.refresh - Timestamp to trigger data refresh
  * @returns {JSX.Element} Championship submissions table
  */
-export default function ChampionshipSubmissions({ refresh, currentUserId = null, deadlineMs = null }) {
+export default function ChampionshipSubmissions({ refresh, currentUserId = null, deadlineMs = null, showPoints = false }) {
   const { isDark } = useTheme();
   const { t } = useLanguage();
   const { getDriverTeam, getTeamLogo } = useF1Data();
@@ -35,15 +35,16 @@ export default function ChampionshipSubmissions({ refresh, currentUserId = null,
         const list = snap.docs
           .map((d) => {
             const data = d.data();
-            if (
-              Array.isArray(data.championshipPiloti) &&
-              Array.isArray(data.championshipCostruttori)
-            ) {
+            const pilots = Array.isArray(data.championshipPiloti) ? data.championshipPiloti : [];
+            const constructors = Array.isArray(data.championshipCostruttori) ? data.championshipCostruttori : [];
+            // Skip users who never submitted a championship lineup
+            if (pilots.length > 0 || constructors.length > 0) {
               return {
                 id: d.id,
                 name: data.name || d.id,
-                pilots: data.championshipPiloti,
-                constructors: data.championshipCostruttori,
+                pilots,
+                constructors,
+                points: data.championshipPts ?? 0,
               };
             }
             return null;
@@ -125,6 +126,7 @@ export default function ChampionshipSubmissions({ refresh, currentUserId = null,
                 <th>{t("leaderboard.player")}</th>
                 <th>{t("history.topDrivers")}</th>
                 <th>{t("history.topConstructors")}</th>
+                {showPoints && <th className="text-center">{t("common.points")}</th>}
               </tr>
             </thead>
             <tbody>
@@ -179,6 +181,7 @@ export default function ChampionshipSubmissions({ refresh, currentUserId = null,
                       );
                     })}
                   </td>
+                  {showPoints && <td className="text-center fw-bold">{s.points}</td>}
                 </tr>
               ))}
             </tbody>
@@ -194,4 +197,5 @@ ChampionshipSubmissions.propTypes = {
   refresh: PropTypes.number,
   currentUserId: PropTypes.string,
   deadlineMs: PropTypes.number,
+  showPoints: PropTypes.bool,
 };
