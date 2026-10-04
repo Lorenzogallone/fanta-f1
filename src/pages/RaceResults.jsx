@@ -376,7 +376,7 @@ export default function RaceResults() {
           const round = selectedRaceToLoad.round;
 
           try {
-            const sessionData = await fetchAllSessions(season, round);
+            const sessionData = await fetchAllSessions(season, round, selectedRaceToLoad.raceUTC);
             const hasAnySession = sessionData.hasQualifying || sessionData.hasSprint || sessionData.hasRace;
 
             setSessions({
@@ -512,7 +512,7 @@ export default function RaceResults() {
       setLoadingSessions(true);
       setSessions(null);
 
-      const sessionData = await fetchAllSessions(season, round);
+      const sessionData = await fetchAllSessions(season, round, race.raceUTC);
 
       const hasAnySession = sessionData.hasQualifying || sessionData.hasSprint || sessionData.hasRace;
 

@@ -5,60 +5,68 @@
  */
 
 import { resolveDriver } from './f1DataResolver.js';
+import { resolveOfficialRound, findOpenF1Meeting } from './f1RaceMatcher.js';
+import { rateLimitedFetch } from './f1SessionsFetcher.js';
 import { log, error, warn } from '../utils/logger';
 
 const API_BASE_URL = "https://api.jolpi.ca/ergast/f1";  // HTTPS not HTTP!
 const OPENF1_API_BASE_URL = "https://api.openf1.org/v1";
 
 /**
+ * Fetches the top 3 drivers of an OpenF1 session
+ * @param {number} sessionKey - OpenF1 session key
+ * @returns {Promise<Array<string>|null>} Driver names [P1, P2, P3] or null
+ */
+async function fetchOpenF1Top3(sessionKey) {
+  const resultsResponse = await rateLimitedFetch(`${OPENF1_API_BASE_URL}/session_result?session_key=${sessionKey}`);
+  if (!resultsResponse.ok) return null;
+
+  const sessionResults = await resultsResponse.json();
+  if (!Array.isArray(sessionResults) || sessionResults.length < 3) return null;
+
+  const driversResponse = await rateLimitedFetch(`${OPENF1_API_BASE_URL}/drivers?session_key=${sessionKey}`);
+  const driverInfo = {};
+  if (driversResponse.ok) {
+    const drivers = await driversResponse.json();
+    drivers.forEach(d => {
+      // Use resolveDriver for consistent name mapping
+      const resolved = resolveDriver(
+        { givenName: d.first_name, familyName: d.last_name, permanentNumber: d.driver_number },
+        { name: d.team_name }
+      );
+      driverInfo[d.driver_number] = resolved?.displayName || `${d.first_name} ${d.last_name}`;
+    });
+  }
+
+  // Drivers without a classified position (DNF/DSQ) go last
+  const classified = sessionResults
+    .filter(r => Number.isInteger(r.position))
+    .sort((a, b) => a.position - b.position);
+
+  if (classified.length < 3) return null;
+  return classified.slice(0, 3).map(r => driverInfo[r.driver_number] || null);
+}
+
+/**
  * Fetches race results from OpenF1 API
  * @param {number} season - Season year
- * @param {number} round - Race round number
+ * @param {number} round - Official race round number
+ * @param {Date|Object|string} [raceDate] - Race date, used to match the meeting
  * @returns {Promise<Object|null>} Race results or null
  */
-async function fetchFromOpenF1(season, round) {
+async function fetchFromOpenF1(season, round, raceDate) {
   try {
     log(`[OpenF1] Fetching race results for ${season} R${round}...`);
 
-    // Step 1: Get all sessions for the year
-    const sessionsUrl = `${OPENF1_API_BASE_URL}/sessions?year=${season}`;
-    const sessionsResponse = await fetch(sessionsUrl);
-
-    if (!sessionsResponse.ok) {
-      warn(`[OpenF1] Failed to fetch sessions list: ${sessionsResponse.status}`);
-      return null;
-    }
-
-    const sessions = await sessionsResponse.json();
-
-    // Group sessions by meeting_key and sort by date
-    const meetingMap = {};
-    sessions.forEach(session => {
-      if (!meetingMap[session.meeting_key]) {
-        meetingMap[session.meeting_key] = {
-          date: session.date_start,
-          sessions: []
-        };
-      }
-      meetingMap[session.meeting_key].sessions.push(session);
-    });
-
-    // Sort meetings by date to get proper round order
-    const sortedMeetings = Object.entries(meetingMap)
-      .sort(([, a], [, b]) => new Date(a.date) - new Date(b.date))
-      .map(([key, data]) => ({ meeting_key: key, ...data }));
-
-    // Get the meeting for this round
-    const targetMeeting = sortedMeetings[round - 1];
-    if (!targetMeeting) {
+    // Step 1: Find the meeting by race date (robust to testing/cancelled meetings)
+    const meetingSessions = await findOpenF1Meeting(season, { raceDate, round, fetchFn: rateLimitedFetch });
+    if (!meetingSessions) {
       warn(`[OpenF1] No meeting found for ${season} R${round}`);
       return null;
     }
 
     // Find the Race session
-    const raceSession = targetMeeting.sessions.find(
-      s => s.session_name === "Race" || s.session_type === "Race"
-    );
+    const raceSession = meetingSessions.find(s => s.session_name === "Race");
 
     if (!raceSession) {
       warn(`[OpenF1] No race session found for ${season} R${round}`);
@@ -74,52 +82,26 @@ async function fetchFromOpenF1(season, round) {
       }
     }
 
-    const sessionKey = raceSession.session_key;
-    log(`[OpenF1] Found race session with key ${sessionKey}`);
+    log(`[OpenF1] Found race session with key ${raceSession.session_key}`);
 
-    // Step 2: Fetch race results (classification)
-    // Try /session_result endpoint first (beta but works for races)
-    const resultsUrl = `${OPENF1_API_BASE_URL}/session_result?session_key=${sessionKey}`;
-    const resultsResponse = await fetch(resultsUrl);
-
-    if (!resultsResponse.ok) {
-      warn(`[OpenF1] Session results not available: ${resultsResponse.status}`);
-      return null;
-    }
-
-    const sessionResults = await resultsResponse.json();
-
-    if (!sessionResults || sessionResults.length < 3) {
+    // Step 2: Fetch race classification (top 3)
+    const raceTop3 = await fetchOpenF1Top3(raceSession.session_key);
+    if (!raceTop3) {
       warn(`[OpenF1] Incomplete race results (less than 3 drivers)`);
       return null;
     }
 
-    // Step 3: Get driver info to map numbers to names
-    const driversUrl = `${OPENF1_API_BASE_URL}/drivers?session_key=${sessionKey}`;
-    const driversResponse = await fetch(driversUrl);
+    const mainResults = { P1: raceTop3[0], P2: raceTop3[1], P3: raceTop3[2] };
 
-    let driverInfo = {};
-    if (driversResponse.ok) {
-      const drivers = await driversResponse.json();
-      drivers.forEach(d => {
-        // Use resolveDriver for consistent name mapping
-        const resolved = resolveDriver(
-          { givenName: d.first_name, familyName: d.last_name, permanentNumber: d.driver_number },
-          { name: d.team_name }
-        );
-        driverInfo[d.driver_number] = resolved?.displayName || `${d.first_name} ${d.last_name}`;
-      });
+    // Step 3: Sprint (if this weekend had one)
+    let sprintResults = null;
+    const sprintSession = meetingSessions.find(s => s.session_name === "Sprint");
+    if (sprintSession) {
+      const sprintTop3 = await fetchOpenF1Top3(sprintSession.session_key);
+      if (sprintTop3) {
+        sprintResults = { SP1: sprintTop3[0], SP2: sprintTop3[1], SP3: sprintTop3[2] };
+      }
     }
-
-    // Sort results by position
-    sessionResults.sort((a, b) => a.position - b.position);
-
-    // Extract top 3
-    const mainResults = {
-      P1: driverInfo[sessionResults[0]?.driver_number] || null,
-      P2: driverInfo[sessionResults[1]?.driver_number] || null,
-      P3: driverInfo[sessionResults[2]?.driver_number] || null,
-    };
 
     log(`[OpenF1] ✅ Race results fetched:`, mainResults);
 
@@ -128,7 +110,7 @@ async function fetchFromOpenF1(season, round) {
       date: raceSession.date_start?.split('T')[0] || null,
       round: round,
       main: mainResults,
-      sprint: null, // Sprint handled separately if needed
+      sprint: sprintResults,
     };
 
   } catch (err) {
@@ -153,16 +135,23 @@ function normalizeDriverName(driver, constructor = null) {
 
 /**
  * Fetches results for a specific race
- * First tries Jolpica/Ergast API, then falls back to OpenF1 for recent races
+ * First tries Jolpica/Ergast API, then falls back to OpenF1 for recent races.
+ * When raceDate is given the race is matched by date, so local round numbers
+ * that differ from the official calendar still work.
  * @param {number} season - Season year (e.g., 2025)
- * @param {number} round - Race round number
+ * @param {number} localRound - Race round number stored in the app
+ * @param {Date|Object|string} [raceDate] - Race date (UTC)
  * @returns {Promise<Object|null>} Object with race and sprint results, or null if unavailable
  */
-export async function fetchRaceResults(season, round) {
-  log(`🔄 Fetching results for ${season} Round ${round}...`);
+export async function fetchRaceResults(season, localRound, raceDate) {
+  const round = await resolveOfficialRound(season, localRound, raceDate);
+  log(`🔄 Fetching results for ${season} Round ${round ?? `? (local R${localRound})`}...`);
 
   // STEP 1: Try Jolpica/Ergast API first (more reliable for historical data)
   try {
+    if (round === null) {
+      throw new Error("no official race matches this date");
+    }
     const raceUrl = `${API_BASE_URL}/${season}/${round}/results.json`;
     const raceResponse = await fetch(raceUrl);
 
@@ -235,7 +224,7 @@ export async function fetchRaceResults(season, round) {
   warn(`⚠️ Trying OpenF1 API fallback...`);
 
   try {
-    const openF1Result = await fetchFromOpenF1(season, round);
+    const openF1Result = await fetchFromOpenF1(season, round, raceDate);
 
     if (openF1Result) {
       log(`✅ Results fetched from OpenF1 fallback:`, openF1Result);

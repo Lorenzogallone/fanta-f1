@@ -6,6 +6,7 @@
 
 import { resolveDriver, resolveTeam } from './f1DataResolver.js';
 import { log, error, warn, info } from '../utils/logger';
+import { resolveOfficialRound, findOpenF1Meeting } from './f1RaceMatcher.js';
 
 const ERGAST_API_BASE_URL = "https://api.jolpi.ca/ergast/f1";
 const OPENF1_API_BASE_URL = "https://api.openf1.org/v1";
@@ -31,7 +32,7 @@ async function sleep(ms) {
  * @param {number} retryCount - Current retry attempt (default 0)
  * @returns {Promise<Response>} Fetch response
  */
-async function rateLimitedFetch(url, retryCount = 0) {
+export async function rateLimitedFetch(url, retryCount = 0) {
   const now = Date.now();
   const timeSinceLastRequest = now - lastOpenF1Request;
 
@@ -265,10 +266,11 @@ export async function fetchSprint(season, round) {
  * Fetches sprint qualifying results
  * Tries Jolpica/Ergast API first, falls back to OpenF1 API
  * @param {number} season - Season year
- * @param {number} round - Race round number
+ * @param {number} round - Official race round number
+ * @param {Date|Object|string} [raceDate] - Race date, used to match the OpenF1 meeting
  * @returns {Promise<Array|null>} Array of sprint qualifying results or null
  */
-export async function fetchSprintQualifying(season, round) {
+export async function fetchSprintQualifying(season, round, raceDate) {
   // STEP 1: Try Jolpica/Ergast API (may support sprint qualifying in newer versions)
   try {
     const url = `${ERGAST_API_BASE_URL}/${season}/${round}/sprint/qualifying.json`;
@@ -309,41 +311,12 @@ export async function fetchSprintQualifying(season, round) {
 
   // STEP 2: Fallback to OpenF1 API
   try {
-    const sessionsUrl = `${OPENF1_API_BASE_URL}/sessions?year=${season}`;
-    const sessionsResponse = await rateLimitedFetch(sessionsUrl);
-
-    if (!sessionsResponse.ok) {
-      warn(`[Sprint Quali] Failed to fetch sessions for ${season}: ${sessionsResponse.status}`);
-      return null;
-    }
-
-    const sessions = await sessionsResponse.json();
-    if (!sessions || sessions.length === 0) {
-      info(`[Sprint Quali] No sessions found for ${season} on OpenF1`);
-      return null;
-    }
-
-    // Group sessions by meeting and sort by date
-    const meetingMap = {};
-    sessions.forEach(session => {
-      if (!meetingMap[session.meeting_key]) {
-        meetingMap[session.meeting_key] = {
-          date: session.date_start,
-          sessions: []
-        };
-      }
-      meetingMap[session.meeting_key].sessions.push(session);
-    });
-
-    const sortedMeetings = Object.entries(meetingMap)
-      .sort(([, a], [, b]) => new Date(a.date) - new Date(b.date))
-      .map(([key, data]) => ({ meeting_key: key, ...data }));
-
-    const targetMeeting = sortedMeetings[round - 1];
-    if (!targetMeeting) {
+    const meetingSessions = await findOpenF1Meeting(season, { raceDate, round, fetchFn: rateLimitedFetch });
+    if (!meetingSessions) {
       warn(`[Sprint Quali] No meeting found for ${season} R${round}`);
       return null;
     }
+    const targetMeeting = { sessions: meetingSessions };
 
     // Log available sessions for debugging
     const availableSessions = targetMeeting.sessions.map(s =>
@@ -435,15 +408,25 @@ export async function fetchSprintQualifying(season, round) {
     }
 
     // Sort and format results
-    sessionResults.sort((a, b) => a.position - b.position);
+    sessionResults.sort((a, b) => (a.position ?? Infinity) - (b.position ?? Infinity));
 
-    return sessionResults.map(result => ({
-      position: result.position,
-      driver: driverInfo[result.driver_number]?.name || `Driver #${result.driver_number}`,
-      constructor: driverInfo[result.driver_number]?.team || "—",
-      time: result.time ? `${Math.floor(result.time / 60)}:${(result.time % 60).toFixed(3).padStart(6, '0')}` : "—",
-      gap: result.gap_to_leader ? `+${result.gap_to_leader.toFixed(3)}` : "—",
-    }));
+    return sessionResults.map(result => {
+      // Qualifying sessions return one value per segment (SQ1, SQ2, SQ3):
+      // use the last segment the driver set a time in
+      const durations = Array.isArray(result.duration) ? result.duration : [result.duration];
+      const segment = durations.map(d => typeof d === "number").lastIndexOf(true);
+      const bestTime = segment >= 0 ? durations[segment] : null;
+      const gaps = Array.isArray(result.gap_to_leader) ? result.gap_to_leader : [result.gap_to_leader];
+      const gap = segment >= 0 ? gaps[segment] : null;
+
+      return {
+        position: result.position,
+        driver: driverInfo[result.driver_number]?.name || `Driver #${result.driver_number}`,
+        constructor: driverInfo[result.driver_number]?.team || "—",
+        time: bestTime ? `${Math.floor(bestTime / 60)}:${(bestTime % 60).toFixed(3).padStart(6, '0')}` : "—",
+        gap: typeof gap === "number" && gap > 0 ? `+${gap.toFixed(3)}` : "—",
+      };
+    });
   } catch (err) {
     warn(`Sprint qualifying not available for ${season} R${round}:`, err.message);
     return null;
@@ -501,11 +484,28 @@ export async function fetchRace(season, round) {
 /**
  * Fetches all available sessions for a race
  * @param {number} season - Season year
- * @param {number} round - Race round number
+ * @param {number} localRound - Race round number stored in the app
+ * @param {Date|Object|string} [raceDate] - Race date (UTC), used to match the official round
  * @returns {Promise<Object>} Object with all session data
  */
-export async function fetchAllSessions(season, round) {
+export async function fetchAllSessions(season, localRound, raceDate) {
   try {
+    // Match the official round by date (local rounds can differ from the official calendar)
+    const round = await resolveOfficialRound(season, localRound, raceDate);
+    if (round === null) {
+      warn(`No official race matches ${season} local R${localRound}, skipping API fetch`);
+      return {
+        qualifying: null,
+        sprintQualifying: null,
+        sprint: null,
+        race: null,
+        hasQualifying: false,
+        hasSprintQualifying: false,
+        hasSprint: false,
+        hasRace: false,
+      };
+    }
+
     // Fetch critical sessions (Sprint, Qualifying, Race)
     const [sprint, qualifying, race] = await Promise.all([
       fetchSprint(season, round),
@@ -517,7 +517,7 @@ export async function fetchAllSessions(season, round) {
     let sprintQualifying = null;
     if (sprint !== null) {
       try {
-        sprintQualifying = await fetchSprintQualifying(season, round);
+        sprintQualifying = await fetchSprintQualifying(season, round, raceDate);
         if (sprintQualifying) {
           log(`✅ Sprint Qualifying loaded for ${season} R${round}`);
         }
@@ -537,7 +537,7 @@ export async function fetchAllSessions(season, round) {
       hasRace: race !== null,
     };
   } catch (err) {
-    error(`Error fetching sessions for ${season} R${round}:`, err);
+    error(`Error fetching sessions for ${season} R${localRound}:`, err);
     return {
       qualifying: null,
       sprintQualifying: null,

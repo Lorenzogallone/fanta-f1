@@ -282,7 +282,7 @@ useEffect(() => {
 
           setMsgRace({variant:"info", msg: t("calculate.fetchingFromAPI", { race: race.name }).replace("{race}", race.name)});
 
-          const apiResults = await fetchRaceResults(season, round);
+          const apiResults = await fetchRaceResults(season, round, raceDate);
 
           if (apiResults) {
             // Pre-fill with API results
