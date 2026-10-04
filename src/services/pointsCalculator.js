@@ -186,10 +186,15 @@ export async function calculatePointsForRace(raceId, official) {
     // difference is applied (e.g. results corrected). For entries saved before
     // this flag existed, the previous state comes from the previous results.
     const prevEntry = oldPB[raceId];
+    // A perfect podium scores at least 30 - 3 (late penalty), doubled in the
+    // double points race: lower previous scores (e.g. -3 for a lineup added
+    // later by the admin) mean the jolly was not awarded.
+    const prevMinPerfect = 27 * (previousOfficial?.doublePoints ? 2 : 1);
     const legacyPerfect = !!previousOfficial && !!s.mainP1
       && s.mainP1 === previousOfficial.P1
       && s.mainP2 === previousOfficial.P2
-      && s.mainP3 === previousOfficial.P3;
+      && s.mainP3 === previousOfficial.P3
+      && (prevEntry?.mainPts ?? 0) >= prevMinPerfect;
     const prevPerfect = prevEntry ? (prevEntry.perfectPodium ?? legacyPerfect) : false;
     const jollyDelta = (perfectPodium ? 1 : 0) - (prevPerfect ? 1 : 0);
 
