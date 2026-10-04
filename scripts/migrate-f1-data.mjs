@@ -148,7 +148,9 @@ const projected = races.map((r) => ({ ...r }));
 for (const fix of fixes) {
   const race = races.find((r) => r.id === fix.id);
   if (!race) { problems.push(`--fix: gara ${fix.id} non trovata`); continue; }
-  change(race, fix.field, fix.value, Timestamp.fromDate(fix.value));
+  if (toDate(race[fix.field])?.getTime() !== fix.value.getTime()) {
+    change(race, fix.field, fix.value, Timestamp.fromDate(fix.value));
+  }
   projected.find((r) => r.id === fix.id)[fix.field] = fix.value;
 }
 
