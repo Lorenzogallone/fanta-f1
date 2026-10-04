@@ -1,0 +1,29 @@
+{
+  "enabledPlugins": {
+    "claude-code-setup@claude-plugins-official": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | grep -E '(serviceAccount(Key)?\\.json|(^|/)\\.env($|\\.)|package-lock\\.json)$' >/dev/null && { echo 'Blocked: file protetto (chiavi, .env, lockfile). Modificalo a mano.' >&2; exit 2; }; exit 0"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path // empty'); case \"$f\" in */src/*.js|*/src/*.jsx) command -v npx >/dev/null || exit 0; cd \"$CLAUDE_PROJECT_DIR\" && out=$(npx eslint \"$f\" 2>&1) || { echo \"$out\" | head -30 >&2; exit 2; };; esac; exit 0"
+          }
+        ]
+      }
+    ]
+  }
+}
