@@ -109,7 +109,7 @@ export async function calculateChampionshipPoints(newResults = null) {
     // Jolly bonus: on a recalculation only the difference is applied. For data
     // saved before this field existed, the previous bonus comes from the
     // previous results (if points had already been assigned).
-    const legacyBonus = previousResults && data.championshipPts != null
+    const legacyBonus = previousResults && data.championshipPts
       ? scoreChampionship(pilotiPicks, costruttoriPicks, previousResults).jollyBonus
       : 0;
     const prevJollyBonus = data.championshipJollyAwarded ?? legacyBonus;

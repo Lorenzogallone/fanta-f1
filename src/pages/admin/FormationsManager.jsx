@@ -22,6 +22,7 @@ import {
   deleteDoc,
   updateDoc,
   deleteField,
+  FieldPath,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "../../services/firebase";
@@ -209,6 +210,7 @@ export default function FormationsManager({ participants, races, loading, onData
 
       const isNew = !submissions[editingUser.id];
       await setDoc(doc(db, "races", selectedRace.id, "submissions", editingUser.id), payload, { merge: true });
+      await syncJollyLedger(editingUser.id, Boolean(payload.mainJolly2));
 
       setMessage({ type: "success", text: isNew ? t("admin.formationAdded") : t("admin.formationUpdated") });
       await loadSubmissions();
@@ -218,6 +220,23 @@ export default function FormationsManager({ participants, races, loading, onData
       setMessage({ type: "danger", text: `${t("common.error")}: ${err.message}` });
     } finally {
       setSaving(false);
+    }
+  };
+
+  /**
+   * Keeps the player's double joker ledger (ranking.jolly2Races) in line with
+   * the lineup edited by the admin, so the player can still spend / get back
+   * the joker for this race. Joker counts are managed by the admin manually.
+   */
+  const syncJollyLedger = async (userId, hasJolly2) => {
+    try {
+      await updateDoc(
+        doc(db, "ranking", userId),
+        new FieldPath("jolly2Races", selectedRace.id),
+        hasJolly2 ? true : deleteField()
+      );
+    } catch (err) {
+      error("Failed to update jolly ledger:", err);
     }
   };
 
@@ -232,6 +251,7 @@ export default function FormationsManager({ participants, races, loading, onData
     setSaving(true);
     try {
       await deleteDoc(doc(db, "races", selectedRace.id, "submissions", deletingUser.id));
+      await syncJollyLedger(deletingUser.id, false);
       await loadSubmissions();
       setShowDeleteConfirm(false);
       setDeletingUser(null);

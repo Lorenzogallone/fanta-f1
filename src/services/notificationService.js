@@ -19,6 +19,8 @@ const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 const TOKEN_KEY = "fanta-f1-fcm-token";
 const ENABLED_KEY = "fanta-f1-notifications-enabled";
 const LAST_SYNC_KEY = "fanta-f1-fcm-last-sync";
+/** Account the stored token was saved for (several accounts can share a device) */
+const TOKEN_USER_KEY = "fanta-f1-fcm-user";
 /** Re-confirm the token in Firestore at most once per week (self-healing). */
 const RESYNC_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -133,6 +135,7 @@ export async function requestNotificationPermission(userId) {
 
     // Store locally for quick state checks
     localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(TOKEN_USER_KEY, userId);
     localStorage.setItem(ENABLED_KEY, "true");
     localStorage.setItem(LAST_SYNC_KEY, String(Date.now()));
 
@@ -198,6 +201,7 @@ export async function disableNotifications(userId) {
     }
 
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_USER_KEY);
     localStorage.removeItem(ENABLED_KEY);
     localStorage.removeItem(LAST_SYNC_KEY);
 
@@ -237,11 +241,15 @@ export async function syncFcmToken(userId) {
     if (!token) return;
 
     const storedToken = localStorage.getItem(TOKEN_KEY);
+    const sameUser = localStorage.getItem(TOKEN_USER_KEY) === userId;
     const lastSync = Number(localStorage.getItem(LAST_SYNC_KEY)) || 0;
-    if (token === storedToken && Date.now() - lastSync < RESYNC_INTERVAL_MS) return;
+    if (sameUser && token === storedToken && Date.now() - lastSync < RESYNC_INTERVAL_MS) return;
 
-    await saveFcmToken(userId, token, storedToken);
+    // Another account on this device: register the token for it as well (the
+    // previous token is only replaced within the same account)
+    await saveFcmToken(userId, token, sameUser ? storedToken : null);
     localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(TOKEN_USER_KEY, userId);
     localStorage.setItem(LAST_SYNC_KEY, String(Date.now()));
   } catch (err) {
     warn("Failed to sync FCM token:", err);
