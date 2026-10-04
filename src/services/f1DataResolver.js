@@ -31,16 +31,29 @@ class F1DataResolver {
     const fullName = `${apiDriver.givenName} ${apiDriver.familyName}`;
     const familyName = apiDriver.familyName;
 
+    // Known drivers always keep the manual id/displayName: it is the value stored
+    // in formations and results (e.g. "Carlos Sainz Jr." while the API says "Carlos Sainz").
+    // preferApiData only lets the API cache override the current team.
+    const fromManual = this.findDriverInManualData(familyName, fullName);
+    if (fromManual) {
+      if (this.manualData.config.preferApiData && this.apiCache?.drivers) {
+        const fromApi = this.findDriverInApiCache(familyName, fullName);
+        if (fromApi?.currentTeam) {
+          return {
+            ...fromManual,
+            currentTeam: fromApi.currentTeam,
+            teamData: fromApi.teamData || fromManual.teamData,
+          };
+        }
+      }
+      return fromManual;
+    }
+
     if (this.manualData.config.preferApiData && this.apiCache?.drivers) {
       const fromApi = this.findDriverInApiCache(familyName, fullName);
       if (fromApi) {
         return fromApi;
       }
-    }
-
-    const fromManual = this.findDriverInManualData(familyName, fullName);
-    if (fromManual) {
-      return fromManual;
     }
 
     if (!this.manualData.config.preferApiData && this.apiCache?.drivers) {
@@ -490,10 +503,10 @@ class F1DataResolver {
       seen.add(d.displayName);
     });
 
-    // From API cache (only those not already in manual)
+    // From API cache (only those not already in manual, also by alias: "Carlos Sainz")
     if (this.apiCache?.drivers) {
       Object.values(this.apiCache.drivers).forEach(d => {
-        if (!seen.has(d.displayName)) {
+        if (!seen.has(d.displayName) && !this.findDriverInManualData(d.lastName, d.displayName)) {
           const team = this.manualData.teams[d.currentTeam];
           drivers.push({ ...d, teamData: team, source: 'api' });
           seen.add(d.displayName);
