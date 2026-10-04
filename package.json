@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "bootstrap": "^5.3.6",
-    "firebase": "^11.10.0",
+    "firebase": "^12.19.0",
     "prop-types": "^15.8.1",
     "react": "^19.2.1",
     "react-bootstrap": "^2.10.10",
@@ -40,6 +40,11 @@
     "fsevents@2.3.3": true,
     "protobufjs@7.6.4": true,
     "re2@1.25.0": true,
-    "@firebase/util@1.12.1": true
+    "@firebase/util@1.15.3": true
+  },
+  "overrides": {
+    "@firebase/firestore": {
+      "@grpc/grpc-js": "^1.14.5"
+    }
   }
 }

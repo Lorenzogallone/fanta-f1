@@ -4,8 +4,7 @@
  */
 
 import {
-  updateDoc,
-  setDoc,
+  writeBatch,
   increment,
   collection,
   getDocs,
@@ -34,6 +33,23 @@ const BONUS_JOLLY_MAIN = POINTS.BONUS_JOLLY_MAIN;
 const BONUS_JOLLY_SPRINT = POINTS.BONUS_JOLLY_SPRINT;
 const PENALTY_EMPTY_LIST = POINTS.PENALTY_EMPTY_LIST;
 
+/** Max writes per Firestore batch (hard limit is 500) */
+const MAX_BATCH_WRITES = 450;
+
+/**
+ * Commits a list of writes. Up to MAX_BATCH_WRITES they go in a single batch,
+ * so the calculation is all-or-nothing: if anything fails, nothing is saved
+ * and the ranking is never left half updated.
+ * @param {Array<(batch: import("firebase/firestore").WriteBatch) => void>} writes
+ */
+export async function commitWrites(writes) {
+  for (let i = 0; i < writes.length; i += MAX_BATCH_WRITES) {
+    const batch = writeBatch(db);
+    writes.slice(i, i + MAX_BATCH_WRITES).forEach((write) => write(batch));
+    await batch.commit();
+  }
+}
+
 /**
  * Calculates and persists points for a race based on official results
  * @param {string} raceId - Race identifier
@@ -41,22 +57,26 @@ const PENALTY_EMPTY_LIST = POINTS.PENALTY_EMPTY_LIST;
  * @returns {Promise<string>} Success message with number of updated submissions
  */
 export async function calculatePointsForRace(raceId, official) {
-  // Step 1: Save/update official race results
-  // If official results are passed from frontend, update Firestore
-  if (official) {
-    await setDoc(
-      doc(db, "races", raceId),
-      { officialResults: official },
-      { merge: true }
-    );
-  }
+  // All writes are collected here and committed together at the end
+  const writes = [];
 
-  // Step 2: Retrieve final results and validate
+  // Step 1: Retrieve the race and merge the official results passed from the
+  // frontend (saved in the same batch as the points)
   const raceRef  = doc(db, "races", raceId);
   const raceSnap = await getDoc(raceRef);
   if (!raceSnap.exists()) throw new Error("Gara non trovata");
 
   const raceData = raceSnap.data();
+  if (official) {
+    raceData.officialResults = { ...(raceData.officialResults || {}), ...official };
+  }
+  writes.push((b) => b.set(
+    raceRef,
+    { ...(official ? { officialResults: official } : {}), pointsCalculated: true },
+    { merge: true }
+  ));
+
+  // Step 2: Validate final results
   const {
     P1, P2, P3,
     SP1 = null, SP2 = null, SP3 = null,
@@ -77,11 +97,11 @@ export async function calculatePointsForRace(raceId, official) {
   const sprintPresent = !!SP1 && !cancelledSprint;
 
   // Step 3: Iterate through all submissions
-  const subsSnap = await getDocs(
-    collection(db, "races", raceId, "submissions")
-  );
-
-  const batchWrites = [];
+  const [subsSnap, allUsersSnap] = await Promise.all([
+    getDocs(collection(db, "races", raceId, "submissions")),
+    getDocs(collection(db, "ranking")),
+  ]);
+  const rankingById = new Map(allUsersSnap.docs.map((d) => [d.id, d]));
 
   for (const subDoc of subsSnap.docs) {
     const s      = subDoc.data();
@@ -113,7 +133,7 @@ export async function calculatePointsForRace(raceId, official) {
       if (s.mainJolly2 && podio.includes(s.mainJolly2)) mainPts += BONUS_JOLLY_MAIN;
     }
 
-    // Apply late submission penalty
+    // Late submission penalty for the main race lineup
     if (s.isLate && s.latePenalty) {
       mainPts += s.latePenalty; // -3
     }
@@ -132,6 +152,11 @@ export async function calculatePointsForRace(raceId, official) {
         if (s.sprintJolly && sprintPodio.includes(s.sprintJolly))
           sprintPts += BONUS_JOLLY_SPRINT;
       }
+
+      // Late submission penalty for the sprint lineup (sprint points only)
+      if (s.isLateSprint && s.latePenaltySprint) {
+        sprintPts += s.latePenaltySprint; // -3
+      }
     }
 
     // Double points multiplier for final race
@@ -141,18 +166,16 @@ export async function calculatePointsForRace(raceId, official) {
     }
 
     // Save points to submission document
-    batchWrites.push(
-      updateDoc(subDoc.ref, {
-        pointsEarned:       mainPts,
-        pointsEarnedSprint: sprintPts,
-      })
-    );
+    writes.push((b) => b.update(subDoc.ref, {
+      pointsEarned:       mainPts,
+      pointsEarnedSprint: sprintPts,
+    }));
 
     // Update ranking with complete points map
-    const rankRef  = doc(db, "ranking", userId);
-    const rankSnap = await getDoc(rankRef);
+    const rankSnap = rankingById.get(userId);
     // Participant removed from the game: keep the submission, skip the ranking
-    if (!rankSnap.exists()) continue;
+    if (!rankSnap) continue;
+    const rankRef  = rankSnap.ref;
     const oldPB    = rankSnap.data().pointsByRace || {};
     const champPts = rankSnap.data().championshipPts || 0;
 
@@ -173,18 +196,15 @@ export async function calculatePointsForRace(raceId, official) {
       0
     ) + champPts; // keep championship points already awarded
 
-    batchWrites.push(
-      updateDoc(rankRef, {
-        pointsByRace: newPointsByRace,
-        puntiTotali:  newTotal,
-        ...(jollyDelta !== 0 ? { jolly: increment(jollyDelta) } : {}),
-      })
-    );
+    writes.push((b) => b.update(rankRef, {
+      pointsByRace: newPointsByRace,
+      puntiTotali:  newTotal,
+      ...(jollyDelta !== 0 ? { jolly: increment(jollyDelta) } : {}),
+    }));
   }
 
   // Step 4: Apply -3 penalty to users who didn't submit any formation
   const submittedUserIds = new Set(subsSnap.docs.map(d => d.id));
-  const allUsersSnap = await getDocs(collection(db, "ranking"));
 
   for (const userDoc of allUsersSnap.docs) {
     const userId = userDoc.id;
@@ -214,16 +234,14 @@ export async function calculatePointsForRace(raceId, official) {
       0
     ) + champPts; // keep championship points already awarded
 
-    batchWrites.push(
-      updateDoc(doc(db, "ranking", userId), {
-        pointsByRace: newPointsByRace,
-        puntiTotali:  newTotal,
-        ...(revokeJolly ? { jolly: increment(-1) } : {}),
-      })
-    );
+    writes.push((b) => b.update(userDoc.ref, {
+      pointsByRace: newPointsByRace,
+      puntiTotali:  newTotal,
+      ...(revokeJolly ? { jolly: increment(-1) } : {}),
+    }));
   }
 
-  // Step 5: Commit all updates in parallel
-  await Promise.all(batchWrites);
+  // Step 5: Commit all updates together (all-or-nothing)
+  await commitWrites(writes);
   return `✔️ Calcolo completato: aggiornate ${subsSnap.size} submissions e ${allUsersSnap.size} ranking`;
 }

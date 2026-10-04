@@ -8,14 +8,12 @@
 import {
   collection,
   getDocs,
-  doc,
-  updateDoc,
   increment,
   query,
   orderBy,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { calculatePointsForRace } from "./pointsCalculator";
+import { calculatePointsForRace, commitWrites } from "./pointsCalculator";
 
 /**
  * Whether a race has complete official results and must be counted.
@@ -64,15 +62,13 @@ export async function recalculateAllRaces() {
       0
     ) + (data.championshipPts || 0);
 
-    resetWrites.push(
-      updateDoc(doc(db, "ranking", userDoc.id), {
-        pointsByRace: keptPB,
-        puntiTotali: total,
-        ...(revokedJolly > 0 ? { jolly: increment(-revokedJolly) } : {}),
-      })
-    );
+    resetWrites.push((b) => b.update(userDoc.ref, {
+      pointsByRace: keptPB,
+      puntiTotali: total,
+      ...(revokedJolly > 0 ? { jolly: increment(-revokedJolly) } : {}),
+    }));
   }
-  await Promise.all(resetWrites);
+  await commitWrites(resetWrites);
 
   const results = [];
 

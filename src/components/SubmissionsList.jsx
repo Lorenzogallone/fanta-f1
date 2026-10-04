@@ -145,7 +145,7 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
                   <div className="d-flex justify-content-between align-items-center mb-2">
                     <h6 className="mb-0" style={{ color: accentColor }}>
                       {i + 1}. {s.user}
-                      {s.isLate && (
+                      {(s.isLate || s.isLateSprint) && (
                         <Badge bg="warning" text="dark" className="ms-2">
                           ⏰ {t("formations.lateSubmission")} (-3)
                         </Badge>
@@ -197,7 +197,7 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
                     <td>{i + 1}</td>
                     <td>
                       {s.user}
-                      {s.isLate && (
+                      {(s.isLate || s.isLateSprint) && (
                         <Badge bg="warning" text="dark" className="ms-1">
                           ⏰ -3
                         </Badge>

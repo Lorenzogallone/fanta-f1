@@ -21,6 +21,7 @@ import {
   setDoc,
   deleteDoc,
   updateDoc,
+  deleteField,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "../../services/firebase";
@@ -60,6 +61,7 @@ export default function FormationsManager({ participants, races, loading, onData
     sprintJolly: null,
   });
   const [isLateSubmission, setIsLateSubmission] = useState(false);
+  const [isLateSprint, setIsLateSprint] = useState(false);
 
   // Save confirmation
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
@@ -125,6 +127,7 @@ export default function FormationsManager({ participants, races, loading, onData
         sprintJolly: findOpt(sub.sprintJolly),
       });
       setIsLateSubmission(sub.isLate ?? false);
+      setIsLateSprint(sub.isLateSprint ?? false);
     } else {
       resetForm();
     }
@@ -141,6 +144,7 @@ export default function FormationsManager({ participants, races, loading, onData
       sprintJolly: null,
     });
     setIsLateSubmission(false);
+    setIsLateSprint(false);
   };
 
   const getSelectedDrivers = (fields) =>
@@ -194,9 +198,12 @@ export default function FormationsManager({ participants, races, loading, onData
         submittedAt: Timestamp.now(),
       };
 
-      if (isLateSubmission) {
-        payload.isLate = true;
-        payload.latePenalty = -3;
+      // Late penalties are per race (main / sprint); unchecking removes them
+      payload.isLate = isLateSubmission;
+      payload.latePenalty = isLateSubmission ? -3 : deleteField();
+      payload.isLateSprint = isLateSprint;
+      payload.latePenaltySprint = isLateSprint ? -3 : deleteField();
+      if (isLateSubmission || isLateSprint) {
         await updateDoc(doc(db, "ranking", editingUser.id), { usedLateSubmission: true });
       }
 
@@ -347,7 +354,7 @@ export default function FormationsManager({ participants, races, loading, onData
                           {hasSubmission ? (
                             <>
                               <Badge bg="success" style={{ fontSize: "0.65rem" }}>{t("admin.submitted")}</Badge>
-                              {sub.isLate && (
+                              {(sub.isLate || sub.isLateSprint) && (
                                 <Badge bg="warning" text="dark" style={{ fontSize: "0.6rem" }}>
                                   {t("formations.lateSubmission")}
                                 </Badge>
@@ -431,6 +438,14 @@ export default function FormationsManager({ participants, races, loading, onData
               {renderDriverSelect("sprintP2", "SP2", false, sprintFields)}
               {renderDriverSelect("sprintP3", "SP3", false, sprintFields)}
               {renderDriverSelect("sprintJolly", `${t("formations.joker")} Sprint`, false, sprintFields)}
+
+              <Form.Check
+                type="switch"
+                label={`${t("formations.lateSubmission")} Sprint (${t("formations.latePenalty")})`}
+                checked={isLateSprint}
+                onChange={(e) => setIsLateSprint(e.target.checked)}
+                className="my-3"
+              />
             </>
           )}
         </Modal.Body>

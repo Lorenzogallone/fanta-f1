@@ -32,12 +32,12 @@ service cloud.firestore {
         : request.resource.data.diff(resource.data).affectedKeys();
     }
 
-    function withinDeadline(deadline) {
+    function withinDeadline(deadline, lateFlag, penaltyField) {
       return deadline != null
         && request.time < deadline + duration.value(11, 'm')
         && (request.time < deadline + duration.value(1, 'm')
-            || (request.resource.data.get('isLate', false) == true
-                && request.resource.data.get('latePenalty', 0) == -3));
+            || (request.resource.data.get(lateFlag, false) == true
+                && request.resource.data.get(penaltyField, 0) == -3));
     }
 
     function validOwnSubmission(raceId, userId) {
@@ -45,12 +45,13 @@ service cloud.firestore {
       let race = get(/databases/$(database)/documents/races/$(raceId)).data;
       return request.resource.data.get('userId', userId) == userId
         && changed.hasOnly(['userId', 'user', 'submittedAt', 'isLate', 'latePenalty',
+                            'isLateSprint', 'latePenaltySprint',
                             'mainP1', 'mainP2', 'mainP3', 'mainJolly', 'mainJolly2',
                             'sprintP1', 'sprintP2', 'sprintP3', 'sprintJolly'])
         && (!changed.hasAny(['mainP1', 'mainP2', 'mainP3', 'mainJolly', 'mainJolly2'])
-            || withinDeadline(race.get('qualiUTC', null)))
+            || withinDeadline(race.get('qualiUTC', null), 'isLate', 'latePenalty'))
         && (!changed.hasAny(['sprintP1', 'sprintP2', 'sprintP3', 'sprintJolly'])
-            || withinDeadline(race.get('qualiSprintUTC', null)));
+            || withinDeadline(race.get('qualiSprintUTC', null), 'isLateSprint', 'latePenaltySprint'));
     }
 
     /* ===================== UTENTI (USERS) ================================

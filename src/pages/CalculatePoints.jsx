@@ -334,19 +334,12 @@ useEffect(() => {
     e.preventDefault(); if(!canSubmitRace) return;
     setSavingRace(true); setMsgRace(null);
     try{
-      await setDoc(doc(db,"races",race.id),{
-        officialResults:{
-          P1:formRace.P1.value,P2:formRace.P2.value,P3:formRace.P3.value,
-          SP1:formRace.SP1?.value||null,SP2:formRace.SP2?.value||null,SP3:formRace.SP3?.value||null,
-          doublePoints:isLast,savedAt:Timestamp.now()
-        }},{merge:true});
-      setMsgRace({variant:"info",msg: t("calculate.resultsSaved")});
-      const res = await calculatePointsForRace(race.id);
-      await setDoc(
-        doc(db, "races", race.id),
-        { pointsCalculated: true },
-        { merge: true }
-      );
+      // Results, points and ranking are saved together (all-or-nothing)
+      const res = await calculatePointsForRace(race.id, {
+        P1:formRace.P1.value,P2:formRace.P2.value,P3:formRace.P3.value,
+        SP1:formRace.SP1?.value||null,SP2:formRace.SP2?.value||null,SP3:formRace.SP3?.value||null,
+        doublePoints:isLast,savedAt:Timestamp.now()
+      });
       // Save ranking snapshot after calculation
       await saveRankingSnapshot("race", race.id);
       setMsgRace({variant:"success",msg:res});

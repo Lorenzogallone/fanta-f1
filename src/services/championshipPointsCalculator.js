@@ -4,7 +4,6 @@
  */
 
 import {
-  updateDoc,
   increment,
   collection,
   getDocs,
@@ -13,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { POINTS } from "../constants/racing";
+import { commitWrites } from "./pointsCalculator";
 
 // Point values imported from centralized constants
 const PTS_MAIN = POINTS.MAIN;
@@ -96,12 +96,10 @@ export async function calculateChampionshipPoints() {
       updateData.jolly = increment(jollyDelta);
     }
 
-    writes.push(
-      updateDoc(doc(db, "ranking", userId), updateData)
-    );
+    writes.push((b) => b.update(doc(db, "ranking", userId), updateData));
   }
 
   // Step 8: Execute all updates in parallel
-  await Promise.all(writes);
+  await commitWrites(writes); // all-or-nothing
   return `✔️ Punteggi campionato aggiornati per ${usersSnap.size} utenti (piloti + costruttori).`;
 }

@@ -430,9 +430,13 @@ export default function FormationApp() {
     }
 
     // Aggiungi flag late submission se necessario
-    if (isLate) {
+    // The late penalty applies only to the race it was submitted late for
+    if (isLate && mode === "main") {
       payload.isLate = true;
       payload.latePenalty = TIME_CONSTANTS.LATE_SUBMISSION_PENALTY;
+    } else if (isLate) {
+      payload.isLateSprint = true;
+      payload.latePenaltySprint = TIME_CONSTANTS.LATE_SUBMISSION_PENALTY;
     }
 
     try {

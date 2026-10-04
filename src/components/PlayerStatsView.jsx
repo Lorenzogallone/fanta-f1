@@ -206,6 +206,11 @@ const calculateRacePoints = (submission, official, cancelledSprint = false) => {
         sprintPoints += POINTS.BONUS_JOLLY_SPRINT;
       }
     }
+
+    // Late submission penalty for the sprint lineup
+    if (submission.isLateSprint) {
+      sprintPoints += (submission.latePenaltySprint || -3);
+    }
   }
 
   // Double points (e.g. final race)

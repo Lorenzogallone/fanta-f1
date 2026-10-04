@@ -410,7 +410,7 @@ function RaceHistoryCard({
                     totalSprint =
                       s.pointsEarnedSprint !== undefined
                         ? s.pointsEarnedSprint
-                        : sp1Pts + sp2Pts + sp3Pts + jspPts;
+                        : sp1Pts + sp2Pts + sp3Pts + jspPts + (s.isLateSprint ? (s.latePenaltySprint || -3) : 0);
                   }
                 }
 
@@ -446,7 +446,7 @@ function RaceHistoryCard({
                       <div className="d-flex justify-content-between align-items-center mb-2">
                         <h6 className="mb-0" style={{ color: accentColor }}>
                           {idx + 1}. {userName}
-                          {s.isLate && (
+                          {(s.isLate || s.isLateSprint) && (
                             <Badge bg="warning" text="dark" className="ms-2">
                               ⏰ {t("formations.lateSubmission")} (-3)
                             </Badge>
@@ -624,7 +624,7 @@ function RaceHistoryCard({
                         <td className="text-center">{idx + 1}</td>
                         <td className="text-center">
                           {userName}
-                          {s.isLate && !mainMasked && (
+                          {((s.isLate && !mainMasked) || (s.isLateSprint && !sprintMasked)) && (
                             <Badge bg="warning" text="dark" className="ms-1">
                               ⏰ {t("formations.latePenalty")}
                             </Badge>
