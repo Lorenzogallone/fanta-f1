@@ -67,6 +67,9 @@ export async function calculatePointsForRace(raceId, official) {
   if (!raceSnap.exists()) throw new Error("Gara non trovata");
 
   const raceData = raceSnap.data();
+  // Results before this calculation (used for entries saved without the
+  // perfectPodium flag, to know whether that jolly had been awarded)
+  const previousOfficial = raceData.officialResults || null;
   if (official) {
     raceData.officialResults = { ...(raceData.officialResults || {}), ...official };
   }
@@ -180,10 +183,14 @@ export async function calculatePointsForRace(raceId, official) {
     const champPts = rankSnap.data().championshipPts || 0;
 
     // Perfect podium jolly: award it once per race. On a recalculation only the
-    // difference is applied (e.g. results corrected). Entries saved before this
-    // flag existed are assumed to have been awarded consistently.
+    // difference is applied (e.g. results corrected). For entries saved before
+    // this flag existed, the previous state comes from the previous results.
     const prevEntry = oldPB[raceId];
-    const prevPerfect = prevEntry ? (prevEntry.perfectPodium ?? perfectPodium) : false;
+    const legacyPerfect = !!previousOfficial && !!s.mainP1
+      && s.mainP1 === previousOfficial.P1
+      && s.mainP2 === previousOfficial.P2
+      && s.mainP3 === previousOfficial.P3;
+    const prevPerfect = prevEntry ? (prevEntry.perfectPodium ?? legacyPerfect) : false;
     const jollyDelta = (perfectPodium ? 1 : 0) - (prevPerfect ? 1 : 0);
 
     const newPointsByRace = {

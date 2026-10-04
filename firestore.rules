@@ -51,7 +51,14 @@ service cloud.firestore {
         && (!changed.hasAny(['mainP1', 'mainP2', 'mainP3', 'mainJolly', 'mainJolly2'])
             || withinDeadline(race.get('qualiUTC', null), 'isLate', 'latePenalty'))
         && (!changed.hasAny(['sprintP1', 'sprintP2', 'sprintP3', 'sprintJolly'])
-            || withinDeadline(race.get('qualiSprintUTC', null), 'isLateSprint', 'latePenaltySprint'));
+            || withinDeadline(race.get('qualiSprintUTC', null), 'isLateSprint', 'latePenaltySprint'))
+        // a late penalty can be added by the player, never removed or changed
+        && (!changed.hasAny(['isLate', 'latePenalty'])
+            || (request.resource.data.get('isLate', false) == true
+                && request.resource.data.get('latePenalty', 0) == -3))
+        && (!changed.hasAny(['isLateSprint', 'latePenaltySprint'])
+            || (request.resource.data.get('isLateSprint', false) == true
+                && request.resource.data.get('latePenaltySprint', 0) == -3));
     }
 
     /* ===================== UTENTI (USERS) ================================
@@ -91,16 +98,39 @@ service cloud.firestore {
     function validOwnRankingUpdate() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       return changed.hasOnly(['name', 'photoURL', 'usedLateSubmission', 'jolly',
+                              'jolly2Races', 'jollyRaceId',
                               'championshipPiloti', 'championshipCostruttori'])
         // the late submission can be used once: it can't be reset
         && (!changed.hasAny(['usedLateSubmission'])
             || request.resource.data.usedLateSubmission == true)
-        // jolly: one at a time (use or refund of the double joker), never negative
-        && (!changed.hasAny(['jolly'])
-            || (request.resource.data.jolly is int
-                && request.resource.data.jolly >= 0
-                && (request.resource.data.jolly - resource.data.get('jolly', 0) == 1
-                    || request.resource.data.jolly - resource.data.get('jolly', 0) == -1)));
+        // jolly: only through the double joker ledger (see validJollyChange)
+        && (!changed.hasAny(['jolly', 'jolly2Races']) || validJollyChange());
+    }
+
+    /* Double joker ledger: ranking.jolly2Races = { raceId: true } for every
+     * race where the player spent a jolly on the double joker. The client
+     * writes it in the same batch as the submission, naming the race in
+     * jollyRaceId:
+     * - spend (-1): the race is added and the submission has mainJolly2;
+     * - refund (+1): the race is removed and the submission no longer has
+     *   mainJolly2. A refund is possible only once per jolly spent.
+     */
+    function validJollyChange() {
+      let before = resource.data.get('jolly2Races', {}).keys().toSet();
+      let after = request.resource.data.get('jolly2Races', {}).keys().toSet();
+      let raceId = request.resource.data.get('jollyRaceId', '');
+      let delta = request.resource.data.get('jolly', 0) - resource.data.get('jolly', 0);
+      let sub = getAfter(/databases/$(database)/documents/races/$(raceId)/submissions/$(request.auth.uid)).data;
+      return request.resource.data.jolly is int
+        && request.resource.data.jolly >= 0
+        && ((delta == -1
+              && after.difference(before) == [raceId].toSet()
+              && before.difference(after).size() == 0
+              && sub.get('mainJolly2', null) != null)
+            || (delta == 1
+              && before.difference(after) == [raceId].toSet()
+              && after.difference(before).size() == 0
+              && sub.get('mainJolly2', null) == null));
     }
 
     /* ===================== GARE (RACES) ==================================

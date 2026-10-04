@@ -11,7 +11,7 @@ import {
 } from "react-bootstrap";
 import {
   collection, query, orderBy, getDocs,
-  doc, setDoc, getDoc, Timestamp
+  doc, getDoc, Timestamp
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { isLastRace, calculatePointsForRace } from "../services/pointsCalculator";
@@ -120,7 +120,7 @@ function CalculatePointsContent() {
   const [rankingMap,setRankingMap] = useState({});
   const [errSubs,   setErrSubs]    = useState(null);
   // Raw setters, wrapped by the auto-fetch effect to drop stale async results
-  const stateSetters = { setFormRace, setMsgRace, setFetchingResults, setSubs, setLoadingSubs, setErrSubs };
+  const stateSetters = { setFormRace, setMsgRace, setFetchingResults, setSubs, setLoadingSubs, setErrSubs, setOfficial };
 
   // Championship state
   const [formChamp,setFormChamp]   = useState({
@@ -167,6 +167,13 @@ useEffect(() => {
    */
   useEffect(()=>{
     if(!race) return;
+    // Ignore results that arrive after the admin selected another race
+    let cancelled = false;
+    const guard = (fn) => (...args) => { if (!cancelled) fn(...args); };
+    const setOfficial = guard(stateSetters.setOfficial);
+    const setSubs = guard(stateSetters.setSubs);
+    const setLoadingSubs = guard(stateSetters.setLoadingSubs);
+    const setErrSubs = guard(stateSetters.setErrSubs);
     (async()=>{
       setLoadingSubs(true); setErrSubs(null);
       try{
@@ -191,6 +198,7 @@ useEffect(() => {
       }catch(e){ setErrSubs(t("calculate.errorLoadingSubmissions")); }
       finally   { setLoadingSubs(false); }
     })();
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[race]);
 
@@ -220,6 +228,7 @@ useEffect(() => {
   const setSubs = guard(stateSetters.setSubs);
   const setLoadingSubs = guard(stateSetters.setLoadingSubs);
   const setErrSubs = guard(stateSetters.setErrSubs);
+  const setOfficial = guard(stateSetters.setOfficial);
 
   (async () => {
     setFetchingResults(true);
@@ -382,14 +391,12 @@ useEffect(() => {
     e.preventDefault(); if(!champReady) return;
     setSavingChamp(true); setMsgChamp(null);
     try{
-      await setDoc(doc(db,"championship","results"),{
+      // Results and points are saved together (all-or-nothing)
+      const res = await calculateChampionshipPoints({
         P1:formChamp.CP1.value,P2:formChamp.CP2.value,P3:formChamp.CP3.value,
         C1:formChamp.CC1.value,C2:formChamp.CC2.value,C3:formChamp.CC3.value,
         savedAt:Timestamp.now()
-      },{merge:true});
-      setMsgChamp({variant:"info",msg: t("calculate.resultsSaved")});
-      // The function reads the results from Firestore (just saved above)
-      const res = await calculateChampionshipPoints();
+      });
       // Save ranking snapshot after championship calculation
       await saveRankingSnapshot("championship", null);
       setMsgChamp({variant:"success",msg:res});

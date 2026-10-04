@@ -25,12 +25,12 @@ import {
   orderBy,
   getDocs,
   doc,
-  setDoc,
-  updateDoc,
   onSnapshot,
   getDoc,
   increment,
   deleteField,
+  writeBatch,
+  FieldPath,
   Timestamp,
 } from "firebase/firestore";
 import Select from "react-select";
@@ -440,34 +440,54 @@ export default function FormationApp() {
     }
 
     try {
-      await setDoc(doc(db, "races", form.raceId, "submissions", form.userId), payload, { merge: true });
+      // Submission, late flag and double joker are saved together (one batch):
+      // the security rules check the joker against the saved submission.
+      const subRef = doc(db, "races", form.raceId, "submissions", form.userId);
+      const rankRef = doc(db, "ranking", form.userId);
+      const batch = writeBatch(db);
+      batch.set(subRef, payload, { merge: true });
+
+      // Ranking changes go in a single update: [fieldPath, value, ...]
+      const rankUpdate = [];
 
       // Se late submission, marca utente come "ha usato"
       if (isLate) {
-        await updateDoc(doc(db, "ranking", form.userId), {
-          usedLateSubmission: true
-        });
-        setUserUsedLateSubmission(true);
+        rankUpdate.push("usedLateSubmission", true);
       }
 
-      // Gestione jolly2 - logic for adding/removing double joker
+      // Gestione jolly2 - ledger ranking.jolly2Races = { raceId: true }
+      let jollyChange = 0;
       if (mode === "main") {
         const hasJolly2Now = Boolean(form.jolly2);
         const hadJolly2Before = existingJolly2;
+        const jollyRace = new FieldPath("jolly2Races", form.raceId);
 
         if (hasJolly2Now && !hadJolly2Before) {
-          // Adding jolly2 for the first time → decrement
-          await updateDoc(doc(db, "ranking", form.userId), { jolly: increment(-1) });
-          setUserJolly((p) => p - 1);
-          setExistingJolly2(true);
+          // Adding jolly2 → spend a joker for this race
+          rankUpdate.push(jollyRace, true, "jolly", increment(-1), "jollyRaceId", form.raceId);
+          jollyChange = -1;
         } else if (!hasJolly2Now && hadJolly2Before) {
-          // Removing jolly2 → refund the joker
-          await updateDoc(doc(db, "ranking", form.userId), { jolly: increment(1) });
-          setUserJolly((p) => p + 1);
-          setExistingJolly2(false);
+          // Removing jolly2 → refund the joker spent for this race (only if it
+          // was recorded in the ledger: older lineups can't be refunded)
+          const rankSnap = await getDoc(rankRef);
+          if (rankSnap.data()?.jolly2Races?.[form.raceId]) {
+            rankUpdate.push(jollyRace, deleteField(), "jolly", increment(1), "jollyRaceId", form.raceId);
+            jollyChange = 1;
+          }
         }
-        // If hasJolly2Now && hadJolly2Before → no change needed
-        // If !hasJolly2Now && !hadJolly2Before → no change needed
+      }
+
+      if (rankUpdate.length > 0) {
+        const [firstField, firstValue, ...rest] = rankUpdate;
+        batch.update(rankRef, firstField, firstValue, ...rest);
+      }
+
+      await batch.commit();
+
+      if (isLate) setUserUsedLateSubmission(true);
+      if (mode === "main") {
+        setUserJolly((p) => p + jollyChange);
+        setExistingJolly2(Boolean(form.jolly2));
       }
 
       setFlash({
