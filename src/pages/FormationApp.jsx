@@ -467,13 +467,15 @@ export default function FormationApp() {
           rankUpdate.push(jollyRace, true, "jolly", increment(-1), "jollyRaceId", form.raceId);
           jollyChange = -1;
         } else if (!hasJolly2Now && hadJolly2Before) {
-          // Removing jolly2 → refund the joker spent for this race (only if it
-          // was recorded in the ledger: older lineups can't be refunded)
+          // Removing jolly2 → refund the joker spent for this race. Lineups
+          // saved before the ledger existed have no entry: plain refund.
           const rankSnap = await getDoc(rankRef);
           if (rankSnap.data()?.jolly2Races?.[form.raceId]) {
             rankUpdate.push(jollyRace, deleteField(), "jolly", increment(1), "jollyRaceId", form.raceId);
-            jollyChange = 1;
+          } else {
+            rankUpdate.push("jolly", increment(1), "jollyRaceId", form.raceId);
           }
+          jollyChange = 1;
         }
       }
 

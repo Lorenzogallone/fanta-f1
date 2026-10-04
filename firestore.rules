@@ -52,6 +52,13 @@ service cloud.firestore {
             || withinDeadline(race.get('qualiUTC', null), 'isLate', 'latePenalty'))
         && (!changed.hasAny(['sprintP1', 'sprintP2', 'sprintP3', 'sprintJolly'])
             || withinDeadline(race.get('qualiSprintUTC', null), 'isLateSprint', 'latePenaltySprint'))
+        // adding the double joker requires spending a jolly in the same batch
+        // (ledger entry for this race); changing its driver is free
+        && (!changed.hasAny(['mainJolly2'])
+            || request.resource.data.get('mainJolly2', null) == null
+            || (resource != null && resource.data.get('mainJolly2', null) != null)
+            || getAfter(/databases/$(database)/documents/ranking/$(userId))
+                 .data.get('jolly2Races', {}).get(raceId, false) == true)
         // a late penalty can be added by the player, never removed or changed
         && (!changed.hasAny(['isLate', 'latePenalty'])
             || (request.resource.data.get('isLate', false) == true
@@ -114,13 +121,17 @@ service cloud.firestore {
      * - spend (-1): the race is added and the submission has mainJolly2;
      * - refund (+1): the race is removed and the submission no longer has
      *   mainJolly2. A refund is possible only once per jolly spent.
+     * - legacy refund (+1): double jokers added before the ledger existed have
+     *   no entry; the refund is allowed when this batch removes mainJolly2
+     *   from a submission that had it (adding it back requires a spend).
      */
     function validJollyChange() {
       let before = resource.data.get('jolly2Races', {}).keys().toSet();
       let after = request.resource.data.get('jolly2Races', {}).keys().toSet();
       let raceId = request.resource.data.get('jollyRaceId', '');
       let delta = request.resource.data.get('jolly', 0) - resource.data.get('jolly', 0);
-      let sub = getAfter(/databases/$(database)/documents/races/$(raceId)/submissions/$(request.auth.uid)).data;
+      let subPath = /databases/$(database)/documents/races/$(raceId)/submissions/$(request.auth.uid);
+      let sub = getAfter(subPath).data;
       return request.resource.data.jolly is int
         && request.resource.data.jolly >= 0
         && ((delta == -1
@@ -130,6 +141,12 @@ service cloud.firestore {
             || (delta == 1
               && before.difference(after) == [raceId].toSet()
               && after.difference(before).size() == 0
+              && sub.get('mainJolly2', null) == null)
+            || (delta == 1
+              && before == after
+              && !(raceId in after)
+              && exists(subPath)
+              && get(subPath).data.get('mainJolly2', null) != null
               && sub.get('mainJolly2', null) == null));
     }
 
