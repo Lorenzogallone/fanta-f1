@@ -1,117 +1,327 @@
 /**
  * @file Home.jsx
- * @description Home page displaying main navigation options and current leaderboard
+ * @description Home page: next race with the user's lineup status, personal summary,
+ * leaderboard and secondary links.
  */
 
-import React from "react";
-import { Container, Row, Col, Card, Button } from "react-bootstrap";
+import React, { useEffect, useMemo, useState } from "react";
+import PropTypes from "prop-types";
+import { Row, Col, Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import {
+  collection, query, orderBy, getDocs, onSnapshot, doc, getDoc,
+} from "firebase/firestore";
+import { db } from "../services/firebase";
 import Leaderboard from "./Leaderboard";
-import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useAuth } from "../hooks/useAuth";
+import { useTimezone } from "../hooks/useTimezone";
+import { error } from "../utils/logger";
+import "../styles/cards.css";
+import "../styles/home.css";
+
+const ms = (ts) => (ts?.seconds ? ts.seconds * 1000 : null);
 
 /**
- * Home page component with quick navigation and leaderboard preview
- * @returns {JSX.Element} Home page with navigation cards and leaderboard
+ * Formats a time span as "1g 04h 12m" (or "4h 12m", "12m").
+ * @param {number} diff - Milliseconds
+ * @param {string} dayUnit - Localized day suffix
+ * @returns {string} Countdown text
  */
-export default function Home() {
-  const { isDark } = useTheme();
+function formatCountdown(diff, dayUnit) {
+  const totalMin = Math.max(0, Math.floor(diff / 60000));
+  const d = Math.floor(totalMin / 1440);
+  const h = Math.floor((totalMin % 1440) / 60);
+  const m = totalMin % 60;
+  const pad = (n) => String(n).padStart(2, "0");
+  if (d > 0) return `${d}${dayUnit} ${pad(h)}h ${pad(m)}m`;
+  if (h > 0) return `${h}h ${pad(m)}m`;
+  return `${m}m`;
+}
+
+/**
+ * Current time, refreshed every 30 seconds (drives the countdown).
+ * @returns {number} Now in ms
+ */
+function useNow() {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
+/**
+ * Lineup status line for one session (main race or sprint).
+ */
+function LineupStatus({ label, submitted, open }) {
   const { t } = useLanguage();
-  const { isAdmin } = useAuth();
-  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
-  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
+  const state = submitted ? "done" : open ? "todo" : "missed";
+  return (
+    <div className={`home-lineup-status is-${state}`}>
+      <span className="home-lineup-dot" aria-hidden="true" />
+      <span className="home-lineup-label">{label}</span>
+      <span className="home-lineup-state">
+        {submitted ? t("home.lineupDone") : open ? t("home.lineupTodo") : t("home.lineupMissed")}
+      </span>
+    </div>
+  );
+}
+
+LineupStatus.propTypes = {
+  label: PropTypes.string.isRequired,
+  submitted: PropTypes.bool,
+  open: PropTypes.bool,
+};
+
+/**
+ * Next race card: deadline countdown, lineup status and the main action.
+ */
+function NextRaceCard({ race, submission, now }) {
+  const { t, currentLanguage } = useLanguage();
+  const { timezone } = useTimezone();
+  const locale = currentLanguage === "en" ? "en-GB" : "it-IT";
+
+  if (!race) {
+    return (
+      <div className="fx-card home-hero">
+        <div className="fx-eyebrow">{t("home.nextRace")}</div>
+        <h2 className="home-hero-title">{t("home.seasonOver")}</h2>
+        <Link to="/history" className="btn btn-outline-danger w-100 mt-3">
+          {t("home.viewFantaResults")}
+        </Link>
+      </div>
+    );
+  }
+
+  const mainMs = ms(race.qualiUTC);
+  const sprintMs = ms(race.qualiSprintUTC);
+  const hasSprint = Boolean(race.qualiSprintUTC) && !race.cancelledSprint;
+  const mainOpen = mainMs !== null && now < mainMs;
+  const sprintOpen = hasSprint && sprintMs !== null && now < sprintMs;
+  const mainDone = Boolean(submission?.mainP1);
+  const sprintDone = Boolean(submission?.sprintP1);
+
+  // Countdown to the closest deadline that is still open
+  const deadlines = [
+    sprintOpen && { label: t("home.sprintDeadline"), at: sprintMs },
+    mainOpen && { label: t("home.mainDeadline"), at: mainMs },
+  ].filter(Boolean).sort((a, b) => a.at - b.at);
+  const next = deadlines[0];
+
+  const raceDate = new Date(ms(race.raceUTC)).toLocaleString(locale, {
+    weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: timezone,
+  });
+
+  const anyOpen = mainOpen || sprintOpen;
+  const allDone = mainDone && (!hasSprint || sprintDone);
+  const actionLabel = !anyOpen
+    ? t("home.viewLineup")
+    : mainDone || sprintDone
+      ? t("home.editFormation")
+      : t("home.startLineup");
 
   return (
-    <Container className="py-4">
-      {/* Main Actions Grid - Compact for mobile */}
-      <Row className="justify-content-center mb-4 g-3">
-        <Col xs={12} md={10} lg={8}>
-          <Row className="g-3">
-            {/* Submit Formation - Highlighted */}
-            <Col xs={12}>
-              <Button
-                as={Link}
-                to="/lineup"
-                variant="danger"
-                size="lg"
-                className="w-100 py-3"
-                style={{ fontSize: "1.1rem", fontWeight: "600" }}
-              >
-                ⚡ {t("home.submitFormation")}
-              </Button>
-            </Col>
+    <div className="fx-card home-hero">
+      <div className="d-flex align-items-center gap-2">
+        <span className="fx-eyebrow">{t("home.nextRace")} · R{race.round}</span>
+        {hasSprint && <Badge bg="danger" className="home-sprint-badge">Sprint</Badge>}
+      </div>
+      <h2 className="home-hero-title">{race.name}</h2>
+      <div className="home-hero-date">{raceDate}</div>
 
-            {/* Statistics and Race Results - Side by Side */}
-            <Col xs={12} sm={6}>
-              <Button
-                as={Link}
-                to="/statistics"
-                variant="outline-danger"
-                className="w-100 py-3"
-                style={{ height: "100%" }}
-              >
-                <div className="d-flex flex-column align-items-center gap-1">
-                  <span style={{ fontSize: "1.5rem" }}>📊</span>
-                  <span>{t("nav.statistics")}</span>
-                </div>
-              </Button>
-            </Col>
-            <Col xs={12} sm={6}>
-              <Button
-                as={Link}
-                to="/results"
-                variant="outline-danger"
-                className="w-100 py-3"
-                style={{ height: "100%" }}
-              >
-                <div className="d-flex flex-column align-items-center gap-1">
-                  <span style={{ fontSize: "1.5rem" }}>🏁</span>
-                  <span>{t("nav.raceResults")}</span>
-                </div>
-              </Button>
-            </Col>
+      <div className="home-deadline">
+        {next ? (
+          <>
+            <span className="home-deadline-label">{next.label}</span>
+            <span className="home-deadline-value">{formatCountdown(next.at - now, t("home.dayUnit"))}</span>
+          </>
+        ) : (
+          <span className="home-deadline-label">{t("home.lineupsClosed")}</span>
+        )}
+      </div>
 
-            {/* History - Full Width */}
-            <Col xs={12}>
-              <Button
-                as={Link}
-                to="/history"
-                variant="outline-danger"
-                className="w-100 py-3"
-              >
-                📜 {t("history.title")}
-              </Button>
-            </Col>
+      <div className="home-lineup">
+        <LineupStatus label={t("calculate.mainRace")} submitted={mainDone} open={mainOpen} />
+        {hasSprint && <LineupStatus label="Sprint" submitted={sprintDone} open={sprintOpen} />}
+      </div>
 
-            {/* Calculate Points - Admin Only */}
-            {isAdmin && (
-              <Col xs={12}>
-                <Button
-                  as={Link}
-                  to="/calculate"
-                  variant="outline-secondary"
-                  className="w-100 py-2"
-                  style={{ fontSize: "0.9rem" }}
-                >
-                  🧮 {t("nav.calculatePoints")}
-                </Button>
-              </Col>
+      <Link
+        to="/lineup"
+        className={`btn w-100 mt-3 home-hero-action ${anyOpen && !allDone ? "btn-danger" : "btn-outline-danger"}`}
+      >
+        {actionLabel}
+      </Link>
+    </div>
+  );
+}
+
+NextRaceCard.propTypes = {
+  race: PropTypes.object,
+  submission: PropTypes.object,
+  now: PropTypes.number.isRequired,
+};
+
+/**
+ * Personal summary: position, points, jolly and last race score. Opens the player page.
+ */
+function MySummary({ me, lastRace }) {
+  const { t } = useLanguage();
+  if (!me) return null;
+
+  const last = lastRace ? me.pointsByRace?.[lastRace.id] : null;
+  const lastHasSprint = Boolean(lastRace?.officialResults?.SP1) && !lastRace?.cancelledSprint;
+  const lastTotal = last ? (last.mainPts || 0) + (last.sprintPts || 0) : null;
+  const tone = (v) => (v > 0 ? "is-pos" : v < 0 ? "is-neg" : "");
+
+  return (
+    <Link to={`/participant/${me.id}`} className="fx-card home-me" aria-label={t("home.mySummary")}>
+      <div className="home-me-stat">
+        <span className="home-me-value">{me.position}°</span>
+        <span className="fx-eyebrow">{t("statistics.position")}</span>
+      </div>
+      <div className="home-me-stat">
+        <span className="home-me-value">{me.puntiTotali || 0}</span>
+        <span className="fx-eyebrow">{t("common.points")}</span>
+      </div>
+      <div className="home-me-stat">
+        <span className="home-me-value">{me.jolly ?? 0}</span>
+        <span className="fx-eyebrow">{t("leaderboard.jokers")}</span>
+      </div>
+      <div className="home-me-stat home-me-last">
+        <span className={`home-me-value ${tone(lastTotal)}`}>
+          {lastTotal === null ? "—" : lastTotal > 0 ? `+${lastTotal}` : lastTotal}
+        </span>
+        <span className="fx-eyebrow">{t("home.lastRace")}</span>
+        {last && lastHasSprint && (
+          <span className="home-me-split">
+            {t("history.scoreMain")} {last.mainPts || 0} · Sprint {last.sprintPts || 0}
+          </span>
+        )}
+      </div>
+      <span className="home-me-chevron" aria-hidden="true">›</span>
+    </Link>
+  );
+}
+
+MySummary.propTypes = {
+  me: PropTypes.object,
+  lastRace: PropTypes.object,
+};
+
+/**
+ * Home page
+ * @returns {JSX.Element} Home page
+ */
+export default function Home() {
+  const { t } = useLanguage();
+  const { user, isAdmin } = useAuth();
+  const now = useNow();
+
+  const [races, setRaces] = useState([]);
+  const [ranking, setRanking] = useState([]);
+  const [submission, setSubmission] = useState(null);
+
+  // Season calendar (small collection, read once)
+  useEffect(() => {
+    getDocs(query(collection(db, "races"), orderBy("raceUTC", "asc")))
+      .then((snap) => setRaces(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
+      .catch(error);
+  }, []);
+
+  // Live ranking, same query as the leaderboard
+  useEffect(() => {
+    const q = query(collection(db, "ranking"), orderBy("puntiTotali", "desc"));
+    return onSnapshot(q, (snap) => setRanking(snap.docs.map((d) => ({ id: d.id, ...d.data() }))), error);
+  }, []);
+
+  const nextRace = useMemo(
+    () => races.find((r) => !r.cancelledMain && ms(r.raceUTC) > now) || null,
+    [races, now]
+  );
+  const lastScoredRace = useMemo(
+    () => [...races].reverse().find((r) => r.officialResults && !r.cancelledMain) || null,
+    [races]
+  );
+  // Admin: first finished race (1h after the start) without results
+  const raceToCalculate = useMemo(
+    () => races.find((r) => !r.cancelledMain && !r.officialResults && ms(r.raceUTC) + 3600000 < now) || null,
+    [races, now]
+  );
+
+  // The user's lineup for the next race
+  const nextRaceId = nextRace?.id;
+  useEffect(() => {
+    if (!nextRaceId || !user?.uid) return;
+    let cancelled = false;
+    getDoc(doc(db, "races", nextRaceId, "submissions", user.uid))
+      .then((snap) => { if (!cancelled) setSubmission(snap.exists() ? snap.data() : null); })
+      .catch(error);
+    return () => { cancelled = true; };
+  }, [nextRaceId, user?.uid]);
+
+  // Position with ties (competition ranking), as in the leaderboard
+  const me = useMemo(() => {
+    let pos = 1;
+    for (let i = 0; i < ranking.length; i++) {
+      if (i > 0 && (ranking[i].puntiTotali || 0) < (ranking[i - 1].puntiTotali || 0)) pos = i + 1;
+      if (ranking[i].id === user?.uid) return { ...ranking[i], position: pos };
+    }
+    return null;
+  }, [ranking, user?.uid]);
+
+  const links = [
+    { to: "/history", title: t("nav.history"), text: t("home.fantaResultsHint") },
+    { to: "/results", title: t("nav.raceResults"), text: t("home.f1Hint") },
+    { to: "/statistics", title: t("nav.statistics"), text: t("home.statsHint") },
+  ];
+
+  return (
+    <div className="fx home-page">
+      <Row className="g-3 g-lg-4 justify-content-center">
+        <Col xs={12} lg={6} xl={5}>
+          <div className="d-flex flex-column gap-3">
+            {isAdmin && raceToCalculate && (
+              <Link to="/calculate" className="fx-card home-admin">
+                <span>🧮 {t("home.toCalculate", { race: raceToCalculate.name })}</span>
+                <span aria-hidden="true">›</span>
+              </Link>
             )}
-          </Row>
-        </Col>
-      </Row>
 
-      {/* Current leaderboard preview */}
-      <Row className="justify-content-center">
-        <Col xs={12} md={10} lg={8}>
-          <Card className="shadow" style={{ backgroundColor: bgCard }}>
-            <Card.Body className="p-0">
-              <Leaderboard />
-            </Card.Body>
-          </Card>
+            {races.length > 0 && <NextRaceCard race={nextRace} submission={nextRace ? submission : null} now={now} />}
+
+            <MySummary me={me} lastRace={lastScoredRace} />
+
+            <nav className="fx-card home-links d-none d-lg-block">
+              {links.map((l) => (
+                <Link key={l.to} to={l.to} className="home-link">
+                  <span>
+                    <span className="home-link-title">{l.title}</span>
+                    <span className="home-link-text">{l.text}</span>
+                  </span>
+                  <span aria-hidden="true">›</span>
+                </Link>
+              ))}
+            </nav>
+          </div>
+        </Col>
+
+        <Col xs={12} lg={6} xl={5}>
+          <Leaderboard />
+        </Col>
+
+        {/* Mobile: Risultati Fanta and Mondiale F1 are in the tab bar */}
+        <Col xs={12} className="d-lg-none">
+          <Link to="/statistics" className="fx-card home-link">
+            <span>
+              <span className="home-link-title">{t("nav.statistics")}</span>
+              <span className="home-link-text">{t("home.statsHint")}</span>
+            </span>
+            <span aria-hidden="true">›</span>
+          </Link>
         </Col>
       </Row>
-    </Container>
+    </div>
   );
 }

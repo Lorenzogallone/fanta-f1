@@ -1,0 +1,241 @@
+/* Home and leaderboard */
+.leaderboard-card {
+  overflow: hidden;
+}
+
+.leaderboard-card .table {
+  --bs-table-bg: transparent;
+}
+
+/* Home */
+.home-page .home-hero {
+  padding: 1.1rem 1.1rem 1rem;
+}
+
+.home-page .home-sprint-badge {
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+}
+
+.home-page .home-hero-title {
+  margin: 0.2rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.home-page .home-hero-date {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.home-page .home-deadline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  background-color: var(--score-total-bg);
+}
+
+.home-page .home-deadline-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.home-page .home-deadline-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent-red);
+  font-variant-numeric: tabular-nums;
+}
+
+.home-page .home-lineup {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.home-page .home-lineup-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+}
+
+.home-page .home-lineup-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--text-muted);
+  flex: none;
+}
+
+.home-page .home-lineup-status.is-done .home-lineup-dot {
+  background-color: var(--score-positive);
+}
+
+.home-page .home-lineup-status.is-todo .home-lineup-dot {
+  background-color: #f59f00;
+}
+
+.home-page .home-lineup-status.is-missed .home-lineup-dot {
+  background-color: var(--score-negative);
+}
+
+.home-page .home-lineup-label {
+  color: var(--text-primary);
+}
+
+.home-page .home-lineup-state {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.home-page .home-lineup-status.is-done .home-lineup-state {
+  color: var(--score-positive);
+}
+
+.home-page .home-lineup-status.is-todo .home-lineup-state {
+  color: #e8590c;
+}
+
+.home-page .home-hero-action {
+  padding: 0.7rem;
+  font-weight: 600;
+  border-radius: 10px;
+}
+
+.home-page .home-me {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 0.85rem 1.6rem 0.85rem 0.5rem;
+}
+
+.home-page .home-me-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 0;
+}
+
+.home-page .home-me-stat + .home-me-stat {
+  border-left: 1px solid var(--border-color);
+}
+
+.home-page .home-me-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.home-page .home-me-value.is-pos {
+  color: var(--score-positive);
+}
+
+.home-page .home-me-value.is-neg {
+  color: var(--score-negative);
+}
+
+.home-page .home-me-split {
+  margin-top: 1px;
+  font-size: 0.62rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.home-page .home-me-chevron,
+.home-page .home-link > span:last-child,
+.home-page .home-admin > span:last-child {
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.home-page .home-me-chevron {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.home-page .home-links {
+  padding: 0.25rem 0;
+}
+
+.home-page .home-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.home-page .home-links .home-link + .home-link {
+  border-top: 1px solid var(--border-color);
+}
+
+.home-page .home-link-title {
+  display: block;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.home-page .home-link-text {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.home-page .home-admin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+}
+
+@media (hover: hover) {
+  .home-page a.fx-card:hover,
+  .home-page .home-link:hover {
+    background-color: var(--bg-secondary);
+  }
+
+  [data-theme="dark"] .home-page a.fx-card:hover,
+  [data-theme="dark"] .home-page .home-link:hover {
+    background-color: var(--bg-tertiary);
+  }
+}
+
+.leaderboard-card .table thead th,
+[data-theme="dark"] .leaderboard-card .table thead th {
+  background-color: transparent;
+  font-size: 0.72rem !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary) !important;
+}
+
+.leaderboard-card .table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.leaderboard-card .table thead {
+  background-color: transparent;
+}
