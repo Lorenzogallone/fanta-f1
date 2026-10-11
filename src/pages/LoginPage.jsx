@@ -155,7 +155,7 @@ export default function LoginPage() {
             <img
               src={isDark ? "/FantaF1_Logo_dark.webp" : "/FantaF1_Logo.webp"}
               alt="Fanta F1"
-              height="60"
+              height="48"
               style={{ objectFit: "contain" }}
             />
           </div>
