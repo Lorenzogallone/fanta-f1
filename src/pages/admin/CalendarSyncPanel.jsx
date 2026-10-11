@@ -11,7 +11,6 @@ import PropTypes from "prop-types";
 import { Alert, Badge, Button, Modal, Spinner, Table } from "react-bootstrap";
 import { useLanguage } from "../../hooks/useLanguage";
 import { useTimezone } from "../../hooks/useTimezone";
-import { useTheme } from "../../contexts/ThemeContext";
 import { useF1Data } from "../../hooks/useF1Data";
 import {
   previewF1Sync,
@@ -37,7 +36,6 @@ const FIELD_LABELS = {
 export default function CalendarSyncPanel({ races, onDataChange }) {
   const { t } = useLanguage();
   const { timezone } = useTimezone();
-  const { isDark } = useTheme();
   const { drivers, teams, source, reload: reloadF1Data } = useF1Data();
 
   const [status, setStatus] = useState(null);
@@ -48,8 +46,6 @@ export default function CalendarSyncPanel({ races, onDataChange }) {
   const [applying, setApplying] = useState(false);
   const [message, setMessage] = useState(null);
 
-  const borderColor = isDark ? "var(--border-color)" : "#dee2e6";
-  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
 
   useEffect(() => {
     getSyncStatus().then(setStatus).catch((err) => error(err));
@@ -189,7 +185,7 @@ export default function CalendarSyncPanel({ races, onDataChange }) {
   return (
     <div className="mb-4">
       <h6 className="mb-2 fw-bold" style={{ color: "var(--text-primary)" }}>{t("f1Sync.title")}</h6>
-      <div className="rounded p-3" style={{ backgroundColor: bgCard, border: `1px solid ${borderColor}` }}>
+      <div className="admin-box">
         <p className="small text-muted mb-2">{t("f1Sync.description")}</p>
         <p className="small mb-2">
           <span className="text-muted">{t("f1Sync.lastRun")}:</span>{" "}

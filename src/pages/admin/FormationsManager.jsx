@@ -71,8 +71,6 @@ export default function FormationsManager({ participants, races, loading, onData
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingUser, setDeletingUser] = useState(null);
 
-  const borderColor = isDark ? "var(--border-color)" : "#dee2e6";
-  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
 
   // Default to first race without results and not cancelled
   const defaultRace = useMemo(() => {
@@ -357,7 +355,7 @@ export default function FormationsManager({ participants, races, loading, onData
           {loadingSubs ? (
             <div className="text-center py-4"><Spinner animation="border" size="sm" /></div>
           ) : (
-            <ListGroup variant="flush" style={{ borderRadius: 8, overflow: "hidden", border: `1px solid ${borderColor}` }}>
+            <ListGroup variant="flush" className="admin-list">
               {participants.map((p) => {
                 const sub = submissions[p.id];
                 const hasSubmission = Boolean(sub);
@@ -365,7 +363,7 @@ export default function FormationsManager({ participants, races, loading, onData
                   <ListGroup.Item
                     key={p.id}
                     className="px-3 py-2"
-                    style={{ backgroundColor: bgCard, color: "var(--text-primary)", borderColor }}
+                   
                   >
                     <div className="d-flex justify-content-between align-items-center">
                       <div style={{ minWidth: 0, flex: 1 }}>
@@ -373,23 +371,19 @@ export default function FormationsManager({ participants, races, loading, onData
                         <div className="d-flex align-items-center gap-2 mt-1">
                           {hasSubmission ? (
                             <>
-                              <Badge bg="success" style={{ fontSize: "0.65rem" }}>{t("admin.submitted")}</Badge>
+                              <span className="admin-status is-on">{t("admin.submitted")}</span>
                               {(sub.isLate || sub.isLateSprint) && (
-                                <Badge bg="warning" text="dark" style={{ fontSize: "0.6rem" }}>
-                                  {t("formations.lateSubmission")}
-                                </Badge>
+                                <span className="admin-meta-warn small">{t("formations.lateSubmission")}</span>
                               )}
                             </>
                           ) : (
-                            <Badge bg="outline-secondary" style={{ fontSize: "0.65rem", border: `1px solid ${borderColor}`, color: "var(--text-muted)" }}>
-                              {t("admin.notSubmitted")}
-                            </Badge>
+                            <span className="admin-status">{t("admin.notSubmitted")}</span>
                           )}
                         </div>
                       </div>
                       <div className="d-flex gap-1 flex-shrink-0">
                         <Button
-                          variant={hasSubmission ? "outline-primary" : "outline-success"}
+                          variant="outline-secondary"
                           size="sm"
                           className="py-0 px-2"
                           onClick={() => openEdit(p)}

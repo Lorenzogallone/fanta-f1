@@ -7,11 +7,10 @@
  */
 
 import React, { useState } from "react";
-import { Alert, Badge, Button, Form, Modal, Spinner, Table } from "react-bootstrap";
+import { Alert, Badge, Button, Form, ListGroup, Modal, Spinner } from "react-bootstrap";
 import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp } from "firebase/firestore";
 import { db } from "../../services/firebase";
 import { useLanguage } from "../../hooks/useLanguage";
-import { useTheme } from "../../contexts/ThemeContext";
 import { useF1Data } from "../../hooks/useF1Data";
 import { makeSlug } from "../../../functions/shared/f1Sync.mjs";
 import { error } from "../../utils/logger";
@@ -21,7 +20,6 @@ const parseAliases = (text) => [...new Set(text.split(",").map((s) => s.trim()).
 
 export default function DriversManager() {
   const { t } = useLanguage();
-  const { isDark } = useTheme();
   const { drivers, teams, source, loading, reload } = useF1Data();
 
   const [busyId, setBusyId] = useState(null);
@@ -29,8 +27,6 @@ export default function DriversManager() {
   const [editing, setEditing] = useState(null); // { kind: "driver"|"team", isNew, data }
   const [saving, setSaving] = useState(false);
 
-  const borderColor = isDark ? "var(--border-color)" : "#dee2e6";
-  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
   const editable = source === "firestore";
 
   const teamName = (id) => teams.find((tm) => tm.id === id)?.name || "—";
@@ -159,50 +155,42 @@ export default function DriversManager() {
         </h6>
         <Button size="sm" variant="danger" onClick={() => openDriver(null)} disabled={!editable}>+ {t("driversAdmin.addDriver")}</Button>
       </div>
-      <div className="rounded mb-4" style={{ overflowX: "auto", border: `1px solid ${borderColor}`, backgroundColor: bgCard }}>
-        <Table size="sm" className="mb-0 align-middle" style={{ fontSize: "0.8rem" }}>
-          <thead>
-            <tr>
-              <th>{t("driversAdmin.name")}</th>
-              <th>{t("driversAdmin.team")}</th>
-              <th className="text-center">#</th>
-              <th className="text-center">{t("driversAdmin.selectable")}</th>
-              <th className="text-center">{t("driversAdmin.active")}</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedDrivers.map((d) => {
-              const teamLocked = (d.locked || []).includes("teamId");
-              return (
-                <tr key={d.id} style={{ opacity: d.active === false ? 0.5 : 1 }}>
-                  <td>
-                    <span className="fw-semibold">{d.name}</span>
-                    {d.source === "api" && <Badge bg="info" className="ms-1" style={{ fontSize: "0.55rem" }}>{t("driversAdmin.fromApi")}</Badge>}
-                  </td>
-                  <td className="text-nowrap">
-                    {teamLogo(d.teamId) && <img src={teamLogo(d.teamId)} alt="" style={{ height: 16, width: 16, objectFit: "contain", marginRight: 4 }} />}
-                    {teamName(d.teamId)}
-                    <Button variant="link" size="sm" className="p-0 ms-1 text-decoration-none" disabled={!editable || busyId === `drivers:${d.id}`}
-                      title={teamLocked ? t("driversAdmin.unlockTeam") : t("driversAdmin.lockTeam")}
-                      onClick={() => update("drivers", d.id, { locked: teamLocked ? arrayRemove("teamId") : arrayUnion("teamId") })}>
-                      {teamLocked ? "🔒" : "🔓"}
-                    </Button>
-                  </td>
-                  <td className="text-center">{d.number ?? "—"}</td>
-                  <td className="text-center">{switchCell("drivers", d, "selectable")}</td>
-                  <td className="text-center">{switchCell("drivers", d, "active")}</td>
-                  <td className="text-end">
-                    <Button size="sm" variant="outline-secondary" className="py-0 px-2" onClick={() => openDriver(d)} disabled={!editable}>
-                      {t("common.edit")}
-                    </Button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-      </div>
+      <ListGroup variant="flush" className="admin-list mb-4">
+        {sortedDrivers.map((d) => {
+          const teamLocked = (d.locked || []).includes("teamId");
+          return (
+            <ListGroup.Item key={d.id} className={`admin-row${d.active === false ? " is-off" : ""}`}>
+              <button type="button" className="admin-row-main" onClick={() => openDriver(d)} disabled={!editable}>
+                <span className="admin-row-title">
+                  {d.name}
+                  {d.number != null && d.number !== "" && <span className="admin-row-num">#{d.number}</span>}
+                </span>
+                <span className="admin-meta d-flex align-items-center gap-1">
+                  {teamLogo(d.teamId) && <img src={teamLogo(d.teamId)} alt="" style={{ height: 14, width: 14, objectFit: "contain" }} />}
+                  {teamName(d.teamId)}
+                  {d.source === "api" && <> · {t("driversAdmin.fromApi")}</>}
+                </span>
+              </button>
+              <Button variant="link" size="sm" className="admin-lock" disabled={!editable || busyId === `drivers:${d.id}`}
+                title={teamLocked ? t("driversAdmin.unlockTeam") : t("driversAdmin.lockTeam")}
+                aria-label={teamLocked ? t("driversAdmin.unlockTeam") : t("driversAdmin.lockTeam")}
+                onClick={() => update("drivers", d.id, { locked: teamLocked ? arrayRemove("teamId") : arrayUnion("teamId") })}>
+                {teamLocked ? "🔒" : "🔓"}
+              </Button>
+              <div className="admin-switches">
+                <label className="admin-switch">
+                  {switchCell("drivers", d, "selectable")}
+                  <span>{t("driversAdmin.selectable")}</span>
+                </label>
+                <label className="admin-switch">
+                  {switchCell("drivers", d, "active")}
+                  <span>{t("driversAdmin.active")}</span>
+                </label>
+              </div>
+            </ListGroup.Item>
+          );
+        })}
+      </ListGroup>
 
       {/* ── Teams ── */}
       <div className="d-flex justify-content-between align-items-center mb-2">
@@ -212,36 +200,28 @@ export default function DriversManager() {
         </h6>
         <Button size="sm" variant="danger" onClick={() => openTeam(null)} disabled={!editable}>+ {t("driversAdmin.addTeam")}</Button>
       </div>
-      <div className="rounded" style={{ overflowX: "auto", border: `1px solid ${borderColor}`, backgroundColor: bgCard }}>
-        <Table size="sm" className="mb-0 align-middle" style={{ fontSize: "0.8rem" }}>
-          <thead>
-            <tr>
-              <th>{t("driversAdmin.name")}</th>
-              <th>{t("driversAdmin.aliases")}</th>
-              <th className="text-center">{t("driversAdmin.active")}</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedTeams.map((tm) => (
-              <tr key={tm.id} style={{ opacity: tm.active === false ? 0.5 : 1 }}>
-                <td className="text-nowrap">
-                  {tm.logo && <img src={tm.logo} alt="" style={{ height: 16, width: 16, objectFit: "contain", marginRight: 4 }} />}
-                  <span className="fw-semibold">{tm.name}</span>
-                  {tm.source === "api" && <Badge bg="info" className="ms-1" style={{ fontSize: "0.55rem" }}>{t("driversAdmin.fromApi")}</Badge>}
-                </td>
-                <td className="text-muted small">{(tm.apiAliases || []).join(", ")}</td>
-                <td className="text-center">{switchCell("teams", tm, "active")}</td>
-                <td className="text-end">
-                  <Button size="sm" variant="outline-secondary" className="py-0 px-2" onClick={() => openTeam(tm)} disabled={!editable}>
-                    {t("common.edit")}
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </div>
+      <ListGroup variant="flush" className="admin-list">
+        {sortedTeams.map((tm) => (
+          <ListGroup.Item key={tm.id} className={`admin-row${tm.active === false ? " is-off" : ""}`}>
+            <button type="button" className="admin-row-main" onClick={() => openTeam(tm)} disabled={!editable}>
+              <span className="admin-row-title d-flex align-items-center gap-1">
+                {tm.logo && <img src={tm.logo} alt="" style={{ height: 16, width: 16, objectFit: "contain" }} />}
+                {tm.name}
+              </span>
+              <span className="admin-meta" title={(tm.apiAliases || []).join(", ")}>
+                {t("driversAdmin.aliasesCount", { count: String((tm.apiAliases || []).length) })}
+                {tm.source === "api" && <> · {t("driversAdmin.fromApi")}</>}
+              </span>
+            </button>
+            <div className="admin-switches">
+              <label className="admin-switch">
+                {switchCell("teams", tm, "active")}
+                <span>{t("driversAdmin.active")}</span>
+              </label>
+            </div>
+          </ListGroup.Item>
+        ))}
+      </ListGroup>
 
       {/* ── Edit / add modal ── */}
       <Modal show={Boolean(editing)} onHide={() => setEditing(null)} centered>

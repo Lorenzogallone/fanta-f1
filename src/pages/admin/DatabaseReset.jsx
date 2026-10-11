@@ -23,7 +23,6 @@ import {
 } from "firebase/firestore";
 import { db } from "../../services/firebase";
 import { commitWrites } from "../../services/pointsCalculator";
-import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../hooks/useLanguage";
 import { useTimezone } from "../../hooks/useTimezone";
 import { error } from "../../utils/logger";
@@ -37,7 +36,6 @@ import {
 
 export default function DatabaseReset({ participants, races, onDataChange }) {
   const { t } = useLanguage();
-  const { isDark } = useTheme();
   const { timezone } = useTimezone();
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetType, setResetType] = useState("");
@@ -53,8 +51,6 @@ export default function DatabaseReset({ participants, races, onDataChange }) {
   const [selectedBackup, setSelectedBackup] = useState(null);
   const [restoring, setRestoring] = useState(false);
 
-  const borderColor = isDark ? "var(--border-color)" : "#dee2e6";
-  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
 
   const loadBackups = async () => {
     setLoadingBackups(true);
@@ -163,7 +159,7 @@ export default function DatabaseReset({ participants, races, onDataChange }) {
         <h6 className="mb-2 fw-bold" style={{ color: "var(--text-primary)" }}>
           {t("admin.backupDatabase")}
         </h6>
-        <div className="rounded p-3" style={{ backgroundColor: bgCard, border: `1px solid ${borderColor}` }}>
+        <div className="admin-box">
           <p className="small text-muted mb-3">{t("admin.backupDescription")}</p>
           <Button variant="danger" size="sm" className="w-100" onClick={handleCreateBackup} disabled={backingUp}>
             {backingUp ? <><Spinner animation="border" size="sm" className="me-2" />{t("admin.creatingBackup")}</> : t("admin.createManualBackup")}
@@ -188,15 +184,15 @@ export default function DatabaseReset({ participants, races, onDataChange }) {
         {loadingBackups ? (
           <div className="text-center py-4"><Spinner animation="border" size="sm" /></div>
         ) : backups.length === 0 ? (
-          <div className="text-center py-4 rounded small" style={{ backgroundColor: bgCard, border: `1px solid ${borderColor}`, color: "var(--text-muted)" }}>
+          <div className="admin-empty">
             {t("admin.noBackupsAvailable")}
           </div>
         ) : (
-          <ListGroup variant="flush" style={{ borderRadius: 8, overflow: "hidden", border: `1px solid ${borderColor}` }}>
+          <ListGroup variant="flush" className="admin-list">
             {backups.map((backup) => {
               const timestamp = backup.metadata?.timestamp?.toDate?.() || new Date();
               return (
-                <ListGroup.Item key={backup.id} className="px-3 py-2" style={{ backgroundColor: bgCard, color: "var(--text-primary)", borderColor }}>
+                <ListGroup.Item key={backup.id} className="px-3 py-2">
                   <div className="d-flex align-items-center gap-2 mb-1">
                     <Badge bg={backup.metadata?.type === "manual" ? "success" : "primary"} style={{ fontSize: "0.6rem" }}>
                       {backup.metadata?.type || "manual"}
@@ -231,7 +227,7 @@ export default function DatabaseReset({ participants, races, onDataChange }) {
       {/* ── Reset Section ── */}
       <div>
         <h6 className="mb-2 fw-bold text-danger">{t("admin.resetAll")}</h6>
-        <div className="rounded p-3" style={{ backgroundColor: bgCard, border: `1px solid ${borderColor}` }}>
+        <div className="admin-box">
           <p className="small text-muted mb-3">{t("admin.confirmReset")}</p>
           <Button variant="outline-danger" size="sm" className="w-100" onClick={() => { setResetType("all"); setConfirmText(""); setShowResetModal(true); }}>
             {t("admin.resetAll")}
@@ -275,7 +271,7 @@ export default function DatabaseReset({ participants, races, onDataChange }) {
 
           {selectedBackup && (
             <>
-              <div className="rounded p-2 mb-3 small" style={{ backgroundColor: isDark ? "var(--bg-tertiary)" : "#f8f9fa", border: `1px solid ${borderColor}` }}>
+              <div className="admin-inset mb-3">
                 <div className="d-flex justify-content-between mb-1">
                   <span className="text-muted">{t("admin.backupType")}:</span>
                   <Badge bg={selectedBackup.metadata?.type === "manual" ? "success" : "primary"} style={{ fontSize: "0.6rem" }}>

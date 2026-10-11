@@ -98,8 +98,6 @@ export default function CalendarManager({ races, loading, onDataChange }) {
   const [loadingIcs, setLoadingIcs] = useState(false);
   const [importing, setImporting] = useState(false);
 
-  const borderColor = isDark ? "var(--border-color)" : "#dee2e6";
-  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
 
   // ─── Preview data ───
   const previewData = useMemo(() => {
@@ -361,7 +359,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
         <h6 className="mb-2 fw-bold" style={{ color: "var(--text-primary)" }}>
           {t("admin.importICS")}
         </h6>
-        <div className="rounded p-3" style={{ backgroundColor: bgCard, border: `1px solid ${borderColor}` }}>
+        <div className="admin-box">
           {message && !showEditModal && !showAddModal && (
             <Alert variant={message.type} dismissible onClose={() => setMessage(null)} className="py-2 mb-2">
               {message.text}
@@ -395,13 +393,13 @@ export default function CalendarManager({ races, loading, onDataChange }) {
       {races.length === 0 ? (
         <Alert variant="info">{t("leaderboard.noData")}</Alert>
       ) : (
-        <ListGroup variant="flush" style={{ borderRadius: 8, overflow: "hidden", border: `1px solid ${borderColor}` }}>
+        <ListGroup variant="flush" className="admin-list">
           {races.map((r) => {
             const hasSprint = Boolean(r.qualiSprintUTC);
             const hasResults = Boolean(r.officialResults);
             return (
               <ListGroup.Item key={r.id} className="px-3 py-2" action onClick={() => handleEditRace(r)}
-                style={{ backgroundColor: bgCard, color: "var(--text-primary)", borderColor }}>
+               >
                 <div className="d-flex justify-content-between align-items-center">
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div className="d-flex align-items-center gap-1">
@@ -574,7 +572,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
               <h6 className="fw-bold mb-3">{t("admin.previewChanges")}</h6>
               <p className="small text-muted mb-2">🔒 {t("f1Sync.editLocksHint")}</p>
               {editingRace && (
-                <div className="rounded p-2 mb-3 small" style={{ backgroundColor: isDark ? "var(--bg-tertiary)" : "#f0f4f8", border: `1px solid ${borderColor}` }}>
+                <div className="admin-inset mb-3">
                   <strong>{editingRace.name}</strong> → <strong>{editFormData.name}</strong>
                   {editFormData.name !== editingRace.name && <Badge bg="info" className="ms-1" style={{ fontSize: "0.6rem" }}>{t("admin.nameChanged")}</Badge>}
                   <br />

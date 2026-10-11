@@ -617,6 +617,7 @@ export const it = {
     unlockTeam: "Sblocca squadra",
     duplicate: "Esiste già un elemento con questo nome",
     saved: "Salvato",
+    aliasesCount: "{{count}} alias API",
   },
 
   // Error Messages
