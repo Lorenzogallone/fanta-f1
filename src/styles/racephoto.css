@@ -179,3 +179,95 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+/* Admin › Calendar › edit race: photo editor (the modal lives outside .admin-page) */
+.race-photo-editor {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.race-photo-editor .race-photo-status {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.race-photo-editor .race-photo-preview {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  height: 130px;
+  padding: 0.6rem 0.75rem;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .race-photo-editor .race-photo-preview {
+  background-color: var(--bg-tertiary);
+}
+
+.race-photo-editor .race-photo-preview.has-photo {
+  color: #fff;
+  background-color: #111;
+}
+
+.race-photo-editor .race-photo-preview.has-photo::before,
+.race-photo-editor .race-photo-preview.has-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.race-photo-editor .race-photo-preview.has-photo::before {
+  background-image: var(--hero-img);
+  background-size: cover;
+  background-position: var(--hero-pos, center);
+}
+
+.race-photo-editor .race-photo-preview.has-photo::after {
+  background: linear-gradient(180deg, rgba(10, 10, 12, 0.1) 30%, rgba(10, 10, 12, 0.8) 100%);
+}
+
+.race-photo-editor .race-photo-preview .race-photo-preview-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: inherit;
+}
+
+.race-photo-editor .race-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.race-photo-editor .race-photo-draft {
+  margin-top: 0.6rem;
+}
+
+.race-photo-editor .race-photo-msg,
+.race-photo-editor .race-photo-hint {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+}
+
+.race-photo-editor .race-photo-hint {
+  color: var(--text-muted);
+}
+
+.race-photo-editor .race-photo-msg.is-ok {
+  color: var(--score-positive);
+}
+
+.race-photo-editor .race-photo-msg.is-error {
+  color: var(--score-negative);
+}
+
+.race-photo-editor .fx-segmented {
+  max-width: none;
+}

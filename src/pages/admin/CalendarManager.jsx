@@ -36,6 +36,9 @@ import { useLanguage } from "../../hooks/useLanguage";
 import { useTimezone } from "../../hooks/useTimezone";
 import { error } from "../../utils/logger";
 import CalendarSyncPanel from "./CalendarSyncPanel";
+import RacePhotoEditor from "./RacePhotoEditor";
+import { resetRacePhoto } from "../../services/racePhotoService";
+import "../../styles/racephoto.css";
 import { saveRoundOrder } from "../../services/calendarSyncService";
 import { makeSlug } from "../../../functions/shared/f1Sync.mjs";
 
@@ -335,6 +338,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
         await batch.commit();
       }
       await deleteDoc(doc(db, "races", editingRace.id));
+      await resetRacePhoto(editingRace.id).catch((err) => error(err));
       await saveRoundOrder(races.filter((r) => r.id !== editingRace.id));
       setMessage({ type: "success", text: t("admin.raceDeleted") });
       setShowEditModal(false); setEditingRace(null);
@@ -504,6 +508,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
 
           {!showPreview ? (
             <Form>
+              {editingRace && <RacePhotoEditor race={editingRace} />}
               {Boolean(editingRace?.officialResults) && (
                 <Alert variant="info" className="py-2 small mb-3">
                   {t("admin.hasResults")} — {t("admin.datesLockedHint")}

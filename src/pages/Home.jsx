@@ -17,7 +17,7 @@ import { useLanguage } from "../hooks/useLanguage";
 import { useAuth } from "../hooks/useAuth";
 import { useTimezone } from "../hooks/useTimezone";
 import { error } from "../utils/logger";
-import { raceImage } from "../data/raceImages";
+import { useRacePhoto } from "../hooks/useRacePhoto";
 import "../styles/cards.css";
 import "../styles/home.css";
 import "../styles/racephoto.css";
@@ -84,6 +84,7 @@ function NextRaceCard({ race, submission, now }) {
   const { t, currentLanguage } = useLanguage();
   const { timezone } = useTimezone();
   const locale = currentLanguage === "en" ? "en-GB" : "it-IT";
+  const photo = useRacePhoto(race);
 
   if (!race) {
     return (
@@ -124,8 +125,6 @@ function NextRaceCard({ race, submission, now }) {
       ? t("home.editFormation")
       : t("home.startLineup");
 
-  const photo = raceImage(race);
-
   return (
     <div
       className={`fx-card home-hero${photo ? " has-photo" : ""}`}
@@ -161,8 +160,8 @@ function NextRaceCard({ race, submission, now }) {
         {actionLabel}
       </Link>
 
-      {photo && (
-        <a className="home-hero-credit" href={photo.href} target="_blank" rel="noopener noreferrer">
+      {photo?.credit && (
+        <a className="home-hero-credit" href={photo.href || undefined} target="_blank" rel="noopener noreferrer">
           {t("home.photoCredit", { credit: photo.credit })}
         </a>
       )}

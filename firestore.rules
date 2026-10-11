@@ -231,6 +231,22 @@ service cloud.firestore {
       // Only Cloud Functions (Admin SDK) can read/write this collection
     }
 
+    /* ===================== FOTO GARE ====================================
+     * Collezione: /racePhotos/{raceId}
+     * Foto di sfondo della card "prossima gara" scelta dall'admin
+     * (immagine compressa inline). Nessun doc = foto predefinita dell'app.
+     * Lettura per utenti autenticati, scrittura solo admin
+     * ==================================================================== */
+    match /racePhotos/{raceId} {
+      allow read: if isAuthenticated();
+      allow delete: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.data.mode in ['custom', 'none']
+        && (request.resource.data.mode == 'none'
+            || (request.resource.data.dataUrl is string
+                && request.resource.data.dataUrl.size() < 950000));
+    }
+
     /* ===================== FALLBACK ======================================
      * Blocca accesso a qualsiasi altra collezione non definita sopra
      * ==================================================================== */

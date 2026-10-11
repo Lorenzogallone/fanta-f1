@@ -33,7 +33,7 @@ import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
 import { getTimezoneDisplay } from "../utils/timezoneUtils";
 import { log, error as logError } from "../utils/logger";
-import { raceImage } from "../data/raceImages";
+import { useRacePhoto } from "../hooks/useRacePhoto";
 import "../styles/cards.css";
 import "../styles/results.css";
 import "../styles/racephoto.css";
@@ -201,6 +201,8 @@ export default function RaceResults() {
 
     return { upcoming, past, nextRace };
   }, [races]);
+
+  const nextRacePhoto = useRacePhoto(scheduleData.nextRace);
 
   /**
    * Renders session accordion body with loading state
@@ -776,7 +778,7 @@ export default function RaceResults() {
                     ? t("raceResults.tomorrow")
                     : t("raceResults.daysUntil", { count: daysUntil });
 
-                const photo = raceImage(race);
+                const photo = nextRacePhoto;
 
                 return (
                   <div className="fx-card res-card res-next">
@@ -789,8 +791,8 @@ export default function RaceResults() {
                         {race.qualiSprintUTC && <span className="res-pill">Sprint</span>}
                       </div>
                       <h2 className="res-race-name">{race.name}</h2>
-                      {photo && (
-                        <a className="res-photo-credit" href={photo.href} target="_blank" rel="noopener noreferrer">
+                      {photo?.credit && (
+                        <a className="res-photo-credit" href={photo.href || undefined} target="_blank" rel="noopener noreferrer">
                           {t("home.photoCredit", { credit: photo.credit })}
                         </a>
                       )}
