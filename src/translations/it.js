@@ -159,6 +159,7 @@ export const it = {
     total: "Totale",
     totalMain: "Tot. Gara",
     totalSprint: "Tot. Sprint",
+    scoreMain: "Gara",
     team: "Team",
     noRaces: "Nessuna gara completata",
     noChampionship: "Nessuna formazione campionato inviata",

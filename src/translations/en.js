@@ -159,6 +159,7 @@ export const en = {
     total: "Total",
     totalMain: "Tot. Main",
     totalSprint: "Tot. Sprint",
+    scoreMain: "Race",
     team: "Team",
     noRaces: "No completed races",
     noChampionship: "No championship lineups submitted yet",
