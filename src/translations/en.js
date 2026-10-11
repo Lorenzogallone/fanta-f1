@@ -83,6 +83,8 @@ export const en = {
     fromLeader: "-{{gap}} from 1st",
     leading: "leading",
     jollyAvailable: "available",
+    calculateNow: "Calculate",
+    adminOnly: "Admins only",
   },
 
   // Leaderboard

@@ -83,6 +83,8 @@ export const it = {
     fromLeader: "-{{gap}} dal 1°",
     leading: "in testa",
     jollyAvailable: "disponibili",
+    calculateNow: "Calcola",
+    adminOnly: "Solo admin",
   },
 
   // Leaderboard
