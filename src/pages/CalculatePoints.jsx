@@ -254,11 +254,15 @@ useEffect(() => {
       });
       setFetchingResults(false);
     } else {
-      // No results in DB → try fetching from API only if race has finished
+      // No results in DB → try fetching from API once the race, or at least
+      // the sprint, should be finished (1h after its start)
       const raceStartMs = race.raceUTC.seconds * 1000;
       const raceFinishedEstimate = raceStartMs + 60 * 60 * 1000; // 1 ora dopo l'inizio gara
+      const weekendHasSprint = Boolean(race.qualiSprintUTC) && !race.cancelledSprint;
+      const sprintFinished = weekendHasSprint && race.sprintUTC
+        && Date.now() > race.sprintUTC.seconds * 1000 + 60 * 60 * 1000;
 
-      if (Date.now() < raceFinishedEstimate) {
+      if (Date.now() < raceFinishedEstimate && !sprintFinished) {
         // Race hasn't finished yet — don't fetch from API
         setFormRace({
           P1:null, P2:null, P3:null,
@@ -278,22 +282,26 @@ useEffect(() => {
 
           setMsgRace({variant:"info", msg: t("calculate.fetchingFromAPI", { race: race.name }).replace("{race}", race.name)});
 
-          const apiResults = await fetchRaceResults(season, round, raceDate, race.officialRound);
+          const apiResults = await fetchRaceResults(season, round, raceDate, race.officialRound, weekendHasSprint);
 
           if (apiResults) {
-            // Pre-fill with API results
+            // Pre-fill with whatever is available: race and sprint are independent
+            const { main, sprint } = apiResults;
             setFormRace({
-              P1 : toOpt(apiResults.main.P1),
-              P2 : toOpt(apiResults.main.P2),
-              P3 : toOpt(apiResults.main.P3),
-              SP1: apiResults.sprint ? toOpt(apiResults.sprint.SP1) : null,
-              SP2: apiResults.sprint ? toOpt(apiResults.sprint.SP2) : null,
-              SP3: apiResults.sprint ? toOpt(apiResults.sprint.SP3) : null,
+              P1 : main ? toOpt(main.P1) : null,
+              P2 : main ? toOpt(main.P2) : null,
+              P3 : main ? toOpt(main.P3) : null,
+              SP1: sprint ? toOpt(sprint.SP1) : null,
+              SP2: sprint ? toOpt(sprint.SP2) : null,
+              SP3: sprint ? toOpt(sprint.SP3) : null,
             });
-            setMsgRace({
-              variant:"success",
-              msg: t("calculate.apiResultsLoaded")
-            });
+            setMsgRace(
+              !main
+                ? { variant: "info", msg: t("calculate.apiSprintOnly") }
+                : weekendHasSprint && !sprint
+                  ? { variant: "warning", msg: t("calculate.apiMainOnly") }
+                  : { variant: "success", msg: t("calculate.apiResultsLoaded") }
+            );
           } else {
             // No results available in DB or API
             setFormRace({

@@ -493,6 +493,8 @@ export const it = {
     raceNotFinished: "La gara non è ancora terminata. I risultati saranno disponibili dopo la fine della gara.",
     apiResultsLoaded: "✅ Risultati caricati. Controlla e conferma.",
     apiNoResults: "⚠️ Risultati non ancora disponibili per questa gara. Inserisci manualmente.",
+    apiSprintOnly: "Disponibili solo i risultati Sprint: quelli della gara arriveranno dopo la fine della gara.",
+    apiMainOnly: "Risultati gara caricati, ma quelli Sprint non sono disponibili: inseriscili a mano.",
     apiError: "⚠️ Impossibile caricare risultati da API. Inserisci manualmente.",
     resultsSaved: "Risultati salvati. Calcolo in corso…",
     calculatingPoints: "Calcolo punti in corso…",

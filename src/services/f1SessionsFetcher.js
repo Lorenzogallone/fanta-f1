@@ -515,9 +515,10 @@ export async function fetchAllSessions(season, localRound, raceDate, officialRou
       fetchRace(season, round),
     ]);
 
-    // If there's a sprint, try to fetch sprint qualifying
+    // Sprint qualifying: when the sprint is in, or while the weekend is still
+    // running (race not in yet), so it shows up on Friday evening too
     let sprintQualifying = null;
-    if (sprint !== null) {
+    if (sprint !== null || race === null) {
       try {
         sprintQualifying = await fetchSprintQualifying(season, round, raceDate, officialRound);
         if (sprintQualifying) {
