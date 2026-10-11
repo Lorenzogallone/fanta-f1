@@ -32,7 +32,7 @@
 
 .home-page .home-deadline {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
   margin-top: 0.9rem;
@@ -41,13 +41,17 @@
   background-color: var(--score-total-bg);
 }
 
+.home-page .home-deadline-label,
+.home-page .home-deadline-value {
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
 .home-page .home-deadline-label {
-  font-size: 0.8rem;
   color: var(--text-secondary);
 }
 
 .home-page .home-deadline-value {
-  font-size: 1.2rem;
   font-weight: 700;
   color: var(--accent-red);
   font-variant-numeric: tabular-nums;
@@ -146,11 +150,16 @@
   color: var(--score-negative);
 }
 
-.home-page .home-me-split {
-  margin-top: 1px;
-  font-size: 0.62rem;
+.home-page .home-me-detail {
+  max-width: 100%;
+  margin-top: 2px;
+  padding: 0 4px;
+  font-size: 0.66rem;
+  line-height: 1.3;
   color: var(--text-secondary);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .home-page .home-me-chevron,

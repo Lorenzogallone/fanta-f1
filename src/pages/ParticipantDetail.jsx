@@ -28,6 +28,7 @@ import { error as logError } from "../utils/logger";
 import { getChampionshipDeadlineMs } from "../utils/championshipDeadline";
 import { getChampionshipStatistics } from "../services/statisticsService";
 import PlayerStatsView from "../components/PlayerStatsView";
+import AccountPanel from "../components/AccountPanel";
 
 /**
  * Participant detail page showing complete user profile and statistics
@@ -201,6 +202,8 @@ export default function ParticipantDetail() {
     })();
   }, [userId, t, user?.uid]);
 
+  const isOwnPage = user?.uid === userId;
+
   // Show error if participant not found
   if (error) {
     return (
@@ -241,7 +244,8 @@ export default function ParticipantDetail() {
       totalCompletedRaces={totalCompletedRaces}
       loadingHistory={loadingHistory}
       showCharts={!loadingHistory}
-      showBackButton={true}
+      showBackButton={!isOwnPage}
+      accountPanel={isOwnPage ? <AccountPanel /> : null}
       positionData={positionData}
       pointsByRace={participant?.pointsByRace}
     />

@@ -164,42 +164,61 @@ NextRaceCard.propTypes = {
 };
 
 /**
+ * One summary figure: value, label and a short detail line. Every figure has
+ * all three lines so the four columns stay aligned.
+ */
+function SummaryStat({ value, label, detail, tone = "" }) {
+  return (
+    <div className="home-me-stat">
+      <span className={`home-me-value ${tone}`}>{value}</span>
+      <span className="fx-eyebrow">{label}</span>
+      <span className="home-me-detail">{detail || "\u00a0"}</span>
+    </div>
+  );
+}
+
+SummaryStat.propTypes = {
+  value: PropTypes.node.isRequired,
+  label: PropTypes.string.isRequired,
+  detail: PropTypes.string,
+  tone: PropTypes.string,
+};
+
+/**
  * Personal summary: position, points, jolly and last race score. Opens the player page.
  */
-function MySummary({ me, lastRace }) {
+function MySummary({ me, lastRace, playersCount, leaderPts }) {
   const { t } = useLanguage();
   if (!me) return null;
 
   const last = lastRace ? me.pointsByRace?.[lastRace.id] : null;
-  const lastHasSprint = Boolean(lastRace?.officialResults?.SP1) && !lastRace?.cancelledSprint;
   const lastTotal = last ? (last.mainPts || 0) + (last.sprintPts || 0) : null;
   const tone = (v) => (v > 0 ? "is-pos" : v < 0 ? "is-neg" : "");
+  const gap = leaderPts - (me.puntiTotali || 0);
 
   return (
     <Link to={`/participant/${me.id}`} className="fx-card home-me" aria-label={t("home.mySummary")}>
-      <div className="home-me-stat">
-        <span className="home-me-value">{me.position}°</span>
-        <span className="fx-eyebrow">{t("statistics.position")}</span>
-      </div>
-      <div className="home-me-stat">
-        <span className="home-me-value">{me.puntiTotali || 0}</span>
-        <span className="fx-eyebrow">{t("common.points")}</span>
-      </div>
-      <div className="home-me-stat">
-        <span className="home-me-value">{me.jolly ?? 0}</span>
-        <span className="fx-eyebrow">{t("leaderboard.jokers")}</span>
-      </div>
-      <div className="home-me-stat home-me-last">
-        <span className={`home-me-value ${tone(lastTotal)}`}>
-          {lastTotal === null ? "—" : lastTotal > 0 ? `+${lastTotal}` : lastTotal}
-        </span>
-        <span className="fx-eyebrow">{t("home.lastRace")}</span>
-        {last && lastHasSprint && (
-          <span className="home-me-split">
-            {t("history.scoreMain")} {last.mainPts || 0} · Sprint {last.sprintPts || 0}
-          </span>
-        )}
-      </div>
+      <SummaryStat
+        value={`${me.position}°`}
+        label={t("statistics.position")}
+        detail={t("home.ofPlayers", { count: playersCount })}
+      />
+      <SummaryStat
+        value={me.puntiTotali || 0}
+        label={t("common.points")}
+        detail={gap > 0 ? t("home.fromLeader", { gap }) : t("home.leading")}
+      />
+      <SummaryStat
+        value={me.jolly ?? 0}
+        label={t("leaderboard.jokers")}
+        detail={t("home.jollyAvailable")}
+      />
+      <SummaryStat
+        value={lastTotal === null ? "—" : lastTotal > 0 ? `+${lastTotal}` : lastTotal}
+        label={t("home.lastRace")}
+        tone={tone(lastTotal)}
+        detail={last ? lastRace.name : ""}
+      />
       <span className="home-me-chevron" aria-hidden="true">›</span>
     </Link>
   );
@@ -208,6 +227,8 @@ function MySummary({ me, lastRace }) {
 MySummary.propTypes = {
   me: PropTypes.object,
   lastRace: PropTypes.object,
+  playersCount: PropTypes.number,
+  leaderPts: PropTypes.number,
 };
 
 /**
@@ -291,7 +312,12 @@ export default function Home() {
 
             {races.length > 0 && <NextRaceCard race={nextRace} submission={nextRace ? submission : null} now={now} />}
 
-            <MySummary me={me} lastRace={lastScoredRace} />
+            <MySummary
+              me={me}
+              lastRace={lastScoredRace}
+              playersCount={ranking.length}
+              leaderPts={ranking[0]?.puntiTotali || 0}
+            />
 
             <nav className="fx-card home-links d-none d-lg-block">
               {links.map((l) => (

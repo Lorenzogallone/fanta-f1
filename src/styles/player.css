@@ -1,11 +1,20 @@
 /* Player page (ParticipantDetail / Statistics → Giocatore) */
 .player-view .player-back {
-  margin-bottom: 0.75rem;
-  padding: 0;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  margin-right: -0.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
-  background: none;
-  font-weight: 600;
-  color: var(--accent-red);
+  border-radius: 50%;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .player-view .player-back {
+  background-color: var(--bg-tertiary);
 }
 
 .player-view .player-profile {
@@ -100,7 +109,11 @@
 
 .player-view .player-tab {
   flex: 1 1 0;
-  padding: 0.45rem 0.5rem;
+  min-width: 0;
+  padding: 0.45rem 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   border: 0;
   border-radius: 9px;
   background: none;
@@ -113,6 +126,14 @@
   background-color: var(--bg-primary);
   color: var(--text-primary);
   box-shadow: 0 1px 2px var(--shadow);
+}
+
+@media (max-width: 575.98px) {
+  .player-view .player-tabs.is-compact .player-tab {
+    font-size: 0.8rem;
+    padding-left: 0.1rem;
+    padding-right: 0.1rem;
+  }
 }
 
 [data-theme="dark"] .player-view .player-tab.is-active {
@@ -322,6 +343,70 @@
   }
 
   [data-theme="dark"] .player-view .player-race-row:hover {
+    background-color: var(--bg-tertiary);
+  }
+}
+
+/* Account tab (own page) */
+.player-view .account-panel {
+  overflow: hidden;
+}
+
+.player-view .account-email {
+  padding: 0.75rem 1rem 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.player-view .account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 0;
+  background: none;
+  text-align: left;
+  text-decoration: none;
+  color: var(--text-primary);
+}
+
+.player-view .account-row + .account-row {
+  border-top: 1px solid var(--border-color);
+}
+
+.player-view .account-row-title {
+  display: block;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.player-view .account-row-text {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.player-view .account-row-chevron {
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.player-view .account-logout {
+  justify-content: center;
+  font-weight: 600;
+  color: var(--accent-red);
+}
+
+@media (hover: hover) {
+  .player-view .account-row:hover {
+    background-color: var(--bg-secondary);
+  }
+
+  [data-theme="dark"] .player-view .account-row:hover {
     background-color: var(--bg-tertiary);
   }
 }

@@ -79,6 +79,10 @@ export const en = {
     f1Hint: "F1 results, standings and calendar",
     statsHint: "Trends and player comparisons",
     startLineup: "Submit lineup",
+    ofPlayers: "of {{count}}",
+    fromLeader: "-{{gap}} from 1st",
+    leading: "leading",
+    jollyAvailable: "available",
   },
 
   // Leaderboard
@@ -96,6 +100,12 @@ export const en = {
   },
 
   // Participant Detail
+  // Account section of the "Io" tab
+  account: {
+    profileSettings: "Profile and settings",
+    profileSettingsHint: "Photo, nickname, notifications, theme and language",
+  },
+
   participantDetail: {
     racesTab: "Races",
     championshipTab: "Championship",
@@ -116,6 +126,7 @@ export const en = {
     raceHistory: "Races",
     loadingHistory: "Loading race history...",
     noRaces: "No races found for this participant",
+    accountTab: "Account",
   },
 
   // Formations
