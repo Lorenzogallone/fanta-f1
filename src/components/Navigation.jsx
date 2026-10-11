@@ -66,8 +66,8 @@ export default function Navigation() {
           <img
             src={isDark ? "/FantaF1_Logo_dark.webp" : "/FantaF1_Logo.webp"}
             alt="Fanta F1 Fantasy Formula 1 logo"
-            height="40"
-            style={{ objectFit: "contain" }}
+            height="32"
+            style={{ objectFit: "contain", margin: "4px 0" }}
           />
         </Link>
 

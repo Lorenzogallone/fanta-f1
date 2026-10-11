@@ -8,10 +8,8 @@ import {
   Container,
   Row,
   Col,
-  Card,
   Form,
   Button,
-  Badge,
   Alert,
   Spinner,
 } from "react-bootstrap";
@@ -22,22 +20,33 @@ import { getChampionshipDeadlineMs } from "../utils/championshipDeadline";
 import ChampionshipSubmissions from "../components/ChampionshipSubmissions";
 import { useF1Data } from "../hooks/useF1Data";
 import { buildDriverOptions, buildTeamOptions, findOptionOrCreate } from "../utils/f1SelectOptions";
-import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
 import { useAuth } from "../hooks/useAuth";
 import { error } from "../utils/logger";
 import "../styles/customSelect.css";
+import "../styles/cards.css";
+import "../styles/lineup.css";
 
 /**
  * Championship formation form component
  * @returns {JSX.Element} Championship prediction form with deadline management
  */
+function PickRow({ label, children }) {
+  return (
+    <div className="lineup-pick">
+      <div className="lineup-pick-row">
+        <span className="lineup-pick-label">{label}</span>
+        <div className="lineup-pick-field">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function ChampionshipForm() {
-  const { isDark } = useTheme();
   const { t, currentLanguage } = useLanguage();
   const { timezone } = useTimezone();
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth();
   // Only selectable drivers and active teams can be picked
   const { selectableDrivers, activeTeams, getDriverTeam, getTeamLogo, getDriverLogo } = useF1Data();
   const driverOptions = useMemo(
@@ -232,19 +241,12 @@ export default function ChampionshipForm() {
       </Container>
     );
 
-  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
-
   return (
-    <Container className="py-5">
-      <Row className="justify-content-center g-4 align-items-start">
+    <div className="fx lineup-page">
+      <Row className="g-3 g-lg-4 align-items-start">
         {/* FORM ------------------------------------------------------- */}
         <Col xs={12} lg={6}>
-          <Card className="shadow" style={{ borderLeft: `4px solid ${accentColor}` }}>
-            <Card.Body>
-              <Card.Title className="mb-3" style={{ color: accentColor }}>
-                📋 {t("championshipForm.title")}
-              </Card.Title>
-
+          <div className="fx-card lineup-card">
               {message && (
                 <Alert
                   variant={message.variant}
@@ -256,73 +258,75 @@ export default function ChampionshipForm() {
               )}
 
               <Form onSubmit={handleSubmit}>
-                {/* User info */}
-                <div className="text-muted mb-3" style={{ fontSize: "0.9rem" }}>
-                  {t("auth.submittingAs")}: <strong style={{ color: accentColor }}>{userProfile?.nickname || user?.email}</strong>
+                <section className="lineup-section">
+                  <div className="lineup-section-head">
+                    <span className="lineup-section-title">{t("championshipForm.title")}</span>
+                    <span className={`lineup-status ${pastDeadline ? "is-closed" : "is-open"}`}>
+                      {pastDeadline ? t("formations.closed") : t("formations.open")}
+                    </span>
+                  </div>
+                  <div className="lineup-section-deadline">
+                    {t("formations.submitBy")} {deadlineText}
+                  </div>
+                </section>
+
+                <section className="lineup-section">
+                  <div className="lineup-section-head">
+                    <span className="lineup-section-title">{t("championshipForm.topDrivers")}</span>
+                  </div>
+                  {["D1", "D2", "D3"].map((f, i) => (
+                    <PickRow key={f} label={`${i + 1}°`}>
+                      <Select
+                        options={driverOptions}
+                        value={form[f]}
+                        onChange={(sel) => onSel(sel, f)}
+                        placeholder={t(driverLabels[f])}
+                        classNamePrefix="react-select"
+                        isSearchable
+                        isDisabled={pastDeadline}
+                        aria-label={t(driverLabels[f])}
+                        required
+                      />
+                    </PickRow>
+                  ))}
+                </section>
+
+                <section className="lineup-section">
+                  <div className="lineup-section-head">
+                    <span className="lineup-section-title">{t("championshipForm.topConstructors")}</span>
+                  </div>
+                  {["C1", "C2", "C3"].map((f, i) => (
+                    <PickRow key={f} label={`${i + 1}°`}>
+                      <Select
+                        options={constructorOptions}
+                        value={form[f]}
+                        onChange={(sel) => onSel(sel, f)}
+                        placeholder={t(constructorLabels[f])}
+                        classNamePrefix="react-select"
+                        isDisabled={pastDeadline}
+                        aria-label={t(constructorLabels[f])}
+                        required
+                      />
+                    </PickRow>
+                  ))}
+                </section>
+
+                <div className="lineup-actions">
+                  <Button
+                    variant="danger"
+                    type="submit"
+                    className="lineup-btn"
+                    disabled={!allPicked || saving || pastDeadline}
+                  >
+                    {saving
+                      ? t("common.loading")
+                      : isEdit
+                      ? `${t("common.edit")} ${t("championshipForm.title")}`
+                      : t("championshipForm.saveFormation")}
+                  </Button>
                 </div>
-
-                {/* Scadenza — stile allineato a FormationApp */}
-                <hr style={{ borderColor: accentColor }} />
-                <div className="d-flex align-items-center gap-2 mb-1">
-                  <h5 className="mb-0" style={{ color: accentColor }}>
-                    {t("formations.deadline")}
-                  </h5>
-                  <Badge bg={pastDeadline ? "danger" : "success"}>
-                    {pastDeadline ? t("formations.closed") : t("formations.open")}
-                  </Badge>
-                </div>
-                <p className="small text-muted mb-3">
-                  {t("formations.submitBy")}: {deadlineText}
-                </p>
-
-                <h6 className="fw-bold">{t("championshipForm.topDrivers")}</h6>
-                {["D1", "D2", "D3"].map((f) => (
-                  <Form.Group key={f} className="mb-3">
-                    <Form.Label>{t(driverLabels[f])}</Form.Label>
-                    <Select
-                      options={driverOptions}
-                      value={form[f]}
-                      onChange={(sel) => onSel(sel, f)}
-                      placeholder={t(driverLabels[f])}
-                      classNamePrefix="react-select"
-                      isSearchable
-                      isDisabled={pastDeadline}
-                      required
-                    />
-                  </Form.Group>
-                ))}
-
-                <h6 className="fw-bold mt-4">{t("championshipForm.topConstructors")}</h6>
-                {["C1", "C2", "C3"].map((f) => (
-                  <Form.Group key={f} className="mb-3">
-                    <Form.Label>{t(constructorLabels[f])}</Form.Label>
-                    <Select
-                      options={constructorOptions}
-                      value={form[f]}
-                      onChange={(sel) => onSel(sel, f)}
-                      placeholder={t(constructorLabels[f])}
-                      classNamePrefix="react-select"
-                      isDisabled={pastDeadline}
-                      required
-                    />
-                  </Form.Group>
-                ))}
-
-                <Button
-                  variant="danger"
-                  type="submit"
-                  className="w-100 mt-3"
-                  disabled={!allPicked || saving || pastDeadline}
-                >
-                  {saving
-                    ? t("common.loading")
-                    : isEdit
-                    ? `${t("common.edit")} ${t("championshipForm.title")}`
-                    : t("championshipForm.saveFormation")}
-                </Button>
               </Form>
-            </Card.Body>
-          </Card>
+          </div>
         </Col>
 
         {/* LISTA ------------------------------------------------------ */}
@@ -330,6 +334,6 @@ export default function ChampionshipForm() {
           <ChampionshipSubmissions refresh={refreshKey} currentUserId={user?.uid} deadlineMs={deadlineMs} />
         </Col>
       </Row>
-    </Container>
+    </div>
   );
 }
