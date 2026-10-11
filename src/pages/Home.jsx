@@ -164,6 +164,15 @@ NextRaceCard.propTypes = {
 };
 
 /**
+ * "Gran Premio degli Stati Uniti d'America" → "GP Stati Uniti d'America"
+ * (also "Grand Prix" in English names), to fit the small summary column.
+ */
+const shortRaceName = (name = "") =>
+  name
+    .replace(/^Gran Premio\s+(dell'|dell’|della|delle|degli|del|dei|di|d'|d’)?\s*/i, "GP ")
+    .replace(/\s+Grand Prix$/i, " GP");
+
+/**
  * One summary figure: value, label and a short detail line. Every figure has
  * all three lines so the four columns stay aligned.
  */
@@ -217,7 +226,7 @@ function MySummary({ me, lastRace, playersCount, leaderPts }) {
         value={lastTotal === null ? "—" : lastTotal > 0 ? `+${lastTotal}` : lastTotal}
         label={t("home.lastRace")}
         tone={tone(lastTotal)}
-        detail={last ? lastRace.name : ""}
+        detail={last ? shortRaceName(lastRace.name) : ""}
       />
       <span className="home-me-chevron" aria-hidden="true">›</span>
     </Link>
