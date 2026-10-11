@@ -33,8 +33,10 @@ import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
 import { getTimezoneDisplay } from "../utils/timezoneUtils";
 import { log, error as logError } from "../utils/logger";
+import { raceImage } from "../data/raceImages";
 import "../styles/cards.css";
 import "../styles/results.css";
+import "../styles/racephoto.css";
 
 /**
  * Component to display driver with team logo
@@ -774,14 +776,24 @@ export default function RaceResults() {
                     ? t("raceResults.tomorrow")
                     : t("raceResults.daysUntil", { count: daysUntil });
 
+                const photo = raceImage(race);
+
                 return (
                   <div className="fx-card res-card res-next">
-                    <div className="res-card-head">
+                    <div
+                      className={`res-card-head${photo ? " has-photo" : ""}`}
+                      style={photo ? { "--hero-img": `url("${photo.src}")`, "--hero-pos": photo.pos } : undefined}
+                    >
                       <div className="d-flex align-items-center gap-2">
                         <span className="fx-eyebrow">{t("raceResults.nextRace")} · R{race.round} · {countdownText}</span>
                         {race.qualiSprintUTC && <span className="res-pill">Sprint</span>}
                       </div>
                       <h2 className="res-race-name">{race.name}</h2>
+                      {photo && (
+                        <a className="res-photo-credit" href={photo.href} target="_blank" rel="noopener noreferrer">
+                          {t("home.photoCredit", { credit: photo.credit })}
+                        </a>
+                      )}
                     </div>
                     <div className="res-rows">
                       {weekendSessions(race).map((s, idx) => (

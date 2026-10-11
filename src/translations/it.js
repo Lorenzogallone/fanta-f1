@@ -66,6 +66,7 @@ export const it = {
     sprintDeadline: "La Sprint chiude tra",
     mainDeadline: "La Gara chiude tra",
     lineupsClosed: "Formazioni chiuse",
+    photoCredit: "Foto: {{credit}}",
     lineupDone: "Schierata",
     lineupTodo: "Da schierare",
     lineupMissed: "Non schierata",

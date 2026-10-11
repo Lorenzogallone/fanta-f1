@@ -66,6 +66,7 @@ export const en = {
     sprintDeadline: "Sprint closes in",
     mainDeadline: "Race closes in",
     lineupsClosed: "Lineups closed",
+    photoCredit: "Photo: {{credit}}",
     lineupDone: "Submitted",
     lineupTodo: "To submit",
     lineupMissed: "Not submitted",
