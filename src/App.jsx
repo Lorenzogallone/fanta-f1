@@ -20,6 +20,7 @@ import { F1DataProvider } from "./contexts/F1DataContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Navigation from "./components/Navigation";
 import Footer from "./components/Footer";
+import BottomTabBar from "./components/BottomTabBar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import CompleteProfileModal from "./components/CompleteProfileModal";
@@ -142,6 +143,7 @@ export default function App() {
               </BContainer>
 
               <Footer />
+              <BottomTabBar />
             </Router>
             </F1DataProvider>
           </AuthProvider>

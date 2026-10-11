@@ -46,6 +46,7 @@ export const en = {
     toggleTheme: "Toggle theme",
     changeLanguage: "Change language",
     myProfile: "My Profile",
+    me: "Me",
   },
 
   // Home

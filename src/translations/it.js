@@ -46,6 +46,7 @@ export const it = {
     toggleTheme: "Cambia tema",
     changeLanguage: "Cambia lingua",
     myProfile: "Il mio Profilo",
+    me: "Io",
   },
 
   // Home

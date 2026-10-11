@@ -1,0 +1,65 @@
+/* Bottom tab bar (mobile / PWA) */
+.bottom-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1030;
+  display: flex;
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-tabbar .bottom-tabbar-item {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 58px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-tabbar .bottom-tabbar-item.is-active {
+  color: var(--accent-red);
+}
+
+.bottom-tabbar .bottom-tabbar-label {
+  max-width: 100%;
+  padding: 0 2px;
+  font-size: 0.66rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bottom-tabbar .bottom-tabbar-item.is-active .bottom-tabbar-label {
+  font-weight: 700;
+}
+
+.bottom-tabbar-spacer {
+  height: calc(58px + env(safe-area-inset-bottom));
+}
+
+@media (max-width: 991.98px) {
+  .above-tabbar {
+    bottom: calc(58px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Keep tab colors on hover: global dark-mode link hover would turn them red,
+   and on touch screens :hover sticks after a tap */
+.bottom-tabbar .bottom-tabbar-item:hover {
+  color: var(--text-secondary);
+}
+
+.bottom-tabbar .bottom-tabbar-item.is-active:hover {
+  color: var(--accent-red);
+}

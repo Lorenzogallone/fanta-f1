@@ -92,7 +92,7 @@ export const InstallPwaBanner = () => {
   if (!show) return null;
 
   return (
-    <div className="position-fixed bottom-0 start-50 translate-middle-x p-3" style={{ zIndex: 1100, width: '100%', maxWidth: '400px' }}>
+    <div className="position-fixed bottom-0 start-50 translate-middle-x p-3 above-tabbar" style={{ zIndex: 1100, width: '100%', maxWidth: '400px' }}>
       <Toast show={show} onClose={handleDismiss} delay={15000} className="w-100 shadow-lg border-danger">
         <Toast.Header closeButton={true}>
           <GetAppIcon className="text-danger me-2" />
