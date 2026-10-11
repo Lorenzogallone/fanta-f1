@@ -69,3 +69,49 @@
 .bottom-tabbar .bottom-tabbar-item.is-active:hover {
   color: var(--accent-red);
 }
+
+/* Schiera: centered, red, raised above the bar */
+.bottom-tabbar .bottom-tabbar-item.is-primary {
+  justify-content: flex-end;
+  padding-bottom: 6px;
+  color: var(--accent-red);
+}
+
+.bottom-tabbar .bottom-tabbar-item.is-primary:hover {
+  color: var(--accent-red);
+}
+
+.bottom-tabbar .bottom-tabbar-fab {
+  position: absolute;
+  top: -26px;
+  left: 50%;
+  width: 52px;
+  height: 52px;
+  margin-left: -26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: var(--accent-red);
+  color: #ffffff;
+  /* ring in the bar color, so it looks cut out of the bar */
+  box-shadow: 0 0 0 4px var(--bg-primary), 0 6px 16px rgba(220, 53, 69, 0.35);
+  transition: transform 0.15s ease;
+}
+
+.bottom-tabbar .bottom-tabbar-item.is-primary {
+  position: relative;
+}
+
+.bottom-tabbar .bottom-tabbar-fab svg {
+  width: 24px;
+  height: 24px;
+}
+
+.bottom-tabbar .bottom-tabbar-item.is-primary:active .bottom-tabbar-fab {
+  transform: scale(0.94);
+}
+
+.bottom-tabbar .bottom-tabbar-item.is-primary .bottom-tabbar-label {
+  font-weight: 700;
+}

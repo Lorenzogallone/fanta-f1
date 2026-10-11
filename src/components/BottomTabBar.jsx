@@ -76,8 +76,9 @@ export default function BottomTabBar() {
   const myPage = `/participant/${user.uid}`;
   const tabs = [
     { to: "/", icon: "home", label: t("nav.home"), match: ["/", "/leaderboard", "/classifica"] },
-    { to: "/lineup", icon: "lineup", label: t("nav.formations"), match: ["/lineup", "/schiera", "/formations"] },
     { to: "/history", icon: "fanta", label: t("nav.history"), match: ["/history", "/storico"] },
+    // The main action: centered, red and raised above the bar
+    { to: "/lineup", icon: "lineup", label: t("nav.formations"), match: ["/lineup", "/schiera", "/formations"], primary: true },
     { to: "/results", icon: "f1", label: t("nav.raceResults"), match: ["/results", "/risultati"] },
     { to: myPage, icon: "me", label: t("nav.me"), match: [myPage, `/partecipante/${user.uid}`, "/profile", "/profilo"] },
   ];
@@ -93,10 +94,14 @@ export default function BottomTabBar() {
           <Link
             key={tab.icon}
             to={tab.to}
-            className={`bottom-tabbar-item${active ? " is-active" : ""}`}
+            className={`bottom-tabbar-item${active ? " is-active" : ""}${tab.primary ? " is-primary" : ""}`}
             aria-current={active ? "page" : undefined}
           >
-            <TabIcon name={tab.icon} />
+            {tab.primary ? (
+              <span className="bottom-tabbar-fab"><TabIcon name={tab.icon} /></span>
+            ) : (
+              <TabIcon name={tab.icon} />
+            )}
             <span className="bottom-tabbar-label">{tab.label}</span>
           </Link>
         );
