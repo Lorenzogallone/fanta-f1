@@ -39,9 +39,9 @@
     content="Build your dream Formula 1 team! Predict race podiums, earn points, and compete with friends." />
   <meta property="twitter:image" content="/FantaF1_Logo_big.png" />
 
-  <!-- Theme Color (Now managed dynamically in ThemeContext.jsx, but we keep a default fallback) -->
-  <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
-  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <!-- Theme color: matches the navbar background. Set below from the saved theme
+       and kept in sync by ThemeContext.jsx (a single tag, so the app theme wins over the OS one) -->
+  <meta name="theme-color" content="#ffffff" />
 
   <!-- Mobile Web App -->
   <meta name="mobile-web-app-capable" content="yes" />
@@ -58,6 +58,8 @@
       var d = m === 'dark' || (m !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
       if (d) document.documentElement.setAttribute('data-splash-theme', 'dark');
       else document.documentElement.setAttribute('data-splash-theme', 'light');
+      var tc = document.querySelector('meta[name="theme-color"]');
+      if (tc) tc.setAttribute('content', d ? '#1a1a1a' : '#ffffff');
     })();
   </script>
   <style>

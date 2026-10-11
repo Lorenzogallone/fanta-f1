@@ -77,7 +77,7 @@ export default function Navigation() {
       className="navbar-modern shadow-sm"
       style={{
         backgroundColor: bgColor,
-        borderBottom: `3px solid ${accentColor}`,
+        borderBottom: `2px solid ${accentColor}`,
       }}
     >
       <Container fluid className="px-3 px-lg-4">

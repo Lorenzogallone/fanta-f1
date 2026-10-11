@@ -377,9 +377,9 @@ body {
 }
 
 /* Navbar migliorata */
+/* Flat bar: also overrides Bootstrap's shadow-sm on the navbar */
 .navbar-modern {
-  box-shadow: 0 2px 8px var(--shadow);
-  transition: all 0.3s ease;
+  box-shadow: none !important;
 }
 
 .navbar-modern .nav-link {
