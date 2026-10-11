@@ -38,8 +38,8 @@ export const it = {
     home: "Home",
     leaderboard: "Classifica",
     formations: "Schiera",
-    history: "Storico",
-    raceResults: "F1 Hub",
+    history: "Risultati Fanta",
+    raceResults: "Mondiale F1",
     statistics: "Statistiche",
     admin: "Admin",
     calculatePoints: "Calcola Punteggi",
@@ -56,7 +56,7 @@ export const it = {
     quickActions: "Azioni Rapide",
     viewLeaderboard: "Vedi Classifica",
     submitFormation: "Schiera Formazione",
-    viewHistory: "Vedi Storico",
+    viewHistory: "Vedi Risultati Fanta",
     viewStats: "Vedi Statistiche",
     currentLeaderboard: "Anteprima Classifica Attuale",
   },
@@ -132,7 +132,7 @@ export const it = {
 
   // History
   history: {
-    title: "Storico Gare",
+    title: "Risultati Fanta",
     pastRaces: "Gare Passate",
     round: "Round",
     race: "Gara",
@@ -176,9 +176,9 @@ export const it = {
     completed: "Completata",
   },
 
-  // F1 Hub
+  // Mondiale F1 (real F1 results, standings, calendar)
   raceResults: {
-    title: "F1 Hub",
+    title: "Mondiale F1",
     description: "Risultati delle sessioni: Prove Libere, Qualifiche, Sprint e Gara",
     betaNotice: "Questa funzionalità è in BETA. Alcuni dati potrebbero essere incompleti o non ancora disponibili.",
     practiceBetaNotice: "I dati delle Prove Libere potrebbero richiedere tempo per essere disponibili dopo la sessione",
