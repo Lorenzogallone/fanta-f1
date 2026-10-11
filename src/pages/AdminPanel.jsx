@@ -1,42 +1,33 @@
 /**
  * @file AdminPanel.jsx
- * @description Admin panel with tabbed interface for managing the fantasy league.
- * Clean, professional design with consistent styling across all tabs.
+ * @description Admin hub: points calculation (first view) and every admin section,
+ * reachable only by admins (AdminRoute in App.jsx).
  */
 
 import React, { useState, useEffect } from "react";
-import {
-  Container,
-  Spinner,
-} from "react-bootstrap";
-import {
-  collection,
-  getDocs,
-} from "firebase/firestore";
+import { Spinner } from "react-bootstrap";
+import { useSearchParams } from "react-router-dom";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useLanguage } from "../hooks/useLanguage";
-import { useTheme } from "../contexts/ThemeContext";
 import { error } from "../utils/logger";
+import CalculatePoints from "./CalculatePoints";
 import ParticipantsManager from "./admin/ParticipantsManager";
 import FormationsManager from "./admin/FormationsManager";
 import ChampionshipManager from "./admin/ChampionshipManager";
 import CalendarManager from "./admin/CalendarManager";
 import DriversManager from "./admin/DriversManager";
 import DatabaseReset from "./admin/DatabaseReset";
+import "../styles/cards.css";
+import "../styles/admin.css";
 
-const TABS = [
-  { key: "participants", icon: "👥" },
-  { key: "formations", icon: "📝" },
-  { key: "championship", icon: "🏆" },
-  { key: "calendar", icon: "📅" },
-  { key: "drivers", icon: "🏎️" },
-  { key: "database", icon: "💾" },
-];
+const SECTIONS = ["calculate", "participants", "formations", "championship", "calendar", "drivers", "database"];
 
 export default function AdminPanel() {
   const { t } = useLanguage();
-  const { isDark } = useTheme();
-  const [activeTab, setActiveTab] = useState("participants");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requested = searchParams.get("section");
+  const activeTab = SECTIONS.includes(requested) ? requested : "calculate";
 
   const [sharedParticipants, setSharedParticipants] = useState([]);
   const [sharedRaces, setSharedRaces] = useState([]);
@@ -87,7 +78,8 @@ export default function AdminPanel() {
     }
   };
 
-  const tabLabels = {
+  const labels = {
+    calculate: t("admin.calculate"),
     participants: t("admin.participants"),
     formations: t("admin.formations"),
     championship: t("admin.championship"),
@@ -96,55 +88,38 @@ export default function AdminPanel() {
     database: t("admin.database"),
   };
 
-  const borderColor = isDark ? "var(--border-color)" : "#dee2e6";
+  // The section is in the URL (?section=...), so back/forward and links work
+  const selectSection = (key) =>
+    setSearchParams(key === "calculate" ? {} : { section: key }, { replace: true });
 
   return (
-    <Container className="py-3 px-2 px-sm-3" style={{ maxWidth: 900 }}>
-      {/* Header */}
-      <h5 className="fw-bold mb-3" style={{ color: "var(--text-primary)" }}>
-        {t("admin.title")}
-      </h5>
-
-      {/* Tab bar — pill-style, horizontally scrollable on mobile */}
-      <div
-        className="d-flex gap-1 pb-2 mb-3"
-        style={{
-          overflowX: "auto",
-          WebkitOverflowScrolling: "touch",
-          borderBottom: `2px solid ${borderColor}`,
-        }}
-      >
-        {TABS.map(({ key, icon }) => {
-          const isActive = activeTab === key;
-          return (
-            <button
-              key={key}
-              onClick={() => setActiveTab(key)}
-              className="btn btn-sm flex-shrink-0"
-              style={{
-                backgroundColor: isActive ? "var(--accent-red)" : "transparent",
-                color: isActive ? "#fff" : "var(--text-secondary)",
-                border: "none",
-                borderRadius: 8,
-                padding: "6px 12px",
-                fontSize: "0.8rem",
-                fontWeight: isActive ? 600 : 400,
-                whiteSpace: "nowrap",
-                transition: "all 0.15s ease",
-              }}
-            >
-              <span className="d-sm-none">{icon}</span>
-              <span className="d-none d-sm-inline">{icon} {tabLabels[key]}</span>
-            </button>
-          );
-        })}
+    <div className="fx admin-page">
+      <div className="admin-head">
+        <div className="fx-eyebrow">{t("admin.onlyAdmins")}</div>
+        <h1 className="admin-title">{t("admin.title")}</h1>
       </div>
 
-      {/* Tab content */}
-      {loadingShared && !sharedParticipants.length ? (
+      {/* Sections: scrollable chips on phones */}
+      <nav className="admin-nav" aria-label={t("admin.title")}>
+        {SECTIONS.map((key) => (
+          <button
+            key={key}
+            type="button"
+            className={`admin-chip${activeTab === key ? " is-active" : ""}`}
+            aria-current={activeTab === key ? "page" : undefined}
+            onClick={() => selectSection(key)}
+          >
+            {labels[key]}
+          </button>
+        ))}
+      </nav>
+
+      {activeTab === "calculate" ? (
+        <CalculatePoints />
+      ) : loadingShared && !sharedParticipants.length ? (
         <div className="text-center py-5"><Spinner animation="border" /></div>
       ) : (
-        <>
+        <div className="admin-section">
           {activeTab === "participants" && (
             <ParticipantsManager participants={sharedParticipants} loading={loadingShared} onDataChange={loadSharedData} />
           )}
@@ -161,8 +136,8 @@ export default function AdminPanel() {
           {activeTab === "database" && (
             <DatabaseReset participants={sharedParticipants} races={sharedRaces} onDataChange={loadSharedData} />
           )}
-        </>
+        </div>
       )}
-    </Container>
+    </div>
   );
 }

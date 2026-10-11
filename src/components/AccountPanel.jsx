@@ -49,12 +49,7 @@ export default function AccountPanel() {
         {user?.email && <div className="account-email">{user.email}</div>}
         <AccountLink to="/profile" title={t("account.profileSettings")} text={t("account.profileSettingsHint")} />
         <AccountLink to="/statistics" title={t("nav.statistics")} text={t("home.statsHint")} />
-        {isAdmin && (
-          <>
-            <AccountLink to="/calculate" title={t("nav.calculatePoints")} />
-            <AccountLink to="/admin" title={t("nav.admin")} />
-          </>
-        )}
+        {isAdmin && <AccountLink to="/admin" title={t("nav.admin")} text={t("account.adminHint")} />}
         <button type="button" className="account-row account-logout" onClick={() => setConfirmLogout(true)}>
           {t("auth.logout")}
         </button>

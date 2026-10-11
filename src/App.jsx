@@ -8,6 +8,7 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
+  Navigate,
 } from "react-router-dom";
 import { Container as BContainer } from "react-bootstrap";
 import { Toaster } from 'react-hot-toast';
@@ -36,7 +37,6 @@ const ParticipantDetail = lazy(() => import("./pages/ParticipantDetail"));
 const Formations = lazy(() => import("./pages/Formations"));
 const FormationApp = lazy(() => import("./pages/FormationApp"));
 const ChampionshipForm = lazy(() => import("./pages/ChampionshipForm"));
-const CalculatePoints = lazy(() => import("./pages/CalculatePoints"));
 const History = lazy(() => import("./pages/History"));
 const RaceResults = lazy(() => import("./pages/RaceResults"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
@@ -122,7 +122,7 @@ export default function App() {
                     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
                     {/* Admin-only routes */}
-                    <Route path="/calculate" element={<AdminRoute><CalculatePoints /></AdminRoute>} />
+                    <Route path="/calculate" element={<AdminRoute><Navigate to="/admin" replace /></AdminRoute>} />
                     <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
 
                     {/* Legacy routes */}
@@ -133,7 +133,7 @@ export default function App() {
                     <Route path="/classifica" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                     <Route path="/partecipante/:userId" element={<ProtectedRoute><ParticipantDetail /></ProtectedRoute>} />
                     <Route path="/schiera" element={<ProtectedRoute><Formations /></ProtectedRoute>} />
-                    <Route path="/calcola" element={<AdminRoute><CalculatePoints /></AdminRoute>} />
+                    <Route path="/calcola" element={<AdminRoute><Navigate to="/admin" replace /></AdminRoute>} />
                     <Route path="/storico" element={<ProtectedRoute><History /></ProtectedRoute>} />
                     <Route path="/risultati" element={<ProtectedRoute><RaceResults /></ProtectedRoute>} />
                     <Route path="/statistiche" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />

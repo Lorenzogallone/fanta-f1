@@ -106,6 +106,7 @@ export const it = {
   account: {
     profileSettings: "Profilo e impostazioni",
     profileSettingsHint: "Foto, nickname, notifiche, tema e lingua",
+    adminHint: "Calcola punti, partecipanti, formazioni, calendario",
   },
 
   participantDetail: {
@@ -128,7 +129,7 @@ export const it = {
     raceHistory: "Gare",
     loadingHistory: "Caricamento storico gare...",
     noRaces: "Nessuna gara trovata per questo partecipante",
-    accountTab: "Account",
+    accountTab: "Impostazioni",
   },
 
   // Formations
@@ -467,6 +468,8 @@ export const it = {
     participantsCount: "Numero Partecipanti",
     description: "Descrizione",
     refresh: "Aggiorna",
+    calculate: "Calcola punti",
+    onlyAdmins: "Solo admin",
   },
 
   // Calculate Points
