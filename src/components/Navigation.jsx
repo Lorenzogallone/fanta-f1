@@ -49,7 +49,7 @@ export default function Navigation() {
 
   return (
     <Navbar
-      className="navbar-modern"
+      className="navbar-modern sticky-top"
       style={{
         backgroundColor: bgColor,
         borderBottom: `2px solid ${accentColor}`,
