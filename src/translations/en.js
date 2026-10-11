@@ -617,6 +617,7 @@ export const en = {
     unlockTeam: "Unlock team",
     duplicate: "An item with this name already exists",
     saved: "Saved",
+    aliasesCount: "{{count}} API aliases",
   },
 
   // Error Messages

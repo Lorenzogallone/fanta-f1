@@ -92,8 +92,6 @@ export default function ChampionshipManager({ participants, loading, onDataChang
   const [deletingParticipant, setDeletingParticipant] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
-  const borderColor = isDark ? "var(--border-color)" : "#dee2e6";
-  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
 
   const selectStyles = {
     control: (base, state) => ({
@@ -265,10 +263,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
           </Badge>
         </div>
 
-        <div
-          className="rounded p-3"
-          style={{ backgroundColor: bgCard, border: `1px solid ${borderColor}` }}
-        >
+        <div className="admin-box">
           {deadlineMsg && (
             <Alert variant={deadlineMsg.type} dismissible onClose={() => setDeadlineMsg(null)} className="py-2 mb-2">
               {deadlineMsg.text}
@@ -281,16 +276,12 @@ export default function ChampionshipManager({ participants, loading, onDataChang
             <>
               <div className="d-flex flex-wrap align-items-center gap-2 mb-3" style={{ fontSize: "0.85rem" }}>
                 <span className="fw-semibold">{t("admin.deadlineCurrentLabel")}:</span>
-                <span className="fw-bold" style={{ color: isDark ? "#fbbf24" : "#d97706" }}>
+                <span className="fw-bold">
                   {formatDate(effectiveDeadlineMs, dateLocale, timezone)}
                 </span>
-                <Badge
-                  bg={deadlineOverride ? "warning" : "secondary"}
-                  text={deadlineOverride ? "dark" : undefined}
-                  style={{ fontSize: "0.65rem" }}
-                >
+                <span className="admin-meta mt-0">
                   {deadlineOverride ? t("admin.deadlineOverrideActive") : t("admin.deadlineAutoCalculated")}
-                </Badge>
+                </span>
               </div>
 
               {deadlineAutoMs && deadlineOverride && (
@@ -346,38 +337,33 @@ export default function ChampionshipManager({ participants, loading, onDataChang
         )}
 
         {participants.length === 0 ? (
-          <div
-            className="text-center py-4 rounded"
-            style={{ backgroundColor: bgCard, border: `1px solid ${borderColor}`, color: "var(--text-muted)" }}
-          >
+          <div className="admin-empty">
             <p className="mb-0 small">{t("admin.noChampionshipFormations")}</p>
           </div>
         ) : (
-          <ListGroup variant="flush" style={{ borderRadius: 8, overflow: "hidden", border: `1px solid ${borderColor}` }}>
+          <ListGroup variant="flush" className="admin-list">
             {participants.map((p) => {
               const has = hasFormation(p);
               return (
                 <ListGroup.Item
                   key={p.id}
                   className="px-3 py-2"
-                  style={{ backgroundColor: bgCard, color: "var(--text-primary)", borderColor }}
+                 
                 >
                   <div className="d-flex justify-content-between align-items-center">
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <span className="fw-semibold">{p.name}</span>
                       <div className="d-flex align-items-center gap-2 mt-1">
                         {has ? (
-                          <Badge bg="success" style={{ fontSize: "0.65rem" }}>{t("admin.submitted")}</Badge>
+                          <span className="admin-status is-on">{t("admin.submitted")}</span>
                         ) : (
-                          <Badge bg="outline-secondary" style={{ fontSize: "0.65rem", border: `1px solid ${borderColor}`, color: "var(--text-muted)" }}>
-                            {t("admin.notSubmitted")}
-                          </Badge>
+                          <span className="admin-status">{t("admin.notSubmitted")}</span>
                         )}
                       </div>
                     </div>
                     <div className="d-flex gap-1 flex-shrink-0">
                       <Button
-                        variant={has ? "outline-primary" : "outline-success"}
+                        variant="outline-secondary"
                         size="sm"
                         className="py-0 px-2"
                         onClick={() => startEdit(p)}

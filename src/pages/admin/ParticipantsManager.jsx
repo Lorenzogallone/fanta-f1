@@ -37,8 +37,6 @@ export default function ParticipantsManager({ participants, loading, onDataChang
   const [currentParticipant, setCurrentParticipant] = useState(null);
   const [formData, setFormData] = useState({ id: "", name: "", puntiTotali: 0, jolly: 0, usedLateSubmission: false });
 
-  const borderColor = isDark ? "var(--border-color)" : "#dee2e6";
-  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
 
   /**
    * Pretty-print the auth provider id stored in the users collection.
@@ -46,13 +44,9 @@ export default function ParticipantsManager({ participants, loading, onDataChang
    * @returns {{label: string, variant: string, icon: string}}
    */
   const renderProvider = (providerId) => {
-    if (providerId === "google.com") {
-      return { label: "Google", variant: "primary", icon: "🇬" };
-    }
-    if (providerId === "password") {
-      return { label: t("admin.providerPassword"), variant: "secondary", icon: "✉️" };
-    }
-    return { label: t("admin.providerUnknown"), variant: "outline-secondary", icon: "❔" };
+    if (providerId === "google.com") return "Google";
+    if (providerId === "password") return t("admin.providerPassword");
+    return null;
   };
 
   const openAddDialog = () => {
@@ -184,7 +178,7 @@ export default function ParticipantsManager({ participants, loading, onDataChang
       {participants.length === 0 ? (
         <Alert variant="info">{t("leaderboard.noData")}</Alert>
       ) : (
-        <ListGroup variant="flush" style={{ borderRadius: 8, overflow: "hidden", border: `1px solid ${borderColor}` }}>
+        <ListGroup variant="flush" className="admin-list">
           {participants.map((p) => {
             const provider = renderProvider(p.authProvider);
             return (
@@ -193,7 +187,6 @@ export default function ParticipantsManager({ participants, loading, onDataChang
                 className="px-3 py-2"
                 action
                 onClick={() => openEditDialog(p)}
-                style={{ backgroundColor: bgCard, color: "var(--text-primary)", borderColor }}
               >
                 <div className="d-flex justify-content-between align-items-center">
                   <div style={{ minWidth: 0, flex: 1 }}>
@@ -207,28 +200,11 @@ export default function ParticipantsManager({ participants, loading, onDataChang
                         {p.email}
                       </div>
                     )}
-                    <div className="d-flex align-items-center flex-wrap gap-2 mt-1">
-                      <small className="text-muted">{p.puntiTotali || 0} {t("common.points").toLowerCase()}</small>
-                      <Badge
-                        bg={isDark ? "dark" : "light"}
-                        text={isDark ? "light" : "dark"}
-                        style={{ fontSize: "0.65rem", border: `1px solid ${borderColor}` }}
-                      >
-                        {t("leaderboard.jokers")}: {p.jolly || 0}
-                      </Badge>
-                      <Badge
-                        bg={provider.variant}
-                        style={{ fontSize: "0.65rem" }}
-                        title={t("admin.authProvider")}
-                      >
-                        <span className="me-1" aria-hidden="true">{provider.icon}</span>
-                        {provider.label}
-                      </Badge>
-                      {p.usedLateSubmission && (
-                        <Badge bg="warning" text="dark" style={{ fontSize: "0.65rem" }}>
-                          {t("admin.lateSubmissionUsed")}
-                        </Badge>
-                      )}
+                    <div className="admin-meta">
+                      {p.puntiTotali || 0} {t("common.points").toLowerCase()}
+                      {" · "}{p.jolly || 0} {t("leaderboard.jokers").toLowerCase()}
+                      {provider && <>{" · "}<span title={t("admin.authProvider")}>{provider}</span></>}
+                      {p.usedLateSubmission && <>{" · "}<span className="admin-meta-warn">{t("admin.lateSubmissionUsed")}</span></>}
                     </div>
                   </div>
                   <span className="text-muted ms-2" style={{ fontSize: "0.85rem" }}>›</span>

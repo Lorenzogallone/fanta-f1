@@ -115,3 +115,297 @@
 [data-theme="dark"] .admin-page .calc-page .form-select {
   --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23adb5bd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
 }
+
+/* ── Admin sections: one flat level, quiet colors ── */
+.admin-page .admin-section h6.fw-bold {
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary) !important;
+}
+
+.admin-page .admin-box,
+.admin-page .admin-table-wrap,
+.admin-page .admin-list {
+  border: 1px solid var(--border-color);
+  border-radius: 14px !important;
+  background-color: var(--bg-primary);
+  overflow: hidden;
+}
+
+[data-theme="dark"] .admin-page .admin-box,
+[data-theme="dark"] .admin-page .admin-table-wrap,
+[data-theme="dark"] .admin-page .admin-list {
+  background-color: var(--bg-secondary);
+}
+
+.admin-page .admin-box {
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+
+.admin-page .admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-page .admin-list .list-group-item {
+  padding: 0.75rem 1rem;
+  background-color: transparent;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.admin-page .admin-list .list-group-item-action:hover {
+  background-color: var(--bg-secondary);
+}
+
+[data-theme="dark"] .admin-page .admin-list .list-group-item-action:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.admin-page .admin-empty {
+  padding: 1.25rem;
+  border: 1px dashed var(--border-color);
+  border-radius: 14px;
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.admin-inset {
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  background-color: var(--bg-secondary);
+  font-size: 0.85rem;
+}
+
+[data-theme="dark"] .admin-inset {
+  background-color: var(--bg-tertiary);
+}
+
+.admin-page .admin-meta {
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.admin-page .admin-meta-warn {
+  color: #e8590c;
+}
+
+.admin-page .admin-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.admin-page .admin-status::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--text-muted);
+}
+
+.admin-page .admin-status.is-on {
+  color: var(--text-primary);
+}
+
+.admin-page .admin-status.is-on::before {
+  background-color: var(--score-positive);
+}
+
+/* Badges: soft pills instead of solid colors */
+.admin-page .admin-section .badge.badge {
+  padding: 0.25em 0.6em;
+  border: 0;
+  border-radius: 999px;
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-secondary) !important;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .admin-page .admin-section .badge.badge {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.admin-page .admin-section .badge.badge.bg-success {
+  background-color: rgba(25, 135, 84, 0.12) !important;
+  color: var(--score-positive) !important;
+}
+
+.admin-page .admin-section .badge.badge.bg-danger {
+  background-color: var(--score-total-bg) !important;
+  color: var(--score-negative) !important;
+}
+
+.admin-page .admin-section .badge.badge.bg-warning {
+  background-color: rgba(245, 159, 0, 0.15) !important;
+  color: #c2410c !important;
+}
+
+/* Alerts: quiet notes; only errors keep a (soft) red */
+.admin-page .alert.alert {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.6rem 0.85rem;
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+[data-theme="dark"] .admin-page .alert.alert {
+  background-color: var(--bg-tertiary);
+}
+
+.admin-page .alert.alert-danger {
+  background-color: var(--score-total-bg);
+  color: var(--score-negative);
+}
+
+.admin-page .alert.alert-success {
+  background-color: rgba(25, 135, 84, 0.12);
+  color: var(--score-positive);
+}
+
+/* Buttons: neutral secondary actions, red only for delete and the main action */
+.admin-page .btn {
+  border-radius: 9px;
+  font-weight: 600;
+}
+
+.admin-page .btn-outline-primary,
+.admin-page .btn-outline-success,
+.admin-page .btn-outline-secondary,
+.admin-page .btn-outline-warning,
+.admin-page .btn-outline-info,
+.admin-page .btn-outline-dark,
+[data-theme="dark"] .admin-page .btn-outline-secondary {
+  --bs-btn-color: var(--text-primary);
+  --bs-btn-border-color: var(--border-color);
+  --bs-btn-hover-color: var(--text-primary);
+  --bs-btn-hover-bg: var(--bg-secondary);
+  --bs-btn-hover-border-color: var(--border-color);
+  --bs-btn-active-color: var(--text-primary);
+  --bs-btn-active-bg: var(--bg-tertiary);
+  --bs-btn-active-border-color: var(--border-color);
+  --bs-btn-disabled-color: var(--text-muted);
+  --bs-btn-disabled-border-color: var(--border-color);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  background-color: transparent;
+}
+
+.admin-page .btn-outline-danger,
+[data-theme="dark"] .admin-page .btn-outline-danger {
+  --bs-btn-color: var(--score-negative);
+  --bs-btn-border-color: var(--border-color);
+  --bs-btn-hover-color: var(--score-negative);
+  --bs-btn-hover-bg: var(--score-total-bg);
+  --bs-btn-hover-border-color: var(--border-color);
+  color: var(--score-negative);
+  border-color: var(--border-color);
+  background-color: transparent;
+}
+
+/* Tables and switches */
+.admin-page .admin-section .table {
+  --bs-table-bg: transparent;
+  margin-bottom: 0;
+}
+
+.admin-page .admin-section .table thead th,
+[data-theme="dark"] .admin-page .admin-section .table thead th {
+  background-color: transparent;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary) !important;
+}
+
+.admin-page .form-check-input:checked {
+  background-color: var(--accent-red);
+  border-color: var(--accent-red);
+}
+
+/* List rows with a tappable main area and switches (Piloti & Team) */
+.admin-page .admin-list .admin-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-page .admin-row.is-off .admin-row-main {
+  opacity: 0.5;
+}
+
+.admin-page .admin-row-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: var(--text-primary);
+}
+
+.admin-page .admin-row-title {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.admin-page .admin-row-num {
+  margin-left: 0.4rem;
+  font-weight: 500;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.admin-page .admin-lock {
+  flex: none;
+  padding: 0 0.25rem;
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.admin-page .admin-switches {
+  flex: none;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.admin-page .admin-switch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  margin: 0;
+}
+
+.admin-page .admin-switch .form-check {
+  min-height: 0;
+  margin: 0;
+  padding-left: 2.5em;
+}
+
+.admin-page .admin-switch > span {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.admin-page .admin-section > p.small.text-muted {
+  font-size: 0.82rem;
+}
+
+.admin-page .admin-section .table thead {
+  background-color: transparent;
+}
