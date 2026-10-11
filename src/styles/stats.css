@@ -1,0 +1,207 @@
+/* Statistiche */
+.stats-page .stats-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stats-page .stats-card-title {
+  padding: 0.85rem 1rem 0.4rem;
+}
+
+.stats-page .stats-ranking {
+  overflow: hidden;
+}
+
+.stats-page .stats-rank-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border: 0;
+  border-top: 1px solid var(--border-color);
+  background: none;
+  text-align: left;
+  color: var(--text-primary);
+}
+
+.stats-page .stats-rank-row.is-me {
+  background-color: var(--score-total-bg);
+}
+
+.stats-page .stats-rank-pos {
+  flex: none;
+  width: 1.6rem;
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-page .stats-rank-pos.is-top {
+  color: var(--accent-red);
+  font-weight: 800;
+}
+
+.stats-page .stats-rank-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stats-page .stats-rank-pts {
+  flex: none;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-page .stats-rank-chevron {
+  flex: none;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.stats-page .stats-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.stats-page .stats-filters > div {
+  flex: 1 1 260px;
+}
+
+.stats-page .stats-filters .fx-segmented {
+  margin: 0;
+  max-width: none;
+}
+
+.stats-page .stats-filters .fx-segment {
+  white-space: nowrap;
+}
+
+.stats-page .stats-chart {
+  padding: 0.9rem 0.75rem 0.6rem;
+}
+
+.stats-page .stats-chart .fx-card-title {
+  margin: 0 0 0.4rem 0.25rem;
+}
+
+.stats-page .stats-chart-sub {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.stats-page .stats-empty {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.stats-tooltip {
+  min-width: 160px;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background-color: var(--bg-primary);
+  box-shadow: 0 6px 18px var(--shadow);
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+.stats-tooltip .stats-tooltip-title {
+  margin-bottom: 0.3rem;
+  font-weight: 700;
+}
+
+.stats-tooltip .stats-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-primary);
+}
+
+.stats-tooltip .stats-tooltip-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.stats-tooltip .stats-tooltip-name {
+  flex: 1 1 auto;
+  color: var(--text-secondary);
+}
+
+.stats-tooltip .stats-tooltip-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Player picker: scrollable chips */
+.stats-page .stats-player-picker {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0 -0.75rem 1rem;
+  padding: 0 0.75rem 0.25rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.stats-page .stats-player-picker::-webkit-scrollbar {
+  display: none;
+}
+
+.stats-page .stats-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background-color: var(--bg-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .stats-page .stats-chip {
+  background-color: var(--bg-secondary);
+}
+
+.stats-page .stats-chip-pos {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.stats-page .stats-chip.is-active {
+  border-color: var(--accent-red);
+  background-color: var(--accent-red);
+  color: #ffffff;
+}
+
+.stats-page .stats-chip.is-active .stats-chip-pos {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+@media (hover: hover) {
+  .stats-page .stats-rank-row:hover {
+    background-color: var(--bg-secondary);
+  }
+
+  [data-theme="dark"] .stats-page .stats-rank-row:hover {
+    background-color: var(--bg-tertiary);
+  }
+}
