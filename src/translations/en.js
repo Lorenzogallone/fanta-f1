@@ -83,6 +83,8 @@ export const en = {
     fromLeader: "-{{gap}} from 1st",
     leading: "leading",
     jollyAvailable: "available",
+    calculateNow: "Calculate",
+    adminOnly: "Admins only",
   },
 
   // Leaderboard
@@ -104,6 +106,7 @@ export const en = {
   account: {
     profileSettings: "Profile and settings",
     profileSettingsHint: "Photo, nickname, notifications, theme and language",
+    adminHint: "Calculate points, participants, lineups, calendar",
   },
 
   participantDetail: {
@@ -126,7 +129,7 @@ export const en = {
     raceHistory: "Races",
     loadingHistory: "Loading race history...",
     noRaces: "No races found for this participant",
-    accountTab: "Account",
+    accountTab: "Settings",
   },
 
   // Formations
@@ -465,6 +468,8 @@ export const en = {
     participantsCount: "Number of Participants",
     description: "Description",
     refresh: "Refresh",
+    calculate: "Calculate points",
+    onlyAdmins: "Admins only",
   },
 
   // Calculate Points
@@ -493,6 +498,8 @@ export const en = {
     raceNotFinished: "The race has not finished yet. Results will be available once the race is over.",
     apiResultsLoaded: "✅ Results loaded. Please review and confirm.",
     apiNoResults: "⚠️ Results not yet available for this race. Enter manually.",
+    apiSprintOnly: "Only the Sprint results are available: race results will follow after the race.",
+    apiMainOnly: "Race results loaded, but Sprint results are not available: enter them manually.",
     apiError: "⚠️ Unable to load results from API. Enter manually.",
     resultsSaved: "Results saved. Calculating…",
     calculatingPoints: "Calculating points…",

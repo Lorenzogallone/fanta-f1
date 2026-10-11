@@ -6,8 +6,7 @@
 
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import {
-  Card, Form, Button, Alert, Spinner, Container,
-  Row, Col, Badge, Tab, Nav, Table
+  Card, Form, Button, Alert, Spinner, Row, Col, Badge, Tab
 } from "react-bootstrap";
 import {
   collection, query, orderBy, getDocs,
@@ -254,11 +253,15 @@ useEffect(() => {
       });
       setFetchingResults(false);
     } else {
-      // No results in DB → try fetching from API only if race has finished
+      // No results in DB → try fetching from API once the race, or at least
+      // the sprint, should be finished (1h after its start)
       const raceStartMs = race.raceUTC.seconds * 1000;
       const raceFinishedEstimate = raceStartMs + 60 * 60 * 1000; // 1 ora dopo l'inizio gara
+      const weekendHasSprint = Boolean(race.qualiSprintUTC) && !race.cancelledSprint;
+      const sprintFinished = weekendHasSprint && race.sprintUTC
+        && Date.now() > race.sprintUTC.seconds * 1000 + 60 * 60 * 1000;
 
-      if (Date.now() < raceFinishedEstimate) {
+      if (Date.now() < raceFinishedEstimate && !sprintFinished) {
         // Race hasn't finished yet — don't fetch from API
         setFormRace({
           P1:null, P2:null, P3:null,
@@ -278,22 +281,26 @@ useEffect(() => {
 
           setMsgRace({variant:"info", msg: t("calculate.fetchingFromAPI", { race: race.name }).replace("{race}", race.name)});
 
-          const apiResults = await fetchRaceResults(season, round, raceDate, race.officialRound);
+          const apiResults = await fetchRaceResults(season, round, raceDate, race.officialRound, weekendHasSprint);
 
           if (apiResults) {
-            // Pre-fill with API results
+            // Pre-fill with whatever is available: race and sprint are independent
+            const { main, sprint } = apiResults;
             setFormRace({
-              P1 : toOpt(apiResults.main.P1),
-              P2 : toOpt(apiResults.main.P2),
-              P3 : toOpt(apiResults.main.P3),
-              SP1: apiResults.sprint ? toOpt(apiResults.sprint.SP1) : null,
-              SP2: apiResults.sprint ? toOpt(apiResults.sprint.SP2) : null,
-              SP3: apiResults.sprint ? toOpt(apiResults.sprint.SP3) : null,
+              P1 : main ? toOpt(main.P1) : null,
+              P2 : main ? toOpt(main.P2) : null,
+              P3 : main ? toOpt(main.P3) : null,
+              SP1: sprint ? toOpt(sprint.SP1) : null,
+              SP2: sprint ? toOpt(sprint.SP2) : null,
+              SP3: sprint ? toOpt(sprint.SP3) : null,
             });
-            setMsgRace({
-              variant:"success",
-              msg: t("calculate.apiResultsLoaded")
-            });
+            setMsgRace(
+              !main
+                ? { variant: "info", msg: t("calculate.apiSprintOnly") }
+                : weekendHasSprint && !sprint
+                  ? { variant: "warning", msg: t("calculate.apiMainOnly") }
+                  : { variant: "success", msg: t("calculate.apiResultsLoaded") }
+            );
           } else {
             // No results available in DB or API
             setFormRace({
@@ -445,10 +452,10 @@ useEffect(() => {
 
   /* ---------------- RENDER --------------------------- */
   if(loadingRace)
-    return(<Container className="py-5 text-center"><Spinner animation="border"/></Container>);
+    return(<div className="py-5 text-center"><Spinner animation="border"/></div>);
 
   return (
-    <Container className="py-4">
+    <div className="calc-page">
       {/* Loader fullscreen durante il calcolo */}
       {savingRace && (
         <div style={{
@@ -491,10 +498,23 @@ useEffect(() => {
         </div>
       )}
       <Tab.Container activeKey={activeTab} onSelect={k=>setActiveTab(k)}>
-        <Nav variant="tabs" className="justify-content-center mb-4">
-          <Nav.Item><Nav.Link eventKey="race">{t("calculate.raceTab")}</Nav.Link></Nav.Item>
-          <Nav.Item><Nav.Link eventKey="champ">{t("calculate.championshipTab")}</Nav.Link></Nav.Item>
-        </Nav>
+        <div className="fx-segmented is-small mb-3" role="tablist">
+          {[
+            { key: "race", label: t("calculate.raceTab") },
+            { key: "champ", label: t("calculate.championshipTab") },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.key}
+              className={`fx-segment${activeTab === tab.key ? " is-active" : ""}`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
         <Tab.Content>
           {/* --------- RACE TAB --------- */}
@@ -503,13 +523,14 @@ useEffect(() => {
               {/* ---------- FORM ---------- */}
               {/* … (form identical to above – see above) … */}
 <Col xs={12} lg={8}>
-                <Card className="shadow">
-                  <Card.Header className="bg-white d-flex justify-content-between">
-                    <h5 className="mb-0">
-                      {t("calculate.calculateRacePoints")} <DeadlineBadge open={allowedRace} t={t} />
-                    </h5>
-                    {isLast && <DoubleBadge t={t} />}
-                  </Card.Header>
+                <Card className="fx-card calc-card">
+                  <div className="calc-card-head">
+                    <span className="calc-card-title">{t("calculate.calculateRacePoints")}</span>
+                    <span className="d-flex gap-1">
+                      {isLast && <DoubleBadge t={t} />}
+                      <DeadlineBadge open={allowedRace} t={t} />
+                    </span>
+                  </div>
                   <Card.Body>
                     {msgRace && (
                       <Alert variant={msgRace.variant} onClose={()=>setMsgRace(null)} dismissible>
@@ -537,10 +558,10 @@ useEffect(() => {
                     </Form.Group>
 
                     {/* main podium */}
-                    <h6 className="fw-bold">{t("calculate.mainRace")}</h6>
+                    <div className="calc-section-title">{t("calculate.mainRace")}</div>
                     {["P1","P2","P3"].map(f=>(
-                      <Form.Group key={f} className="mb-3">
-                        <Form.Label>{f}</Form.Label>
+                      <Form.Group key={f} className="calc-pick">
+                        <Form.Label className="calc-pick-label">{f}</Form.Label>
                         <Select
                           options={driverOptions}
                           value={formRace[f]}
@@ -555,10 +576,10 @@ useEffect(() => {
                     {/* sprint */}
                     {race?.qualiSprintUTC && (
                       <>
-                        <h6 className="fw-bold mt-3">{t("calculate.sprint")}</h6>
+                        <div className="calc-section-title mt-3">{t("calculate.sprint")}</div>
                         {["SP1","SP2","SP3"].map(f=>(
-                          <Form.Group key={f} className="mb-3">
-                            <Form.Label>{f}</Form.Label>
+                          <Form.Group key={f} className="calc-pick">
+                            <Form.Label className="calc-pick-label">{f}</Form.Label>
                             <Select
                               options={driverOptions}
                               value={formRace[f]}
@@ -596,10 +617,10 @@ useEffect(() => {
             {/* … usa formChamp / saveChamp / msgChamp … */}
             <Row className="justify-content-center">
               <Col xs={12} lg={8}>
-                <Card className="shadow border-danger">
-                  <Card.Header className="bg-white text-center">
-                    <h5 className="mb-0">{t("calculate.calculateChampionshipPoints")}</h5>
-                  </Card.Header>
+                <Card className="fx-card calc-card">
+                  <div className="calc-card-head">
+                    <span className="calc-card-title">{t("calculate.calculateChampionshipPoints")}</span>
+                  </div>
                   <Card.Body>
                     {!championshipOpen && (
                       <Alert variant="warning" className="text-center">
@@ -613,10 +634,10 @@ useEffect(() => {
                     )}
 
                     <Form onSubmit={saveChamp}>
-                      <h6 className="fw-bold">{t("calculate.drivers")}</h6>
+                      <div className="calc-section-title">{t("calculate.drivers")}</div>
                       {["CP1","CP2","CP3"].map(f=>(
-                        <Form.Group key={f} className="mb-3">
-                          <Form.Label>{f.replace("CP","P")}</Form.Label>
+                        <Form.Group key={f} className="calc-pick">
+                          <Form.Label className="calc-pick-label">{f.replace("CP","P")}</Form.Label>
                           <Select
                             options={driverOptions}
                             value={formChamp[f]}
@@ -628,10 +649,10 @@ useEffect(() => {
                         </Form.Group>
                       ))}
 
-                      <h6 className="fw-bold mt-3">{t("calculate.constructors")}</h6>
+                      <div className="calc-section-title mt-3">{t("calculate.constructors")}</div>
                       {["CC1","CC2","CC3"].map(f=>(
-                        <Form.Group key={f} className="mb-3">
-                          <Form.Label>{f.replace("CC","C")}</Form.Label>
+                        <Form.Group key={f} className="calc-pick">
+                          <Form.Label className="calc-pick-label">{f.replace("CC","C")}</Form.Label>
                           <Select
                             options={constructorOptions}
                             value={formChamp[f]}
@@ -662,7 +683,7 @@ useEffect(() => {
           </Tab.Pane>
         </Tab.Content>
       </Tab.Container>
-    </Container>
+    </div>
   );
 }
 

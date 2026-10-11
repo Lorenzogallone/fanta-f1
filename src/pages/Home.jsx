@@ -274,9 +274,9 @@ export default function Home() {
     () => [...races].reverse().find((r) => r.officialResults && !r.cancelledMain) || null,
     [races]
   );
-  // Admin: first finished race (1h after the start) without results
+  // Admin: first race that has started and has no results yet
   const raceToCalculate = useMemo(
-    () => races.find((r) => !r.cancelledMain && !r.officialResults && ms(r.raceUTC) + 3600000 < now) || null,
+    () => races.find((r) => !r.cancelledMain && !r.officialResults && ms(r.raceUTC) <= now) || null,
     [races, now]
   );
 
@@ -313,9 +313,12 @@ export default function Home() {
         <Col xs={12} lg={6} xl={5}>
           <div className="d-flex flex-column gap-3">
             {isAdmin && raceToCalculate && (
-              <Link to="/calculate" className="fx-card home-admin">
-                <span>🧮 {t("home.toCalculate", { race: raceToCalculate.name })}</span>
-                <span aria-hidden="true">›</span>
+              <Link to="/admin" className="home-admin">
+                <span className="home-admin-text">
+                  <span className="home-admin-eyebrow">{t("home.adminOnly")} · R{raceToCalculate.round}</span>
+                  <span className="home-admin-title">{t("home.toCalculate", { race: raceToCalculate.name })}</span>
+                </span>
+                <span className="home-admin-cta">{t("home.calculateNow")} ›</span>
               </Link>
             )}
 

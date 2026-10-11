@@ -1,0 +1,117 @@
+/* Admin hub */
+.admin-page .admin-head {
+  margin-bottom: 0.75rem;
+}
+
+.admin-page .admin-title {
+  margin: 0.1rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.admin-page .admin-nav {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0 -0.75rem 1rem;
+  padding: 0 0.75rem 0.25rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.admin-page .admin-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.admin-page .admin-chip {
+  flex: none;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background-color: var(--bg-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .admin-page .admin-chip {
+  background-color: var(--bg-secondary);
+}
+
+.admin-page .admin-chip.is-active {
+  border-color: var(--accent-red);
+  background-color: var(--accent-red);
+  color: #ffffff;
+}
+
+/* Admin sections: same surfaces as the rest of the app */
+.admin-page .admin-section .list-group {
+  border-radius: 14px !important;
+}
+
+/* Calcola punti */
+.admin-page .calc-card {
+  overflow: hidden;
+}
+
+.admin-page .calc-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-page .calc-card-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.admin-page .calc-card .card-body {
+  background-color: transparent;
+}
+
+.admin-page .calc-section-title {
+  margin-bottom: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.admin-page .calc-pick {
+  display: grid;
+  grid-template-columns: 2.8rem 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.admin-page .calc-pick-label {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.admin-page .calc-page .form-select,
+.admin-page .calc-page .react-select__control {
+  min-height: 42px;
+  border-radius: 10px;
+}
+
+.admin-page .calc-page .btn {
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .admin-page .calc-page .form-select {
+  --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23adb5bd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
