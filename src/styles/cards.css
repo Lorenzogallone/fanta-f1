@@ -72,3 +72,150 @@
 [data-theme="dark"] .fx-segmented .fx-segment.is-active {
   background-color: var(--bg-secondary);
 }
+
+.fx-segmented.is-small {
+  max-width: 300px;
+}
+
+.fx-segmented.is-small .fx-segment {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Race card (Risultati Fanta, Schiera, Calcola Punteggi) */
+.race-history-card {
+  overflow: hidden;
+}
+
+.race-history-card .rh-head {
+  padding: 0.9rem 1rem 0.6rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.race-history-card .rh-title {
+  margin: 0.15rem 0 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.race-history-card .rh-title.is-cancelled {
+  color: var(--text-secondary);
+}
+
+.race-history-card .rh-head .fx-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.race-history-card .card.score-user-card {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .race-history-card .card.score-user-card {
+  background-color: var(--bg-primary);
+}
+
+[data-theme="dark"] .race-history-card .card.score-user-card .card-body {
+  background-color: transparent;
+}
+
+.race-history-card .rh-section-title {
+  margin-bottom: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.race-history-card .rh-podium-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.25rem;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.race-history-card .rh-podium-row + .rh-podium-row {
+  border-top: 1px solid var(--border-color);
+}
+
+.race-history-card .rh-podium-pos {
+  flex: none;
+  width: 2.6rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.race-history-card .rh-podium-pos.is-first {
+  color: var(--accent-red);
+  font-weight: 800;
+}
+
+.race-history-card .rh-podium-name {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.race-history-card .rh-podium-pts {
+  flex: none;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--score-positive);
+}
+
+/* Player card header (optionally a toggle) */
+.race-history-card .score-user-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 0.6rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.race-history-card .score-user-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.race-history-card .score-user-chevron {
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+
+.race-history-card .is-open .score-user-chevron {
+  transform: rotate(90deg);
+}
+
+.race-history-card .is-collapsible:not(.is-open) .score-summary {
+  margin-bottom: 0;
+}
+
+/* Desktop table header: neutral */
+.race-history-card .race-scores-table thead th,
+[data-theme="dark"] .race-history-card .race-scores-table thead th {
+  background-color: transparent;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary) !important;
+}
+
+.race-history-card .race-scores-table thead {
+  background-color: transparent;
+}

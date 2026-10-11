@@ -7,19 +7,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import {
-  Container,
   Row,
   Col,
-  Card,
-  Accordion,
-  Table,
   Spinner,
-  Alert,
-  Badge,
   Form,
   Button,
-  Nav,
-  Tab,
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import {
@@ -37,11 +29,12 @@ import {
   fetchConstructorStandings,
 } from "../services/f1SessionsFetcher";
 import { useF1Data } from "../hooks/useF1Data";
-import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
-import { getTimezoneDisplay, getTimezoneAbbreviation } from "../utils/timezoneUtils";
+import { getTimezoneDisplay } from "../utils/timezoneUtils";
 import { log, error as logError } from "../utils/logger";
+import "../styles/cards.css";
+import "../styles/results.css";
 
 /**
  * Component to display driver with team logo
@@ -110,7 +103,6 @@ TeamWithLogo.propTypes = {
  * RaceResults page component
  */
 export default function RaceResults() {
-  const { isDark } = useTheme();
   const { t, currentLanguage } = useLanguage();
   const { timezone } = useTimezone();
   const navigate = useNavigate();
@@ -136,10 +128,8 @@ export default function RaceResults() {
   const [constructorStandings, setConstructorStandings] = useState(null);
   const [loadingStandings, setLoadingStandings] = useState(false);
   const [standingsFilter, setStandingsFilter] = useState("all"); // "5", "10", "all"
+  const [showPastRaces, setShowPastRaces] = useState(false);
 
-  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
-  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
-  const bgHeader = isDark ? "var(--bg-tertiary)" : "#ffffff";
 
   const locale = currentLanguage === "it" ? "it-IT" : "en-US";
 
@@ -235,31 +225,19 @@ export default function RaceResults() {
       );
     }
 
-    // Render the data table
+    // Render the results list
     return (
-      <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
-        <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
-          <thead>
-            <tr>
-              <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
-              <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-              <th className="text-center" style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((result, idx) => (
-              <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                <td className="text-center">
-                  {result.position} {result.fastestLap || ""}
-                </td>
-                <td>
-                  <DriverWithLogo name={result.driver} />
-                </td>
-                <td className="text-center text-muted font-monospace">{result.gap}</td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
+      <div className="res-rows">
+        {data.map((result, idx) => (
+          <div key={idx} className="res-row">
+            <span className={`res-pos${idx < 3 ? " is-top" : ""}`}>{result.position}</span>
+            <span className="res-name">
+              <DriverWithLogo name={result.driver} />
+              {result.fastestLap && <span className="res-fl">{result.fastestLap}</span>}
+            </span>
+            <span className="res-gap">{result.gap}</span>
+          </div>
+        ))}
       </div>
     );
   };
@@ -288,47 +266,21 @@ export default function RaceResults() {
       );
     }
 
-    // Render qualifying table with Q session badges
+    // Render qualifying list with the Q session reached
     return (
-      <div className="table-responsive" style={{ fontSize: "0.95rem" }}>
-        <Table hover className="align-middle" size="sm" variant={isDark ? "dark" : undefined}>
-          <thead>
-            <tr>
-              <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
-              <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-              <th style={{ color: accentColor }}>{t("leaderboard.gap")}</th>
-              <th style={{ color: accentColor }} className="text-center">Q</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((result, idx) => {
-              const pos = parseInt(result.position);
-              let qSession = "Q1";
-              let qVariant = "danger";
-              if (pos <= 10) {
-                qSession = "Q3";
-                qVariant = "success";
-              } else if (pos <= 15) {
-                qSession = "Q2";
-                qVariant = "warning";
-              }
-              return (
-                <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                  <td>{result.position}</td>
-                  <td>
-                    <DriverWithLogo name={result.driver} />
-                  </td>
-                  <td className="text-muted font-monospace">{result.gap}</td>
-                  <td className="text-center">
-                    <Badge bg={qVariant} text={qVariant === "warning" ? "dark" : "light"}>
-                      {qSession}
-                    </Badge>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
+      <div className="res-rows">
+        {data.map((result, idx) => {
+          const pos = parseInt(result.position);
+          const qSession = pos <= 10 ? "Q3" : pos <= 15 ? "Q2" : "Q1";
+          return (
+            <div key={idx} className="res-row">
+              <span className={`res-pos${idx < 3 ? " is-top" : ""}`}>{result.position}</span>
+              <span className="res-name"><DriverWithLogo name={result.driver} /></span>
+              <span className="res-gap">{result.gap}</span>
+              <span className={`res-q is-${qSession.toLowerCase()}`}>{qSession}</span>
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -559,835 +511,364 @@ export default function RaceResults() {
   // Show loading only while loading races list
   if (loadingRaces) {
     return (
-      <Container className="py-5 text-center">
+      <div className="py-5 text-center">
         <Spinner animation="border" />
         <p className="mt-3">{t("common.loading")}</p>
-      </Container>
+      </div>
     );
   }
 
-  return (
-    <Container className="py-5">
-      <Row className="g-4">
-        {/* Header */}
-        <Col xs={12}>
-          <Card
-            className="shadow"
-            style={{
-              borderColor: accentColor,
-              backgroundColor: bgCard,
-            }}
-          >
-            <Card.Header
-              style={{
-                backgroundColor: bgHeader,
-                borderBottom: `2px solid ${accentColor}`,
-              }}
-            >
-              <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
-                <h3 className="mb-3 mb-md-0" style={{ color: accentColor }}>
-                  🏁 {t("raceResults.title")}
-                </h3>
-                <Nav variant="pills" activeKey={activeTab} onSelect={setActiveTab}>
-                  <Nav.Item>
-                    <Nav.Link
-                      eventKey="results"
-                      style={{
-                        backgroundColor: activeTab === "results" ? accentColor : "transparent",
-                        color: activeTab === "results" ? "#fff" : (isDark ? "#fff" : "#000"),
-                        borderColor: accentColor,
-                      }}
-                    >
-                      📊 {t("raceResults.sessionsTab")}
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link
-                      eventKey="standings"
-                      style={{
-                        backgroundColor: activeTab === "standings" ? accentColor : "transparent",
-                        color: activeTab === "standings" ? "#fff" : (isDark ? "#fff" : "#000"),
-                        borderColor: accentColor,
-                      }}
-                    >
-                      🏆 {t("raceResults.championshipTab")}
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link
-                      eventKey="schedule"
-                      style={{
-                        backgroundColor: activeTab === "schedule" ? accentColor : "transparent",
-                        color: activeTab === "schedule" ? "#fff" : (isDark ? "#fff" : "#000"),
-                        borderColor: accentColor,
-                      }}
-                    >
-                      📅 {t("raceResults.scheduleTab")}
-                    </Nav.Link>
-                  </Nav.Item>
-                </Nav>
+  const tabs = [
+    { key: "results", label: t("raceResults.sessionsTab") },
+    { key: "standings", label: t("raceResults.championshipTab") },
+    { key: "schedule", label: t("raceResults.scheduleTab") },
+  ];
+
+  // Collapsible session (replaces the accordion, same activeKeys state)
+  const toggleSession = (key) =>
+    setActiveKeys((keys) => (keys.includes(key) ? keys.filter((k) => k !== key) : [...keys, key]));
+
+  const SessionBlock = ({ sessionKey, title, children }) => {
+    const open = activeKeys.includes(sessionKey);
+    return (
+      <div className={`res-session${open ? " is-open" : ""}`}>
+        <button type="button" className="res-session-head" aria-expanded={open} onClick={() => toggleSession(sessionKey)}>
+          <span>{title}</span>
+          <span className="res-chevron" aria-hidden="true">›</span>
+        </button>
+        {open && <div className="res-session-body">{children}</div>}
+      </div>
+    );
+  };
+
+  const StandingsList = ({ title, rows, kind }) => (
+    <div className="fx-card res-card">
+      <h2 className="fx-card-title res-card-title">{title}</h2>
+      {rows && rows.length > 0 ? (
+        <div className="res-rows">
+          <div className="res-row res-row-head">
+            <span className="res-pos">#</span>
+            <span className="res-name">{kind === "driver" ? t("formations.driver") : "Team"}</span>
+            <span className="res-wins d-none d-md-inline">Win</span>
+            <span className="res-pts">Pt</span>
+          </div>
+          {rows
+            .slice(0, standingsFilter === "5" ? 5 : standingsFilter === "10" ? 10 : rows.length)
+            .map((s, idx) => (
+              <div key={idx} className="res-row">
+                <span className={`res-pos${idx < 3 ? " is-top" : ""}`}>{s.position}</span>
+                <span className="res-name">
+                  {kind === "driver" ? <DriverWithLogo name={s.driver} /> : <TeamWithLogo name={s.constructor} />}
+                </span>
+                <span className="res-wins d-none d-md-inline">{s.wins}</span>
+                <span className="res-pts">{s.points}</span>
               </div>
-            </Card.Header>
-            <Card.Body>
-              {activeTab === "results" && (
-                <>
-                  <p className="text-muted mb-3">{t("raceResults.description")}</p>
+            ))}
+        </div>
+      ) : (
+        <div className="res-empty">
+          {kind === "driver" ? t("raceResults.driverStandingsUnavailable") : t("raceResults.constructorStandingsUnavailable")}
+        </div>
+      )}
+    </div>
+  );
 
-                  {/* Race Selector */}
-              <Form.Group>
-                <Form.Label className="fw-bold">{t("raceResults.selectRace")}</Form.Label>
-                <Form.Select
-                  value={selectedRaceId || ""}
-                  onChange={(e) => handleRaceChange(e.target.value)}
-                  style={{
-                    borderColor: accentColor,
-                  }}
-                  aria-label="Select race to view session results"
-                >
-                  <option value="">{t("raceResults.chooseRace")}</option>
-                  {races.map((race) => (
-                    <option key={race.id} value={race.id}>
-                      {t("history.round")} {race.round} - {race.name}
-                      {race.cancelledMain ? ` ⛔` : ""}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
+  // Sessions of a weekend, in order, for the calendar
+  const weekendSessions = (race) => {
+    const rows = [];
+    if (race.qualiSprintUTC) {
+      const sq = formatToUserTz(race.qualiSprintUTC);
+      if (sq) rows.push({ label: t("raceResults.sprintQualifying"), ...sq });
+      const sp = formatToUserTz(race.sprintUTC);
+      if (sp) rows.push({ label: t("raceResults.sprint"), ...sp });
+    }
+    const q = formatToUserTz(race.qualiUTC);
+    if (q) rows.push({ label: t("raceResults.qualifying"), ...q });
+    const r = formatToUserTz(race.raceUTC);
+    if (r) rows.push({ label: t("raceResults.race"), ...r, isRace: true });
+    return rows;
+  };
 
-              {/* Cancelled race alert */}
-              {selectedRace?.cancelledMain && (
-                <Alert variant="danger" className="mt-3 mb-0 py-2">
-                  ⛔ <strong>{t("history.raceCancelled")}</strong> — {t("history.raceCancelledDescription")}
-                </Alert>
-              )}
+  return (
+    <div className="fx results-page">
+      <div className="fx-segmented mb-3" role="tablist">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.key}
+            className={`fx-segment${activeTab === tab.key ? " is-active" : ""}`}
+            onClick={() => setActiveTab(tab.key)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-              {/* Submit Formation Card — shown only while deadlines are still open */}
-              {selectedRace && (submissionStatus.mainOpen || submissionStatus.sprintOpen) && (
-                <Alert variant="info" className="mt-3 mb-0">
-                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
-                    <div>
-                      <strong>{t("raceResults.canStillSubmit")}</strong>
-                      {submissionStatus.mainOpen && (
-                        <div className="small mt-1">
-                          {t("raceResults.canStillSubmitMain")}
-                          {selectedRace.qualiUTC && (
-                            <> — {t("raceResults.deadlineAt")} {formatToUserTz(selectedRace.qualiUTC)?.time} ({formatToUserTz(selectedRace.qualiUTC)?.dateStr})</>
-                          )}
-                        </div>
-                      )}
-                      {submissionStatus.sprintOpen && (
-                        <div className="small mt-1">
-                          {t("raceResults.canStillSubmitSprint")}
-                          {selectedRace.qualiSprintUTC && (
-                            <> — {t("raceResults.deadlineAt")} {formatToUserTz(selectedRace.qualiSprintUTC)?.time} ({formatToUserTz(selectedRace.qualiSprintUTC)?.dateStr})</>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => navigate("/lineup")}
-                      style={{
-                        backgroundColor: accentColor,
-                        borderColor: accentColor,
-                        whiteSpace: "nowrap",
-                      }}
-                      aria-label="Go to formation page to submit lineup"
-                    >
-                      {t("raceResults.goToFormation")}
-                    </Button>
+      {/* ============ SESSIONS ============ */}
+      {activeTab === "results" && (
+        <div className="res-narrow">
+          <div className="res-picker">
+            <label className="fx-eyebrow" htmlFor="res-race-select">{t("raceResults.selectRace")}</label>
+            <Form.Select
+              id="res-race-select"
+              className="res-select"
+              value={selectedRaceId || ""}
+              onChange={(e) => handleRaceChange(e.target.value)}
+              aria-label="Select race to view session results"
+            >
+              <option value="">{t("raceResults.chooseRace")}</option>
+              {races.map((race) => (
+                <option key={race.id} value={race.id}>
+                  {race.round}. {race.name}
+                  {race.cancelledMain ? ` ⛔` : ""}
+                </option>
+              ))}
+            </Form.Select>
+          </div>
+
+          {/* Cancelled race alert */}
+          {selectedRace?.cancelledMain && (
+            <div className="res-note is-danger">
+              <strong>{t("history.raceCancelled")}</strong> — {t("history.raceCancelledDescription")}
+            </div>
+          )}
+
+          {/* Lineups still open for this race */}
+          {selectedRace && (submissionStatus.mainOpen || submissionStatus.sprintOpen) && (
+            <div className="fx-card res-cta">
+              <div className="min-w-0">
+                <div className="res-cta-title">{t("raceResults.canStillSubmit")}</div>
+                {submissionStatus.sprintOpen && selectedRace.qualiSprintUTC && (
+                  <div className="res-cta-text">
+                    Sprint · {t("raceResults.deadlineAt")} {formatToUserTz(selectedRace.qualiSprintUTC)?.time} ({formatToUserTz(selectedRace.qualiSprintUTC)?.dateStr})
                   </div>
-                </Alert>
+                )}
+                {submissionStatus.mainOpen && selectedRace.qualiUTC && (
+                  <div className="res-cta-text">
+                    {t("raceResults.race")} · {t("raceResults.deadlineAt")} {formatToUserTz(selectedRace.qualiUTC)?.time} ({formatToUserTz(selectedRace.qualiUTC)?.dateStr})
+                  </div>
+                )}
+              </div>
+              <Button
+                variant="danger"
+                size="sm"
+                className="res-cta-btn"
+                onClick={() => navigate("/lineup")}
+                aria-label="Go to formation page to submit lineup"
+              >
+                {t("raceResults.goToFormation")}
+              </Button>
+            </div>
+          )}
+
+          {/* Loading state - only when no sessions data at all */}
+          {loadingSessions && !sessions && (
+            <div className="text-center py-4">
+              <Spinner animation="border" size="sm" />
+              <p className="mt-2 text-muted small">{t("common.loading")}</p>
+            </div>
+          )}
+
+          {/* Error state */}
+          {error && !sessions && <div className="res-note is-warning">{error}</div>}
+
+          {/* Sessions */}
+          {sessions && (
+            <div className="fx-card res-card">
+              <div className="res-card-head">
+                <div className="fx-eyebrow">R{sessions.round} · {sessions.date}</div>
+                <h2 className="res-race-name">{sessions.raceName}</h2>
+              </div>
+
+              {sessions.noData ? (
+                <div className="res-empty">
+                  <div className="fw-semibold">{t("raceResults.noResultsYet")}</div>
+                  <div className="small">{t("raceResults.noResultsYetDescription")}</div>
+                </div>
+              ) : (
+                <div className="res-sessions">
+                  {sessions.hasQualifying && (
+                    <SessionBlock sessionKey="qualifying" title={t("raceResults.qualifying")}>
+                      {renderQualifyingBody(sessions.qualifying)}
+                    </SessionBlock>
+                  )}
+                  {sessions.hasSprintQualifying && (
+                    <SessionBlock sessionKey="sprintQualifying" title={t("raceResults.sprintQualifying")}>
+                      {renderSessionBody(sessions.sprintQualifying, "sprintQualifying")}
+                    </SessionBlock>
+                  )}
+                  {sessions.hasSprint && (
+                    <SessionBlock sessionKey="sprint" title={t("raceResults.sprint")}>
+                      {renderSessionBody(sessions.sprint, "sprint")}
+                    </SessionBlock>
+                  )}
+                  {sessions.hasRace && (
+                    <SessionBlock sessionKey="race" title={t("raceResults.race")}>
+                      {renderSessionBody(sessions.race, "race")}
+                    </SessionBlock>
+                  )}
+                </div>
               )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ============ STANDINGS ============ */}
+      {activeTab === "standings" && (
+        loadingStandings ? (
+          <div className="text-center py-5">
+            <Spinner animation="border" />
+            <p className="mt-3 text-muted">{t("common.loading")}</p>
+          </div>
+        ) : (
+          <>
+            <div className="fx-segmented is-small mb-3" role="group" aria-label="Standings filter">
+              {[
+                { key: "5", label: "Top 5" },
+                { key: "10", label: "Top 10" },
+                { key: "all", label: t("raceResults.allFilter") },
+              ].map((f) => (
+                <button
+                  key={f.key}
+                  type="button"
+                  aria-pressed={standingsFilter === f.key}
+                  className={`fx-segment${standingsFilter === f.key ? " is-active" : ""}`}
+                  onClick={() => setStandingsFilter(f.key)}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            <Row className="g-3 g-lg-4">
+              <Col xs={12} lg={6}>
+                <StandingsList title={t("raceResults.driverStandings")} rows={driverStandings} kind="driver" />
+              </Col>
+              <Col xs={12} lg={6}>
+                <StandingsList title={t("raceResults.constructorStandings")} rows={constructorStandings} kind="team" />
+              </Col>
+            </Row>
+          </>
+        )
+      )}
+
+      {/* ============ SCHEDULE ============ */}
+      {activeTab === "schedule" && (
+        <div className="res-narrow">
+          <p className="res-tz">{t("raceResults.allTimesIn")} {getTimezoneDisplay(timezone)}</p>
+
+          {races.length === 0 ? (
+            <div className="fx-card res-empty">{t("raceResults.noRacesScheduled")}</div>
+          ) : (
+            <>
+              {/* Next race */}
+              {scheduleData.nextRace && (() => {
+                const race = scheduleData.nextRace;
+                const raceDate = race.raceUTC?.toDate ? race.raceUTC.toDate() : new Date(race.raceUTC?.seconds * 1000);
+                const daysUntil = Math.ceil((raceDate - new Date()) / (1000 * 60 * 60 * 24));
+                const countdownText = daysUntil <= 0
+                  ? t("raceResults.today")
+                  : daysUntil === 1
+                    ? t("raceResults.tomorrow")
+                    : t("raceResults.daysUntil", { count: daysUntil });
+
+                return (
+                  <div className="fx-card res-card res-next">
+                    <div className="res-card-head">
+                      <div className="d-flex align-items-center gap-2">
+                        <span className="fx-eyebrow">{t("raceResults.nextRace")} · R{race.round} · {countdownText}</span>
+                        {race.qualiSprintUTC && <span className="res-pill">Sprint</span>}
+                      </div>
+                      <h2 className="res-race-name">{race.name}</h2>
+                    </div>
+                    <div className="res-rows">
+                      {weekendSessions(race).map((s, idx) => (
+                        <div key={idx} className={`res-row${s.isRace ? " is-strong" : ""}`}>
+                          <span className="res-name">{s.label}</span>
+                          <span className="res-when">{s.dayOfWeek} {s.dateStr}</span>
+                          <span className="res-time">{s.time}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Other upcoming races */}
+              {scheduleData.upcoming.length > 1 && (
+                <>
+                  <h3 className="res-section-title">
+                    {t("raceResults.upcomingRaces")} <span>{scheduleData.upcoming.length - 1}</span>
+                  </h3>
+                  <div className="fx-card res-list">
+                    {scheduleData.upcoming.slice(1).map((race) => {
+                      const q = formatToUserTz(race.qualiUTC);
+                      const r = formatToUserTz(race.raceUTC);
+                      return (
+                        <div key={race.id} className="res-list-row">
+                          <span className="res-round">R{race.round}</span>
+                          <span className="res-list-main">
+                            <span className="res-list-name">
+                              {race.name}
+                              {race.qualiSprintUTC && <span className="res-pill ms-2">Sprint</span>}
+                              {race.cancelledMain && <span className="res-pill is-danger ms-2">{t("history.cancelled")}</span>}
+                            </span>
+                            <span className="res-list-sub">
+                              {q && <>{t("raceResults.qualifying")} {q.dayOfWeek} {q.dateStr} · {q.time}</>}
+                            </span>
+                          </span>
+                          {r && (
+                            <span className="res-list-date">
+                              <span>{r.dayOfWeek} {r.dateStr}</span>
+                              <span className="res-time">{r.time}</span>
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </>
               )}
 
-              {/* Standings Tab */}
-              {activeTab === "standings" && (
+              {/* Past races, collapsed */}
+              {scheduleData.past.length > 0 && (
                 <>
-                  {loadingStandings ? (
-                    <div className="text-center py-5">
-                      <Spinner animation="border" variant={isDark ? "light" : "primary"} style={{ width: '3rem', height: '3rem' }} />
-                      <p className="mt-3 text-muted">{t("common.loading")}</p>
+                  <button
+                    type="button"
+                    className="res-section-title res-section-toggle"
+                    aria-expanded={showPastRaces}
+                    onClick={() => setShowPastRaces((v) => !v)}
+                  >
+                    {t("raceResults.pastRaces")} <span>{scheduleData.past.length}</span>
+                    <span className={`res-chevron${showPastRaces ? " is-open" : ""}`} aria-hidden="true">›</span>
+                  </button>
+                  {showPastRaces && (
+                    <div className="fx-card res-list is-past">
+                      {[...scheduleData.past].reverse().map((race) => {
+                        const r = formatToUserTz(race.raceUTC);
+                        return (
+                          <div key={race.id} className="res-list-row">
+                            <span className="res-round">R{race.round}</span>
+                            <span className="res-list-main">
+                              <span className="res-list-name">
+                                {race.name}
+                                {race.cancelledMain && <span className="res-pill is-danger ms-2">{t("history.cancelled")}</span>}
+                              </span>
+                            </span>
+                            {r && <span className="res-list-date"><span>{r.dayOfWeek} {r.dateStr}</span></span>}
+                          </div>
+                        );
+                      })}
                     </div>
-                  ) : (
-                    <>
-                      {/* Filter Buttons */}
-                      <div className="d-flex justify-content-center gap-2 mb-4 flex-wrap">
-                        <Button
-                          size="sm"
-                          variant={standingsFilter === "5" ? "danger" : "outline-secondary"}
-                          onClick={() => setStandingsFilter("5")}
-                          style={{
-                            backgroundColor: standingsFilter === "5" ? accentColor : "transparent",
-                            borderColor: standingsFilter === "5" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
-                          }}
-                          aria-label="Show top 5 in standings"
-                        >
-                          Top 5
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={standingsFilter === "10" ? "danger" : "outline-secondary"}
-                          onClick={() => setStandingsFilter("10")}
-                          style={{
-                            backgroundColor: standingsFilter === "10" ? accentColor : "transparent",
-                            borderColor: standingsFilter === "10" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
-                          }}
-                          aria-label="Show top 10 in standings"
-                        >
-                          Top 10
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={standingsFilter === "all" ? "danger" : "outline-secondary"}
-                          onClick={() => setStandingsFilter("all")}
-                          style={{
-                            backgroundColor: standingsFilter === "all" ? accentColor : "transparent",
-                            borderColor: standingsFilter === "all" ? accentColor : (isDark ? "#6c757d" : "#dee2e6"),
-                          }}
-                          aria-label="Show all positions in standings"
-                        >
-                          {t("raceResults.allFilter")}
-                        </Button>
-                      </div>
-
-                      <Row className="g-4">
-                        {/* Driver Standings */}
-                        <Col xs={12} lg={6}>
-                          <h5 className="mb-3" style={{ color: accentColor }}>
-                            🏎️ {t("raceResults.driverStandings")}
-                          </h5>
-                          {driverStandings && driverStandings.length > 0 ? (
-                            <>
-                              {/* Podium */}
-                              <div className="d-flex justify-content-center align-items-end gap-2 gap-md-3 mb-4" style={{ maxWidth: '100%', overflow: 'hidden' }}>
-                              {/* 2nd Place */}
-                              {driverStandings[1] && (
-                                <div className="text-center" style={{ flex: '1', maxWidth: '32%', minWidth: 0 }}>
-                                  <div
-                                    style={{
-                                      backgroundColor: '#C0C0C0',
-                                      height: '60px',
-                                      borderRadius: '8px 8px 0 0',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      fontWeight: 'bold',
-                                      fontSize: 'clamp(1.2rem, 4vw, 2rem)',
-                                      color: '#fff',
-                                      textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
-                                    }}
-                                  >
-                                    2
-                                  </div>
-                                  <div className="p-1 p-md-2" style={{ fontSize: 'clamp(0.7rem, 2vw, 0.9rem)', overflow: 'hidden' }}>
-                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                      {driverStandings[1].driver.split(' ').pop()}
-                                    </div>
-                                    <div className="fw-bold mt-1" style={{ color: accentColor, fontSize: 'clamp(0.75rem, 2.5vw, 1rem)' }}>
-                                      {driverStandings[1].points}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* 1st Place */}
-                              {driverStandings[0] && (
-                                <div className="text-center" style={{ flex: '1', maxWidth: '32%', minWidth: 0 }}>
-                                  <div
-                                    style={{
-                                      backgroundColor: '#FFD700',
-                                      height: '90px',
-                                      borderRadius: '8px 8px 0 0',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      fontWeight: 'bold',
-                                      fontSize: 'clamp(1.5rem, 5vw, 2.5rem)',
-                                      color: '#fff',
-                                      textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
-                                    }}
-                                  >
-                                    1
-                                  </div>
-                                  <div className="p-1 p-md-2" style={{ fontSize: 'clamp(0.7rem, 2vw, 0.9rem)', overflow: 'hidden' }}>
-                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                      {driverStandings[0].driver.split(' ').pop()}
-                                    </div>
-                                    <div className="fw-bold mt-1" style={{ color: accentColor, fontSize: 'clamp(0.75rem, 2.5vw, 1rem)' }}>
-                                      {driverStandings[0].points}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* 3rd Place */}
-                              {driverStandings[2] && (
-                                <div className="text-center" style={{ flex: '1', maxWidth: '32%', minWidth: 0 }}>
-                                  <div
-                                    style={{
-                                      backgroundColor: '#CD7F32',
-                                      height: '45px',
-                                      borderRadius: '8px 8px 0 0',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      fontWeight: 'bold',
-                                      fontSize: 'clamp(1rem, 3.5vw, 1.8rem)',
-                                      color: '#fff',
-                                      textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
-                                    }}
-                                  >
-                                    3
-                                  </div>
-                                  <div className="p-1 p-md-2" style={{ fontSize: 'clamp(0.7rem, 2vw, 0.9rem)', overflow: 'hidden' }}>
-                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                      {driverStandings[2].driver.split(' ').pop()}
-                                    </div>
-                                    <div className="fw-bold mt-1" style={{ color: accentColor, fontSize: 'clamp(0.75rem, 2.5vw, 1rem)' }}>
-                                      {driverStandings[2].points}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Full Standings Table */}
-                            <div className="table-responsive">
-                              <Table hover size="sm" variant={isDark ? "dark" : undefined} className="mb-0">
-                                <thead>
-                                  <tr>
-                                    <th style={{ color: accentColor, width: '10%', padding: '0.5rem 0.25rem' }}>#</th>
-                                    <th style={{ color: accentColor, padding: '0.5rem 0.25rem' }}>{t("formations.driver")}</th>
-                                    <th className="text-end" style={{ color: accentColor, width: '20%', padding: '0.5rem 0.25rem' }}>Pt</th>
-                                    <th className="text-end d-none d-md-table-cell" style={{ color: accentColor, width: '15%', padding: '0.5rem 0.25rem' }}>Win</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {driverStandings
-                                    .slice(0, standingsFilter === "5" ? 5 : standingsFilter === "10" ? 10 : driverStandings.length)
-                                    .map((standing, idx) => (
-                                      <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                        <td style={{ padding: '0.5rem 0.25rem' }}>{standing.position}</td>
-                                        <td style={{ padding: '0.5rem 0.25rem' }}>
-                                          <div className="d-flex align-items-center">
-                                            <DriverWithLogo name={standing.driver} />
-                                          </div>
-                                        </td>
-                                        <td className="text-end" style={{ padding: '0.5rem 0.25rem' }}>{standing.points}</td>
-                                        <td className="text-end d-none d-md-table-cell" style={{ padding: '0.5rem 0.25rem' }}>{standing.wins}</td>
-                                      </tr>
-                                    ))}
-                                </tbody>
-                              </Table>
-                            </div>
-                          </>
-                        ) : (
-                          <Alert variant="info">{t("raceResults.driverStandingsUnavailable")}</Alert>
-                        )}
-                      </Col>
-
-                      {/* Constructor Standings */}
-                      <Col xs={12} lg={6}>
-                        <h5 className="mb-3" style={{ color: accentColor }}>
-                          🏁 {t("raceResults.constructorStandings")}
-                        </h5>
-                        {constructorStandings && constructorStandings.length > 0 ? (
-                          <>
-                            {/* Podium */}
-                            <div className="d-flex justify-content-center align-items-end gap-2 gap-md-3 mb-4" style={{ maxWidth: '100%', overflow: 'hidden' }}>
-                              {/* 2nd Place */}
-                              {constructorStandings[1] && (
-                                <div className="text-center" style={{ flex: '1', maxWidth: '32%', minWidth: 0 }}>
-                                  <div
-                                    style={{
-                                      backgroundColor: '#C0C0C0',
-                                      height: '60px',
-                                      borderRadius: '8px 8px 0 0',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      fontWeight: 'bold',
-                                      fontSize: 'clamp(1.2rem, 4vw, 2rem)',
-                                      color: '#fff',
-                                      textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
-                                    }}
-                                  >
-                                    2
-                                  </div>
-                                  <div className="p-1 p-md-2" style={{ fontSize: 'clamp(0.65rem, 1.8vw, 0.85rem)', overflow: 'hidden' }}>
-                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                      {constructorStandings[1].constructor}
-                                    </div>
-                                    <div className="fw-bold mt-1" style={{ color: accentColor, fontSize: 'clamp(0.75rem, 2.5vw, 1rem)' }}>
-                                      {constructorStandings[1].points}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* 1st Place */}
-                              {constructorStandings[0] && (
-                                <div className="text-center" style={{ flex: '1', maxWidth: '32%', minWidth: 0 }}>
-                                  <div
-                                    style={{
-                                      backgroundColor: '#FFD700',
-                                      height: '90px',
-                                      borderRadius: '8px 8px 0 0',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      fontWeight: 'bold',
-                                      fontSize: 'clamp(1.5rem, 5vw, 2.5rem)',
-                                      color: '#fff',
-                                      textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
-                                    }}
-                                  >
-                                    1
-                                  </div>
-                                  <div className="p-1 p-md-2" style={{ fontSize: 'clamp(0.65rem, 1.8vw, 0.85rem)', overflow: 'hidden' }}>
-                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                      {constructorStandings[0].constructor}
-                                    </div>
-                                    <div className="fw-bold mt-1" style={{ color: accentColor, fontSize: 'clamp(0.75rem, 2.5vw, 1rem)' }}>
-                                      {constructorStandings[0].points}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* 3rd Place */}
-                              {constructorStandings[2] && (
-                                <div className="text-center" style={{ flex: '1', maxWidth: '32%', minWidth: 0 }}>
-                                  <div
-                                    style={{
-                                      backgroundColor: '#CD7F32',
-                                      height: '45px',
-                                      borderRadius: '8px 8px 0 0',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      fontWeight: 'bold',
-                                      fontSize: 'clamp(1rem, 3.5vw, 1.8rem)',
-                                      color: '#fff',
-                                      textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
-                                    }}
-                                  >
-                                    3
-                                  </div>
-                                  <div className="p-1 p-md-2" style={{ fontSize: 'clamp(0.65rem, 1.8vw, 0.85rem)', overflow: 'hidden' }}>
-                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                      {constructorStandings[2].constructor}
-                                    </div>
-                                    <div className="fw-bold mt-1" style={{ color: accentColor, fontSize: 'clamp(0.75rem, 2.5vw, 1rem)' }}>
-                                      {constructorStandings[2].points}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Full Standings Table */}
-                            <div className="table-responsive">
-                              <Table hover size="sm" variant={isDark ? "dark" : undefined} className="mb-0">
-                                <thead>
-                                  <tr>
-                                    <th style={{ color: accentColor, width: '10%', padding: '0.5rem 0.25rem' }}>#</th>
-                                    <th style={{ color: accentColor, padding: '0.5rem 0.25rem' }}>Team</th>
-                                    <th className="text-end" style={{ color: accentColor, width: '20%', padding: '0.5rem 0.25rem' }}>Pt</th>
-                                    <th className="text-end d-none d-md-table-cell" style={{ color: accentColor, width: '15%', padding: '0.5rem 0.25rem' }}>Win</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {constructorStandings
-                                    .slice(0, standingsFilter === "5" ? 5 : standingsFilter === "10" ? 10 : constructorStandings.length)
-                                    .map((standing, idx) => (
-                                      <tr key={idx} className={idx < 3 ? "fw-bold" : ""}>
-                                        <td style={{ padding: '0.5rem 0.25rem' }}>{standing.position}</td>
-                                        <td style={{ padding: '0.5rem 0.25rem' }}>
-                                          <div className="d-flex align-items-center">
-                                            <TeamWithLogo name={standing.constructor} />
-                                          </div>
-                                        </td>
-                                        <td className="text-end" style={{ padding: '0.5rem 0.25rem' }}>{standing.points}</td>
-                                        <td className="text-end d-none d-md-table-cell" style={{ padding: '0.5rem 0.25rem' }}>{standing.wins}</td>
-                                      </tr>
-                                    ))}
-                                </tbody>
-                              </Table>
-                            </div>
-                          </>
-                        ) : (
-                          <Alert variant="info">{t("raceResults.constructorStandingsUnavailable")}</Alert>
-                        )}
-                      </Col>
-                    </Row>
+                  )}
                 </>
               )}
             </>
           )}
-
-              {/* Schedule Tab */}
-              {activeTab === "schedule" && (
-                <>
-                  <p className="text-muted mb-4" style={{ fontSize: "0.9rem" }}>
-                    🕐 {t("raceResults.allTimesIn")} {getTimezoneDisplay(timezone)}
-                  </p>
-
-                  {races.length === 0 ? (
-                    <Alert variant="info">{t("raceResults.noRacesScheduled")}</Alert>
-                  ) : (
-                    <>
-                      {/* Next Race - Highlighted */}
-                      {scheduleData.nextRace && (() => {
-                        const race = scheduleData.nextRace;
-                        const raceDate = race.raceUTC?.toDate ? race.raceUTC.toDate() : new Date(race.raceUTC?.seconds * 1000);
-                        const daysUntil = Math.ceil((raceDate - new Date()) / (1000 * 60 * 60 * 24));
-                        const isSprint = !!race.qualiSprintUTC;
-
-                        const sessionRows = [];
-                        if (isSprint) {
-                          const sqFmt = formatToUserTz(race.qualiSprintUTC);
-                          if (sqFmt) sessionRows.push({ label: t("raceResults.sprintQualifying"), ...sqFmt, icon: "⚡" });
-                          const spFmt = formatToUserTz(race.sprintUTC);
-                          if (spFmt) sessionRows.push({ label: t("raceResults.sprint"), ...spFmt, icon: "⚡" });
-                        }
-                        const qFmt = formatToUserTz(race.qualiUTC);
-                        if (qFmt) sessionRows.push({ label: t("raceResults.qualifying"), ...qFmt, icon: "🏎️" });
-                        const rFmt = formatToUserTz(race.raceUTC);
-                        if (rFmt) sessionRows.push({ label: t("raceResults.race"), ...rFmt, icon: "🏆" });
-
-                        let countdownText;
-                        if (daysUntil <= 0) countdownText = t("raceResults.today");
-                        else if (daysUntil === 1) countdownText = t("raceResults.tomorrow");
-                        else countdownText = t("raceResults.daysUntil", { count: daysUntil });
-
-                        return (
-                          <Card
-                            className="mb-4 shadow schedule-next-race"
-                            style={{
-                              borderColor: accentColor,
-                              borderWidth: "2px",
-                              backgroundColor: bgCard,
-                            }}
-                          >
-                            <Card.Header
-                              style={{
-                                backgroundColor: accentColor,
-                                color: "#fff",
-                                borderBottom: "none",
-                              }}
-                            >
-                              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <div>
-                                  <span className="fw-bold" style={{ fontSize: "1.1rem" }}>
-                                    R{race.round} — {race.name}
-                                  </span>
-                                  {isSprint && (
-                                    <Badge bg="warning" text="dark" className="ms-2">
-                                      🏁 {t("raceResults.sprintWeekend")}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="d-flex align-items-center gap-2">
-                                  <Badge bg="light" text="dark" style={{ fontSize: "0.85rem" }}>
-                                    {countdownText}
-                                  </Badge>
-                                  <Badge bg="light" text="dark" style={{ fontSize: "0.75rem" }}>
-                                    {t("raceResults.nextRace")}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </Card.Header>
-                            <Card.Body className="p-0">
-                              <Table hover className="mb-0" size="sm" variant={isDark ? "dark" : undefined}>
-                                <thead>
-                                  <tr>
-                                    <th style={{ color: accentColor, padding: "0.6rem 0.75rem" }}>{t("raceResults.sessionSchedule")}</th>
-                                    <th style={{ color: accentColor, padding: "0.6rem 0.75rem" }}>{t("common.date")}</th>
-                                    <th className="text-end" style={{ color: accentColor, padding: "0.6rem 0.75rem" }}>{getTimezoneAbbreviation(timezone)}</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {sessionRows.map((s, idx) => (
-                                    <tr key={idx}>
-                                      <td style={{ padding: "0.6rem 0.75rem" }}>
-                                        <span className="me-2">{s.icon}</span>
-                                        <strong>{s.label}</strong>
-                                      </td>
-                                      <td style={{ padding: "0.6rem 0.75rem" }}>
-                                        <span className="text-capitalize">{s.dayOfWeek}</span> {s.dateStr}
-                                      </td>
-                                      <td className="text-end fw-bold font-monospace" style={{ padding: "0.6rem 0.75rem", color: accentColor }}>
-                                        {s.time}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </Table>
-                            </Card.Body>
-                          </Card>
-                        );
-                      })()}
-
-                      {/* Other Upcoming Races */}
-                      {scheduleData.upcoming.length > 1 && (
-                        <>
-                          <h6 className="mb-3 mt-2" style={{ color: accentColor }}>
-                            📅 {t("raceResults.upcomingRaces")} ({scheduleData.upcoming.length - 1})
-                          </h6>
-                          <div className="schedule-race-list">
-                            {scheduleData.upcoming.slice(1).map((race) => {
-                              const isSprint = !!race.qualiSprintUTC;
-                              const qFmt = formatToUserTz(race.qualiUTC);
-                              const rFmt = formatToUserTz(race.raceUTC);
-
-                              return (
-                                <Card
-                                  key={race.id}
-                                  className="mb-2 schedule-race-card"
-                                  style={{ backgroundColor: bgCard, borderColor: isDark ? "var(--border-color)" : "#dee2e6" }}
-                                >
-                                  <Card.Body className="p-0">
-                                    {/* Race header row */}
-                                    <div
-                                      className="d-flex justify-content-between align-items-center px-3 py-2"
-                                      style={{
-                                        borderBottom: `1px solid ${isDark ? "var(--border-color)" : "#dee2e6"}`,
-                                        backgroundColor: isDark ? "var(--bg-tertiary)" : "#f8f9fa",
-                                      }}
-                                    >
-                                      <div className="d-flex align-items-center gap-2">
-                                        <Badge bg="secondary" style={{ minWidth: "36px" }}>R{race.round}</Badge>
-                                        <strong style={{ fontSize: "0.95rem" }}>{race.name}</strong>
-                                        {isSprint && (
-                                          <Badge bg="warning" text="dark" style={{ fontSize: "0.7rem" }}>🏁 {t("raceResults.sprintWeekend")}</Badge>
-                                        )}
-                                        {race.cancelledMain && (
-                                          <Badge bg="danger" style={{ fontSize: "0.7rem" }}>{t("history.cancelled")}</Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                    {/* Session times */}
-                                    <Table hover className="mb-0" size="sm" variant={isDark ? "dark" : undefined} style={{ fontSize: "0.85rem" }}>
-                                      <tbody>
-                                        {isSprint && (() => {
-                                          const sqFmt = formatToUserTz(race.qualiSprintUTC);
-                                          const spFmt = formatToUserTz(race.sprintUTC);
-                                          return (
-                                            <>
-                                              {sqFmt && (
-                                                <tr>
-                                                  <td style={{ padding: "0.4rem 0.75rem" }}>⚡ {t("raceResults.sprintQualifying")}</td>
-                                                  <td className="text-muted text-capitalize" style={{ padding: "0.4rem 0.5rem" }}>{sqFmt.dayOfWeek} {sqFmt.dateStr}</td>
-                                                  <td className="text-end fw-bold font-monospace" style={{ padding: "0.4rem 0.75rem", color: accentColor }}>{sqFmt.time}</td>
-                                                </tr>
-                                              )}
-                                              {spFmt && (
-                                                <tr>
-                                                  <td style={{ padding: "0.4rem 0.75rem" }}>⚡ {t("raceResults.sprint")}</td>
-                                                  <td className="text-muted text-capitalize" style={{ padding: "0.4rem 0.5rem" }}>{spFmt.dayOfWeek} {spFmt.dateStr}</td>
-                                                  <td className="text-end fw-bold font-monospace" style={{ padding: "0.4rem 0.75rem", color: accentColor }}>{spFmt.time}</td>
-                                                </tr>
-                                              )}
-                                            </>
-                                          );
-                                        })()}
-                                        {qFmt && (
-                                          <tr>
-                                            <td style={{ padding: "0.4rem 0.75rem" }}>🏎️ {t("raceResults.qualifying")}</td>
-                                            <td className="text-muted text-capitalize" style={{ padding: "0.4rem 0.5rem" }}>{qFmt.dayOfWeek} {qFmt.dateStr}</td>
-                                            <td className="text-end fw-bold font-monospace" style={{ padding: "0.4rem 0.75rem", color: accentColor }}>{qFmt.time}</td>
-                                          </tr>
-                                        )}
-                                        {rFmt && (
-                                          <tr>
-                                            <td style={{ padding: "0.4rem 0.75rem" }}>🏆 {t("raceResults.race")}</td>
-                                            <td className="text-muted text-capitalize" style={{ padding: "0.4rem 0.5rem" }}>{rFmt.dayOfWeek} {rFmt.dateStr}</td>
-                                            <td className="text-end fw-bold font-monospace" style={{ padding: "0.4rem 0.75rem", color: accentColor }}>{rFmt.time}</td>
-                                          </tr>
-                                        )}
-                                      </tbody>
-                                    </Table>
-                                  </Card.Body>
-                                </Card>
-                              );
-                            })}
-                          </div>
-                        </>
-                      )}
-
-                      {/* Past Races - Compact */}
-                      {scheduleData.past.length > 0 && (
-                        <>
-                          <h6 className="mb-3 mt-4" style={{ color: isDark ? "var(--text-secondary)" : "#6c757d" }}>
-                            ✅ {t("raceResults.pastRaces")} ({scheduleData.past.length})
-                          </h6>
-                          <Card style={{ backgroundColor: bgCard, borderColor: isDark ? "var(--border-color)" : "#dee2e6" }}>
-                            <div className="table-responsive">
-                              <Table hover size="sm" variant={isDark ? "dark" : undefined} className="mb-0" style={{ fontSize: "0.85rem" }}>
-                                <thead>
-                                  <tr>
-                                    <th style={{ padding: "0.5rem 0.75rem", width: "50px" }}>#</th>
-                                    <th style={{ padding: "0.5rem 0.75rem" }}>{t("history.race")}</th>
-                                    <th style={{ padding: "0.5rem 0.75rem" }}>{t("raceResults.qualifying")}</th>
-                                    <th style={{ padding: "0.5rem 0.75rem" }}>{t("raceResults.race")}</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {scheduleData.past.map((race) => {
-                                    const qFmt = formatToUserTz(race.qualiUTC);
-                                    const rFmt = formatToUserTz(race.raceUTC);
-                                    return (
-                                      <tr key={race.id} style={{ opacity: 0.7 }}>
-                                        <td style={{ padding: "0.5rem 0.75rem" }}>{race.round}</td>
-                                        <td style={{ padding: "0.5rem 0.75rem" }}>
-                                          {race.name}
-                                          {race.cancelledMain && <Badge bg="danger" className="ms-2" style={{ fontSize: "0.65rem" }}>{t("history.cancelled")}</Badge>}
-                                        </td>
-                                        <td className="font-monospace" style={{ padding: "0.5rem 0.75rem" }}>
-                                          {qFmt ? `${qFmt.dayOfWeek} ${qFmt.dateStr} ${qFmt.time}` : "—"}
-                                        </td>
-                                        <td className="font-monospace" style={{ padding: "0.5rem 0.75rem" }}>
-                                          {rFmt ? `${rFmt.dayOfWeek} ${rFmt.dateStr} ${rFmt.time}` : "—"}
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </Table>
-                            </div>
-                          </Card>
-                        </>
-                      )}
-                    </>
-                  )}
-                </>
-              )}
-
-            </Card.Body>
-          </Card>
-        </Col>
-
-        {/* Loading state - only when no sessions data at all */}
-        {activeTab === "results" && loadingSessions && !sessions && (
-          <Col xs={12} className="text-center">
-            <Spinner animation="border" />
-            <p className="mt-3 text-muted">{t("common.loading")}</p>
-          </Col>
-        )}
-
-        {/* Error state */}
-        {activeTab === "results" && error && !sessions && (
-          <Col xs={12}>
-            <Alert variant="warning">{error}</Alert>
-          </Col>
-        )}
-
-        {/* Sessions Display - show as soon as we have session metadata */}
-        {activeTab === "results" && sessions && (
-          <Col xs={12}>
-            <Card
-              className="shadow"
-              style={{
-                borderColor: accentColor,
-                backgroundColor: bgCard,
-              }}
-            >
-              <Card.Header
-                style={{
-                  backgroundColor: bgHeader,
-                  borderBottom: `2px solid ${accentColor}`,
-                }}
-              >
-                <h4 className="mb-0">
-                  {sessions.raceName}
-                  <Badge bg="secondary" className="ms-3">
-                    {t("history.round")} {sessions.round}
-                  </Badge>
-                </h4>
-                <small className="text-muted">{sessions.date}</small>
-              </Card.Header>
-
-              <Card.Body>
-                {sessions.noData ? (
-                  <Alert variant="info" className="text-center mb-0">
-                    <div className="py-3">
-                      <h5>{t("raceResults.noResultsYet")}</h5>
-                      <p className="mb-0 text-muted">{t("raceResults.noResultsYetDescription")}</p>
-                    </div>
-                  </Alert>
-                ) : (
-                  <Accordion
-                    activeKey={activeKeys}
-                    onSelect={(keys) => setActiveKeys(Array.isArray(keys) ? keys : [keys])}
-                    alwaysOpen
-                  >
-                    {/* Qualifying */}
-                    {sessions.hasQualifying && (
-                      <Accordion.Item eventKey="qualifying">
-                        <Accordion.Header>
-                          <strong style={{ color: accentColor }}>
-                            🏎️ {t("raceResults.qualifying")}
-                          </strong>
-                        </Accordion.Header>
-                        <Accordion.Body className="p-2 p-md-3">
-                          {renderQualifyingBody(sessions.qualifying)}
-                        </Accordion.Body>
-                      </Accordion.Item>
-                    )}
-
-                    {/* Sprint Qualifying */}
-                    {sessions.hasSprintQualifying && (
-                      <Accordion.Item eventKey="sprintQualifying">
-                        <Accordion.Header>
-                          <strong style={{ color: accentColor }}>
-                            ⚡ {t("raceResults.sprintQualifying")}
-                          </strong>
-                        </Accordion.Header>
-                        <Accordion.Body className="p-2 p-md-3">
-                          {renderSessionBody(sessions.sprintQualifying, "sprintQualifying")}
-                        </Accordion.Body>
-                      </Accordion.Item>
-                    )}
-
-                    {/* Sprint */}
-                    {sessions.hasSprint && (
-                      <Accordion.Item eventKey="sprint">
-                        <Accordion.Header>
-                          <strong style={{ color: accentColor }}>
-                            ⚡ {t("raceResults.sprint")}
-                          </strong>
-                        </Accordion.Header>
-                        <Accordion.Body className="p-2 p-md-3">
-                          {renderSessionBody(sessions.sprint, "sprint")}
-                        </Accordion.Body>
-                      </Accordion.Item>
-                    )}
-
-                    {/* Race */}
-                    {sessions.hasRace && (
-                      <Accordion.Item eventKey="race">
-                        <Accordion.Header>
-                          <strong style={{ color: accentColor }}>
-                            🏆 {t("raceResults.race")}
-                          </strong>
-                        </Accordion.Header>
-                        <Accordion.Body className="p-2 p-md-3">
-                          {renderSessionBody(sessions.race, "race")}
-                        </Accordion.Body>
-                      </Accordion.Item>
-                    )}
-                  </Accordion>
-                )}
-              </Card.Body>
-            </Card>
-          </Col>
-        )}
-
-      </Row>
-    </Container>
+        </div>
+      )}
+    </div>
   );
 }
