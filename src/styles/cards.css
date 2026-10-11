@@ -1,0 +1,37 @@
+/* Minimal surfaces shared by Home and the player page */
+.fx-card {
+  display: block;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+[data-theme="dark"] .fx-card,
+[data-theme="dark"] .card.fx-card {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+.fx-card .fx-card-header {
+  padding: 0.85rem 1rem 0.5rem;
+}
+
+.fx .fx-card-title,
+.fx-card .fx-card-title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.fx .fx-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}

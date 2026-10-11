@@ -17,20 +17,26 @@ import UserAvatar from "./UserAvatar";
 export default function Navigation() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [expanded, setExpanded] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { toggleTheme, isDark, themeMode } = useTheme();
   const { currentLanguage, changeLanguage, availableLanguages, t } = useLanguage();
   const { user, userProfile, isAdmin, logout } = useAuth();
 
-  const handleNavClick = () => {
-    setExpanded(false);
-  };
-
   const handleLogoutRequest = () => {
-    setExpanded(false);
     setShowLogoutConfirm(true);
   };
+
+  const isActive = (paths) => paths.includes(location.pathname);
+
+  // Desktop links. On mobile the same sections live in the bottom tab bar
+  // (BottomTabBar.jsx); statistics and admin pages move to the user menu.
+  const desktopLinks = [
+    { to: "/", label: t("nav.home"), paths: ["/", "/leaderboard", "/classifica"] },
+    { to: "/lineup", label: t("nav.formations"), paths: ["/lineup", "/schiera"] },
+    { to: "/history", label: t("nav.history"), paths: ["/history", "/storico"] },
+    { to: "/results", label: t("nav.raceResults"), paths: ["/results", "/risultati"] },
+    { to: "/statistics", label: t("nav.statistics"), paths: ["/statistics", "/statistiche"] },
+  ];
 
   const handleLogoutConfirm = async () => {
     setShowLogoutConfirm(false);
@@ -71,42 +77,30 @@ export default function Navigation() {
     <>
     {logoutConfirmModal}
     <Navbar
-      expand="lg"
-      expanded={expanded}
-      onToggle={(isOpen) => setExpanded(isOpen)}
-      className="navbar-modern shadow-sm"
+      className="navbar-modern"
       style={{
         backgroundColor: bgColor,
-        borderBottom: `3px solid ${accentColor}`,
+        borderBottom: `2px solid ${accentColor}`,
       }}
     >
       <Container fluid className="px-3 px-lg-4">
-        {/* Hamburger menu - mobile only, left side */}
-        <Navbar.Toggle
-          aria-controls="main-navbar-nav"
-          aria-label="Toggle navigation menu"
-          className="border-0 me-2 order-0"
-          style={{ transform: "scale(0.85)" }}
-        />
-
-        {/* Logo - centered on mobile */}
+        {/* Logo */}
         <Link
           to="/"
-          onClick={() => setExpanded(false)}
-          className="navbar-brand logo-wrapper d-flex align-items-center mx-auto mx-lg-0 order-1 order-lg-1"
+          className="navbar-brand logo-wrapper d-flex align-items-center me-auto me-lg-0 order-1"
           style={{ textDecoration: "none" }}
           aria-label="Fanta F1 home page"
         >
           <img
             src={isDark ? "/FantaF1_Logo_dark.webp" : "/FantaF1_Logo.webp"}
             alt="Fanta F1 Fantasy Formula 1 logo"
-            height="45"
+            height="40"
             style={{ objectFit: "contain" }}
           />
         </Link>
 
         {/* Right side: unified user menu */}
-        <div className="d-flex align-items-center order-2 order-lg-3">
+        <div className="d-flex align-items-center order-3">
           <Dropdown align="end">
             <Dropdown.Toggle
               variant="link"
@@ -193,6 +187,36 @@ export default function Navigation() {
                 👤 {t("nav.myProfile")}
               </Dropdown.Item>
 
+              {/* Sections not in the mobile tab bar */}
+              <Dropdown.Item
+                as={Link}
+                to="/statistics"
+                style={{ color: textColor, fontSize: "0.85rem" }}
+                className="user-menu-item d-lg-none"
+              >
+                📈 {t("nav.statistics")}
+              </Dropdown.Item>
+              {isAdmin && (
+                <>
+                  <Dropdown.Item
+                    as={Link}
+                    to="/calculate"
+                    style={{ color: textColor, fontSize: "0.85rem" }}
+                    className="user-menu-item d-lg-none"
+                  >
+                    🧮 {t("nav.calculatePoints")}
+                  </Dropdown.Item>
+                  <Dropdown.Item
+                    as={Link}
+                    to="/admin"
+                    style={{ color: textColor, fontSize: "0.85rem" }}
+                    className="user-menu-item d-lg-none"
+                  >
+                    ⚙️ {t("nav.admin")}
+                  </Dropdown.Item>
+                </>
+              )}
+
               {/* Theme - single toggle button with emoji */}
               <Dropdown.Item
                 as="div"
@@ -278,71 +302,37 @@ export default function Navigation() {
           </Dropdown>
         </div>
 
-        {/* Collapsible menu */}
-        <Navbar.Collapse id="main-navbar-nav" className="order-3 order-lg-2">
-          <Nav className="mx-auto">
+        {/* Desktop links (mobile uses the bottom tab bar) */}
+        <Nav className="mx-auto d-none d-lg-flex order-2">
+          {desktopLinks.map((l) => (
             <Nav.Link
+              key={l.to}
               as={Link}
-              to="/"
-              onClick={handleNavClick}
-              className={location.pathname === "/" ? "active" : ""}
+              to={l.to}
+              className={isActive(l.paths) ? "active" : ""}
             >
-              📊 {t("nav.leaderboard")}
+              {l.label}
             </Nav.Link>
-            <Nav.Link
-              as={Link}
-              to="/lineup"
-              onClick={handleNavClick}
-              className={location.pathname === "/lineup" ? "active" : ""}
-            >
-              🏎️ {t("nav.formations")}
-            </Nav.Link>
-            <Nav.Link
-              as={Link}
-              to="/history"
-              onClick={handleNavClick}
-              className={location.pathname === "/history" ? "active" : ""}
-            >
-              📜 {t("nav.history")}
-            </Nav.Link>
-            <Nav.Link
-              as={Link}
-              to="/results"
-              onClick={handleNavClick}
-              className={location.pathname === "/results" ? "active" : ""}
-            >
-              🏁 {t("nav.raceResults")}
-            </Nav.Link>
-            <Nav.Link
-              as={Link}
-              to="/statistics"
-              onClick={handleNavClick}
-              className={location.pathname === "/statistics" ? "active" : ""}
-            >
-              📈 {t("nav.statistics")}
-            </Nav.Link>
-            {isAdmin && (
-              <>
-                <Nav.Link
-                  as={Link}
-                  to="/calculate"
-                  onClick={handleNavClick}
-                  className={location.pathname === "/calculate" ? "active" : ""}
-                >
-                  🧮 {t("nav.calculatePoints")}
-                </Nav.Link>
-                <Nav.Link
-                  as={Link}
-                  to="/admin"
-                  onClick={handleNavClick}
-                  className={`admin-link ${location.pathname === "/admin" ? "active" : ""}`}
-                >
-                  ⚙️ {t("nav.admin")}
-                </Nav.Link>
-              </>
-            )}
-          </Nav>
-        </Navbar.Collapse>
+          ))}
+          {isAdmin && (
+            <>
+              <Nav.Link
+                as={Link}
+                to="/calculate"
+                className={isActive(["/calculate", "/calcola"]) ? "active" : ""}
+              >
+                {t("nav.calculatePoints")}
+              </Nav.Link>
+              <Nav.Link
+                as={Link}
+                to="/admin"
+                className={`admin-link ${isActive(["/admin"]) ? "active" : ""}`}
+              >
+                {t("nav.admin")}
+              </Nav.Link>
+            </>
+          )}
+        </Nav>
       </Container>
     </Navbar>
     </>

@@ -1,0 +1,327 @@
+/* Player page (ParticipantDetail / Statistics → Giocatore) */
+.player-view .player-back {
+  margin-bottom: 0.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-weight: 600;
+  color: var(--accent-red);
+}
+
+.player-view .player-profile {
+  padding: 1.1rem;
+}
+
+@media (min-width: 992px) {
+  .player-view .player-profile {
+    position: sticky;
+    top: 1rem;
+  }
+}
+
+.player-view .min-w-0 {
+  min-width: 0;
+}
+
+.player-view .player-name {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-view .player-fullname {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.player-view .player-headline {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.player-view .player-headline > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.player-view .player-headline-value {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.player-view .player-headline-value.is-accent {
+  color: var(--accent-red);
+}
+
+.player-view .player-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+
+.player-view .player-chip {
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background-color: var(--bg-secondary);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .player-view .player-chip {
+  background-color: var(--bg-tertiary);
+}
+
+.player-view .player-chip strong {
+  color: var(--text-primary);
+}
+
+/* Segmented control */
+.player-view .player-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  margin-bottom: 0.75rem;
+  border-radius: 12px;
+  background-color: var(--bg-secondary);
+}
+
+[data-theme="dark"] .player-view .player-tabs {
+  background-color: var(--bg-tertiary);
+}
+
+.player-view .player-tab {
+  flex: 1 1 0;
+  padding: 0.45rem 0.5rem;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.player-view .player-tab.is-active {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px var(--shadow);
+}
+
+[data-theme="dark"] .player-view .player-tab.is-active {
+  background-color: var(--bg-secondary);
+}
+
+.player-view .player-empty {
+  padding: 1.25rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* Races list */
+.player-view .player-races {
+  overflow: hidden;
+}
+
+.player-view .player-race + .player-race {
+  border-top: 1px solid var(--border-color);
+}
+
+.player-view .player-race-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: var(--text-primary);
+}
+
+.player-view .player-race-round {
+  flex: none;
+  width: 2rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.player-view .player-race-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 0.93rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-view .player-race-split {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.player-view .player-race-total,
+.player-view .player-section-pts {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.player-view .player-race-total {
+  flex: none;
+  min-width: 2.5rem;
+  text-align: right;
+  font-size: 1.05rem;
+}
+
+.player-view .is-pos {
+  color: var(--score-positive);
+}
+
+.player-view .is-neg {
+  color: var(--score-negative);
+}
+
+.player-view .player-race-chevron {
+  flex: none;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+
+.player-view .player-race.is-open .player-race-chevron {
+  transform: rotate(90deg);
+}
+
+.player-view .player-race.is-open .player-race-row {
+  background-color: var(--score-total-bg);
+}
+
+.player-view .player-race-detail {
+  padding: 0.5rem 0.9rem 0.8rem;
+}
+
+.player-view .player-race-sections {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.9rem;
+}
+
+@media (min-width: 576px) {
+  .player-view .player-race-sections {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+}
+
+.player-view .player-race-empty {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.player-view .player-section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.15rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.player-view .player-section-title .player-section-pts {
+  font-size: 0.85rem;
+  letter-spacing: 0;
+}
+
+.player-view .player-section-title .player-section-pts.is-pos {
+  color: var(--score-positive);
+}
+
+.player-view .player-section-title .player-section-pts.is-neg {
+  color: var(--score-negative);
+}
+
+.player-view .player-pick {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0;
+  font-size: 0.88rem;
+}
+
+.player-view .player-pick-label {
+  flex: none;
+  width: 2.2rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.player-view .player-pick-driver {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-primary);
+}
+
+.player-view .player-pick-pts {
+  min-width: 30px;
+  font-size: 0.75rem;
+}
+
+.player-view .player-race-link {
+  margin-top: 0.6rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent-red);
+}
+
+.player-view .player-champ {
+  padding: 0.9rem 1rem;
+}
+
+.player-view .player-chart {
+  padding: 0.9rem 0.75rem 0.5rem;
+}
+
+.player-view .player-chart .fx-card-title {
+  margin: 0 0 0.25rem 0.25rem;
+}
+
+.player-chart-tooltip {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  box-shadow: 0 4px 12px var(--shadow);
+}
+
+@media (hover: hover) {
+  .player-view .player-race-row:hover {
+    background-color: var(--bg-secondary);
+  }
+
+  [data-theme="dark"] .player-view .player-race-row:hover {
+    background-color: var(--bg-tertiary);
+  }
+}

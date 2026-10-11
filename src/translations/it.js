@@ -38,14 +38,15 @@ export const it = {
     home: "Home",
     leaderboard: "Classifica",
     formations: "Schiera",
-    history: "Storico",
-    raceResults: "F1 Hub",
+    history: "Risultati Fanta",
+    raceResults: "Mondiale F1",
     statistics: "Statistiche",
     admin: "Admin",
     calculatePoints: "Calcola Punteggi",
     toggleTheme: "Cambia tema",
     changeLanguage: "Cambia lingua",
     myProfile: "Il mio Profilo",
+    me: "Io",
   },
 
   // Home
@@ -56,9 +57,28 @@ export const it = {
     quickActions: "Azioni Rapide",
     viewLeaderboard: "Vedi Classifica",
     submitFormation: "Schiera Formazione",
-    viewHistory: "Vedi Storico",
+    viewHistory: "Vedi Risultati Fanta",
     viewStats: "Vedi Statistiche",
     currentLeaderboard: "Anteprima Classifica Attuale",
+    nextRace: "Prossima gara",
+    seasonOver: "Stagione conclusa",
+    viewFantaResults: "Vedi Risultati Fanta",
+    sprintDeadline: "La Sprint chiude tra",
+    mainDeadline: "La Gara chiude tra",
+    lineupsClosed: "Formazioni chiuse",
+    lineupDone: "Schierata",
+    lineupTodo: "Da schierare",
+    lineupMissed: "Non schierata",
+    viewLineup: "Vedi formazione",
+    editFormation: "Modifica formazione",
+    dayUnit: "g",
+    mySummary: "La mia situazione",
+    lastRace: "Ultimo GP",
+    toCalculate: "{{race}} da calcolare",
+    fantaResultsHint: "Formazioni e punti di ogni GP",
+    f1Hint: "Risultati, classifiche e calendario F1",
+    statsHint: "Andamento e confronti tra giocatori",
+    startLineup: "Schiera formazione",
   },
 
   // Leaderboard
@@ -77,6 +97,15 @@ export const it = {
 
   // Participant Detail
   participantDetail: {
+    racesTab: "Gare",
+    championshipTab: "Campionato",
+    trendTab: "Andamento",
+    noLineup: "Formazione non inviata",
+    allLineups: "Tutte le formazioni del GP",
+    noChampionship: "Formazione campionato non ancora visibile",
+    pointsPerRace: "Punti per GP",
+    lineupsShort: "formazioni",
+    averageShort: "media",
     notFound: "Partecipante non trovato",
     racesParticipated: "Gare Partecipate",
     lineupsSubmitted: "Formazioni Schierate",
@@ -84,7 +113,7 @@ export const it = {
     position: "Posizione",
     racePoints: "Punti Gara",
     championshipFormation: "Formazione Campionato",
-    raceHistory: "Storico Gare",
+    raceHistory: "Gare",
     loadingHistory: "Caricamento storico gare...",
     noRaces: "Nessuna gara trovata per questo partecipante",
   },
@@ -132,7 +161,7 @@ export const it = {
 
   // History
   history: {
-    title: "Storico Gare",
+    title: "Risultati Fanta",
     pastRaces: "Gare Passate",
     round: "Round",
     race: "Gara",
@@ -176,9 +205,9 @@ export const it = {
     completed: "Completata",
   },
 
-  // F1 Hub
+  // Mondiale F1 (real F1 results, standings, calendar)
   raceResults: {
-    title: "F1 Hub",
+    title: "Mondiale F1",
     description: "Risultati delle sessioni: Prove Libere, Qualifiche, Sprint e Gara",
     betaNotice: "Questa funzionalità è in BETA. Alcuni dati potrebbero essere incompleti o non ancora disponibili.",
     practiceBetaNotice: "I dati delle Prove Libere potrebbero richiedere tempo per essere disponibili dopo la sessione",

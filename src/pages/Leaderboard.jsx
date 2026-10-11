@@ -12,6 +12,8 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { hideSplash } from "../utils/splash";
 import UserAvatar from "../components/UserAvatar";
+import "../styles/cards.css";
+import "../styles/home.css";
 
 const medals = ["🥇", "🥈", "🥉"];
 
@@ -132,27 +134,12 @@ export default function Leaderboard() {
 
   const leaderPts = rows[0]?.pts ?? 0;
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
-  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
-  const bgHeader = isDark ? "var(--bg-tertiary)" : "#ffffff";
 
   return (
-    <Card
-      className="shadow h-100"
-      style={{
-        borderColor: accentColor,
-        backgroundColor: bgCard,
-      }}
-    >
-      <Card.Header
-        as="h6"
-        className="text-center fw-semibold py-2"
-        style={{
-          backgroundColor: bgHeader,
-          borderBottom: `2px solid ${accentColor}`,
-        }}
-      >
-        {t("leaderboard.title")}
-      </Card.Header>
+    <Card className="fx-card leaderboard-card">
+      <div className="fx-card-header">
+        <h2 className="fx-card-title">{t("leaderboard.title")}</h2>
+      </div>
 
       <Card.Body className="p-0" style={{ overflowX: "auto" }}>
         {loading ? (
@@ -163,10 +150,8 @@ export default function Leaderboard() {
         ) : (
           <Table
             hover
-            striped
             className="mb-0 align-middle"
             style={{
-              borderTop: `1px solid ${accentColor}`,
               tableLayout: "fixed",
               minWidth: "300px",
             }}

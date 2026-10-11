@@ -586,7 +586,7 @@ export default function RaceResults() {
             >
               <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
                 <h3 className="mb-3 mb-md-0" style={{ color: accentColor }}>
-                  🏁 F1 Hub
+                  🏁 {t("raceResults.title")}
                 </h3>
                 <Nav variant="pills" activeKey={activeTab} onSelect={setActiveTab}>
                   <Nav.Item>

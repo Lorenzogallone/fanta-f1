@@ -4,20 +4,15 @@
  * Used in both ParticipantDetail and Statistics pages for consistent UX
  */
 
-import React from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
-import {
-  Row,
-  Col,
-  Card,
-  Badge,
-  Table,
-  Button,
-  Spinner,
-} from "react-bootstrap";
+import { Row, Col, Badge, Spinner } from "react-bootstrap";
 import {
   LineChart,
   Line,
+  BarChart,
+  Bar,
+  ReferenceLine,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -29,7 +24,10 @@ import { POINTS } from "../constants/racing";
 import { useF1Data } from "../hooks/useF1Data";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { computeScores, scoreTone } from "../utils/raceScores";
 import UserAvatar from "./UserAvatar";
+import "../styles/cards.css";
+import "../styles/player.css";
 import "../styles/statistics.css";
 
 /**
@@ -240,13 +238,301 @@ const getRacePoints = (race, pointsByRace) => {
 };
 
 /**
+ * Signed points text: +12, -3, 0, or "—" when missing.
+ */
+const signed = (v) => (v === null || v === undefined ? "—" : v > 0 ? `+${v}` : `${v}`);
+const toneClass = (v) => (v > 0 ? "is-pos" : v < 0 ? "is-neg" : "");
+
+/**
+ * One pick inside an expanded race: label, driver and points.
+ */
+function PickRow({ label, pick, pts, show }) {
+  return (
+    <div className="player-pick">
+      <span className="player-pick-label">{label}</span>
+      <span className="player-pick-driver">
+        <DriverWithLogo name={pick} />
+      </span>
+      {show && pick && (
+        <Badge bg={scoreTone(pts)} pill className="player-pick-pts">{pts}</Badge>
+      )}
+    </div>
+  );
+}
+
+PickRow.propTypes = {
+  label: PropTypes.string.isRequired,
+  pick: PropTypes.string,
+  pts: PropTypes.number,
+  show: PropTypes.bool,
+};
+
+/**
+ * Expanded race: the player's picks with the points each one earned.
+ */
+function RaceDetail({ race, points }) {
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+  const s = race.submission;
+  const official = race.officialResults;
+  const multiplier = official?.doublePoints ? 2 : 1;
+  const sprintScored = Boolean(official?.SP1) && !race.cancelledSprint;
+  const score = s && official ? computeScores(s, official, multiplier, sprintScored) : null;
+  const hasSprintPicks = Boolean(s?.sprintP1 || s?.sprintP2 || s?.sprintP3 || s?.sprintJolly);
+
+  return (
+    <div className="player-race-detail">
+      {!s ? (
+        <div className="player-race-empty">{t("participantDetail.noLineup")}</div>
+      ) : (
+        <div className="player-race-sections">
+          <div>
+            <div className="player-section-title">
+              <span>{t("calculate.mainRace")}</span>
+              <span className={`player-section-pts ${toneClass(points.mainPoints)}`}>{signed(points.mainPoints)}</span>
+            </div>
+            <PickRow label="P1" pick={s.mainP1} pts={score?.main.P1} show={Boolean(score)} />
+            <PickRow label="P2" pick={s.mainP2} pts={score?.main.P2} show={Boolean(score)} />
+            <PickRow label="P3" pick={s.mainP3} pts={score?.main.P3} show={Boolean(score)} />
+            <PickRow label="J1" pick={s.mainJolly} pts={score?.main.J1} show={Boolean(score)} />
+            {s.mainJolly2 && <PickRow label="J2" pick={s.mainJolly2} pts={score?.main.J2} show={Boolean(score)} />}
+          </div>
+          {(points.sprintPoints !== null || hasSprintPicks) && (
+            <div>
+              <div className="player-section-title">
+                <span>Sprint</span>
+                <span className={`player-section-pts ${toneClass(points.sprintPoints)}`}>{signed(points.sprintPoints)}</span>
+              </div>
+              <PickRow label="SP1" pick={s.sprintP1} pts={score?.sprint.SP1} show={sprintScored} />
+              <PickRow label="SP2" pick={s.sprintP2} pts={score?.sprint.SP2} show={sprintScored} />
+              <PickRow label="SP3" pick={s.sprintP3} pts={score?.sprint.SP3} show={sprintScored} />
+              <PickRow label="J SP" pick={s.sprintJolly} pts={score?.sprint.J} show={sprintScored} />
+            </div>
+          )}
+        </div>
+      )}
+      <button
+        type="button"
+        className="player-race-link"
+        onClick={() => navigate("/history", { state: { raceId: race.raceId } })}
+      >
+        {t("participantDetail.allLineups")} ›
+      </button>
+    </div>
+  );
+}
+
+RaceDetail.propTypes = {
+  race: PropTypes.object.isRequired,
+  points: PropTypes.object.isRequired,
+};
+
+/**
+ * Races tab: one row per GP (main · sprint · total), tap to expand the picks.
+ */
+function RacesList({ raceHistory, pointsByRace }) {
+  const { t } = useLanguage();
+  const [openId, setOpenId] = useState(null);
+
+  if (!raceHistory.length) {
+    return <div className="fx-card player-empty">{t("participantDetail.noRaces")}</div>;
+  }
+
+  return (
+    <div className="fx-card player-races">
+      {[...raceHistory]
+        .sort((a, b) => b.round - a.round)
+        .map((race) => {
+          const points = getRacePoints(race, pointsByRace);
+          const open = openId === race.raceId;
+          return (
+            <div key={race.raceId} className={`player-race${open ? " is-open" : ""}`}>
+              <button
+                type="button"
+                className="player-race-row"
+                aria-expanded={open}
+                onClick={() => setOpenId(open ? null : race.raceId)}
+              >
+                <span className="player-race-round">R{race.round}</span>
+                <span className="player-race-name">
+                  {race.raceName}
+                  <span className="player-race-split">
+                    {!race.submission
+                      ? t("participantDetail.noLineup")
+                      : points.sprintPoints !== null
+                        ? `${t("history.scoreMain")} ${signed(points.mainPoints)} · Sprint ${signed(points.sprintPoints)}`
+                        : `${t("history.scoreMain")} ${signed(points.mainPoints)}`}
+                  </span>
+                </span>
+                <span className={`player-race-total ${toneClass(points.total)}`}>{signed(points.total)}</span>
+                <span className="player-race-chevron" aria-hidden="true">›</span>
+              </button>
+              {open && <RaceDetail race={race} points={points} />}
+            </div>
+          );
+        })}
+    </div>
+  );
+}
+
+RacesList.propTypes = {
+  raceHistory: PropTypes.array.isRequired,
+  pointsByRace: PropTypes.object,
+};
+
+/**
+ * Championship tab: top 3 drivers and constructors picked by the player.
+ */
+function ChampionshipPicks({ playerData }) {
+  const { t } = useLanguage();
+  if (playerData.championshipPiloti?.length !== 3) {
+    return <div className="fx-card player-empty">{t("participantDetail.noChampionship")}</div>;
+  }
+  return (
+    <div className="fx-card player-champ">
+      <div className="player-section-title">
+        <span>{t("history.drivers")}</span>
+        {playerData.championshipPts > 0 && (
+          <span className="player-section-pts is-pos">+{playerData.championshipPts}</span>
+        )}
+      </div>
+      {playerData.championshipPiloti.map((driver, idx) => (
+        <div key={driver} className="player-pick">
+          <span className="player-pick-label">{idx + 1}°</span>
+          <span className="player-pick-driver"><DriverWithLogo name={driver} /></span>
+        </div>
+      ))}
+      {playerData.championshipCostruttori?.length === 3 && (
+        <>
+          <div className="player-section-title mt-3">
+            <span>{t("history.constructors")}</span>
+          </div>
+          {playerData.championshipCostruttori.map((team, idx) => (
+            <div key={team} className="player-pick">
+              <span className="player-pick-label">{idx + 1}°</span>
+              <span className="player-pick-driver"><TeamWithLogo name={team} /></span>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+ChampionshipPicks.propTypes = {
+  playerData: PropTypes.object.isRequired,
+};
+
+/**
+ * Tooltip for the points-per-race chart: total with the main / sprint split.
+ */
+function PointsTooltip({ active, payload }) {
+  const { t } = useLanguage();
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload;
+  return (
+    <div className="player-chart-tooltip">
+      <div className="fw-semibold">{d.fullName}</div>
+      <div>{t("history.total")}: {signed(d.total)}</div>
+      <div className="text-muted small">
+        {t("history.scoreMain")} {signed(d.main)}{d.sprint !== null ? ` · Sprint ${signed(d.sprint)}` : ""}
+      </div>
+    </div>
+  );
+}
+
+PointsTooltip.propTypes = {
+  active: PropTypes.bool,
+  payload: PropTypes.array,
+};
+
+/**
+ * Trend tab: points per race and position in the standings.
+ */
+function TrendCharts({ raceHistory, pointsByRace, positionData }) {
+  const { isDark } = useTheme();
+  const { t } = useLanguage();
+  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
+  const textColor = isDark ? "#adb5bd" : "#6c757d";
+  const gridColor = isDark ? "#3a3a3a" : "#e9ecef";
+
+  const pointsData = [...raceHistory]
+    .sort((a, b) => a.round - b.round)
+    .map((race) => {
+      const p = getRacePoints(race, pointsByRace);
+      return { name: `R${race.round}`, fullName: race.raceName, total: p.total, main: p.mainPoints, sprint: p.sprintPoints };
+    });
+
+  return (
+    <div className="d-flex flex-column gap-3">
+      {pointsData.length > 0 && (
+        <div className="fx-card player-chart">
+          <h3 className="fx-card-title">{t("participantDetail.pointsPerRace")}</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={pointsData} margin={{ top: 12, right: 8, left: -18, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={gridColor} />
+              <XAxis dataKey="name" stroke={textColor} tickLine={false} axisLine={false} style={{ fontSize: "0.72rem" }} />
+              <YAxis stroke={textColor} tickLine={false} axisLine={false} allowDecimals={false} style={{ fontSize: "0.72rem" }} />
+              <ReferenceLine y={0} stroke={textColor} strokeOpacity={0.5} />
+              <Tooltip content={<PointsTooltip />} cursor={{ fill: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)" }} />
+              <Bar dataKey="total" fill={accentColor} maxBarSize={24} radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {positionData.length > 0 && (
+        <div className="fx-card player-chart">
+          <h3 className="fx-card-title">{t("statistics.positionPerRace")}</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart
+              data={positionData.map((d) => ({
+                name: d.label || `R${d.round}`,
+                fullName: d.name,
+                position: d.position,
+              }))}
+              margin={{ top: 12, right: 12, left: -18, bottom: 0 }}
+            >
+              <CartesianGrid vertical={false} stroke={gridColor} />
+              <XAxis dataKey="name" stroke={textColor} tickLine={false} axisLine={false} style={{ fontSize: "0.72rem" }} />
+              <YAxis stroke={textColor} tickLine={false} axisLine={false} reversed allowDecimals={false} domain={[1, "dataMax"]} style={{ fontSize: "0.72rem" }} />
+              <Tooltip content={(props) => <CustomTooltip {...props} isDark={isDark} accentColor={accentColor} />} />
+              <Line
+                type="monotone"
+                dataKey="position"
+                name={t("statistics.position")}
+                stroke={accentColor}
+                strokeWidth={2}
+                dot={{ r: 4, strokeWidth: 2, fill: isDark ? "#2d2d2d" : "#ffffff" }}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {!pointsData.length && !positionData.length && (
+        <div className="fx-card player-empty">{t("participantDetail.noRaces")}</div>
+      )}
+    </div>
+  );
+}
+
+TrendCharts.propTypes = {
+  raceHistory: PropTypes.array.isRequired,
+  pointsByRace: PropTypes.object,
+  positionData: PropTypes.array.isRequired,
+};
+
+/**
  * Unified player statistics view component
  * @param {Object} props
  * @param {Object} props.playerData - Player data with all info
  * @param {Array} props.raceHistory - Array of race history with submissions
  * @param {number} props.totalCompletedRaces - Total number of completed races
- * @param {boolean} props.showCharts - Whether to show progression charts
+ * @param {boolean} props.showCharts - Whether the trend data is ready
  * @param {boolean} props.showBackButton - Whether to show back button
+ * @param {boolean} props.loadingHistory - Whether the race history is still loading
  * @param {string} [props.firstName] - Player's first name
  * @param {string} [props.lastName] - Player's last name
  * @param {string} [props.photoURL] - Player's profile photo URL
@@ -266,325 +552,103 @@ function PlayerStatsView({
   positionData = [], // [{ round, name, position }] — championship position per race
   pointsByRace = null, // ranking.pointsByRace — authoritative per-race points
 }) {
-  const { isDark } = useTheme();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const [tab, setTab] = useState("races");
 
-  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
-  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
-  const bgHeader = isDark ? "var(--bg-tertiary)" : "#ffffff";
-  const textColor = isDark ? "#e9ecef" : "#212529";
-  const gridColor = isDark ? "#495057" : "#dee2e6";
-  const grayColor = isDark ? "#adb5bd" : "#6c757d";
-
-  const pointsColor = (val) =>
-    val > 0 ? "#198754" : val < 0 ? "#dc3545" : grayColor;
-
-  // Calculate statistics
-  const totalRaces = raceHistory.filter(race => race.submission !== null).length;
-  const averagePoints = totalRaces > 0
-    ? (playerData.totalPoints / totalRaces).toFixed(1)
-    : "0.0";
-
+  const lineups = raceHistory.filter((race) => race.submission !== null).length;
+  const averagePoints = lineups > 0 ? (playerData.totalPoints / lineups).toFixed(1) : "0.0";
   const fullName = firstName && lastName ? `${firstName} ${lastName}` : null;
 
+  const tabs = [
+    { key: "races", label: t("participantDetail.racesTab") },
+    { key: "championship", label: t("participantDetail.championshipTab") },
+    { key: "trend", label: t("participantDetail.trendTab") },
+  ];
+
   return (
-    <>
+    <div className="fx player-view">
       {showBackButton && (
-        <Button
-          variant="link"
-          className="mb-3 p-0"
-          onClick={() => navigate(-1)}
-          style={{ color: accentColor }}
-          aria-label="Go back to previous page"
-        >
-          ← {t("common.back")}
-        </Button>
+        <button type="button" className="player-back" onClick={() => navigate(-1)}>
+          ‹ {t("common.back")}
+        </button>
       )}
 
-      <Row className="g-4">
-        {/* Player Info Header */}
-        <Col xs={12}>
-          <Card
-            className="shadow"
-            style={{
-              borderColor: accentColor,
-              backgroundColor: bgCard,
-            }}
-          >
-            <Card.Header
-              style={{
-                backgroundColor: bgHeader,
-                borderBottom: `2px solid ${accentColor}`,
-              }}
-            >
-              <div className="d-flex align-items-center gap-3">
-                <UserAvatar
-                  photoURL={photoURL}
-                  name={playerData.name}
-                  size={56}
-                />
-                <div>
-                  <h3 className="mb-0" style={{ color: accentColor }}>
-                    {playerData.name}
-                  </h3>
-                  {fullName && (
-                    <div style={{ color: isDark ? "#aaa" : "#6c757d", fontSize: "0.9rem" }}>
-                      {fullName}
-                    </div>
-                  )}
-                </div>
+      <Row className="g-3 g-lg-4">
+        {/* Profile summary (sticky on desktop) */}
+        <Col xs={12} lg={4}>
+          <div className="fx-card player-profile">
+            <div className="d-flex align-items-center gap-3">
+              <UserAvatar photoURL={photoURL} name={playerData.name} size={56} />
+              <div className="min-w-0">
+                <h1 className="player-name">{playerData.name}</h1>
+                {fullName && <div className="player-fullname">{fullName}</div>}
               </div>
-            </Card.Header>
-            <Card.Body>
-              <Row className="g-3">
-                {/* Position (if available) */}
-                {playerData.position && (
-                  <Col xs={6} md={playerData.position ? 2 : 3}>
-                    <div className="text-center">
-                      <div className="text-muted small">{t("statistics.position")}</div>
-                      <div className="fs-2 fw-bold" style={{ color: accentColor }}>
-                        {playerData.position}°
-                      </div>
-                    </div>
-                  </Col>
-                )}
-                <Col xs={6} md={playerData.position ? 2 : 3}>
-                  <div className="text-center">
-                    <div className="text-muted small">{t("leaderboard.totalPoints")}</div>
-                    <div className="fs-2 fw-bold" style={{ color: accentColor }}>
-                      {playerData.totalPoints}
-                    </div>
-                  </div>
-                </Col>
-                <Col xs={6} md={playerData.position ? 3 : 3}>
-                  <div className="text-center">
-                    <div className="text-muted small">{t("participantDetail.lineupsSubmitted")}</div>
-                    <div className="fs-2 fw-bold" style={{ color: accentColor }}>
-                      {totalRaces}/{totalCompletedRaces}
-                    </div>
-                  </div>
-                </Col>
-                <Col xs={6} md={playerData.position ? 3 : 3}>
-                  <div className="text-center">
-                    <div className="text-muted small">{t("participantDetail.averagePoints")}</div>
-                    <div className="fs-2 fw-bold" style={{ color: accentColor }}>
-                      {averagePoints}
-                    </div>
-                  </div>
-                </Col>
-                <Col xs={6} md={playerData.position ? 2 : 3}>
-                  <div className="text-center">
-                    <div className="text-muted small">{t("leaderboard.jokers")}</div>
-                    <div className="fs-2 fw-bold">
-                      <Badge bg={playerData.jolly > 0 ? "success" : "secondary"} style={{ fontSize: "1.5rem" }}>
-                        {playerData.jolly ?? 0}
-                      </Badge>
-                    </div>
-                  </div>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
+            </div>
+
+            <div className="player-headline">
+              {playerData.position && (
+                <div>
+                  <span className="player-headline-value">{playerData.position}°</span>
+                  <span className="fx-eyebrow">{t("statistics.position")}</span>
+                </div>
+              )}
+              <div>
+                <span className="player-headline-value is-accent">{playerData.totalPoints}</span>
+                <span className="fx-eyebrow">{t("common.points")}</span>
+              </div>
+            </div>
+
+            <div className="player-chips">
+              <span className="player-chip">
+                <strong>{playerData.jolly ?? 0}</strong> {t("leaderboard.jokers")}
+              </span>
+              <span className="player-chip">
+                <strong>{loadingHistory ? "…" : `${lineups}/${totalCompletedRaces}`}</strong> {t("participantDetail.lineupsShort")}
+              </span>
+              <span className="player-chip">
+                <strong>{loadingHistory ? "…" : averagePoints}</strong> {t("participantDetail.averageShort")}
+              </span>
+            </div>
+          </div>
         </Col>
 
-        {/* Championship Formation */}
-        {playerData.championshipPiloti?.length === 3 && (
-          <Col xs={12} lg={8} xl={6} className="mx-auto">
-            <Card
-              className="shadow h-100"
-              style={{
-                borderColor: accentColor,
-                backgroundColor: bgCard,
-              }}
-            >
-              <Card.Header
-                style={{
-                  backgroundColor: bgHeader,
-                  borderBottom: `2px solid ${accentColor}`,
-                }}
+        <Col xs={12} lg={8}>
+          <div className="player-tabs" role="tablist">
+            {tabs.map((tb) => (
+              <button
+                key={tb.key}
+                type="button"
+                role="tab"
+                aria-selected={tab === tb.key}
+                className={`player-tab${tab === tb.key ? " is-active" : ""}`}
+                onClick={() => setTab(tb.key)}
               >
-                <h5 className="mb-0" style={{ color: accentColor }}>
-                  🏆 {t("participantDetail.championshipFormation")}
-                </h5>
-              </Card.Header>
-              <Card.Body className="p-3">
-                <h6 className="fw-bold mb-2">{t("history.drivers")}</h6>
-                <div className="mb-3">
-                  {playerData.championshipPiloti.map((driver, idx) => (
-                    <div key={idx} className="py-1 border-bottom d-flex align-items-center">
-                      <span className="text-muted me-2" style={{ minWidth: "25px" }}>{idx + 1}°</span>
-                      <DriverWithLogo name={driver} />
-                    </div>
-                  ))}
-                </div>
+                {tb.label}
+              </button>
+            ))}
+          </div>
 
-                {playerData.championshipCostruttori?.length === 3 && (
-                  <>
-                    <h6 className="fw-bold mb-2 mt-3">{t("history.constructors")}</h6>
-                    <div>
-                      {playerData.championshipCostruttori.map((team, idx) => (
-                        <div key={idx} className="py-1 border-bottom d-flex align-items-center">
-                          <span className="text-muted me-2" style={{ minWidth: "25px" }}>{idx + 1}°</span>
-                          <TeamWithLogo name={team} />
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-
-                {playerData.championshipPts > 0 && (
-                  <div className="mt-3 text-center">
-                    <Badge bg="success" style={{ fontSize: "1rem" }}>
-                      {playerData.championshipPts} {t("common.points")}
-                    </Badge>
-                  </div>
-                )}
-              </Card.Body>
-            </Card>
-          </Col>
-        )}
-
-        {/* Spinner storia gare in caricamento */}
-        {loadingHistory && (
-          <Col xs={12} className="text-center py-3">
-            <Spinner animation="border" size="sm" style={{ color: accentColor }} />
-            <p className="mt-2 text-muted small">{t("statistics.loadingPlayer")}</p>
-          </Col>
-        )}
-
-        {/* Race History Table — compatta */}
-        {!loadingHistory && raceHistory.length > 0 && (
-          <Col xs={12}>
-            <Card
-              className="shadow border-0"
-              style={{
-                backgroundColor: bgCard,
-                borderLeft: `4px solid ${accentColor}`,
-              }}
-            >
-              <Card.Header
-                style={{
-                  backgroundColor: bgHeader,
-                  borderBottom: `2px solid ${accentColor}`,
-                  padding: "8px 12px",
-                }}
-              >
-                <h6 className="mb-0" style={{ color: accentColor }}>
-                  📊 {t("participantDetail.raceHistory")}
-                </h6>
-              </Card.Header>
-              <Card.Body className="p-0">
-                <Table hover className="mb-0 align-middle" size="sm" style={{ fontSize: "0.85rem" }}>
-                  <thead>
-                    <tr>
-                      <th className="text-center" style={{ width: "42px", padding: "6px 4px" }}>#</th>
-                      <th style={{ padding: "6px 6px" }}>{t("raceResults.race")}</th>
-                      <th className="text-center" style={{ width: "52px", padding: "6px 4px" }}>Main</th>
-                      <th className="text-center" style={{ width: "52px", padding: "6px 4px" }}>Spr</th>
-                      <th className="text-center" style={{ width: "52px", padding: "6px 4px" }}>Tot</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[...raceHistory].reverse().map((race) => {
-                      const points = getRacePoints(race, pointsByRace);
-                      const mainColor = pointsColor(points.mainPoints);
-                      const sprintColor = points.sprintPoints !== null ? pointsColor(points.sprintPoints) : null;
-                      const totalColor = pointsColor(points.total);
-                      return (
-                        <tr
-                          key={race.raceId}
-                          style={{ cursor: "pointer" }}
-                          onClick={() => navigate("/history", { state: { raceId: race.raceId } })}
-                        >
-                          <td className="text-center fw-semibold text-muted" style={{ padding: "5px 4px" }}>
-                            R{race.round}
-                          </td>
-                          <td className="text-truncate" style={{ maxWidth: "150px", padding: "5px 6px" }}>
-                            {race.raceName}
-                          </td>
-                          <td className="text-center fw-semibold" style={{ padding: "5px 4px", color: mainColor }}>
-                            {points.mainPoints !== null ? (points.mainPoints > 0 ? `+${points.mainPoints}` : points.mainPoints) : "—"}
-                          </td>
-                          <td className="text-center fw-semibold" style={{ padding: "5px 4px", color: sprintColor ?? (isDark ? "#adb5bd" : "#6c757d") }}>
-                            {points.sprintPoints !== null ? (points.sprintPoints > 0 ? `+${points.sprintPoints}` : points.sprintPoints) : "—"}
-                          </td>
-                          <td className="text-center fw-semibold" style={{ padding: "5px 4px", color: totalColor }}>
-                            {points.total > 0 ? `+${points.total}` : points.total}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </Table>
-              </Card.Body>
-            </Card>
-          </Col>
-        )}
-
-        {/* Grafico posizione in classifica per gara */}
-        {!loadingHistory && showCharts && positionData.length > 0 && (
-          <Col xs={12}>
-            <Card
-              className="shadow"
-              style={{
-                borderColor: accentColor,
-                backgroundColor: bgCard,
-              }}
-            >
-              <Card.Header
-                as="h6"
-                className="fw-semibold"
-                style={{
-                  backgroundColor: bgHeader,
-                  borderBottom: `2px solid ${accentColor}`,
-                }}
-              >
-                📈 {t("statistics.positionPerRace")}
-              </Card.Header>
-              <Card.Body className="chart-container-optimized">
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart
-                    data={positionData.map((d) => ({
-                      name: d.label || `R${d.round}`,
-                      fullName: d.name,
-                      position: d.position,
-                    }))}
-                    margin={{ top: 10, right: 5, left: 0, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                    <XAxis dataKey="name" stroke={textColor} style={{ fontSize: "0.8rem" }} />
-                    <YAxis
-                      stroke={textColor}
-                      style={{ fontSize: "0.8rem" }}
-                      width={45}
-                      reversed
-                      allowDecimals={false}
-                      label={{
-                        value: t("statistics.position"),
-                        angle: -90,
-                        position: "insideLeft",
-                        style: { fill: textColor, fontSize: "0.7rem" },
-                      }}
-                    />
-                    <Tooltip content={(props) => <CustomTooltip {...props} isDark={isDark} accentColor={accentColor} />} />
-                    <Line
-                      type="monotone"
-                      dataKey="position"
-                      name={t("statistics.position")}
-                      stroke={accentColor}
-                      strokeWidth={2.5}
-                      dot={{ r: 3 }}
-                      connectNulls={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Card.Body>
-            </Card>
-          </Col>
-        )}
+          {tab === "championship" ? (
+            <ChampionshipPicks playerData={playerData} />
+          ) : loadingHistory ? (
+            <div className="fx-card player-empty">
+              <Spinner animation="border" size="sm" className="me-2" />
+              {t("participantDetail.loadingHistory")}
+            </div>
+          ) : tab === "races" ? (
+            <RacesList raceHistory={raceHistory} pointsByRace={pointsByRace} />
+          ) : showCharts ? (
+            <TrendCharts raceHistory={raceHistory} pointsByRace={pointsByRace} positionData={positionData} />
+          ) : (
+            <div className="fx-card player-empty">
+              <Spinner animation="border" size="sm" className="me-2" />
+              {t("common.loading")}
+            </div>
+          )}
+        </Col>
       </Row>
-    </>
+    </div>
   );
 }
 
@@ -621,4 +685,5 @@ PlayerStatsView.propTypes = {
     name: PropTypes.string,
     position: PropTypes.number,
   })),
+  pointsByRace: PropTypes.object,
 };

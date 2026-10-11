@@ -38,14 +38,15 @@ export const en = {
     home: "Home",
     leaderboard: "Leaderboard",
     formations: "Lineup",
-    history: "History",
-    raceResults: "F1 Hub",
+    history: "Fanta Results",
+    raceResults: "F1 Championship",
     statistics: "Statistics",
     admin: "Admin",
     calculatePoints: "Calculate Points",
     toggleTheme: "Toggle theme",
     changeLanguage: "Change language",
     myProfile: "My Profile",
+    me: "Me",
   },
 
   // Home
@@ -56,9 +57,28 @@ export const en = {
     quickActions: "Quick Actions",
     viewLeaderboard: "View Leaderboard",
     submitFormation: "Submit Lineup",
-    viewHistory: "View History",
+    viewHistory: "View Fanta Results",
     viewStats: "View Statistics",
     currentLeaderboard: "Current Leaderboard Preview",
+    nextRace: "Next race",
+    seasonOver: "Season over",
+    viewFantaResults: "View Fanta Results",
+    sprintDeadline: "Sprint closes in",
+    mainDeadline: "Race closes in",
+    lineupsClosed: "Lineups closed",
+    lineupDone: "Submitted",
+    lineupTodo: "To submit",
+    lineupMissed: "Not submitted",
+    viewLineup: "View lineup",
+    editFormation: "Edit lineup",
+    dayUnit: "d",
+    mySummary: "My summary",
+    lastRace: "Last GP",
+    toCalculate: "{{race}} to calculate",
+    fantaResultsHint: "Lineups and points of every GP",
+    f1Hint: "F1 results, standings and calendar",
+    statsHint: "Trends and player comparisons",
+    startLineup: "Submit lineup",
   },
 
   // Leaderboard
@@ -77,6 +97,15 @@ export const en = {
 
   // Participant Detail
   participantDetail: {
+    racesTab: "Races",
+    championshipTab: "Championship",
+    trendTab: "Trend",
+    noLineup: "No lineup submitted",
+    allLineups: "All lineups of this GP",
+    noChampionship: "Championship lineup not visible yet",
+    pointsPerRace: "Points per GP",
+    lineupsShort: "lineups",
+    averageShort: "average",
     notFound: "Participant not found",
     racesParticipated: "Races Participated",
     lineupsSubmitted: "Lineups Submitted",
@@ -84,7 +113,7 @@ export const en = {
     position: "Position",
     racePoints: "Race Points",
     championshipFormation: "Championship Formation",
-    raceHistory: "Race History",
+    raceHistory: "Races",
     loadingHistory: "Loading race history...",
     noRaces: "No races found for this participant",
   },
@@ -132,7 +161,7 @@ export const en = {
 
   // History
   history: {
-    title: "Race History",
+    title: "Fanta Results",
     pastRaces: "Past Races",
     round: "Round",
     race: "Race",
@@ -176,9 +205,9 @@ export const en = {
     completed: "Completed",
   },
 
-  // F1 Hub
+  // F1 Championship (real F1 results, standings, calendar)
   raceResults: {
-    title: "F1 Hub",
+    title: "F1 Championship",
     description: "Session results from Free Practice, Qualifying, Sprint, and Race",
     betaNotice: "This feature is in BETA. Some data may be incomplete or not yet available.",
     practiceBetaNotice: "Free Practice data may take time to become available after the session",
