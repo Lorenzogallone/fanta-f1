@@ -17,8 +17,10 @@ import { useLanguage } from "../hooks/useLanguage";
 import { useAuth } from "../hooks/useAuth";
 import { useTimezone } from "../hooks/useTimezone";
 import { error } from "../utils/logger";
+import { useRacePhoto } from "../hooks/useRacePhoto";
 import "../styles/cards.css";
 import "../styles/home.css";
+import "../styles/racephoto.css";
 
 const ms = (ts) => (ts?.seconds ? ts.seconds * 1000 : null);
 
@@ -82,6 +84,7 @@ function NextRaceCard({ race, submission, now }) {
   const { t, currentLanguage } = useLanguage();
   const { timezone } = useTimezone();
   const locale = currentLanguage === "en" ? "en-GB" : "it-IT";
+  const photo = useRacePhoto(race);
 
   if (!race) {
     return (
@@ -123,7 +126,10 @@ function NextRaceCard({ race, submission, now }) {
       : t("home.startLineup");
 
   return (
-    <div className="fx-card home-hero">
+    <div
+      className={`fx-card home-hero${photo ? " has-photo" : ""}`}
+      style={photo ? { "--hero-img": `url("${photo.src}")`, "--hero-pos": photo.pos } : undefined}
+    >
       <div className="d-flex align-items-center gap-2">
         <span className="fx-eyebrow">{t("home.nextRace")} · R{race.round}</span>
         {hasSprint && <Badge bg="danger" className="home-sprint-badge">Sprint</Badge>}
@@ -153,6 +159,12 @@ function NextRaceCard({ race, submission, now }) {
       >
         {actionLabel}
       </Link>
+
+      {photo?.credit && (
+        <a className="home-hero-credit" href={photo.href || undefined} target="_blank" rel="noopener noreferrer">
+          {t("home.photoCredit", { credit: photo.credit })}
+        </a>
+      )}
     </div>
   );
 }
