@@ -382,6 +382,12 @@ body {
   box-shadow: none !important;
 }
 
+/* Sticky, opaque top bar that also covers the status-bar area: content never
+   scrolls under the clock, so iOS has nothing to fade there */
+.navbar-modern.sticky-top {
+  padding-top: calc(0.5rem + env(safe-area-inset-top));
+}
+
 .navbar-modern .nav-link {
   position: relative;
   padding: 0.75rem 1rem;
