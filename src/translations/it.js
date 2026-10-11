@@ -97,6 +97,15 @@ export const it = {
 
   // Participant Detail
   participantDetail: {
+    racesTab: "Gare",
+    championshipTab: "Campionato",
+    trendTab: "Andamento",
+    noLineup: "Formazione non inviata",
+    allLineups: "Tutte le formazioni del GP",
+    noChampionship: "Formazione campionato non ancora visibile",
+    pointsPerRace: "Punti per GP",
+    lineupsShort: "formazioni",
+    averageShort: "media",
     notFound: "Partecipante non trovato",
     racesParticipated: "Gare Partecipate",
     lineupsSubmitted: "Formazioni Schierate",
@@ -104,7 +113,7 @@ export const it = {
     position: "Posizione",
     racePoints: "Punti Gara",
     championshipFormation: "Formazione Campionato",
-    raceHistory: "Storico Gare",
+    raceHistory: "Gare",
     loadingHistory: "Caricamento storico gare...",
     noRaces: "Nessuna gara trovata per questo partecipante",
   },

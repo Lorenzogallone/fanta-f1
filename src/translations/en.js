@@ -97,6 +97,15 @@ export const en = {
 
   // Participant Detail
   participantDetail: {
+    racesTab: "Races",
+    championshipTab: "Championship",
+    trendTab: "Trend",
+    noLineup: "No lineup submitted",
+    allLineups: "All lineups of this GP",
+    noChampionship: "Championship lineup not visible yet",
+    pointsPerRace: "Points per GP",
+    lineupsShort: "lineups",
+    averageShort: "average",
     notFound: "Participant not found",
     racesParticipated: "Races Participated",
     lineupsSubmitted: "Lineups Submitted",
@@ -104,7 +113,7 @@ export const en = {
     position: "Position",
     racePoints: "Race Points",
     championshipFormation: "Championship Formation",
-    raceHistory: "Race History",
+    raceHistory: "Races",
     loadingHistory: "Loading race history...",
     noRaces: "No races found for this participant",
   },

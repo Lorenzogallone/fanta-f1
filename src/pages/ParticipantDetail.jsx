@@ -22,7 +22,6 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "../services/firebase";
-import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useAuth } from "../hooks/useAuth";
 import { error as logError } from "../utils/logger";
@@ -36,7 +35,6 @@ import PlayerStatsView from "../components/PlayerStatsView";
  */
 export default function ParticipantDetail() {
   const { userId } = useParams();
-  const { isDark } = useTheme();
   const { t } = useLanguage();
   const { user } = useAuth();
 
@@ -50,8 +48,6 @@ export default function ParticipantDetail() {
   const [participantPosition, setParticipantPosition] = useState(null);
   const [championshipDeadlinePassed, setChampionshipDeadlinePassed] = useState(false);
   const [positionData, setPositionData] = useState([]);
-
-  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
 
   /**
    * Load participant data and race history with progressive loading
@@ -227,60 +223,27 @@ export default function ParticipantDetail() {
     );
   }
 
-  // Show loading for race history
-  if (loadingHistory) {
-    return (
-      <Container className="py-5">
-        <PlayerStatsView
-          playerData={{
-            name: participant?.name,
-            totalPoints: participant?.puntiTotali || 0,
-            position: participantPosition,
-            jolly: participant?.jolly ?? 0,
-            championshipPiloti: participant?.championshipPiloti || [],
-            championshipCostruttori: participant?.championshipCostruttori || [],
-            championshipPts: participant?.championshipPts || 0,
-          }}
-          firstName={userProfile?.firstName}
-          lastName={userProfile?.lastName}
-          photoURL={userProfile?.photoURL}
-          raceHistory={[]}
-          totalCompletedRaces={totalCompletedRaces}
-          showCharts={false}
-          showBackButton={true}
-          positionData={positionData}
-          pointsByRace={participant?.pointsByRace}
-        />
-        <div className="text-center mt-4">
-          <Spinner animation="border" size="sm" style={{ color: accentColor }} />
-          <p className="mt-3 text-muted">{t("participantDetail.loadingHistory")}</p>
-        </div>
-      </Container>
-    );
-  }
-
   return (
-    <Container className="py-5">
-      <PlayerStatsView
-        playerData={{
-          name: participant?.name,
-          totalPoints: participant?.puntiTotali || 0,
-          position: participantPosition,
-          jolly: participant?.jolly ?? 0,
-          championshipPiloti: participant?.championshipPiloti || [],
-          championshipCostruttori: participant?.championshipCostruttori || [],
-          championshipPts: participant?.championshipPts || 0,
-        }}
-        firstName={userProfile?.firstName}
-        lastName={userProfile?.lastName}
-        photoURL={userProfile?.photoURL}
-        raceHistory={raceHistory}
-        totalCompletedRaces={totalCompletedRaces}
-        showCharts={true}
-        showBackButton={true}
-        positionData={positionData}
-        pointsByRace={participant?.pointsByRace}
-      />
-    </Container>
+    <PlayerStatsView
+      playerData={{
+        name: participant?.name,
+        totalPoints: participant?.puntiTotali || 0,
+        position: participantPosition,
+        jolly: participant?.jolly ?? 0,
+        championshipPiloti: participant?.championshipPiloti || [],
+        championshipCostruttori: participant?.championshipCostruttori || [],
+        championshipPts: participant?.championshipPts || 0,
+      }}
+      firstName={userProfile?.firstName}
+      lastName={userProfile?.lastName}
+      photoURL={userProfile?.photoURL}
+      raceHistory={raceHistory}
+      totalCompletedRaces={totalCompletedRaces}
+      loadingHistory={loadingHistory}
+      showCharts={!loadingHistory}
+      showBackButton={true}
+      positionData={positionData}
+      pointsByRace={participant?.pointsByRace}
+    />
   );
 }
