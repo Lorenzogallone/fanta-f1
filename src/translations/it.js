@@ -79,6 +79,10 @@ export const it = {
     f1Hint: "Risultati, classifiche e calendario F1",
     statsHint: "Andamento e confronti tra giocatori",
     startLineup: "Schiera formazione",
+    ofPlayers: "su {{count}}",
+    fromLeader: "-{{gap}} dal 1°",
+    leading: "in testa",
+    jollyAvailable: "disponibili",
   },
 
   // Leaderboard
