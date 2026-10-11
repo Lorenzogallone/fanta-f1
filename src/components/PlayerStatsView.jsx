@@ -551,6 +551,7 @@ function PlayerStatsView({
   photoURL,
   positionData = [], // [{ round, name, position }] — championship position per race
   pointsByRace = null, // ranking.pointsByRace — authoritative per-race points
+  accountPanel = null, // own page only: account/settings tab content
 }) {
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -564,21 +565,27 @@ function PlayerStatsView({
     { key: "races", label: t("participantDetail.racesTab") },
     { key: "championship", label: t("participantDetail.championshipTab") },
     { key: "trend", label: t("participantDetail.trendTab") },
+    ...(accountPanel ? [{ key: "account", label: t("participantDetail.accountTab") }] : []),
   ];
+
+  // Back to the previous page, or Home when the page was opened directly
+  const goBack = () => (window.history.state?.idx > 0 ? navigate(-1) : navigate("/"));
 
   return (
     <div className="fx player-view">
-      {showBackButton && (
-        <button type="button" className="player-back" onClick={() => navigate(-1)}>
-          ‹ {t("common.back")}
-        </button>
-      )}
 
       <Row className="g-3 g-lg-4">
         {/* Profile summary (sticky on desktop) */}
         <Col xs={12} lg={4}>
           <div className="fx-card player-profile">
             <div className="d-flex align-items-center gap-3">
+              {showBackButton && (
+                <button type="button" className="player-back" onClick={goBack} aria-label={t("common.back")}>
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M15 5l-7 7 7 7" />
+                  </svg>
+                </button>
+              )}
               <UserAvatar photoURL={photoURL} name={playerData.name} size={56} />
               <div className="min-w-0">
                 <h1 className="player-name">{playerData.name}</h1>
@@ -614,7 +621,7 @@ function PlayerStatsView({
         </Col>
 
         <Col xs={12} lg={8}>
-          <div className="player-tabs" role="tablist">
+          <div className={`player-tabs${tabs.length > 3 ? " is-compact" : ""}`} role="tablist">
             {tabs.map((tb) => (
               <button
                 key={tb.key}
@@ -629,7 +636,9 @@ function PlayerStatsView({
             ))}
           </div>
 
-          {tab === "championship" ? (
+          {tab === "account" ? (
+            accountPanel
+          ) : tab === "championship" ? (
             <ChampionshipPicks playerData={playerData} />
           ) : loadingHistory ? (
             <div className="fx-card player-empty">
@@ -675,6 +684,7 @@ PlayerStatsView.propTypes = {
   totalCompletedRaces: PropTypes.number,
   showCharts: PropTypes.bool,
   showBackButton: PropTypes.bool,
+  accountPanel: PropTypes.node,
   loadingHistory: PropTypes.bool,
   firstName: PropTypes.string,
   lastName: PropTypes.string,

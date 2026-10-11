@@ -100,6 +100,12 @@ export const it = {
   },
 
   // Participant Detail
+  // Account section of the "Io" tab
+  account: {
+    profileSettings: "Profilo e impostazioni",
+    profileSettingsHint: "Foto, nickname, notifiche, tema e lingua",
+  },
+
   participantDetail: {
     racesTab: "Gare",
     championshipTab: "Campionato",
@@ -120,6 +126,7 @@ export const it = {
     raceHistory: "Gare",
     loadingHistory: "Caricamento storico gare...",
     noRaces: "Nessuna gara trovata per questo partecipante",
+    accountTab: "Account",
   },
 
   // Formations
