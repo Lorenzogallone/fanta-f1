@@ -1,62 +1,45 @@
 /**
  * @file Formations.jsx
- * @description Formation management page with tabs for races and championship
+ * @description Formation page with a segmented control for race and championship lineups
  */
 
 import React, { useState } from "react";
-import { Tab, Nav } from "react-bootstrap";
 import FormationApp from "./FormationApp";
 import ChampionshipForm from "./ChampionshipForm";
-import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
+import "../styles/cards.css";
 
 /**
- * Formations page with tabbed interface for race and championship formations
- * @returns {JSX.Element} Tabbed formation interface
+ * Formations page: Gare | Campionato
+ * @returns {JSX.Element} Formation page
  */
 export default function Formations() {
   const [activeTab, setActiveTab] = useState("races");
-  const { isDark } = useTheme();
   const { t } = useLanguage();
 
-  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
+  const tabs = [
+    { key: "races", label: t("formations.races") },
+    { key: "championship", label: t("formations.championship") },
+  ];
 
   return (
-    <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
-      <Nav variant="tabs" className="justify-content-center mb-4">
-        <Nav.Item>
-          <Nav.Link
-            eventKey="races"
-            style={{
-              color: activeTab === "races" ? accentColor : undefined,
-              borderBottomColor: activeTab === "races" ? accentColor : undefined,
-            }}
+    <>
+      <div className="fx-segmented mb-3" role="tablist">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.key}
+            className={`fx-segment${activeTab === tab.key ? " is-active" : ""}`}
+            onClick={() => setActiveTab(tab.key)}
           >
-            🏎️ {t("formations.races")}
-          </Nav.Link>
-        </Nav.Item>
-        <Nav.Item>
-          <Nav.Link
-            eventKey="championship"
-            style={{
-              color: activeTab === "championship" ? accentColor : undefined,
-              borderBottomColor: activeTab === "championship" ? accentColor : undefined,
-            }}
-          >
-            🏆 {t("formations.championship")}
-          </Nav.Link>
-        </Nav.Item>
-      </Nav>
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      <Tab.Content>
-        <Tab.Pane eventKey="races">
-          <FormationApp />
-        </Tab.Pane>
-
-        <Tab.Pane eventKey="championship">
-          <ChampionshipForm />
-        </Tab.Pane>
-      </Tab.Content>
-    </Tab.Container>
+      {activeTab === "races" ? <FormationApp /> : <ChampionshipForm />}
+    </>
   );
 }

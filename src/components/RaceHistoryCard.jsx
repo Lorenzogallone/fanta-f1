@@ -268,6 +268,7 @@ function RaceHistoryCard({
   isLastRace = false,
   currentUserId = null,
   reactive = false,
+  cardsOnly = false,
 }) {
   const { isDark } = useTheme();
   const { t } = useLanguage();
@@ -517,7 +518,7 @@ function RaceHistoryCard({
             )}
 
             {/* Mobile layout - cards */}
-            <div className="d-lg-none">
+            <div className={cardsOnly ? undefined : "d-lg-none"}>
               {rows.map(({ s, userName, mainMasked, sprintMasked, score }, idx) => (
                 <Card key={s.id} className="mb-3 score-user-card" style={{ borderLeft: `3px solid ${accentColor}` }}>
                   <Card.Body>
@@ -580,7 +581,7 @@ function RaceHistoryCard({
             </div>
 
             {/* Desktop layout - table grouped by main race / sprint / points */}
-            <div className="d-none d-lg-block table-responsive">
+            <div className={cardsOnly ? "d-none" : "d-none d-lg-block table-responsive"}>
               <Table hover size="sm" className="align-middle race-scores-table">
                 <thead>
                   <tr>
@@ -714,6 +715,7 @@ RaceHistoryCard.propTypes = {
   isLastRace: PropTypes.bool,
   currentUserId: PropTypes.string,
   reactive: PropTypes.bool,
+  cardsOnly: PropTypes.bool, // always use the stacked card layout (narrow columns)
 };
 
 export default React.memo(RaceHistoryCard);

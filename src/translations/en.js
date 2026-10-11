@@ -168,6 +168,8 @@ export const en = {
     mainPicksHidden: "Race lineup hidden until qualifying starts",
     sprintPicksHidden: "Sprint lineup hidden until sprint qualifying starts",
     hiddenSubmissions: "{{count}} lineups hidden",
+    editMain: "Edit Race",
+    editSprint: "Edit Sprint",
   },
 
   // History

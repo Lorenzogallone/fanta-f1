@@ -9,12 +9,10 @@ import {
   Container,
   Row,
   Col,
-  Card,
   Form,
   Button,
   Spinner,
   Alert,
-  Badge,
   Table,
   Modal,
 } from "react-bootstrap";
@@ -47,6 +45,8 @@ import { error } from "../utils/logger";
 import { getLateWindowInfo } from "../utils/lateSubmissionHelper";
 import { bilingual, bilingualWithSuffix } from "../utils/bilingualMessages";
 import "../styles/customSelect.css";
+import "../styles/cards.css";
+import "../styles/lineup.css";
 
 /**
  * Formation management component for race and sprint submissions
@@ -56,7 +56,7 @@ export default function FormationApp() {
   const colors = useThemeColors();
   const { t, currentLanguage } = useLanguage();
   const { timezone } = useTimezone();
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth();
   // Only selectable drivers (reserves can't be picked in formations)
   const { selectableDrivers, getDriverTeam, getTeamLogo, getDriverLogo } = useF1Data();
   const driverOpts = useMemo(
@@ -531,31 +531,20 @@ export default function FormationApp() {
 
   /* ─────────────── helpers UI ─────────────── */
   const DeadlineBadgeLocal = ({ open }) => (
-    <Badge
-      bg={open ? "success" : "danger"}
-      style={{ color: (open && colors.isDark) ? "#ffffff" : undefined }}
-    >
+    <span className={`lineup-status ${open ? "is-open" : "is-closed"}`}>
       {open ? t("formations.open") : t("formations.closed")}
-    </Badge>
+    </span>
   );
+
+  const isDoubleRace = Boolean(race) && races.length > 0 && race.round === Math.max(...races.map((r) => r.round));
 
   /* ─────────────────────────────── JSX ───────────────────────────── */
   return (
-    <Container className="py-5">
-      <Row className="justify-content-center g-4 align-items-start">
+    <div className="fx lineup-page">
+      <Row className="g-3 g-lg-4 align-items-start">
         {/* ---------- FORM ---------- */}
         <Col xs={12} lg={6}>
-          <Card
-            className="shadow h-100"
-            style={{
-              borderLeft: `4px solid ${colors.accent}`,
-            }}
-          >
-            <Card.Body>
-              <Card.Title className="text-center mb-3" style={{ color: colors.accent }}>
-                🏎️ {t("formations.title")}
-              </Card.Title>
-
+          <div className="fx-card lineup-card">
               {flash && (
                 <Alert variant={flash.type} dismissible onClose={() => setFlash(null)}>
                   {flash.msg}
@@ -564,22 +553,10 @@ export default function FormationApp() {
 
               {/* Submit unico, ma savingMode viene impostato dal bottone */}
               <Form onSubmit={save}>
-                {/* User info */}
-                <div className="d-flex align-items-center justify-content-between mb-3 text-muted" style={{ fontSize: "0.9rem" }}>
-                  <span>
-                    {t("auth.submittingAs")}: <strong style={{ color: colors.accent }}>{userProfile?.nickname || user?.email}</strong>
-                  </span>
-                  {form.userId && (
-                    <span>
-                      {t("formations.jokersAvailable")}: <strong>{userJolly}</strong>
-                    </span>
-                  )}
-                </div>
-
                 {/* Gara */}
-                <Form.Group className="mb-3">
-                  <Form.Label>{t("formations.selectRace")} *</Form.Label>
-                  <Form.Select name="raceId" value={form.raceId} onChange={onChangeSimple} required aria-label="Select race to submit formation for">
+                <div className="lineup-race">
+                  <label className="fx-eyebrow" htmlFor="lineup-race-select">{t("formations.selectRace")}</label>
+                  <Form.Select id="lineup-race-select" className="lineup-race-select" name="raceId" value={form.raceId} onChange={onChangeSimple} required aria-label="Select race to submit formation for">
                     <option value="">{t("formations.selectRace")}</option>
                     {races.map((r) => {
                       const isLastRace = races.length > 0 && r.round === Math.max(...races.map(x => x.round));
@@ -590,7 +567,21 @@ export default function FormationApp() {
                       );
                     })}
                   </Form.Select>
-                </Form.Group>
+                </div>
+
+                {/* Jolly and double points */}
+                <div className="lineup-meta">
+                  {form.userId && (
+                    <span className="lineup-chip">
+                      <strong>{userJolly}</strong> {t("formations.jokersAvailable")}
+                    </span>
+                  )}
+                  {isDoubleRace && (
+                    <span className="lineup-chip is-accent">
+                      <strong>2x</strong> {t("formations.doublePointsRace")}
+                    </span>
+                  )}
+                </div>
 
                 {/* Cancelled race alert */}
                 {race?.cancelledMain && (
@@ -600,21 +591,13 @@ export default function FormationApp() {
                   </Alert>
                 )}
 
-                {/* Double points indicator for last race */}
-                {race && races.length > 0 && race.round === Math.max(...races.map(r => r.round)) && (
-                  <Alert variant="info" className="py-2 d-flex align-items-center gap-2">
-                    <Badge bg="warning" text="dark" style={{ fontSize: "0.85rem" }}>2x</Badge>
-                    <span>{t("formations.doublePointsRace")}</span>
-                  </Alert>
-                )}
-
                 {/* Render sections dynamically: show the one with the closest open deadline first */}
                 {race && (() => {
                   // Sprint section shows first if sprint is open and its deadline is before main
                   const showSprintFirst = isSprintRace && sprOpen && (!mainOpen || sprMs < qualiMs);
 
                   const mainSection = (
-                    <>
+                    <section className="lineup-section">
                       <SectionHeader title={t("formations.mainRace")} open={mainOpen} deadlineMs={qualiMs} accentColor={colors.accent} />
 
                       {hasMainDuplicates && touched && (
@@ -648,7 +631,7 @@ export default function FormationApp() {
                       />
                       {(userJolly > 0 || existingJolly2) && (
                         <DriverSelect
-                          label={`Jolly 2 (${t("formations.optional")})`}
+                          label="Jolly 2"
                           field="jolly2"
                           clearable
                           disabled={!mainOpen}
@@ -659,11 +642,11 @@ export default function FormationApp() {
                           helpText={existingJolly2 && !form.jolly2 ? t("formations.jolly2RefundHint") : t("formations.jolly2Hint")}
                         />
                       )}
-                    </>
+                    </section>
                   );
 
                   const sprintSection = isSprintRace ? (
-                    <>
+                    <section className="lineup-section">
                       <SectionHeader title={t("formations.sprintOptional")} open={sprOpen} deadlineMs={sprMs} accentColor={colors.accent} />
 
                       {hasSprintDuplicates && touched && (
@@ -675,7 +658,7 @@ export default function FormationApp() {
                       {["sprintP1", "sprintP2", "sprintP3", "sprintJolly"].map((f) => (
                         <DriverSelect
                           key={f}
-                          label={f.replace("sprint", "SP").replace("sprintJolly", "Jolly SP")}
+                          label={f === "sprintJolly" ? "Jolly SP" : f.replace("sprintP", "SP")}
                           field={f}
                           clearable
                           disabled={!sprOpen}
@@ -685,7 +668,7 @@ export default function FormationApp() {
                           driverOpts={driverOpts}
                         />
                       ))}
-                    </>
+                    </section>
                   ) : null;
 
                   return showSprintFirst ? <>{sprintSection}{mainSection}</> : <>{mainSection}{sprintSection}</>;
@@ -720,44 +703,39 @@ export default function FormationApp() {
                 )}
 
                 {/* BOTTONI */}
-                <Row className="g-2 mt-3">
-                  <Col xs={isSprintRace ? 6 : 12}>
+                <div className="lineup-actions">
+                  <Button
+                    variant="danger"
+                    className="lineup-btn"
+                    type="submit"
+                    formNoValidate
+                    disabled={disabledMain}
+                    onClick={() => setSavingMode("main")}
+                    aria-label={isEditMode ? "Edit main race formation" : "Save main race formation"}
+                  >
+                    {isEditMode ? t("formations.editMain") : t("formations.save")}
+                  </Button>
+                  {isSprintRace && (
                     <Button
-                      variant="danger"
-                      className="w-100"
+                      variant="outline-danger"
+                      className="lineup-btn"
                       type="submit"
                       formNoValidate
-                      disabled={disabledMain}
-                      onClick={() => setSavingMode("main")}
-                      aria-label={isEditMode ? "Edit main race formation" : "Save main race formation"}
+                      disabled={disabledSprint}
+                      onClick={() => setSavingMode("sprint")}
+                      aria-label={isEditMode ? "Edit sprint formation" : "Save sprint formation"}
                     >
-                      {isEditMode ? `✏️ ${t("formations.editFormation")}` : `💾 ${t("formations.save")}`}
+                      {isEditMode ? t("formations.editSprint") : t("formations.saveSprint")}
                     </Button>
-                  </Col>
-                  {isSprintRace && (
-                    <Col xs={6}>
-                      <Button
-                        variant="warning"
-                        className="w-100"
-                        type="submit"
-                        formNoValidate
-                        disabled={disabledSprint}
-                        onClick={() => setSavingMode("sprint")}
-                        aria-label={isEditMode ? "Edit sprint formation" : "Save sprint formation"}
-                      >
-                        {isEditMode ? `✏️ ${t("formations.editFormation")}` : `💾 ${t("formations.saveSprint")}`}
-                      </Button>
-                    </Col>
                   )}
-                </Row>
+                </div>
               </Form>
-            </Card.Body>
-          </Card>
+          </div>
         </Col>
 
         {/* ---------- LISTA FORMAZIONI ---------- */}
         <Col xs={12} lg={6}>
-          {race && <RaceHistoryCard key={refreshKey} race={race} showOfficialResults={false} showPoints={false} compact={true} currentUserId={user?.uid} />}
+          {race && <RaceHistoryCard key={refreshKey} race={race} showOfficialResults={false} showPoints={false} compact={true} cardsOnly currentUserId={user?.uid} />}
         </Col>
       </Row>
 
@@ -792,7 +770,7 @@ export default function FormationApp() {
           </Button>
         </Modal.Footer>
       </Modal>
-    </Container>
+    </div>
   );
 
   /* ─────────────── componenti ausiliari inline ─────────────── */
@@ -812,20 +790,19 @@ export default function FormationApp() {
     );
   }
 
-  function SectionHeader({ title, open, deadlineMs, accentColor }) {
+  function SectionHeader({ title, open, deadlineMs }) {
     return (
       <>
-        <hr style={{ borderColor: accentColor }} />
-        <h5 className="mt-3" style={{ color: accentColor }}>
-          {title}&nbsp;
+        <div className="lineup-section-head">
+          <span className="lineup-section-title">{title}</span>
           <DeadlineBadgeLocal open={open} />
-        </h5>
-        <p className="small text-muted mb-3">
-          {t("formations.submitBy")}:{" "}
-          {new Date(deadlineMs).toLocaleDateString(dateLocale, { day: "numeric", month: "long", year: "numeric", timeZone: timezone })}
-          {" – "}
+        </div>
+        <div className="lineup-section-deadline">
+          {t("formations.submitBy")}{" "}
+          {new Date(deadlineMs).toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "long", timeZone: timezone })}
+          {" · "}
           {new Date(deadlineMs).toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit", timeZone: timezone })}
-        </p>
+        </div>
       </>
     );
   }
@@ -835,49 +812,28 @@ export default function FormationApp() {
     const isEmpty = required && !value && touched;
 
     return (
-      <Form.Group className="mb-2">
-        <Form.Label>
-          {label} {required && "*"}
-          {isEmpty && <span className="text-danger ms-1">({t("formations.required")})</span>}
-        </Form.Label>
-        <div className="d-flex gap-2">
-          <div className="flex-grow-1">
+      <div className={`lineup-pick${isEmpty ? " is-invalid" : ""}`}>
+        <div className="lineup-pick-row">
+          <span className="lineup-pick-label">
+            {label}
+            {required && <span className="lineup-pick-required">*</span>}
+          </span>
+          <div className="lineup-pick-field">
             <Select
               isDisabled={disabled}
               options={driverOpts}
               value={value}
               onChange={(sel) => onSelectChange(sel, field)}
-              placeholder={`${t("common.select")} ${label}`}
+              placeholder={clearable && !required ? t("formations.optional") : `${t("common.select")} ${label}`}
               classNamePrefix="react-select"
               isClearable={clearable}
               aria-label={`Select driver for ${label}`}
-              styles={
-                isEmpty
-                  ? {
-                      control: (base) => ({
-                        ...base,
-                        borderColor: "#dc3545",
-                        boxShadow: "0 0 0 0.2rem rgba(220,53,69,.25)",
-                      }),
-                    }
-                  : {}
-              }
             />
           </div>
-          {clearable && value && !disabled && (
-            <Button
-              variant="outline-secondary"
-              size="sm"
-              onClick={() => onSelectChange(null, field)}
-              title={t("common.clearSelection")}
-              aria-label={`Clear ${label} selection`}
-            >
-              ✕
-            </Button>
-          )}
         </div>
-        {helpText && <Form.Text className="text-muted">{helpText}</Form.Text>}
-      </Form.Group>
+        {isEmpty && <div className="lineup-pick-error">{t("formations.required")}</div>}
+        {helpText && <div className="lineup-pick-help">{helpText}</div>}
+      </div>
     );
   }
 

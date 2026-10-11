@@ -168,6 +168,8 @@ export const it = {
     mainPicksHidden: "Formazione gara nascosta fino all'inizio delle qualifiche",
     sprintPicksHidden: "Formazione sprint nascosta fino all'inizio delle qualifiche sprint",
     hiddenSubmissions: "{{count}} formazioni nascoste",
+    editMain: "Modifica Gara",
+    editSprint: "Modifica Sprint",
   },
 
   // History
