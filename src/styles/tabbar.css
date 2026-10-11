@@ -9,6 +9,10 @@
   background-color: var(--bg-primary);
   border-top: 1px solid var(--border-color);
   padding-bottom: env(safe-area-inset-bottom);
+  /* Own compositing layer: iOS keeps it pinned while scrolling (no lag/jump) */
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .bottom-tabbar .bottom-tabbar-item {

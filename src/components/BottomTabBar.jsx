@@ -3,6 +3,7 @@
  * Mobile / PWA bottom navigation (hidden on desktop, where the top navbar shows the links).
  */
 import React from "react";
+import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
 import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
@@ -84,26 +85,32 @@ export default function BottomTabBar() {
   const isActive = (match) =>
     match.some((m) => (m === "/" ? pathname === "/" : pathname === m || pathname.startsWith(`${m}/`)));
 
+  const bar = (
+    <nav className="bottom-tabbar d-lg-none" aria-label={t("nav.home")}>
+      {tabs.map((tab) => {
+        const active = isActive(tab.match);
+        return (
+          <Link
+            key={tab.icon}
+            to={tab.to}
+            className={`bottom-tabbar-item${active ? " is-active" : ""}`}
+            aria-current={active ? "page" : undefined}
+          >
+            <TabIcon name={tab.icon} />
+            <span className="bottom-tabbar-label">{tab.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+
   return (
     <>
       {/* Keeps the page content clear of the fixed bar */}
       <div className="bottom-tabbar-spacer d-lg-none" aria-hidden="true" />
-      <nav className="bottom-tabbar d-lg-none" aria-label={t("nav.home")}>
-        {tabs.map((tab) => {
-          const active = isActive(tab.match);
-          return (
-            <Link
-              key={tab.icon}
-              to={tab.to}
-              className={`bottom-tabbar-item${active ? " is-active" : ""}`}
-              aria-current={active ? "page" : undefined}
-            >
-              <TabIcon name={tab.icon} />
-              <span className="bottom-tabbar-label">{tab.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+      {/* Rendered into <body> so no ancestor (transform, filter, overflow)
+          can turn position: fixed into "scrolls with the page" */}
+      {createPortal(bar, document.body)}
     </>
   );
 }
