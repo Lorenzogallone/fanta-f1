@@ -19,10 +19,10 @@ import { db } from "../services/firebase";
 import { POINTS } from "../constants/racing";
 import { computeScores, scoreTone } from "../utils/raceScores";
 import { useF1Data } from "../hooks/useF1Data";
-import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
 import { error } from "../utils/logger";
+import "../styles/cards.css";
 
 /**
  * Formats driver name to first initial + surname
@@ -210,31 +210,18 @@ PickCell.propTypes = {
  * @param {Object} props - Component props
  * @returns {JSX.Element} Podium table
  */
-function OfficialPodium({ title, rows, accentColor, driverLabel }) {
+function OfficialPodium({ title, rows }) {
   return (
-    <>
-      <h6 className="fw-bold border-bottom pb-1" style={{ color: accentColor }}>
-        {title}
-      </h6>
-      <Table size="sm" className="mb-0">
-        <thead>
-          <tr>
-            <th style={{ width: "20%", color: accentColor }}>Pos.</th>
-            <th style={{ color: accentColor }}>{driverLabel}</th>
-            <th style={{ width: "20%", color: accentColor }} className="text-end">Pts</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(({ pos, name, pts }, i) => (
-            <tr key={pos}>
-              <td>{i === 0 ? <strong>{pos}</strong> : pos}</td>
-              <td><DriverWithLogo name={name} /></td>
-              <td className="text-end text-success">{pts}</td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-    </>
+    <div className="rh-podium">
+      <div className="rh-section-title">{title}</div>
+      {rows.map(({ pos, name, pts }, i) => (
+        <div key={pos} className="rh-podium-row">
+          <span className={`rh-podium-pos${i === 0 ? " is-first" : ""}`}>{pos}</span>
+          <span className="rh-podium-name"><DriverWithLogo name={name} /></span>
+          <span className="rh-podium-pts">{pts}</span>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -247,8 +234,6 @@ OfficialPodium.propTypes = {
       pts: PropTypes.number.isRequired,
     })
   ).isRequired,
-  accentColor: PropTypes.string.isRequired,
-  driverLabel: PropTypes.string.isRequired,
 };
 
 /**
@@ -269,14 +254,21 @@ function RaceHistoryCard({
   currentUserId = null,
   reactive = false,
   cardsOnly = false,
+  collapsible = false,
 }) {
-  const { isDark } = useTheme();
   const { t } = useLanguage();
   const { timezone } = useTimezone();
   const [subs, setSubs] = useState([]);
   const [loadingSub, setLoadingSub] = useState(true);
   const [errorSub, setErrorSub] = useState(null);
   const [rankingMap, setRankingMap] = useState({});
+  const [openIds, setOpenIds] = useState(() => new Set(currentUserId ? [currentUserId] : []));
+  const toggleOpen = (id) =>
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
 
   // Load userId → name mapping from "ranking" collection
   useEffect(() => {
@@ -392,9 +384,6 @@ function RaceHistoryCard({
     };
   });
 
-  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
-  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
-  const borderColor = cancelledMain ? "#6c757d" : accentColor;
 
   const DoubleBadge = () =>
     doublePts ? (
@@ -404,24 +393,14 @@ function RaceHistoryCard({
     ) : null;
 
   return (
-    <Card
-      className="shadow border-0 race-history-card"
-      style={{
-        backgroundColor: bgCard,
-        borderLeft: `4px solid ${borderColor}`,
-      }}
-    >
+    <Card className="fx-card race-history-card">
       {!compact && (
-        <Card.Header
-          className="border-bottom"
-          style={{
-            backgroundColor: isDark ? "var(--bg-tertiary)" : "#ffffff",
-            borderBottomColor: accentColor,
-          }}
-        >
-          <h5 className="mb-0" style={{ color: cancelledMain ? "#6c757d" : accentColor }}>
-            {race.round}. {race.name} —{" "}
-            {new Date(race.raceUTC.seconds * 1000).toLocaleDateString(undefined, { timeZone: timezone })}
+        <div className="rh-head">
+          <div className="fx-eyebrow">
+            R{race.round} · {new Date(race.raceUTC.seconds * 1000).toLocaleDateString(undefined, { timeZone: timezone })}
+          </div>
+          <h2 className={`rh-title${cancelledMain ? " is-cancelled" : ""}`}>
+            {race.name}
             {cancelledMain && (
               <Badge bg="danger" className="ms-2">
                 ⛔ {t("history.cancelled")}
@@ -433,8 +412,8 @@ function RaceHistoryCard({
               </Badge>
             )}
             {doublePts && <DoubleBadge />}
-          </h5>
-        </Card.Header>
+          </h2>
+        </div>
       )}
 
       <Card.Body>
@@ -458,8 +437,6 @@ function RaceHistoryCard({
             <Col xs={12} lg={showSprintResults ? 6 : 12}>
               <OfficialPodium
                 title={t("calculate.mainRace")}
-                accentColor={accentColor}
-                driverLabel={t("formations.driver")}
                 rows={[
                   { pos: "1°", name: official.P1, pts: POINTS.MAIN[1] * multiplier },
                   { pos: "2°", name: official.P2, pts: POINTS.MAIN[2] * multiplier },
@@ -471,8 +448,6 @@ function RaceHistoryCard({
               <Col xs={12} lg={6}>
                 <OfficialPodium
                   title={t("formations.sprint")}
-                  accentColor={accentColor}
-                  driverLabel={t("formations.driver")}
                   rows={[
                     { pos: "SP1°", name: official.SP1, pts: POINTS.SPRINT[1] * multiplier },
                     { pos: "SP2°", name: official.SP2, pts: POINTS.SPRINT[2] * multiplier },
@@ -499,9 +474,9 @@ function RaceHistoryCard({
           <Alert variant="info">{t("history.noLineupsYet")}</Alert>
         ) : (
           <>
-            <h6 className="fw-bold mb-3" style={{ color: accentColor }}>
+            <div className="rh-section-title mb-2">
               {scored ? t("history.lineupsAndScores") : t("history.lineups")}
-            </h6>
+            </div>
 
             {/* Visibility warning */}
             {currentUserId && !canSeeOthersMain && (
@@ -519,19 +494,26 @@ function RaceHistoryCard({
 
             {/* Mobile layout - cards */}
             <div className={cardsOnly ? undefined : "d-lg-none"}>
-              {rows.map(({ s, userName, mainMasked, sprintMasked, score }, idx) => (
-                <Card key={s.id} className="mb-3 score-user-card" style={{ borderLeft: `3px solid ${accentColor}` }}>
+              {rows.map(({ s, userName, mainMasked, sprintMasked, score }, idx) => {
+                const open = !collapsible || openIds.has(s.id);
+                const Head = collapsible ? "button" : "div";
+                return (
+                <Card key={s.id} className={`mb-2 score-user-card${collapsible ? " is-collapsible" : ""}${open ? " is-open" : ""}`}>
                   <Card.Body>
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <h6 className="mb-0" style={{ color: accentColor }}>
+                    <Head
+                      {...(collapsible ? { type: "button", onClick: () => toggleOpen(s.id), "aria-expanded": open } : {})}
+                      className="score-user-head"
+                    >
+                      <span className="score-user-name">
                         {idx + 1}. {userName}
                         {(s.isLate || s.isLateSprint) && (
                           <Badge bg="warning" text="dark" className="ms-2">
                             ⏰ {t("formations.lateSubmission")} (-3)
                           </Badge>
                         )}
-                      </h6>
-                    </div>
+                      </span>
+                      {collapsible && <span className="score-user-chevron" aria-hidden="true">›</span>}
+                    </Head>
 
                     {scored && (
                       <ScoreSummary
@@ -545,7 +527,7 @@ function RaceHistoryCard({
                       />
                     )}
 
-                    {mainMasked ? (
+                    {!open ? null : mainMasked ? (
                       <div className="text-center text-muted py-2">
                         🔒 <em>{t("formations.mainPicksHidden")}</em>
                       </div>
@@ -560,7 +542,7 @@ function RaceHistoryCard({
                       </div>
                     )}
 
-                    {hasSprint && (
+                    {open && hasSprint && (
                       sprintMasked ? (
                         <div className="text-center text-muted py-2">
                           🔒 <em>{t("formations.sprintPicksHidden")}</em>
@@ -577,7 +559,8 @@ function RaceHistoryCard({
                     )}
                   </Card.Body>
                 </Card>
-              ))}
+                );
+              })}
             </div>
 
             {/* Desktop layout - table grouped by main race / sprint / points */}
@@ -585,18 +568,18 @@ function RaceHistoryCard({
               <Table hover size="sm" className="align-middle race-scores-table">
                 <thead>
                   <tr>
-                    <th rowSpan={2} style={{ width: 40, color: accentColor }} className="text-center">#</th>
-                    <th rowSpan={2} style={{ width: 120, color: accentColor }} className="text-center">{t("history.user")}</th>
+                    <th rowSpan={2} style={{ width: 40 }} className="text-center">#</th>
+                    <th rowSpan={2} style={{ width: 120 }} className="text-center">{t("history.user")}</th>
                     {scored && (
-                      <th colSpan={hasSprint ? 3 : 2} style={{ color: accentColor }} className="text-center score-group-start score-group-title">
+                      <th colSpan={hasSprint ? 3 : 2} className="text-center score-group-start score-group-title">
                         {t("common.points")}
                       </th>
                     )}
-                    <th colSpan={hasJolly2 ? 5 : 4} style={{ color: accentColor }} className="text-center score-group-start score-group-title">
+                    <th colSpan={hasJolly2 ? 5 : 4} className="text-center score-group-start score-group-title">
                       {t("calculate.mainRace")}
                     </th>
                     {hasSprint && (
-                      <th colSpan={4} style={{ color: accentColor }} className="text-center score-group-start score-group-title">
+                      <th colSpan={4} className="text-center score-group-start score-group-title">
                         {t("formations.sprint")}
                       </th>
                     )}
@@ -604,22 +587,22 @@ function RaceHistoryCard({
                   <tr>
                     {scored && (
                       <>
-                        <th style={{ width: 70, color: accentColor }} className="text-center score-group-start">{t("history.scoreMain")}</th>
-                        {hasSprint && <th style={{ width: 70, color: accentColor }} className="text-center">{t("formations.sprint")}</th>}
-                        <th style={{ width: 80, color: accentColor }} className="text-center">{t("history.total")}</th>
+                        <th style={{ width: 70 }} className="text-center score-group-start">{t("history.scoreMain")}</th>
+                        {hasSprint && <th style={{ width: 70 }} className="text-center">{t("formations.sprint")}</th>}
+                        <th style={{ width: 80 }} className="text-center">{t("history.total")}</th>
                       </>
                     )}
-                    <th style={{ color: accentColor }} className="text-center score-group-start">P1</th>
-                    <th style={{ color: accentColor }} className="text-center">P2</th>
-                    <th style={{ color: accentColor }} className="text-center">P3</th>
-                    <th style={{ color: accentColor }} className="text-center">J1</th>
-                    {hasJolly2 && <th style={{ color: accentColor }} className="text-center">J2</th>}
+                    <th className="text-center score-group-start">P1</th>
+                    <th className="text-center">P2</th>
+                    <th className="text-center">P3</th>
+                    <th className="text-center">J1</th>
+                    {hasJolly2 && <th className="text-center">J2</th>}
                     {hasSprint && (
                       <>
-                        <th style={{ color: accentColor }} className="text-center score-group-start">SP1</th>
-                        <th style={{ color: accentColor }} className="text-center">SP2</th>
-                        <th style={{ color: accentColor }} className="text-center">SP3</th>
-                        <th style={{ color: accentColor }} className="text-center">J SP</th>
+                        <th className="text-center score-group-start">SP1</th>
+                        <th className="text-center">SP2</th>
+                        <th className="text-center">SP3</th>
+                        <th className="text-center">J SP</th>
                       </>
                     )}
                   </tr>
@@ -716,6 +699,7 @@ RaceHistoryCard.propTypes = {
   currentUserId: PropTypes.string,
   reactive: PropTypes.bool,
   cardsOnly: PropTypes.bool, // always use the stacked card layout (narrow columns)
+  collapsible: PropTypes.bool, // mobile cards start closed (own lineup open), tap to expand
 };
 
 export default React.memo(RaceHistoryCard);

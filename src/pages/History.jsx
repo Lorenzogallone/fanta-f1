@@ -10,16 +10,12 @@ import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { useLocation } from "react-router-dom";
 import {
-  Container,
   Row,
   Col,
   Spinner,
   Alert,
-  Card,
-  Table,
   Badge,
   Form,
-  Nav,
 } from "react-bootstrap";
 import {
   collection,
@@ -35,12 +31,12 @@ import { db } from "../services/firebase";
 import RaceHistoryCard from "../components/RaceHistoryCard";
 import { POINTS } from "../constants/racing";
 import { useF1Data } from "../hooks/useF1Data";
-import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
-import { useTimezone } from "../hooks/useTimezone";
 import { useAuth } from "../hooks/useAuth";
 import { getChampionshipDeadlineMs } from "../utils/championshipDeadline";
 import { error } from "../utils/logger";
+import "../styles/cards.css";
+import "../styles/results.css";
 
 /**
  * Component to display driver name with team logo
@@ -153,10 +149,9 @@ export default function History() {
   const [loadingChampionship, setLoadingChampionship] = useState(true);
   const [isLoadingRaceData, setIsLoadingRaceData] = useState(false);
   const [activeTab, setActiveTab] = useState("races"); // "races" or "championship"
+  const [openChampId, setOpenChampId] = useState(null);
   const [championshipDeadlineMs, setChampionshipDeadlineMs] = useState(null);
-  const { isDark } = useTheme();
   const { t } = useLanguage();
-  const { timezone } = useTimezone();
   const { user } = useAuth();
 
   /**
@@ -239,9 +234,6 @@ export default function History() {
     })();
   }, []);
 
-  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
-  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
-  const bgHeader = isDark ? "var(--bg-tertiary)" : "#ffffff";
 
   // Get selected race
   const selectedRace = pastRaces.find((r) => r.id === selectedRaceId);
@@ -268,21 +260,17 @@ export default function History() {
 
   if (loading)
     return (
-      <Container className="py-5 text-center">
+      <div className="py-5 text-center">
         <Spinner animation="border" />
-      </Container>
+      </div>
     );
   if (errorState)
     return (
-      <Container className="py-5">
-        <Alert variant="danger">{errorState}</Alert>
-      </Container>
+      <Alert variant="danger">{errorState}</Alert>
     );
   if (!pastRaces.length && !championshipResults)
     return (
-      <Container className="py-5">
-        <Alert variant="info">{t("history.noRaces")}</Alert>
-      </Container>
+      <Alert variant="info">{t("history.noRaces")}</Alert>
     );
 
   /**
@@ -316,389 +304,188 @@ export default function History() {
   };
 
   const hasChampionship = !loadingChampionship && championshipResults;
+  const champDeadlinePassed = !championshipDeadlineMs || Date.now() >= championshipDeadlineMs;
+  const visibleChampSubs = user?.uid && !champDeadlinePassed
+    ? championshipSubmissions.filter((s) => s.userId === user.uid)
+    : championshipSubmissions;
+
+  const tabs = [
+    { key: "races", label: t("history.racesTab") },
+    ...(hasChampionship ? [{ key: "championship", label: t("history.championshipTab") }] : []),
+  ];
+
+  const OfficialTop3 = ({ title, entries, renderName }) => (
+    <div className="fx-card res-card h-100 mb-0">
+      <h2 className="fx-card-title res-card-title">{title}</h2>
+      <div className="res-rows">
+        {entries.map((name, idx) => (
+          <div key={idx} className="res-row">
+            <span className="res-pos is-top">{idx + 1}</span>
+            <span className="res-name">{renderName(name)}</span>
+            <span className="res-pts is-pos">{POINTS.MAIN[idx + 1]}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const PickRow = ({ pos, children, pts }) => (
+    <div className="res-row">
+      <span className="res-pos">{pos}°</span>
+      <span className="res-name">{children}</span>
+      <PointsBadge pts={pts} pill />
+    </div>
+  );
 
   return (
-    <Container className="py-3 py-md-5">
-      <Card
-        className="shadow border-0"
-        style={{
-          backgroundColor: bgCard,
-          borderLeft: `4px solid ${accentColor}`,
-        }}
-      >
-        <Card.Header
-          className="border-bottom px-3 py-2"
-          style={{
-            backgroundColor: bgHeader,
-            borderBottomColor: accentColor,
-          }}
-        >
-          <div className="d-flex justify-content-between align-items-center">
-            <h5 className="mb-0" style={{ color: accentColor }}>
-              📊 {t("nav.history")}
-            </h5>
-            <Nav variant="pills" activeKey={activeTab} onSelect={setActiveTab}>
-              <Nav.Item>
-                <Nav.Link
-                  eventKey="races"
-                  className="py-1 px-2 px-md-3"
-                  style={{
-                    backgroundColor: activeTab === "races" ? accentColor : "transparent",
-                    color: activeTab === "races" ? "#fff" : (isDark ? "#fff" : "#000"),
-                    borderColor: accentColor,
-                    fontSize: "0.9rem",
-                  }}
+    <div className="fx results-page">
+      {tabs.length > 1 && (
+        <div className="fx-segmented mb-3" role="tablist">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.key}
+              className={`fx-segment${activeTab === tab.key ? " is-active" : ""}`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ============ RACES ============ */}
+      {activeTab === "races" && (
+        <div className="res-wide">
+          {pastRaces.length > 0 ? (
+            <>
+              <div className="res-picker res-narrow">
+                <label className="fx-eyebrow" htmlFor="hist-race-select">{t("raceResults.selectRace")}</label>
+                <Form.Select
+                  id="hist-race-select"
+                  className="res-select"
+                  value={selectedRaceId || ""}
+                  onChange={(e) => handleRaceChange(e.target.value)}
                 >
-                  {t("history.racesTab")}
-                </Nav.Link>
-              </Nav.Item>
-              {hasChampionship && (
-                <Nav.Item>
-                  <Nav.Link
-                    eventKey="championship"
-                    className="py-1 px-2 px-md-3"
-                    style={{
-                      backgroundColor: activeTab === "championship" ? accentColor : "transparent",
-                      color: activeTab === "championship" ? "#fff" : (isDark ? "#fff" : "#000"),
-                      borderColor: accentColor,
-                      fontSize: "0.9rem",
-                    }}
-                  >
-                    🏆 {t("history.championshipTab")}
-                  </Nav.Link>
-                </Nav.Item>
+                  <option value="">{t("raceResults.chooseRace")}</option>
+                  {pastRaces.map((race) => (
+                    <option key={race.id} value={race.id}>
+                      {race.round}. {race.name}
+                      {race.cancelledMain ? ` ⛔` : race.officialResults ? ` ✓` : ""}
+                    </option>
+                  ))}
+                </Form.Select>
+              </div>
+
+              {/* Loading state when changing races */}
+              {isLoadingRaceData && selectedRace && (
+                <div className="text-center py-5">
+                  <Spinner animation="border" size="sm" />
+                  <p className="mt-2 text-muted small">{t("common.loading")}</p>
+                </div>
               )}
-            </Nav>
-          </div>
-        </Card.Header>
 
-        <Card.Body className="px-3 py-3">
-          {/* ============ TAB GARE ============ */}
-          {activeTab === "races" && (
+              {selectedRace && !isLoadingRaceData && (
+                <RaceHistoryCard race={selectedRace} key={selectedRaceId} isLastRace={isLastRaceSelected} currentUserId={user?.uid} collapsible />
+              )}
+
+              {!selectedRace && <div className="fx-card res-empty">{t("raceResults.chooseRace")}</div>}
+            </>
+          ) : (
+            <div className="fx-card res-empty">{t("history.noRaces")}</div>
+          )}
+        </div>
+      )}
+
+      {/* ============ CHAMPIONSHIP ============ */}
+      {activeTab === "championship" && hasChampionship && (
+        <div className="res-narrow">
+          <Row className="g-3 mb-3">
+            <Col xs={12} md={6}>
+              <OfficialTop3
+                title={t("history.topDrivers")}
+                entries={[championshipResults.P1, championshipResults.P2, championshipResults.P3]}
+                renderName={(name) => <DriverWithLogo name={name} />}
+              />
+            </Col>
+            <Col xs={12} md={6}>
+              <OfficialTop3
+                title={t("history.topConstructors")}
+                entries={[championshipResults.C1, championshipResults.C2, championshipResults.C3]}
+                renderName={(name) => <TeamWithLogo name={name} />}
+              />
+            </Col>
+          </Row>
+
+          {championshipSubmissions.length === 0 ? (
+            <div className="fx-card res-empty">{t("history.noChampionship")}</div>
+          ) : (
             <>
-              {pastRaces.length > 0 ? (
-                <>
-                  {/* Race Selector */}
-                  <Form.Group className="mb-3">
-                    <Form.Select
-                      value={selectedRaceId || ""}
-                      onChange={(e) => handleRaceChange(e.target.value)}
-                      style={{
-                        borderColor: accentColor,
-                      }}
-                    >
-                      <option value="">{t("raceResults.chooseRace")}</option>
-                      {pastRaces.map((race) => (
-                        <option key={race.id} value={race.id}>
-                          {t("history.round")} {race.round} - {race.name}
-                          {race.cancelledMain ? ` ⛔` : race.officialResults ? ` ✓` : ""}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
+              <h3 className="res-section-title">{t("history.formationsAndPoints")}</h3>
 
-                  {/* Loading state when changing races */}
-                  {isLoadingRaceData && selectedRace && (
-                    <div className="text-center py-5 mb-4">
-                      <div className="mb-3">
-                        <h5 style={{ color: accentColor }}>
-                          {t("history.round")} {selectedRace.round} - {selectedRace.name}
-                        </h5>
-                        <small className="text-muted">
-                          {selectedRace.raceUTC && new Date(selectedRace.raceUTC.seconds * 1000).toLocaleDateString(undefined, { timeZone: timezone })}
-                        </small>
-                      </div>
-                      <Spinner animation="border" variant={isDark ? "light" : "primary"} style={{ width: '3rem', height: '3rem' }} />
-                      <p className="mt-3 text-muted">{t("common.loading")}</p>
-                    </div>
-                  )}
+              {user?.uid && !champDeadlinePassed && (
+                <div className="res-note is-warning">🔒 {t("championshipForm.othersHidden")}</div>
+              )}
 
-                  {/* Selected Race Details - shown when not loading */}
-                  {selectedRace && !isLoadingRaceData && (
-                    <RaceHistoryCard race={selectedRace} key={selectedRaceId} isLastRace={isLastRaceSelected} currentUserId={user?.uid}
- />
-                  )}
-
-                  {/* Placeholder when no race selected */}
-                  {!selectedRace && (
-                    <Alert variant="info">
-                      {t("raceResults.chooseRace")}
-                    </Alert>
-                  )}
-                </>
+              {visibleChampSubs.length === 0 ? (
+                <div className="fx-card res-empty">{t("history.noChampionship")}</div>
               ) : (
-                <Alert variant="info">{t("history.noRaces")}</Alert>
-              )}
-            </>
-          )}
-
-          {/* ============ TAB CAMPIONATO ============ */}
-          {activeTab === "championship" && hasChampionship && (
-            <>
-              {/* Risultati Ufficiali */}
-              <Row className="mb-4">
-                <Col xs={12} md={6}>
-                  <h6 className="fw-bold border-bottom pb-2" style={{ color: accentColor }}>
-                    {t("history.topDrivers")}
-                  </h6>
-                  <Table size="sm" className="mb-0">
-                    <thead>
-                      <tr>
-                        <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
-                        <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                        <th className="text-end" style={{ color: accentColor }}>{t("common.points")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td><strong>1°</strong></td>
-                        <td><DriverWithLogo name={championshipResults.P1} /></td>
-                        <td className="text-end text-success fw-bold">{POINTS.MAIN[1]}</td>
-                      </tr>
-                      <tr>
-                        <td>2°</td>
-                        <td><DriverWithLogo name={championshipResults.P2} /></td>
-                        <td className="text-end text-success fw-bold">{POINTS.MAIN[2]}</td>
-                      </tr>
-                      <tr>
-                        <td>3°</td>
-                        <td><DriverWithLogo name={championshipResults.P3} /></td>
-                        <td className="text-end text-success fw-bold">{POINTS.MAIN[3]}</td>
-                      </tr>
-                    </tbody>
-                  </Table>
-                </Col>
-
-                <Col xs={12} md={6}>
-                  <h6 className="fw-bold border-bottom pb-2 mt-3 mt-md-0" style={{ color: accentColor }}>
-                    {t("history.topConstructors")}
-                  </h6>
-                  <Table size="sm" className="mb-0">
-                    <thead>
-                      <tr>
-                        <th style={{ color: accentColor }}>{t("leaderboard.rank")}</th>
-                        <th style={{ color: accentColor }}>{t("history.team")}</th>
-                        <th className="text-end" style={{ color: accentColor }}>{t("common.points")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td><strong>1°</strong></td>
-                        <td><TeamWithLogo name={championshipResults.C1} /></td>
-                        <td className="text-end text-success fw-bold">{POINTS.MAIN[1]}</td>
-                      </tr>
-                      <tr>
-                        <td>2°</td>
-                        <td><TeamWithLogo name={championshipResults.C2} /></td>
-                        <td className="text-end text-success fw-bold">{POINTS.MAIN[2]}</td>
-                      </tr>
-                      <tr>
-                        <td>3°</td>
-                        <td><TeamWithLogo name={championshipResults.C3} /></td>
-                        <td className="text-end text-success fw-bold">{POINTS.MAIN[3]}</td>
-                      </tr>
-                    </tbody>
-                  </Table>
-                </Col>
-              </Row>
-
-              {/* Formazioni e Punteggi Giocatori */}
-              {(() => {
-                const champDeadlinePassed = !championshipDeadlineMs || Date.now() >= championshipDeadlineMs;
-                const visibleChampSubs = user?.uid && !champDeadlinePassed
-                  ? championshipSubmissions.filter(s => s.userId === user.uid)
-                  : championshipSubmissions;
-
-                return championshipSubmissions.length > 0 && (
-                <>
-                  <h6 className="fw-bold mb-3 mt-4" style={{ color: accentColor }}>
-                    {t("history.formationsAndPoints")}
-                  </h6>
-
-                  {/* Visibility warning */}
-                  {user?.uid && !champDeadlinePassed && (
-                    <Alert variant="warning" className="mb-3">
-                      🔒 {t("championshipForm.othersHidden")}
-                    </Alert>
-                  )}
-
-                  {visibleChampSubs.length === 0 ? (
-                    <Alert variant="info">{t("history.noChampionship")}</Alert>
-                  ) : (
-                  <>
-                  {/* Desktop View */}
-                  <div className="d-none d-lg-block table-responsive">
-                    <Table striped bordered hover size="sm" className="align-middle">
-                      <thead>
-                        <tr>
-                          <th style={{ color: accentColor }}>{t("history.player")}</th>
-                          <th style={{ color: accentColor }}>P1</th>
-                          <th style={{ color: accentColor }}>P2</th>
-                          <th style={{ color: accentColor }}>P3</th>
-                          <th className="text-center" style={{ color: accentColor }}>{t("history.totalDrivers")}</th>
-                          <th style={{ color: accentColor }}>C1</th>
-                          <th style={{ color: accentColor }}>C2</th>
-                          <th style={{ color: accentColor }}>C3</th>
-                          <th className="text-center" style={{ color: accentColor }}>{t("history.totalConstructors")}</th>
-                          <th className="text-center" style={{ color: accentColor }}>{t("history.total")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {visibleChampSubs.map((sub) => {
-                          const pts = calculateChampionshipPoints(sub, championshipResults);
-                          return (
-                            <tr key={sub.userId}>
-                              <td className="fw-bold">{sub.name}</td>
-                              <td>
-                                <div className="d-flex align-items-center gap-2">
-                                  <DriverWithLogo name={sub.piloti[0]} />
-                                  <PointsBadge
-                                    pts={sub.piloti[0] === championshipResults.P1 ? POINTS.MAIN[1] : 0}
-                                    pill
-                                  />
-                                </div>
-                              </td>
-                              <td>
-                                <div className="d-flex align-items-center gap-2">
-                                  <DriverWithLogo name={sub.piloti[1]} />
-                                  <PointsBadge
-                                    pts={sub.piloti[1] === championshipResults.P2 ? POINTS.MAIN[2] : 0}
-                                    pill
-                                  />
-                                </div>
-                              </td>
-                              <td>
-                                <div className="d-flex align-items-center gap-2">
-                                  <DriverWithLogo name={sub.piloti[2]} />
-                                  <PointsBadge
-                                    pts={sub.piloti[2] === championshipResults.P3 ? POINTS.MAIN[3] : 0}
-                                    pill
-                                  />
-                                </div>
-                              </td>
-                              <td className="text-center">
-                                <PointsBadge pts={pts.pilotiPts} pill />
-                              </td>
-                              <td>
-                                <div className="d-flex align-items-center gap-2">
-                                  <TeamWithLogo name={sub.costruttori[0]} />
-                                  <PointsBadge
-                                    pts={sub.costruttori[0] === championshipResults.C1 ? POINTS.MAIN[1] : 0}
-                                    pill
-                                  />
-                                </div>
-                              </td>
-                              <td>
-                                <div className="d-flex align-items-center gap-2">
-                                  <TeamWithLogo name={sub.costruttori[1]} />
-                                  <PointsBadge
-                                    pts={sub.costruttori[1] === championshipResults.C2 ? POINTS.MAIN[2] : 0}
-                                    pill
-                                  />
-                                </div>
-                              </td>
-                              <td>
-                                <div className="d-flex align-items-center gap-2">
-                                  <TeamWithLogo name={sub.costruttori[2]} />
-                                  <PointsBadge
-                                    pts={sub.costruttori[2] === championshipResults.C3 ? POINTS.MAIN[3] : 0}
-                                    pill
-                                  />
-                                </div>
-                              </td>
-                              <td className="text-center">
-                                <PointsBadge pts={pts.costruttoriPts} pill />
-                              </td>
-                              <td className="text-center">
-                                <PointsBadge pts={pts.total} pill style={{ fontSize: "1rem" }} />
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </Table>
-                  </div>
-
-                  {/* Mobile View - Cards */}
-                  <div className="d-lg-none">
-                    {visibleChampSubs.map((sub) => {
-                      const pts = calculateChampionshipPoints(sub, championshipResults);
-                      return (
-                        <Card
-                          key={sub.userId}
-                          className="mb-3"
-                          style={{ borderLeft: `3px solid ${accentColor}` }}
+                <div className="fx-card res-list">
+                  {visibleChampSubs.map((sub) => {
+                    const pts = calculateChampionshipPoints(sub, championshipResults);
+                    const open = openChampId === sub.userId;
+                    return (
+                      <div key={sub.userId} className={`res-session${open ? " is-open" : ""}`}>
+                        <button
+                          type="button"
+                          className="res-session-head res-player-head"
+                          aria-expanded={open}
+                          onClick={() => setOpenChampId(open ? null : sub.userId)}
                         >
-                          <Card.Body>
-                            <div className="d-flex justify-content-between align-items-center mb-3">
-                              <h6 className="mb-0 fw-bold" style={{ color: accentColor }}>
-                                {sub.name}
-                              </h6>
-                              <PointsBadge
-                                pts={pts.total}
-                                style={{ fontSize: "1rem" }}
-                              />
-                            </div>
-
-                            {/* Piloti */}
-                            <div className="mb-3">
-                              <strong className="text-muted" style={{ fontSize: "0.85rem" }}>
-                                {t("history.drivers").toUpperCase()}
-                                <PointsBadge pts={pts.pilotiPts} className="ms-2" />
-                              </strong>
-                              <div className="mt-2">
-                                {sub.piloti.map((pilot, idx) => (
-                                  <div key={idx} className="d-flex justify-content-between align-items-center py-1 border-bottom">
-                                    <span className="text-muted">{idx + 1}°</span>
-                                    <div className="d-flex align-items-center gap-2">
-                                      <DriverWithLogo name={pilot} />
-                                      <PointsBadge
-                                        pts={pilot === championshipResults[`P${idx + 1}`] ? POINTS.MAIN[idx + 1] : 0}
-                                      />
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Costruttori */}
-                            <div>
-                              <strong className="text-muted" style={{ fontSize: "0.85rem" }}>
-                                {t("history.constructors").toUpperCase()}
-                                <PointsBadge pts={pts.costruttoriPts} className="ms-2" />
-                              </strong>
-                              <div className="mt-2">
-                                {sub.costruttori.map((team, idx) => (
-                                  <div key={idx} className="d-flex justify-content-between align-items-center py-1 border-bottom">
-                                    <span className="text-muted">{idx + 1}°</span>
-                                    <div className="d-flex align-items-center gap-2">
-                                      <TeamWithLogo name={team} />
-                                      <PointsBadge
-                                        pts={team === championshipResults[`C${idx + 1}`] ? POINTS.MAIN[idx + 1] : 0}
-                                      />
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </Card.Body>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                  </>
-                  )}
-                </>
-              );
-              })()}
-
-              {championshipSubmissions.length === 0 && (
-                <Alert variant="info">{t("history.noChampionship")}</Alert>
+                          <span className="res-list-main">
+                            <span className="res-list-name">{sub.name}</span>
+                            <span className="res-list-sub">
+                              {t("history.drivers")} {pts.pilotiPts} · {t("history.constructors")} {pts.costruttoriPts}
+                            </span>
+                          </span>
+                          <span className={`res-pts${pts.total > 0 ? " is-pos" : ""}`}>{pts.total}</span>
+                          <span className="res-chevron" aria-hidden="true">›</span>
+                        </button>
+                        {open && (
+                          <div className="res-session-body">
+                            <div className="res-sub-title">{t("history.drivers")}</div>
+                            {sub.piloti.map((pilot, idx) => (
+                              <PickRow
+                                key={`p${idx}`}
+                                pos={idx + 1}
+                                pts={pilot === championshipResults[`P${idx + 1}`] ? POINTS.MAIN[idx + 1] : 0}
+                              >
+                                <DriverWithLogo name={pilot} />
+                              </PickRow>
+                            ))}
+                            <div className="res-sub-title">{t("history.constructors")}</div>
+                            {sub.costruttori.map((team, idx) => (
+                              <PickRow
+                                key={`c${idx}`}
+                                pos={idx + 1}
+                                pts={team === championshipResults[`C${idx + 1}`] ? POINTS.MAIN[idx + 1] : 0}
+                              >
+                                <TeamWithLogo name={team} />
+                              </PickRow>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </>
           )}
-        </Card.Body>
-      </Card>
-    </Container>
+        </div>
+      )}
+    </div>
   );
 }
