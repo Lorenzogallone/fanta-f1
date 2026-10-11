@@ -11,6 +11,8 @@ import {
   Spinner,
   Badge,
   Alert,
+  Row,
+  Col,
 } from "react-bootstrap";
 import { collection, getDocs, onSnapshot } from "firebase/firestore";
 import { db } from "../services/firebase";
@@ -71,6 +73,245 @@ function DriverWithLogo({ name, short = false }) {
 DriverWithLogo.propTypes = {
   name: PropTypes.string,
   short: PropTypes.bool,
+};
+
+/**
+ * Bootstrap tone for a points value: green if positive, red if negative, grey otherwise.
+ * @param {number|null} value - Points value
+ * @returns {string} Bootstrap variant
+ */
+function scoreTone(value) {
+  if (value > 0) return "success";
+  if (value < 0) return "danger";
+  return "secondary";
+}
+
+/**
+ * Computes the per-pick points and the main / sprint / total scores of a lineup.
+ * Stored points (pointsEarned / pointsEarnedSprint) win; otherwise the same rules
+ * as pointsCalculator are applied, so not-yet-saved lineups show a coherent total.
+ * @param {Object} s - Submission
+ * @param {Object} official - Official results
+ * @param {number} multiplier - 2 for the double points race, 1 otherwise
+ * @param {boolean} sprintScored - Whether the sprint counts for this race
+ * @returns {Object} { main, sprint, mainTotal, sprintTotal, total }
+ */
+function computeScores(s, official, multiplier, sprintScored) {
+  const hit = (ok, pts) => (ok ? pts * multiplier : 0);
+  const podium = [official.P1, official.P2, official.P3];
+  const main = {
+    P1: hit(s.mainP1 && s.mainP1 === official.P1, POINTS.MAIN[1]),
+    P2: hit(s.mainP2 && s.mainP2 === official.P2, POINTS.MAIN[2]),
+    P3: hit(s.mainP3 && s.mainP3 === official.P3, POINTS.MAIN[3]),
+    J1: hit(s.mainJolly && podium.includes(s.mainJolly), POINTS.BONUS_JOLLY_MAIN),
+    J2: hit(s.mainJolly2 && podium.includes(s.mainJolly2), POINTS.BONUS_JOLLY_MAIN),
+  };
+
+  let mainTotal = s.pointsEarned;
+  if (mainTotal === undefined) {
+    const perfectPodium = main.P1 && main.P2 && main.P3; // 29 → 30
+    mainTotal = s.mainP1
+      ? main.P1 + main.P2 + main.P3 + (perfectPodium ? multiplier : 0) + main.J1 + main.J2
+      : POINTS.PENALTY_EMPTY_LIST * multiplier;
+    if (s.isLate && s.latePenalty) mainTotal += s.latePenalty * multiplier;
+  }
+
+  const sprintPodium = [official.SP1, official.SP2, official.SP3];
+  const sprint = {
+    SP1: hit(sprintScored && s.sprintP1 && s.sprintP1 === official.SP1, POINTS.SPRINT[1]),
+    SP2: hit(sprintScored && s.sprintP2 && s.sprintP2 === official.SP2, POINTS.SPRINT[2]),
+    SP3: hit(sprintScored && s.sprintP3 && s.sprintP3 === official.SP3, POINTS.SPRINT[3]),
+    J: hit(sprintScored && s.sprintJolly && sprintPodium.includes(s.sprintJolly), POINTS.BONUS_JOLLY_SPRINT),
+  };
+
+  let sprintTotal = null;
+  if (sprintScored) {
+    sprintTotal = s.pointsEarnedSprint;
+    if (sprintTotal === undefined) {
+      sprintTotal = s.sprintP1
+        ? sprint.SP1 + sprint.SP2 + sprint.SP3 + sprint.J
+        : POINTS.PENALTY_EMPTY_LIST * multiplier;
+      if (s.isLateSprint && s.latePenaltySprint) sprintTotal += s.latePenaltySprint * multiplier;
+    }
+  }
+
+  // Without a sprint the total equals the main race score
+  return { main, sprint, mainTotal, sprintTotal, total: mainTotal + (sprintTotal ?? 0) };
+}
+
+/**
+ * Colored points value ("—" when missing, 🔒 when hidden).
+ * @param {Object} props - Component props
+ * @param {number|null} props.value - Points value
+ * @param {boolean} props.locked - Whether the value is hidden
+ * @returns {JSX.Element} Points value
+ */
+function ScoreValue({ value, locked = false }) {
+  if (locked) return <span className="text-muted">🔒</span>;
+  if (value === null || value === undefined) return <span className="text-muted">—</span>;
+  return <span className={`score-value is-${scoreTone(value)}`}>{value}</span>;
+}
+
+ScoreValue.propTypes = {
+  value: PropTypes.number,
+  locked: PropTypes.bool,
+};
+
+/**
+ * Segmented summary of a lineup's scores: main race | sprint | total.
+ * @param {Object} props - Component props
+ * @param {Array} props.items - [{ key, label, value, locked, isTotal }]
+ * @returns {JSX.Element} Score summary
+ */
+function ScoreSummary({ items }) {
+  return (
+    <div className="score-summary">
+      {items.map((item) => (
+        <div key={item.key} className={`score-summary-item${item.isTotal ? " is-total" : ""}`}>
+          <span className="score-summary-label">{item.label}</span>
+          <span className="score-summary-value">
+            <ScoreValue value={item.value} locked={item.locked} />
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+ScoreSummary.propTypes = {
+  items: PropTypes.arrayOf(
+    PropTypes.shape({
+      key: PropTypes.string.isRequired,
+      label: PropTypes.string.isRequired,
+      value: PropTypes.number,
+      locked: PropTypes.bool,
+      isTotal: PropTypes.bool,
+    })
+  ).isRequired,
+};
+
+/**
+ * Points badge shown next to a pick.
+ * @param {Object} props - Component props
+ * @param {number} props.pts - Points value
+ * @returns {JSX.Element} Points badge
+ */
+function PickBadge({ pts = 0 }) {
+  return (
+    <Badge bg={scoreTone(pts)} pill style={{ minWidth: 32, fontSize: "0.8rem" }}>
+      {pts}
+    </Badge>
+  );
+}
+
+PickBadge.propTypes = {
+  pts: PropTypes.number,
+};
+
+/**
+ * Mobile row: pick label, driver and points.
+ * @param {Object} props - Component props
+ * @returns {JSX.Element} Pick line
+ */
+function PickLine({ label, pick, pts, showPts }) {
+  return (
+    <div className="d-flex justify-content-between align-items-center py-1 border-bottom" style={{ fontSize: "0.9rem" }}>
+      <span className="text-muted">{label}</span>
+      <div className="d-flex align-items-center gap-2">
+        {pick ? (
+          <>
+            <DriverWithLogo name={pick} />
+            {showPts && <PickBadge pts={pts} />}
+          </>
+        ) : (
+          <span className="text-muted">—</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+PickLine.propTypes = {
+  label: PropTypes.string.isRequired,
+  pick: PropTypes.string,
+  pts: PropTypes.number,
+  showPts: PropTypes.bool,
+};
+
+/**
+ * Desktop table cell: driver and points.
+ * @param {Object} props - Component props
+ * @returns {JSX.Element} Table cell
+ */
+function PickCell({ pick, pts, masked, showPts, groupStart = false }) {
+  return (
+    <td className={`text-center${groupStart ? " score-group-start" : ""}`}>
+      {masked ? (
+        <span className="text-muted">🔒</span>
+      ) : pick ? (
+        <div className="d-flex flex-column align-items-center gap-1 text-nowrap">
+          <DriverWithLogo name={pick} short />
+          {showPts && <PickBadge pts={pts} />}
+        </div>
+      ) : (
+        "—"
+      )}
+    </td>
+  );
+}
+
+PickCell.propTypes = {
+  pick: PropTypes.string,
+  pts: PropTypes.number,
+  masked: PropTypes.bool,
+  showPts: PropTypes.bool,
+  groupStart: PropTypes.bool,
+};
+
+/**
+ * Official podium table (main race or sprint).
+ * @param {Object} props - Component props
+ * @returns {JSX.Element} Podium table
+ */
+function OfficialPodium({ title, rows, accentColor, driverLabel }) {
+  return (
+    <>
+      <h6 className="fw-bold border-bottom pb-1" style={{ color: accentColor }}>
+        {title}
+      </h6>
+      <Table size="sm" className="mb-0">
+        <thead>
+          <tr>
+            <th style={{ width: "20%", color: accentColor }}>Pos.</th>
+            <th style={{ color: accentColor }}>{driverLabel}</th>
+            <th style={{ width: "20%", color: accentColor }} className="text-end">Pts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ pos, name, pts }, i) => (
+            <tr key={pos}>
+              <td>{i === 0 ? <strong>{pos}</strong> : pos}</td>
+              <td><DriverWithLogo name={name} /></td>
+              <td className="text-end text-success">{pts}</td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </>
+  );
+}
+
+OfficialPodium.propTypes = {
+  title: PropTypes.string.isRequired,
+  rows: PropTypes.arrayOf(
+    PropTypes.shape({
+      pos: PropTypes.string.isRequired,
+      name: PropTypes.string,
+      pts: PropTypes.number.isRequired,
+    })
+  ).isRequired,
+  accentColor: PropTypes.string.isRequired,
+  driverLabel: PropTypes.string.isRequired,
 };
 
 /**
@@ -173,9 +414,11 @@ function RaceHistoryCard({
   const hasSprint = Boolean(race.qualiSprintUTC) || Boolean(official?.SP1) || subs.some(s => s.sprintP1 || s.sprintP2 || s.sprintP3 || s.sprintJolly);
   const doublePts = Boolean(official?.doublePoints);
   const multiplier = doublePts ? 2 : 1;
-  const BONUS_MAIN = POINTS.BONUS_JOLLY_MAIN;
   const cancelledMain = race.cancelledMain || false;
   const cancelledSprint = race.cancelledSprint || false;
+  const showSprintResults = hasSprint && !cancelledSprint;
+  const scored = showPoints && Boolean(official);
+  const sprintScored = scored && showSprintResults && Boolean(official.SP1);
 
   // Visibility rules: hide other players' picks until qualifying deadlines
   const nowMs = Date.now();
@@ -198,6 +441,19 @@ function RaceHistoryCard({
 
   const hiddenCount = subs.length - visibleSubs.length;
 
+  // One entry per visible lineup, shared by the mobile and desktop layouts
+  const rows = visibleSubs.map((s) => {
+    const mainMasked = Boolean(maskMain(s.id));
+    const sprintMasked = hasSprint && Boolean(maskSprint(s.id));
+    return {
+      s,
+      userName: s.user || rankingMap[s.id] || s.id,
+      mainMasked,
+      sprintMasked,
+      score: scored ? computeScores(s, official, multiplier, sprintScored) : null,
+    };
+  });
+
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
   const borderColor = cancelledMain ? "#6c757d" : accentColor;
@@ -211,7 +467,7 @@ function RaceHistoryCard({
 
   return (
     <Card
-      className="shadow border-0"
+      className="shadow border-0 race-history-card"
       style={{
         backgroundColor: bgCard,
         borderLeft: `4px solid ${borderColor}`,
@@ -260,75 +516,34 @@ function RaceHistoryCard({
 
         {/* Official results section */}
         {showOfficialResults && official && !cancelledMain ? (
-          <>
-            <h6 className="fw-bold border-bottom pb-1" style={{ color: accentColor }}>
-              {t("calculate.mainRace")}
-            </h6>
-            <Table size="sm" className="mb-3">
-              <thead>
-                <tr>
-                  <th style={{ width: "20%", color: accentColor }}>Pos.</th>
-                  <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                  <th style={{ width: "20%", color: accentColor }} className="text-end">
-                    Pts
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><strong>1°</strong></td>
-                  <td><DriverWithLogo name={official.P1} /></td>
-                  <td className="text-end text-success">{POINTS.MAIN[1] * multiplier}</td>
-                </tr>
-                <tr>
-                  <td>2°</td>
-                  <td><DriverWithLogo name={official.P2} /></td>
-                  <td className="text-end text-success">{POINTS.MAIN[2] * multiplier}</td>
-                </tr>
-                <tr>
-                  <td>3°</td>
-                  <td><DriverWithLogo name={official.P3} /></td>
-                  <td className="text-end text-success">{POINTS.MAIN[3] * multiplier}</td>
-                </tr>
-              </tbody>
-            </Table>
-
-            {hasSprint && !cancelledSprint && (
-              <>
-                <h6 className="fw-bold border-bottom pb-1 mt-4" style={{ color: accentColor }}>
-                  {t("formations.sprint")}
-                </h6>
-                <Table size="sm" className="mb-4">
-                  <thead>
-                    <tr>
-                      <th style={{ width: "20%", color: accentColor }}>Pos.</th>
-                      <th style={{ color: accentColor }}>{t("formations.driver")}</th>
-                      <th style={{ width: "20%", color: accentColor }} className="text-end">
-                        Pts
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>SP1°</strong></td>
-                      <td><DriverWithLogo name={official.SP1} /></td>
-                      <td className="text-end text-success">{POINTS.SPRINT[1] * multiplier}</td>
-                    </tr>
-                    <tr>
-                      <td>SP2°</td>
-                      <td><DriverWithLogo name={official.SP2} /></td>
-                      <td className="text-end text-success">{POINTS.SPRINT[2] * multiplier}</td>
-                    </tr>
-                    <tr>
-                      <td>SP3°</td>
-                      <td><DriverWithLogo name={official.SP3} /></td>
-                      <td className="text-end text-success">{POINTS.SPRINT[3] * multiplier}</td>
-                    </tr>
-                  </tbody>
-                </Table>
-              </>
+          <Row className="g-4 mb-4">
+            <Col xs={12} lg={showSprintResults ? 6 : 12}>
+              <OfficialPodium
+                title={t("calculate.mainRace")}
+                accentColor={accentColor}
+                driverLabel={t("formations.driver")}
+                rows={[
+                  { pos: "1°", name: official.P1, pts: POINTS.MAIN[1] * multiplier },
+                  { pos: "2°", name: official.P2, pts: POINTS.MAIN[2] * multiplier },
+                  { pos: "3°", name: official.P3, pts: POINTS.MAIN[3] * multiplier },
+                ]}
+              />
+            </Col>
+            {showSprintResults && (
+              <Col xs={12} lg={6}>
+                <OfficialPodium
+                  title={t("formations.sprint")}
+                  accentColor={accentColor}
+                  driverLabel={t("formations.driver")}
+                  rows={[
+                    { pos: "SP1°", name: official.SP1, pts: POINTS.SPRINT[1] * multiplier },
+                    { pos: "SP2°", name: official.SP2, pts: POINTS.SPRINT[2] * multiplier },
+                    { pos: "SP3°", name: official.SP3, pts: POINTS.SPRINT[3] * multiplier },
+                  ]}
+                />
+              </Col>
             )}
-          </>
+          </Row>
         ) : showOfficialResults && !official ? (
           <Alert variant="warning">
             {t("history.officialResultsNotAvailable")}
@@ -347,7 +562,7 @@ function RaceHistoryCard({
         ) : (
           <>
             <h6 className="fw-bold mb-3" style={{ color: accentColor }}>
-              {showPoints && official ? t("history.lineupsAndScores") : t("history.lineups")}
+              {scored ? t("history.lineupsAndScores") : t("history.lineups")}
             </h6>
 
             {/* Visibility warning */}
@@ -366,310 +581,166 @@ function RaceHistoryCard({
 
             {/* Mobile layout - cards */}
             <div className="d-lg-none">
-              {visibleSubs.map((s, idx) => {
-                /* Points calculation */
-                const p1Pts = showPoints && official && s.mainP1 === official.P1 ? POINTS.MAIN[1] * multiplier : 0;
-                const p2Pts = showPoints && official && s.mainP2 === official.P2 ? POINTS.MAIN[2] * multiplier : 0;
-                const p3Pts = showPoints && official && s.mainP3 === official.P3 ? POINTS.MAIN[3] * multiplier : 0;
-
-                const j1Pts =
-                  showPoints && official && s.mainJolly &&
-                  [official.P1, official.P2, official.P3].includes(s.mainJolly)
-                    ? BONUS_MAIN * multiplier
-                    : 0;
-
-                const j2Pts =
-                  showPoints && official && s.mainJolly2 &&
-                  [official.P1, official.P2, official.P3].includes(s.mainJolly2)
-                    ? BONUS_MAIN * multiplier
-                    : 0;
-                const totalMain =
-                  showPoints && official
-                    ? s.pointsEarned !== undefined
-                      ? s.pointsEarned
-                      : p1Pts + p2Pts + p3Pts + j1Pts + j2Pts + (s.isLate ? (s.latePenalty || -3) : 0)
-                    : null;
-
-                /* Sprint points */
-                let sp1Pts = 0,
-                  sp2Pts = 0,
-                  sp3Pts = 0,
-                  jspPts = 0,
-                  totalSprint = null;
-
-                if (hasSprint) {
-                  if (showPoints && official) {
-                    sp1Pts = s.sprintP1 === official.SP1 ? POINTS.SPRINT[1] * multiplier : 0;
-                    sp2Pts = s.sprintP2 === official.SP2 ? POINTS.SPRINT[2] * multiplier : 0;
-                    sp3Pts = s.sprintP3 === official.SP3 ? POINTS.SPRINT[3] * multiplier : 0;
-                    jspPts =
-                      s.sprintJolly &&
-                      [official.SP1, official.SP2, official.SP3].includes(s.sprintJolly)
-                        ? POINTS.BONUS_JOLLY_SPRINT * multiplier
-                        : 0;
-                    totalSprint =
-                      s.pointsEarnedSprint !== undefined
-                        ? s.pointsEarnedSprint
-                        : sp1Pts + sp2Pts + sp3Pts + jspPts + (s.isLateSprint ? (s.latePenaltySprint || -3) : 0);
-                  }
-                }
-
-                const userName = s.user || rankingMap[s.id] || s.id;
-
-                const PickLine = ({ label, pick, pts }) => (
-                  <div className="d-flex justify-content-between align-items-center py-1 border-bottom" style={{ fontSize: "0.9rem" }}>
-                    <span className="text-muted">{label}</span>
-                    <div className="d-flex align-items-center gap-2">
-                      {pick ? (
-                        <>
-                          <DriverWithLogo name={pick} />
-                          {showPoints && official && (
-                            <Badge
-                              bg={pts > 0 ? "success" : pts < 0 ? "danger" : "secondary"}
-                              pill
-                              style={{ minWidth: 35 }}
-                            >
-                              {pts}
-                            </Badge>
-                          )}
-                        </>
-                      ) : (
-                        <span className="text-muted">—</span>
-                      )}
-                    </div>
-                  </div>
-                );
-
-                return (
-                  <Card key={s.id} className="mb-3" style={{ borderLeft: `3px solid ${accentColor}` }}>
-                    <Card.Body>
-                      <div className="d-flex justify-content-between align-items-center mb-2">
-                        <h6 className="mb-0" style={{ color: accentColor }}>
-                          {idx + 1}. {userName}
-                          {(s.isLate || s.isLateSprint) && (
-                            <Badge bg="warning" text="dark" className="ms-2">
-                              ⏰ {t("formations.lateSubmission")} (-3)
-                            </Badge>
-                          )}
-                        </h6>
-                        {showPoints && official && (
-                          <Badge
-                            bg={totalMain > 0 ? "success" : totalMain < 0 ? "danger" : "secondary"}
-                            style={{ fontSize: "1rem" }}
-                          >
-                            {totalMain} {t("common.points").toLowerCase()}
+              {rows.map(({ s, userName, mainMasked, sprintMasked, score }, idx) => (
+                <Card key={s.id} className="mb-3 score-user-card" style={{ borderLeft: `3px solid ${accentColor}` }}>
+                  <Card.Body>
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <h6 className="mb-0" style={{ color: accentColor }}>
+                        {idx + 1}. {userName}
+                        {(s.isLate || s.isLateSprint) && (
+                          <Badge bg="warning" text="dark" className="ms-2">
+                            ⏰ {t("formations.lateSubmission")} (-3)
                           </Badge>
                         )}
-                      </div>
+                      </h6>
+                    </div>
 
-                      {maskMain(s.id) ? (
+                    {scored && (
+                      <ScoreSummary
+                        items={[
+                          { key: "main", label: t("history.scoreMain"), value: score?.mainTotal, locked: mainMasked },
+                          ...(hasSprint
+                            ? [{ key: "sprint", label: t("formations.sprint"), value: score?.sprintTotal, locked: sprintMasked }]
+                            : []),
+                          { key: "total", label: t("history.total"), value: score?.total, locked: mainMasked || sprintMasked, isTotal: true },
+                        ]}
+                      />
+                    )}
+
+                    {mainMasked ? (
+                      <div className="text-center text-muted py-2">
+                        🔒 <em>{t("formations.mainPicksHidden")}</em>
+                      </div>
+                    ) : (
+                      <div className={hasSprint ? "mb-3" : undefined}>
+                        <div className="score-section-title">{t("calculate.mainRace")}</div>
+                        <PickLine label="P1" pick={s.mainP1} pts={score?.main.P1} showPts={scored} />
+                        <PickLine label="P2" pick={s.mainP2} pts={score?.main.P2} showPts={scored} />
+                        <PickLine label="P3" pick={s.mainP3} pts={score?.main.P3} showPts={scored} />
+                        <PickLine label="J1" pick={s.mainJolly} pts={score?.main.J1} showPts={scored} />
+                        {s.mainJolly2 && <PickLine label="J2" pick={s.mainJolly2} pts={score?.main.J2} showPts={scored} />}
+                      </div>
+                    )}
+
+                    {hasSprint && (
+                      sprintMasked ? (
                         <div className="text-center text-muted py-2">
-                          🔒 <em>{t("formations.mainPicksHidden")}</em>
+                          🔒 <em>{t("formations.sprintPicksHidden")}</em>
                         </div>
                       ) : (
-                        <div className="mb-2">
-                          <strong className="text-muted" style={{ fontSize: "0.85rem" }}>{t("formations.mainRace").toUpperCase()}</strong>
-                          <PickLine label="P1" pick={s.mainP1} pts={p1Pts} />
-                          <PickLine label="P2" pick={s.mainP2} pts={p2Pts} />
-                          <PickLine label="P3" pick={s.mainP3} pts={p3Pts} />
-                          <PickLine label="J1" pick={s.mainJolly} pts={j1Pts} />
-                          {s.mainJolly2 && <PickLine label="J2" pick={s.mainJolly2} pts={j2Pts} />}
+                        <div>
+                          <div className="score-section-title">{t("formations.sprint")}</div>
+                          <PickLine label="SP1" pick={s.sprintP1} pts={score?.sprint.SP1} showPts={sprintScored} />
+                          <PickLine label="SP2" pick={s.sprintP2} pts={score?.sprint.SP2} showPts={sprintScored} />
+                          <PickLine label="SP3" pick={s.sprintP3} pts={score?.sprint.SP3} showPts={sprintScored} />
+                          <PickLine label="J SP" pick={s.sprintJolly} pts={score?.sprint.J} showPts={sprintScored} />
                         </div>
-                      )}
-
-                      {hasSprint && (
-                        maskSprint(s.id) ? (
-                          <div className="text-center text-muted py-2">
-                            🔒 <em>{t("formations.sprintPicksHidden")}</em>
-                          </div>
-                        ) : (
-                          <div>
-                            <div className="d-flex justify-content-between align-items-center">
-                              <strong className="text-muted" style={{ fontSize: "0.85rem" }}>{t("formations.sprint").toUpperCase()}</strong>
-                              {showPoints && official && (
-                                <Badge
-                                  bg={totalSprint > 0 ? "success" : totalSprint < 0 ? "danger" : "secondary"}
-                                  style={{ fontSize: "0.9rem" }}
-                                >
-                                  {totalSprint} pts
-                                </Badge>
-                              )}
-                            </div>
-                            <PickLine label="SP1" pick={s.sprintP1} pts={sp1Pts} />
-                            <PickLine label="SP2" pick={s.sprintP2} pts={sp2Pts} />
-                            <PickLine label="SP3" pick={s.sprintP3} pts={sp3Pts} />
-                            <PickLine label="J SP" pick={s.sprintJolly} pts={jspPts} />
-                          </div>
-                        )
-                      )}
-                    </Card.Body>
-                  </Card>
-                );
-              })}
+                      )
+                    )}
+                  </Card.Body>
+                </Card>
+              ))}
             </div>
 
-            {/* Desktop layout - table */}
+            {/* Desktop layout - table grouped by main race / sprint / points */}
             <div className="d-none d-lg-block table-responsive">
-              <Table striped bordered hover size="sm" className="align-middle">
+              <Table hover size="sm" className="align-middle race-scores-table">
                 <thead>
                   <tr>
-                    <th style={{ width: 40, color: accentColor }} className="text-center">#</th>
-                    <th style={{ width: 120, color: accentColor }} className="text-center">{t("history.user")}</th>
-                    <th style={{ width: 150, color: accentColor }} className="text-center">P1</th>
-                    <th style={{ width: 150, color: accentColor }} className="text-center">P2</th>
-                    <th style={{ width: 150, color: accentColor }} className="text-center">P3</th>
-                    <th style={{ width: 150, color: accentColor }} className="text-center">
-                      J1
-                    </th>
-                    {hasJolly2 && (
-                      <th style={{ width: 150, color: accentColor }} className="text-center">
-                        J2
+                    <th rowSpan={2} style={{ width: 40, color: accentColor }} className="text-center">#</th>
+                    <th rowSpan={2} style={{ width: 120, color: accentColor }} className="text-center">{t("history.user")}</th>
+                    {scored && (
+                      <th colSpan={hasSprint ? 3 : 2} style={{ color: accentColor }} className="text-center score-group-start score-group-title">
+                        {t("common.points")}
                       </th>
                     )}
+                    <th colSpan={hasJolly2 ? 5 : 4} style={{ color: accentColor }} className="text-center score-group-start score-group-title">
+                      {t("calculate.mainRace")}
+                    </th>
                     {hasSprint && (
+                      <th colSpan={4} style={{ color: accentColor }} className="text-center score-group-start score-group-title">
+                        {t("formations.sprint")}
+                      </th>
+                    )}
+                  </tr>
+                  <tr>
+                    {scored && (
                       <>
-                        <th style={{ width: 150, color: accentColor }} className="text-center">SP1</th>
-                        <th style={{ width: 150, color: accentColor }} className="text-center">SP2</th>
-                        <th style={{ width: 150, color: accentColor }} className="text-center">SP3</th>
-                        <th style={{ width: 150, color: accentColor }} className="text-center">
-                          J SP
-                        </th>
+                        <th style={{ width: 70, color: accentColor }} className="text-center score-group-start">{t("history.scoreMain")}</th>
+                        {hasSprint && <th style={{ width: 70, color: accentColor }} className="text-center">{t("formations.sprint")}</th>}
+                        <th style={{ width: 80, color: accentColor }} className="text-center">{t("history.total")}</th>
                       </>
                     )}
-                    {showPoints && official && (
+                    <th style={{ color: accentColor }} className="text-center score-group-start">P1</th>
+                    <th style={{ color: accentColor }} className="text-center">P2</th>
+                    <th style={{ color: accentColor }} className="text-center">P3</th>
+                    <th style={{ color: accentColor }} className="text-center">J1</th>
+                    {hasJolly2 && <th style={{ color: accentColor }} className="text-center">J2</th>}
+                    {hasSprint && (
                       <>
-                        <th style={{ width: 80, color: accentColor }} className="text-center">{t("history.totalMain")}</th>
-                        {hasSprint && <th style={{ width: 80, color: accentColor }} className="text-center">{t("history.totalSprint")}</th>}
+                        <th style={{ color: accentColor }} className="text-center score-group-start">SP1</th>
+                        <th style={{ color: accentColor }} className="text-center">SP2</th>
+                        <th style={{ color: accentColor }} className="text-center">SP3</th>
+                        <th style={{ color: accentColor }} className="text-center">J SP</th>
                       </>
                     )}
                   </tr>
                 </thead>
 
                 <tbody>
-                  {visibleSubs.map((s, idx) => {
-                    const mainMasked = maskMain(s.id);
-                    const sprintMasked = maskSprint(s.id);
-
-                    /* Points calculation */
-                    const p1Pts = !mainMasked && showPoints && official && s.mainP1 === official.P1 ? POINTS.MAIN[1] * multiplier : 0;
-                    const p2Pts = !mainMasked && showPoints && official && s.mainP2 === official.P2 ? POINTS.MAIN[2] * multiplier : 0;
-                    const p3Pts = !mainMasked && showPoints && official && s.mainP3 === official.P3 ? POINTS.MAIN[3] * multiplier : 0;
-
-                    const j1Pts = !mainMasked && showPoints && official && s.mainJolly &&
-                      [official.P1, official.P2, official.P3].includes(s.mainJolly)
-                        ? BONUS_MAIN * multiplier
-                        : 0;
-
-                    const j2Pts = !mainMasked && showPoints && official && s.mainJolly2 &&
-                      [official.P1, official.P2, official.P3].includes(s.mainJolly2)
-                        ? BONUS_MAIN * multiplier
-                        : 0;
-
-
-                    const totalMain =
-                      !mainMasked && showPoints && official
-                        ? s.pointsEarned !== undefined
-                          ? s.pointsEarned
-                          : p1Pts + p2Pts + p3Pts + j1Pts + j2Pts
-                        : null;
-
-                    /* Sprint points */
-                    let sp1Pts = 0,
-                      sp2Pts = 0,
-                      sp3Pts = 0,
-                      jspPts = 0,
-                      totalSprint = null;
-
-                    if (hasSprint && !sprintMasked) {
-                      if (showPoints && official) {
-                        sp1Pts = s.sprintP1 === official.SP1 ? POINTS.SPRINT[1] * multiplier : 0;
-                        sp2Pts = s.sprintP2 === official.SP2 ? POINTS.SPRINT[2] * multiplier : 0;
-                        sp3Pts = s.sprintP3 === official.SP3 ? POINTS.SPRINT[3] * multiplier : 0;
-                        jspPts =
-                          s.sprintJolly &&
-                          [official.SP1, official.SP2, official.SP3].includes(s.sprintJolly)
-                            ? POINTS.BONUS_JOLLY_SPRINT * multiplier
-                            : 0;
-                        totalSprint =
-                          s.pointsEarnedSprint !== undefined
-                            ? s.pointsEarnedSprint
-                            : sp1Pts + sp2Pts + sp3Pts + jspPts;
-                      }
-                    }
-
-                    const userName = s.user || rankingMap[s.id] || s.id;
-
-                    /* Helper cell with points badge */
-                    const Cell = ({ pick, pts, masked }) => (
+                  {rows.map(({ s, userName, mainMasked, sprintMasked, score }, idx) => (
+                    <tr key={s.id}>
+                      <td className="text-center">{idx + 1}</td>
                       <td className="text-center">
-                        {masked ? (
-                          <span className="text-muted">🔒</span>
-                        ) : pick ? (
-                          <div className="d-flex align-items-center justify-content-center gap-2">
-                            <DriverWithLogo name={pick} short />
-                            {showPoints && official && (
-                              <Badge bg={pts > 0 ? "success" : pts < 0 ? "danger" : "secondary"} pill style={{ fontSize: "0.85rem" }}>
-                                {pts}
-                              </Badge>
-                            )}
-                          </div>
-                        ) : (
-                          "—"
+                        {userName}
+                        {((s.isLate && !mainMasked) || (s.isLateSprint && !sprintMasked)) && (
+                          <Badge bg="warning" text="dark" className="ms-1">
+                            ⏰ {t("formations.latePenalty")}
+                          </Badge>
                         )}
                       </td>
-                    );
 
-                    return (
-                      <tr key={s.id}>
-                        <td className="text-center">{idx + 1}</td>
-                        <td className="text-center">
-                          {userName}
-                          {((s.isLate && !mainMasked) || (s.isLateSprint && !sprintMasked)) && (
-                            <Badge bg="warning" text="dark" className="ms-1">
-                              ⏰ {t("formations.latePenalty")}
-                            </Badge>
-                          )}
-                        </td>
-
-                        {/* Main race picks */}
-                        <Cell pick={s.mainP1} pts={p1Pts} masked={mainMasked} />
-                        <Cell pick={s.mainP2} pts={p2Pts} masked={mainMasked} />
-                        <Cell pick={s.mainP3} pts={p3Pts} masked={mainMasked} />
-                        <Cell pick={s.mainJolly} pts={j1Pts} masked={mainMasked} />
-                        {hasJolly2 && <Cell pick={s.mainJolly2} pts={j2Pts} masked={mainMasked} />}
-
-                        {/* Sprint race picks */}
-                        {hasSprint && (
-                          <>
-                            <Cell pick={s.sprintP1} pts={sp1Pts} masked={sprintMasked} />
-                            <Cell pick={s.sprintP2} pts={sp2Pts} masked={sprintMasked} />
-                            <Cell pick={s.sprintP3} pts={sp3Pts} masked={sprintMasked} />
-                            <Cell pick={s.sprintJolly} pts={jspPts} masked={sprintMasked} />
-                          </>
-                        )}
-
-                        {/* Totals */}
-                        {showPoints && official && (
-                          <>
-                            <td
-                              className="text-center fw-bold"
-                              style={{ color: mainMasked ? "#6c757d" : totalMain > 0 ? "green" : totalMain < 0 ? "red" : "#6c757d" }}
-                            >
-                              {mainMasked ? "🔒" : totalMain}
+                      {/* Points: main race, sprint, total */}
+                      {scored && (
+                        <>
+                          <td className="text-center score-group-start">
+                            <ScoreValue value={score.mainTotal} locked={mainMasked} />
+                          </td>
+                          {hasSprint && (
+                            <td className="text-center">
+                              <ScoreValue value={score.sprintTotal} locked={sprintMasked} />
                             </td>
-                            {hasSprint && (
-                              <td
-                                className="text-center fw-bold"
-                                style={{ color: sprintMasked ? "#6c757d" : totalSprint > 0 ? "green" : totalSprint < 0 ? "red" : "#6c757d" }}
-                              >
-                                {sprintMasked ? "🔒" : totalSprint}
-                              </td>
+                          )}
+                          <td className="text-center">
+                            {mainMasked || sprintMasked ? (
+                              <span className="text-muted">🔒</span>
+                            ) : (
+                              <Badge bg={scoreTone(score.total)} pill className="score-total-badge">
+                                {score.total}
+                              </Badge>
                             )}
-                          </>
-                        )}
-                      </tr>
-                    );
-                  })}
+                          </td>
+                        </>
+                      )}
+
+                      {/* Main race picks */}
+                      <PickCell pick={s.mainP1} pts={score?.main.P1} masked={mainMasked} showPts={scored} groupStart />
+                      <PickCell pick={s.mainP2} pts={score?.main.P2} masked={mainMasked} showPts={scored} />
+                      <PickCell pick={s.mainP3} pts={score?.main.P3} masked={mainMasked} showPts={scored} />
+                      <PickCell pick={s.mainJolly} pts={score?.main.J1} masked={mainMasked} showPts={scored} />
+                      {hasJolly2 && <PickCell pick={s.mainJolly2} pts={score?.main.J2} masked={mainMasked} showPts={scored} />}
+
+                      {/* Sprint race picks */}
+                      {hasSprint && (
+                        <>
+                          <PickCell pick={s.sprintP1} pts={score?.sprint.SP1} masked={sprintMasked} showPts={sprintScored} groupStart />
+                          <PickCell pick={s.sprintP2} pts={score?.sprint.SP2} masked={sprintMasked} showPts={sprintScored} />
+                          <PickCell pick={s.sprintP3} pts={score?.sprint.SP3} masked={sprintMasked} showPts={sprintScored} />
+                          <PickCell pick={s.sprintJolly} pts={score?.sprint.J} masked={sprintMasked} showPts={sprintScored} />
+                        </>
+                      )}
+                    </tr>
+                  ))}
                 </tbody>
               </Table>
             </div>
