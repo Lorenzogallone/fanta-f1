@@ -8,20 +8,9 @@ import React, { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import { Row, Col, Form, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import {
-  collection,
-  getDocs,
-  query,
-  orderBy as firestoreOrderBy,
-  Timestamp,
-} from "firebase/firestore";
-import { db } from "../services/firebase";
-import {
-  fetchAllSessions,
-  fetchLastRaceSessions,
-  fetchDriverStandings,
-  fetchConstructorStandings,
-} from "../services/f1SessionsFetcher";
+import { Timestamp } from "firebase/firestore";
+import { fetchLastRaceSessions } from "../services/f1SessionsFetcher";
+import { peek, loadRaces, loadSessions, loadStandings, sessionsKey } from "../services/warmup";
 import { useF1Data } from "../hooks/useF1Data";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
@@ -96,6 +85,22 @@ TeamWithLogo.propTypes = {
   name: PropTypes.string,
 };
 
+/** The race closest to today: the one the page opens on */
+const closestRace = (list) => {
+  const now = Date.now();
+  return list.reduce((best, r) =>
+    !best || Math.abs(r.raceUTC.toMillis() - now) < Math.abs(best.raceUTC.toMillis() - now) ? r : best, null);
+};
+
+/** Default open panel: the latest session that has data */
+const defaultKeys = (sessionData) => {
+  if (sessionData.hasRace) return ["race"];
+  if (sessionData.hasSprint) return ["sprint"];
+  if (sessionData.hasSprintQualifying) return ["sprintQualifying"];
+  if (sessionData.hasQualifying) return ["qualifying"];
+  return [];
+};
+
 /**
  * RaceResults page component
  */
@@ -104,14 +109,35 @@ export default function RaceResults() {
   const { timezone } = useTimezone();
   const navigate = useNavigate();
 
-  const [races, setRaces] = useState([]);
-  const [selectedRaceId, setSelectedRaceId] = useState(null);
-  const [selectedRace, setSelectedRace] = useState(null);
-  const [sessions, setSessions] = useState(null);
-  const [loadingRaces, setLoadingRaces] = useState(true);
-  const [loadingSessions, setLoadingSessions] = useState(false);
+  // Calendar, the race closest to today and its sessions come from the warm-up
+  // cache when present: the page opens with its content at first render
+  const [initial] = useState(() => {
+    const list = [...(peek("races") || [])].reverse();
+    const race = closestRace(list);
+    const sessionData = race ? peek(sessionsKey(race)) : undefined;
+    return { list, race, sessionData };
+  });
+  const [races, setRaces] = useState(initial.list);
+  const [selectedRaceId, setSelectedRaceId] = useState(initial.race?.id ?? null);
+  const [selectedRace, setSelectedRace] = useState(initial.race);
+  const [sessions, setSessions] = useState(() => {
+    const { race, sessionData } = initial;
+    if (!race || !sessionData) return null;
+    const season = race.raceUTC.toDate().getFullYear();
+    return {
+      raceName: race.name,
+      date: race.raceUTC.toDate().toLocaleDateString(
+        currentLanguage === "it" ? "it-IT" : "en-US", { timeZone: timezone }),
+      season,
+      round: race.round,
+      noData: !(sessionData.hasQualifying || sessionData.hasSprint || sessionData.hasRace),
+      ...sessionData,
+    };
+  });
+  const [loadingRaces, setLoadingRaces] = useState(!initial.list.length);
+  const [loadingSessions, setLoadingSessions] = useState(Boolean(initial.race) && !initial.sessionData);
   const [error, setError] = useState(null);
-  const [activeKeys, setActiveKeys] = useState([]);
+  const [activeKeys, setActiveKeys] = useState(() => (initial.sessionData ? defaultKeys(initial.sessionData) : []));
   // { mainOpen: bool, sprintOpen: bool } — live-updated by interval
   const [submissionStatus, setSubmissionStatus] = useState({ mainOpen: false, sprintOpen: false });
 
@@ -287,18 +313,10 @@ export default function RaceResults() {
    */
   useEffect(() => {
     // Load races list first (fast)
-    const loadRaces = async () => {
+    const loadCalendar = async () => {
       try {
-        const snap = await getDocs(
-          query(
-            collection(db, "races"),
-            firestoreOrderBy("raceUTC", "desc")
-          )
-        );
-        const raceList = snap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }));
+        // Calendar from the warm-up cache (by date descending), refreshed in the background
+        const raceList = [...(await loadRaces(true))].reverse();
         setRaces(raceList);
         setLoadingRaces(false); // Show race selector immediately
 
@@ -320,14 +338,14 @@ export default function RaceResults() {
 
           setSelectedRaceId(selectedRaceToLoad.id);
           setSelectedRace(selectedRaceToLoad);
-          setLoadingSessions(true); // Start loading sessions
+          // Sessions prefetched by the warm-up open at once; otherwise show the loader
+          if (!peek(sessionsKey(selectedRaceToLoad))) setLoadingSessions(true);
 
-          // Load sessions for this race
           const season = selectedRaceToLoad.raceUTC.toDate().getFullYear();
           const round = selectedRaceToLoad.round;
 
           try {
-            const sessionData = await fetchAllSessions(season, round, selectedRaceToLoad.raceUTC, selectedRaceToLoad.officialRound);
+            const sessionData = await loadSessions(selectedRaceToLoad);
             const hasAnySession = sessionData.hasQualifying || sessionData.hasSprint || sessionData.hasRace;
 
             setSessions({
@@ -346,18 +364,7 @@ export default function RaceResults() {
               [cacheKey]: sessionData
             }));
 
-            // Set default expanded keys
-            const defaultKeys = [];
-            if (sessionData.hasRace) {
-              defaultKeys.push("race");
-            } else if (sessionData.hasSprint) {
-              defaultKeys.push("sprint");
-            } else if (sessionData.hasSprintQualifying) {
-              defaultKeys.push("sprintQualifying");
-            } else if (sessionData.hasQualifying) {
-              defaultKeys.push("qualifying");
-            }
-            setActiveKeys(defaultKeys);
+            setActiveKeys(defaultKeys(sessionData));
 
             // Check if user can still submit formation for the initial race
             setSubmissionStatus(computeSubmissionStatus(selectedRaceToLoad));
@@ -376,7 +383,7 @@ export default function RaceResults() {
       }
     };
 
-    loadRaces();
+    loadCalendar();
   }, [t]);
 
   /**
@@ -387,10 +394,7 @@ export default function RaceResults() {
       (async () => {
         setLoadingStandings(true);
         try {
-          const [drivers, constructors] = await Promise.all([
-            fetchDriverStandings(),
-            fetchConstructorStandings(),
-          ]);
+          const { drivers, constructors } = await loadStandings();
           setDriverStandings(drivers);
           setConstructorStandings(constructors);
         } catch (err) {
@@ -463,7 +467,7 @@ export default function RaceResults() {
       setLoadingSessions(true);
       setSessions(null);
 
-      const sessionData = await fetchAllSessions(season, round, race.raceUTC, race.officialRound);
+      const sessionData = await loadSessions(race);
 
       const hasAnySession = sessionData.hasQualifying || sessionData.hasSprint || sessionData.hasRace;
 

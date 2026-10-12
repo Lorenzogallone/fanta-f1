@@ -5,6 +5,7 @@
  */
 
 import { useEffect } from "react";
+import { isSplashActive } from "../utils/splash";
 
 /** What gets revealed: cards, race cards, admin rows, results and leaderboard rows */
 const SELECTOR = [
@@ -56,13 +57,20 @@ export function useScrollReveal() {
       });
     };
 
-    tag(document.body);
     const mo = new MutationObserver((muts) => {
       muts.forEach((m) => m.addedNodes.forEach((n) => n.nodeType === 1 && tag(n)));
     });
-    mo.observe(document.body, { childList: true, subtree: true });
+
+    // Under the splash nothing is tagged: the first page reveals as the splash fades
+    const start = () => {
+      tag(document.body);
+      mo.observe(document.body, { childList: true, subtree: true });
+    };
+    if (isSplashActive()) window.addEventListener("fantaf1:splash-hidden", start, { once: true });
+    else start();
 
     return () => {
+      window.removeEventListener("fantaf1:splash-hidden", start);
       mo.disconnect();
       io.disconnect();
     };

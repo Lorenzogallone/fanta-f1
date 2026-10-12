@@ -3,135 +3,117 @@
  * @description Real-time leaderboard component displaying current rankings with user avatars
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Card, Table, Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import { collection, query, orderBy, onSnapshot, getDocs } from "firebase/firestore";
-import { db } from "../services/firebase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
-import { hideSplash } from "../utils/splash";
 import UserAvatar from "../components/UserAvatar";
 import "../styles/cards.css";
 import "../styles/home.css";
 import LogoLoader from "../components/LogoLoader";
+import { useWarm } from "../hooks/useWarm";
+import { watchRanking, loadUsers, loadRaces } from "../services/warmup";
 
 const medals = ["🥇", "🥈", "🥉"];
 
+/**
+ * Rows with positions (ties share the position) and the change since the last
+ * scoring event: the end-of-season championship points once assigned, else
+ * the last calculated race. "Before" = current total minus that event.
+ * @param {Array<Object>} ranking - ranking docs by points descending
+ * @param {Object|null} raceOrder - raceId → chronological index
+ * @returns {Array<Object>} Rows
+ */
+function buildRows(ranking, raceOrder) {
+  const rawRows = ranking.map((d) => ({
+    userId: d.id,
+    name: d.name,
+    pts: d.puntiTotali || 0,
+    jolly: d.jolly ?? 0,
+    photoURL: d.photoURL || "",
+    pointsByRace: d.pointsByRace || {},
+    championshipPts: d.championshipPts || 0,
+  }));
+
+  const assignPositions = (arr) => {
+    let pos = 1;
+    const map = {};
+    arr.forEach((r, i) => {
+      if (i > 0 && r.sortPts < arr[i - 1].sortPts) pos = i + 1;
+      map[r.userId] = pos;
+    });
+    return map;
+  };
+
+  // Last calculated race by date. Until the race order is known no position
+  // changes are shown, rather than guessing from IDs.
+  const allRaceIds = new Set();
+  rawRows.forEach((r) => Object.keys(r.pointsByRace).forEach((id) => allRaceIds.add(id)));
+  let lastRaceId = null;
+  if (raceOrder && Object.keys(raceOrder).length > 0 && allRaceIds.size > 0) {
+    lastRaceId = [...allRaceIds].reduce((best, id) =>
+      (raceOrder[id] || 0) > (raceOrder[best] || 0) ? id : best
+    );
+  }
+
+  let currentPos = 1;
+  const rows = rawRows.map((row, index) => {
+    if (index > 0 && row.pts < rawRows[index - 1].pts) currentPos = index + 1;
+    return { ...row, position: currentPos };
+  });
+
+  const championshipAssigned = rawRows.some((r) => r.championshipPts !== 0);
+  const lastEventPts = (r) => {
+    if (championshipAssigned) return r.championshipPts;
+    const lastEntry = r.pointsByRace[lastRaceId];
+    return lastEntry ? (lastEntry.mainPts || 0) + (lastEntry.sprintPts || 0) : 0;
+  };
+  if (championshipAssigned || (lastRaceId && allRaceIds.size > 1)) {
+    const curr = rawRows.map((r) => ({ userId: r.userId, sortPts: r.pts })).sort((a, b) => b.sortPts - a.sortPts);
+    const prev = rawRows.map((r) => ({ userId: r.userId, sortPts: r.pts - lastEventPts(r) })).sort((a, b) => b.sortPts - a.sortPts);
+    const currPosMap = assignPositions(curr);
+    const prevPosMap = assignPositions(prev);
+    rows.forEach((r) => {
+      const c = currPosMap[r.userId];
+      const p = prevPosMap[r.userId];
+      if (c != null && p != null) r.posChange = p - c;
+    });
+  }
+  return rows;
+}
+
 export default function Leaderboard() {
-  const [rows, setRows] = useState([]);
-  const [userProfiles, setUserProfiles] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [raceOrder, setRaceOrder] = useState(null);
   const { isDark } = useTheme();
   const { t } = useLanguage();
 
-  // Load user profiles and race ordering in parallel
+  // Shared live ranking, profiles and calendar (warm-up cache, refreshed in the background)
+  const ranking = useWarm("ranking");
+  const users = useWarm("users");
+  const races = useWarm("races");
   useEffect(() => {
-    (async () => {
-      try {
-        const snap = await getDocs(collection(db, "users"));
-        const profiles = {};
-        snap.docs.forEach((d) => {
-          const data = d.data();
-          profiles[d.id] = { photoURL: data.photoURL || "", nickname: data.nickname || "" };
-        });
-        setUserProfiles(profiles);
-      } catch {
-        // Non-critical: avatars will fallback to initials
-      }
-    })();
-    // Fetch race date ordering once
-    getDocs(query(collection(db, "races"), orderBy("raceUTC", "asc")))
-      .then((snap) => {
-        const map = {};
-        snap.docs.forEach((d, i) => { map[d.id] = i + 1; });
-        setRaceOrder(map);
-      })
-      .catch(() => setRaceOrder({}));
+    watchRanking();
+    loadUsers(true);
+    loadRaces(true);
   }, []);
 
-  useEffect(() => {
-    const q = query(collection(db, "ranking"), orderBy("puntiTotali", "desc"));
-    const unsub = onSnapshot(q, (snap) => {
-      const rawRows = snap.docs.map((d) => ({
-        userId: d.id,
-        name: d.data().name,
-        pts: d.data().puntiTotali || 0,
-        jolly: d.data().jolly ?? 0,
-        photoURL: d.data().photoURL || "",
-        pointsByRace: d.data().pointsByRace || {},
-        championshipPts: d.data().championshipPts || 0,
-      }));
-
-      // Helper: assign positions with tie handling (competition ranking)
-      const assignPositions = (arr) => {
-        let pos = 1;
-        const map = {};
-        arr.forEach((r, i) => {
-          if (i > 0 && r.sortPts < arr[i - 1].sortPts) pos = i + 1;
-          map[r.userId] = pos;
-        });
-        return map;
-      };
-
-      // Find the last calculated race by date. Until the race order is known
-      // we don't show position changes at all, rather than guessing from IDs.
-      const allRaceIds = new Set();
-      rawRows.forEach((r) => Object.keys(r.pointsByRace).forEach((id) => allRaceIds.add(id)));
-      let lastRaceId = null;
-      if (raceOrder && Object.keys(raceOrder).length > 0 && allRaceIds.size > 0) {
-        lastRaceId = [...allRaceIds].reduce((best, id) =>
-          (raceOrder[id] || 0) > (raceOrder[best] || 0) ? id : best
-        );
-      }
-
-      // Current positions (from puntiTotali as displayed)
-      let currentPos = 1;
-      const rowsWithPositions = rawRows.map((row, index) => {
-        if (index > 0 && row.pts < rawRows[index - 1].pts) {
-          currentPos = index + 1;
-        }
-        return { ...row, position: currentPos };
-      });
-
-      // Position change since the last scoring event. The end-of-season
-      // championship points (driver/constructor lineups) are assigned after the
-      // last race, so once they exist they are the last event; otherwise it's
-      // the last calculated race. "Before" = current total minus that event.
-      const championshipAssigned = rawRows.some((r) => r.championshipPts !== 0);
-      const lastEventPts = (r) => {
-        if (championshipAssigned) return r.championshipPts;
-        const lastEntry = r.pointsByRace[lastRaceId];
-        return lastEntry ? (lastEntry.mainPts || 0) + (lastEntry.sprintPts || 0) : 0;
-      };
-      if (championshipAssigned || (lastRaceId && allRaceIds.size > 1)) {
-        const currRace = rawRows.map((r) => ({
-          userId: r.userId,
-          sortPts: r.pts,
-        })).sort((a, b) => b.sortPts - a.sortPts);
-
-        const prevRace = rawRows.map((r) => ({
-          userId: r.userId,
-          sortPts: r.pts - lastEventPts(r),
-        })).sort((a, b) => b.sortPts - a.sortPts);
-
-        const currPosMap = assignPositions(currRace);
-        const prevPosMap = assignPositions(prevRace);
-
-        rowsWithPositions.forEach((r) => {
-          const curr = currPosMap[r.userId];
-          const prev = prevPosMap[r.userId];
-          if (curr != null && prev != null) r.posChange = prev - curr;
-        });
-      }
-
-      setRows(rowsWithPositions);
-      setLoading(false);
-      hideSplash();
+  const userProfiles = useMemo(() => {
+    const profiles = {};
+    Object.entries(users || {}).forEach(([id, data]) => {
+      profiles[id] = { photoURL: data.photoURL || "", nickname: data.nickname || "" };
     });
-    return () => unsub();
-  }, [raceOrder]);
+    return profiles;
+  }, [users]);
+
+  const raceOrder = useMemo(() => {
+    if (!races) return null;
+    const map = {};
+    races.forEach((r, i) => { map[r.id] = i + 1; });
+    return map;
+  }, [races]);
+
+  const rows = useMemo(() => buildRows(ranking || [], raceOrder), [ranking, raceOrder]);
+  const loading = ranking == null;
 
   const leaderPts = rows[0]?.pts ?? 0;
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";

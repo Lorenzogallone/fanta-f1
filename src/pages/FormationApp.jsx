@@ -38,6 +38,7 @@ import "../styles/customSelect.css";
 import "../styles/cards.css";
 import "../styles/lineup.css";
 import LogoLoader from "../components/LogoLoader";
+import { peek } from "../services/warmup";
 
 /**
  * Formation management component for race and sprint submissions
@@ -57,11 +58,16 @@ export default function FormationApp() {
   const dateLocale = currentLanguage === "en" ? "en-GB" : "it-IT";
 
   // Main state
-  const [ranking, setRanking] = useState([]);
-  const [races, setRaces] = useState([]);
-  const [race, setRace] = useState(null);
+  // Upcoming races from the warm-up cache: the form is there at first render
+  const cachedFuture = useMemo(() => {
+    const now = Date.now();
+    return (peek("races") || []).filter((r) => r.raceUTC.toMillis() > now && !r.cancelledMain);
+  }, []);
+  const [ranking, setRanking] = useState(() => peek("ranking") || []);
+  const [races, setRaces] = useState(cachedFuture);
+  const [race, setRace] = useState(cachedFuture[0] || null);
 
-  const [busy, setBusy] = useState(true);
+  const [busy, setBusy] = useState(() => !peek("races"));
   const [permError, setPermError] = useState(false);
   const [flash, setFlash] = useState(null);
   const [inlineError, setInlineError] = useState(/** @type {Array<{it:string,en:string}>|null} */ (null));
@@ -78,7 +84,7 @@ export default function FormationApp() {
   const [existingJolly2, setExistingJolly2] = useState(false); // Track if existing submission had jolly2
   const [form, setForm] = useState({
     userId: user?.uid || "",
-    raceId: "",
+    raceId: cachedFuture[0]?.id || "",
     P1: null,
     P2: null,
     P3: null,

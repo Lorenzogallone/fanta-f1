@@ -6,27 +6,17 @@
  * Shows championship results when available
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import { useLocation } from "react-router-dom";
 import { Row, Col, Alert, Badge, Form } from "react-bootstrap";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  Timestamp,
-  doc,
-  getDoc,
-} from "firebase/firestore";
-import { db } from "../services/firebase";
 import RaceHistoryCard from "../components/RaceHistoryCard";
 import { POINTS } from "../constants/racing";
 import { useF1Data } from "../hooks/useF1Data";
 import { useLanguage } from "../hooks/useLanguage";
 import { useAuth } from "../hooks/useAuth";
-import { getChampionshipDeadlineMs } from "../utils/championshipDeadline";
+import { useWarm } from "../hooks/useWarm";
+import { loadRaces, loadChampionship, loadDeadlineMs, watchRanking } from "../services/warmup";
 import { error } from "../utils/logger";
 import "../styles/cards.css";
 import "../styles/results.css";
@@ -134,100 +124,60 @@ PointsBadge.propTypes = {
  */
 export default function History() {
   const location = useLocation();
-  const [pastRaces, setPastRaces] = useState([]);
-  const [selectedRaceId, setSelectedRaceId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [errorState, setErrorState] = useState(null);
-  const [championshipResults, setChampionshipResults] = useState(null);
-  const [championshipSubmissions, setChampionshipSubmissions] = useState([]);
-  const [loadingChampionship, setLoadingChampionship] = useState(true);
-  const [isLoadingRaceData, setIsLoadingRaceData] = useState(false);
-  const [activeTab, setActiveTab] = useState("races"); // "races" or "championship"
-  const [openChampId, setOpenChampId] = useState(null);
-  const [championshipDeadlineMs, setChampionshipDeadlineMs] = useState(null);
   const { t } = useLanguage();
   const { user } = useAuth();
 
-  /**
-   * Load past races from Firestore
-   */
-  useEffect(() => {
-    (async () => {
-      try {
-        const now = Timestamp.now();
-        const snap = await getDocs(
-          query(
-            collection(db, "races"),
-            where("raceUTC", "<", now),
-            orderBy("raceUTC", "desc")
-          )
-        );
-        const races = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setPastRaces(races);
+  const [errorState, setErrorState] = useState(null);
+  const [selectedRaceId, setSelectedRaceId] = useState(null);
+  const [isLoadingRaceData, setIsLoadingRaceData] = useState(false);
+  const [activeTab, setActiveTab] = useState("races"); // "races" or "championship"
+  const [openChampId, setOpenChampId] = useState(null);
 
-        // If navigated with a specific raceId, select that race; otherwise select most recent
-        if (races.length > 0) {
-          const targetRaceId = location.state?.raceId;
-          const matchedRace = targetRaceId && races.find(r => r.id === targetRaceId);
-          setSelectedRaceId(matchedRace ? matchedRace.id : races[0].id);
-        }
-      } catch (e) {
-        error(e);
-        setErrorState(t("errors.generic"));
-      } finally {
-        setLoading(false);
-      }
-    })();
+  // Calendar, championship results, ranking and deadline from the warm-up cache
+  // (present at first render after launch, refreshed in the background)
+  const races = useWarm("races");
+  const championship = useWarm("championship"); // undefined: not loaded yet; null: not calculated
+  const championshipResults = championship ?? null;
+  const ranking = useWarm("ranking");
+  const championshipDeadlineMs = useWarm("championshipDeadlineMs") ?? null;
+  const loading = races == null;
+  const loadingChampionship = championship === undefined || ranking == null;
+
+  useEffect(() => {
+    loadRaces(true).catch((e) => { error(e); setErrorState(t("errors.generic")); });
+    loadChampionship(true).catch((e) => error("Errore caricamento campionato:", e));
+    loadDeadlineMs(true).catch(error);
+    watchRanking();
   }, [t]);
 
-  /**
-   * Load championship results and submissions
-   */
+  // Past races, most recent first
+  const pastRaces = useMemo(() => {
+    const now = Date.now();
+    return (races || []).filter((r) => r.raceUTC.toMillis() < now).reverse();
+  }, [races]);
+
+  // If navigated with a specific raceId, select that race; otherwise the most recent
   useEffect(() => {
-    (async () => {
-      try {
-        // Load championship deadline
-        const deadlineMs = await getChampionshipDeadlineMs();
-        setChampionshipDeadlineMs(deadlineMs);
+    if (!pastRaces.length || selectedRaceId) return;
+    const targetRaceId = location.state?.raceId;
+    const matchedRace = targetRaceId && pastRaces.find((r) => r.id === targetRaceId);
+    setSelectedRaceId(matchedRace ? matchedRace.id : pastRaces[0].id);
+  }, [pastRaces, selectedRaceId, location.state?.raceId]);
 
-        // Load official championship results
-        const champDoc = await getDoc(doc(db, "championship", "results"));
-        if (champDoc.exists()) {
-          setChampionshipResults(champDoc.data());
-
-          // Load all submissions from ranking
-          const rankingSnap = await getDocs(collection(db, "ranking"));
-          const submissions = [];
-
-          rankingSnap.docs.forEach((userDoc) => {
-            const data = userDoc.data();
-            if (
-              data.championshipPiloti &&
-              Array.isArray(data.championshipPiloti) &&
-              data.championshipPiloti.length === 3
-            ) {
-              submissions.push({
-                userId: userDoc.id,
-                name: data.name,
-                piloti: data.championshipPiloti,
-                costruttori: data.championshipCostruttori || [],
-                points: data.championshipPts || 0,
-              });
-            }
-          });
-
-          // Sort by name
-          submissions.sort((a, b) => a.name.localeCompare(b.name, "it"));
-          setChampionshipSubmissions(submissions);
-        }
-      } catch (e) {
-        error("Errore caricamento campionato:", e);
-      } finally {
-        setLoadingChampionship(false);
-      }
-    })();
-  }, []);
-
+  // Championship lineups from the ranking (only complete ones), by name
+  const championshipSubmissions = useMemo(() => {
+    if (!championshipResults || !ranking) return [];
+    return ranking
+      .filter((data) => Array.isArray(data.championshipPiloti) && data.championshipPiloti.length === 3)
+      .map((data) => ({
+        userId: data.id,
+        name: data.name,
+        piloti: data.championshipPiloti,
+        costruttori: data.championshipCostruttori || [],
+        points: data.championshipPts || 0,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, "it"));
+  }, [championshipResults, ranking]);
 
   // Get selected race
   const selectedRace = pastRaces.find((r) => r.id === selectedRaceId);
