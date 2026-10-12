@@ -130,6 +130,55 @@ export const loadStandings = (refresh) =>
     return { drivers, constructors };
   }, refresh);
 
+const JOLPICA = "https://api.jolpi.ca/ergast/f1";
+const SESSION_KEYS = [
+  ["fp1", "FirstPractice"], ["fp2", "SecondPractice"], ["fp3", "ThirdPractice"],
+  ["sprintQualifying", "SprintQualifying"], ["sprint", "Sprint"], ["qualifying", "Qualifying"],
+];
+
+export const raceInfoKey = (race) => `raceInfo:${race.raceUTC.toDate().getFullYear()}-${race.officialRound || race.round}`;
+
+/**
+ * Weekend info from the official calendar: circuit, place and every session's
+ * start time (the race doc only has qualifying/sprint/race).
+ * @returns {Promise<{circuitId, circuitName, locality, country, wiki, sessions: Array<{key, at: number}>}|null>}
+ */
+export const loadRaceInfo = (race, refresh) =>
+  load(raceInfoKey(race), async () => {
+    const season = race.raceUTC.toDate().getFullYear();
+    const res = await fetch(`${JOLPICA}/${season}/${race.officialRound || race.round}.json`);
+    if (!res.ok) throw new Error(`calendar ${res.status}`);
+    const r = (await res.json()).MRData?.RaceTable?.Races?.[0];
+    if (!r) return null;
+    const sessions = SESSION_KEYS
+      .filter(([, api]) => r[api]?.date)
+      .map(([key, api]) => ({ key, at: Date.parse(`${r[api].date}T${r[api].time || "12:00:00Z"}`) }));
+    sessions.push({ key: "race", at: Date.parse(`${r.date}T${r.time || "12:00:00Z"}`) });
+    return {
+      circuitId: r.Circuit?.circuitId || null,
+      circuitName: r.Circuit?.circuitName || null,
+      locality: r.Circuit?.Location?.locality || null,
+      country: r.Circuit?.Location?.country || null,
+      wiki: r.url || null,
+      sessions: sessions.sort((a, b) => a.at - b.at),
+    };
+  }, refresh);
+
+/** Winner of the previous edition at this circuit (null if none) */
+export const loadPrevWinner = (circuitId, season, refresh) =>
+  load(`prevWinner:${circuitId}:${season}`, async () => {
+    const res = await fetch(`${JOLPICA}/${season}/circuits/${circuitId}/results/1.json`);
+    if (!res.ok) throw new Error(`results ${res.status}`);
+    const r = (await res.json()).MRData?.RaceTable?.Races?.[0];
+    const w = r?.Results?.[0];
+    if (!w) return null;
+    return {
+      season,
+      driver: `${w.Driver.givenName} ${w.Driver.familyName}`,
+      constructor: w.Constructor?.name || null,
+    };
+  }, refresh);
+
 export const participantKey = (userId, viewerUid) => `participant:${userId}:${viewerUid || ""}`;
 
 /**
@@ -277,6 +326,7 @@ export function warmUp(uid) {
       import("../pages/RaceResults"),
       import("../pages/ParticipantDetail"),
       import("../pages/Statistics"),
+      import("../pages/RaceDetail"),
     ];
     // Chunks are awaited at most briefly: the charts bundle shouldn't hold the splash
     chunks.forEach((c) => c.catch(() => {}));
@@ -302,6 +352,12 @@ export function warmUp(uid) {
     // Not awaited: the F1 pages open at once and fill in if these are still on the way
     const closest = closestRace(races, now);
     if (closest) loadSessions(closest).catch(error);
+    if (nextRace) {
+      loadRaceInfo(nextRace)
+        .then((info) => info?.circuitId && loadPrevWinner(info.circuitId, nextRace.raceUTC.toDate().getFullYear() - 1))
+        .catch(error);
+      if (nextRace !== closest) loadSessions(nextRace).catch(error);
+    }
     loadStandings().catch(error);
   })().catch((err) => {
     error("[warmup]", err);
