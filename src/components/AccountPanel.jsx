@@ -63,10 +63,10 @@ export default function AccountPanel() {
           {t("auth.logoutConfirm")}
         </Modal.Body>
         <Modal.Footer className="border-0 pt-0">
-          <Button variant="outline-secondary" size="sm" onClick={() => setConfirmLogout(false)}>
+          <Button variant="outline-secondary" onClick={() => setConfirmLogout(false)}>
             {t("common.cancel")}
           </Button>
-          <Button variant="danger" size="sm" onClick={handleLogout}>
+          <Button variant="danger" onClick={handleLogout}>
             {t("auth.logout")}
           </Button>
         </Modal.Footer>

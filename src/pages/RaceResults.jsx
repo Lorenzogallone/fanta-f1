@@ -4,13 +4,13 @@
  * Smart loading: shows only last race by default, expandable sessions
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import PropTypes from "prop-types";
 import { Row, Col, Form, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { Timestamp } from "firebase/firestore";
 import { fetchLastRaceSessions } from "../services/f1SessionsFetcher";
-import { peek, loadRaces, loadSessions, loadStandings, sessionsKey } from "../services/warmup";
+import { peek, subscribe, loadRaces, loadSessions, loadStandings, sessionsKey } from "../services/warmup";
 import { useF1Data } from "../hooks/useF1Data";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
@@ -31,7 +31,7 @@ function DriverWithLogo({ name }) {
   const team = getDriverTeam(name);
   const logoSrc = team ? getTeamLogo(team) : null;
   return (
-    <span className="d-flex align-items-center">
+    <span className="d-flex align-items-center" style={{ minWidth: 0 }}>
       {logoSrc && (
         <img
           src={logoSrc}
@@ -45,7 +45,7 @@ function DriverWithLogo({ name }) {
           }}
         />
       )}
-      {name}
+      <span className="text-truncate">{name}</span>
     </span>
   );
 }
@@ -143,7 +143,6 @@ export default function RaceResults() {
 
   // Lazy loading states for individual sessions
   const [loadingSessionKeys, setLoadingSessionKeys] = useState({});
-  const [sessionsCache, setSessionsCache] = useState({});
 
   // Standings states
   const [activeTab, setActiveTab] = useState("results");
@@ -184,6 +183,23 @@ export default function RaceResults() {
       sprintOpen: !race.cancelledSprint && sprintMs > now,
     };
   };
+
+  // The open race's sessions are refreshed in the background (results come in
+  // during the weekend); the cache update lands here
+  useEffect(() => {
+    if (!selectedRace) return undefined;
+    loadSessions(selectedRace, true).catch(() => {});
+    return subscribe(sessionsKey(selectedRace), (sessionData) => {
+      setSessions({
+        raceName: selectedRace.name,
+        date: selectedRace.raceUTC.toDate().toLocaleDateString(locale, { timeZone: timezone }),
+        season: selectedRace.raceUTC.toDate().getFullYear(),
+        round: selectedRace.round,
+        noData: !(sessionData.hasQualifying || sessionData.hasSprint || sessionData.hasRace),
+        ...sessionData,
+      });
+    });
+  }, [selectedRace, locale, timezone]);
 
   // Keep submission status live — re-check every 30 s so the card disappears
   // automatically when the qualifying deadline passes.
@@ -240,13 +256,16 @@ export default function RaceResults() {
       return null;
     }
 
-    // If data is not loaded yet, show spinner
-    if (!data || data.length === 0) {
+    // Not loaded yet: loader; loaded but empty: empty state
+    if (!data) {
       return (
         <div className="text-center py-4">
           <LogoLoader label={t("common.loading")} />
         </div>
       );
+    }
+    if (data.length === 0) {
+      return <div className="res-note">{t("raceResults.noResultsYet")}</div>;
     }
 
     // Render the results list
@@ -280,13 +299,16 @@ export default function RaceResults() {
       return null;
     }
 
-    // If data is not loaded yet, show spinner
-    if (!data || data.length === 0) {
+    // Not loaded yet: loader; loaded but empty: empty state
+    if (!data) {
       return (
         <div className="text-center py-4">
           <LogoLoader label={t("common.loading")} />
         </div>
       );
+    }
+    if (data.length === 0) {
+      return <div className="res-note">{t("raceResults.noResultsYet")}</div>;
     }
 
     // Render qualifying list with the Q session reached
@@ -357,13 +379,6 @@ export default function RaceResults() {
               ...sessionData,
             });
 
-            // Cache the sessions
-            const cacheKey = `${season}-${round}`;
-            setSessionsCache(prev => ({
-              ...prev,
-              [cacheKey]: sessionData
-            }));
-
             setActiveKeys(defaultKeys(sessionData));
 
             // Check if user can still submit formation for the initial race
@@ -372,6 +387,7 @@ export default function RaceResults() {
             setLoadingSessions(false); // Sessions loaded
           } catch (err) {
             logError("Error loading race sessions:", err);
+            setError(t("errors.generic"));
             setLoadingSessions(false); // Stop loading even on error
           }
         }
@@ -409,9 +425,11 @@ export default function RaceResults() {
   /**
    * Load sessions when race changes (with caching)
    */
+  const latestRaceId = useRef(null);
   const handleRaceChange = async (raceId) => {
     if (!raceId) return;
 
+    latestRaceId.current = raceId;
     setSelectedRaceId(raceId);
     setError(null);
     setSubmissionStatus({ mainOpen: false, sprintOpen: false });
@@ -427,12 +445,11 @@ export default function RaceResults() {
 
       const season = race.raceUTC.toDate().getFullYear();
       const round = race.round;
-      const cacheKey = `${season}-${round}`;
 
       // Check cache first
-      if (sessionsCache[cacheKey]) {
+      if (peek(sessionsKey(race))) {
         log(`Using cached sessions for ${season} R${round}`);
-        const sessionData = sessionsCache[cacheKey];
+        const sessionData = peek(sessionsKey(race));
         const hasAnySession = sessionData.hasQualifying || sessionData.hasSprint || sessionData.hasRace;
 
         setSessions({
@@ -468,14 +485,9 @@ export default function RaceResults() {
       setSessions(null);
 
       const sessionData = await loadSessions(race);
+      if (latestRaceId.current !== raceId) return; // another race was picked meanwhile
 
       const hasAnySession = sessionData.hasQualifying || sessionData.hasSprint || sessionData.hasRace;
-
-      // Cache the sessions
-      setSessionsCache(prev => ({
-        ...prev,
-        [cacheKey]: sessionData
-      }));
 
       setSessions({
         raceName: race.name,

@@ -475,7 +475,7 @@ export default function ProfilePage() {
               onChange={(e) => setTimezone(e.target.value)}
               style={{
                 maxWidth: 220,
-                fontSize: "0.82rem",
+                fontSize: "1rem", // 16px: below that iOS zooms the page on focus
                 borderColor: isDark ? "#6c757d" : "#dee2e6",
                 backgroundColor: isDark ? "var(--bg-tertiary)" : "#fff",
                 color: textColor,

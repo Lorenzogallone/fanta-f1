@@ -3,7 +3,7 @@
  * Unified component for displaying race history, lineups and scores.
  * Supports main race, sprint races, double jolly, double points, and dark/light themes.
  */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import PropTypes from "prop-types";
 import { Card, Table, Badge, Alert, Row, Col } from "react-bootstrap";
 import { collection, getDocs, onSnapshot } from "firebase/firestore";
@@ -15,6 +15,8 @@ import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
 import { error } from "../utils/logger";
 import "../styles/cards.css";
+import { useWarm } from "../hooks/useWarm";
+import { watchRanking } from "../services/warmup";
 import LogoLoader from "./LogoLoader";
 
 /**
@@ -254,7 +256,6 @@ function RaceHistoryCard({
   const [subs, setSubs] = useState([]);
   const [loadingSub, setLoadingSub] = useState(true);
   const [errorSub, setErrorSub] = useState(null);
-  const [rankingMap, setRankingMap] = useState({});
   const [openIds, setOpenIds] = useState(() => new Set(currentUserId ? [currentUserId] : []));
   const toggleOpen = (id) =>
     setOpenIds((prev) => {
@@ -263,21 +264,17 @@ function RaceHistoryCard({
       return next;
     });
 
-  // Load userId → name mapping from "ranking" collection
-  useEffect(() => {
-    (async () => {
-      try {
-        const snapRank = await getDocs(collection(db, "ranking"));
-        const map = {};
-        snapRank.docs.forEach((d) => {
-          map[d.id] = d.data().name;
-        });
-        setRankingMap(map);
-      } catch (e) {
-        error("Error loading ranking:", e);
-      }
-    })();
-  }, []);
+  // userId → name from the shared live ranking (no extra read per card)
+  const ranking = useWarm("ranking");
+  useEffect(() => { watchRanking(); }, []);
+  const rankingMap = useMemo(() => {
+    const map = {};
+    (ranking || []).forEach((d) => { map[d.id] = d.name; });
+    return map;
+  }, [ranking]);
+  // Read through a ref by the sort below, so a name update doesn't re-read the submissions
+  const rankingMapRef = useRef(rankingMap);
+  rankingMapRef.current = rankingMap;
 
   // Load submissions for this race (reactive via onSnapshot, or one-shot via getDocs)
   useEffect(() => {
@@ -295,8 +292,8 @@ function RaceHistoryCard({
         if (aTs !== null && bTs !== null) return aTs - bTs;
         if (aTs !== null) return -1;
         if (bTs !== null) return 1;
-        const aName = a.user || rankingMap[a.id] || a.id;
-        const bName = b.user || rankingMap[b.id] || b.id;
+        const aName = a.user || rankingMapRef.current[a.id] || a.id;
+        const bName = b.user || rankingMapRef.current[b.id] || b.id;
         return aName.localeCompare(bName, "it");
       });
       return list;
@@ -330,7 +327,7 @@ function RaceHistoryCard({
         setErrorSub(t("history.unableToLoadLineups"));
       })
       .finally(() => setLoadingSub(false));
-  }, [race.id, rankingMap, t, currentUserId, reactive]);
+  }, [race.id, t, currentUserId, reactive]);
 
   const hasJolly2 = subs.some((s) => s.mainJolly2);
   const official = race.officialResults ?? null;
@@ -464,7 +461,7 @@ function RaceHistoryCard({
         ) : errorSub ? (
           <Alert variant="danger">{errorSub}</Alert>
         ) : subs.length === 0 ? (
-          <Alert variant="info">{t("history.noLineupsYet")}</Alert>
+          <div className="rh-note">{t("history.noLineupsYet")}</div>
         ) : (
           <>
             <div className="rh-section-title mb-2">
@@ -473,16 +470,16 @@ function RaceHistoryCard({
 
             {/* Visibility warning */}
             {currentUserId && !canSeeOthersMain && (
-              <Alert variant="warning" className="mb-3">
+              <div className="rh-note mb-3">
                 🔒 {hasSprint && canSeeOthersSprint
                   ? t("formations.othersMainHidden")
                   : t("formations.othersHidden")}
                 {hiddenCount > 0 && !hasSprint && (
-                  <div className="mt-1 small">
+                  <div className="mt-1">
                     {t("formations.hiddenSubmissions", { count: subs.length - (subs.some(s => isOwn(s.id)) ? 1 : 0) })}
                   </div>
                 )}
-              </Alert>
+              </div>
             )}
 
             {/* Mobile layout - cards */}

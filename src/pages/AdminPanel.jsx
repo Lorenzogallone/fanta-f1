@@ -21,6 +21,7 @@ import DatabaseReset from "./admin/DatabaseReset";
 import "../styles/cards.css";
 import "../styles/admin.css";
 import LogoLoader from "../components/LogoLoader";
+import { loadRaces, loadChampionship, loadDeadlineMs, loadStatistics } from "../services/warmup";
 
 const SECTIONS = ["calculate", "participants", "formations", "championship", "calendar", "drivers", "database"];
 
@@ -42,6 +43,8 @@ export default function AdminPanel() {
    */
   const loadSharedData = async () => {
     setLoadingShared(true);
+    // Admin changes touch what the other pages read from the warm-up cache
+    loadRaces(true); loadChampionship(true); loadDeadlineMs(true); loadStatistics(true);
     try {
       const [partSnap, racesSnap, usersSnap] = await Promise.all([
         getDocs(collection(db, "ranking")),

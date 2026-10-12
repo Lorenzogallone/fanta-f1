@@ -36,6 +36,9 @@ function PickRow({ label, children }) {
   );
 }
 
+// On touch screens the pickers don't open the keyboard (it would cover the list)
+const COARSE_POINTER = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+
 export default function ChampionshipForm() {
   const { t, currentLanguage } = useLanguage();
   const { timezone } = useTimezone();
@@ -274,7 +277,9 @@ export default function ChampionshipForm() {
                         onChange={(sel) => onSel(sel, f)}
                         placeholder={t(driverLabels[f])}
                         classNamePrefix="react-select"
-                        isSearchable
+                        isSearchable={!COARSE_POINTER}
+                        menuPlacement="auto"
+                        blurInputOnSelect
                         isDisabled={pastDeadline}
                         aria-label={t(driverLabels[f])}
                         required

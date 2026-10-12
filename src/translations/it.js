@@ -35,6 +35,8 @@ export const it = {
 
   // Navigation
   nav: {
+    tabHistory: "Fanta",
+    tabResults: "Mondiale",
     home: "Home",
     leaderboard: "Classifica",
     formations: "Schiera",
@@ -737,6 +739,14 @@ export const it = {
 
   // Notifiche Push
   notifications: {
+    promptTitle: "Notifiche gara",
+    promptQuestion: "Vuoi ricevere un promemoria prima di ogni gara?",
+    prompt1h: "1 ora prima",
+    prompt5m: "5 minuti prima",
+    promptBeforeStart: "della partenza",
+    promptHint: "Puoi cambiare idea quando vuoi da Io → Profilo.",
+    promptNo: "No, grazie",
+    promptYes: "Attiva",
     title: "Notifiche",
     enable: "Attiva promemoria qualifiche",
     disable: "Disattiva notifiche",

@@ -56,7 +56,7 @@ export default function CompleteProfileModal() {
   };
 
   return (
-    <Modal show={needsProfile} backdrop="static" keyboard={false} centered>
+    <Modal show={needsProfile} backdrop="static" keyboard={false} centered scrollable>
       <Modal.Header>
         <Modal.Title>{t("auth.completeProfile")}</Modal.Title>
       </Modal.Header>
@@ -70,30 +70,32 @@ export default function CompleteProfileModal() {
         )}
 
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="profile-nickname">
             <Form.Label>{t("auth.nickname")} *</Form.Label>
             <Form.Control
               type="text"
+              autoComplete="nickname"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               placeholder={t("auth.nicknamePlaceholder")}
               required
-              autoFocus
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="profile-first-name">
             <Form.Label>{t("auth.firstName")} *</Form.Label>
             <Form.Control
               type="text"
+              autoComplete="given-name"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="profile-last-name">
             <Form.Label>{t("auth.lastName")} *</Form.Label>
             <Form.Control
               type="text"
+              autoComplete="family-name"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               required

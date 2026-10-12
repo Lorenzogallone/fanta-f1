@@ -35,6 +35,8 @@ export const en = {
 
   // Navigation
   nav: {
+    tabHistory: "Fanta",
+    tabResults: "F1",
     home: "Home",
     leaderboard: "Leaderboard",
     formations: "Lineup",
@@ -737,6 +739,14 @@ export const en = {
 
   // Push Notifications
   notifications: {
+    promptTitle: "Race notifications",
+    promptQuestion: "Want a reminder before every race?",
+    prompt1h: "1 hour before",
+    prompt5m: "5 minutes before",
+    promptBeforeStart: "the start",
+    promptHint: "You can change this any time from Me → Profile.",
+    promptNo: "No, thanks",
+    promptYes: "Enable",
     title: "Notifications",
     enable: "Enable qualifying reminders",
     disable: "Disable notifications",

@@ -54,6 +54,7 @@
 
 .fx-segmented .fx-segment {
   flex: 1 1 0;
+  min-height: 42px;
   padding: 0.45rem 0.5rem;
   border: 0;
   border-radius: 9px;
@@ -78,6 +79,7 @@
 }
 
 .fx-segmented.is-small .fx-segment {
+  min-height: 38px;
   padding: 0.3rem 0.5rem;
   font-size: 0.8rem;
 }

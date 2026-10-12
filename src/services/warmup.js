@@ -13,13 +13,15 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { getChampionshipDeadlineMs } from "../utils/championshipDeadline";
-import { getChampionshipStatistics } from "./statisticsService";
+import { computeChampionshipStatistics } from "./statisticsService";
+import { getRacePhoto } from "./racePhotoService";
 import { fetchAllSessions, fetchDriverStandings, fetchConstructorStandings } from "./f1SessionsFetcher";
 import { error } from "../utils/logger";
 
 const cache = new Map();
 const listeners = new Map();
 const inflight = new Map();
+const warmed = new Map();
 
 /** @returns {*} The cached value for key, or undefined */
 export const peek = (key) => cache.get(key);
@@ -93,7 +95,15 @@ export const loadChampionship = (refresh) =>
 
 export const loadDeadlineMs = (refresh) => load("championshipDeadlineMs", getChampionshipDeadlineMs, refresh);
 
-export const loadStatistics = (refresh) => load("statistics", getChampionshipStatistics, refresh);
+/** Championship statistics, computed from the cached calendar and ranking (no extra reads) */
+export const loadStatistics = (refresh) =>
+  load("statistics", async () => {
+    const [races, ranking] = await Promise.all([loadRaces(refresh), loadRankingOnce()]);
+    return computeChampionshipStatistics(races, ranking);
+  }, refresh);
+
+/** Admin photo override of a race (null if none); read once per session */
+export const loadRacePhoto = (raceId, refresh) => load(`racePhoto:${raceId}`, () => getRacePhoto(raceId), refresh);
 
 export const submissionKey = (raceId, uid) => `sub:${raceId}:${uid}`;
 
@@ -128,17 +138,16 @@ export const participantKey = (userId, viewerUid) => `participant:${userId}:${vi
  */
 export const loadParticipant = (userId, viewerUid, refresh) =>
   load(participantKey(userId, viewerUid), async () => {
-    const [rankingDoc, profileDoc, deadlineMs, allRanking, races] = await Promise.all([
-      getDoc(doc(db, "ranking", userId)),
-      getDoc(doc(db, "users", userId)),
-      loadDeadlineMs(refresh),
+    // Ranking entry, profile, deadline and calendar come from the cache when there
+    const [allRanking, users, deadlineMs, races] = await Promise.all([
       loadRankingOnce(),
-      loadRaces(refresh),
+      loadUsers(),
+      loadDeadlineMs(),
+      loadRaces(),
     ]);
-    if (!rankingDoc.exists()) return { notFound: true };
-
-    const userData = rankingDoc.data();
-    const profileData = profileDoc.exists() ? profileDoc.data() : null;
+    const userData = allRanking.find((r) => r.id === userId);
+    if (!userData) return { notFound: true };
+    const profileData = users[userId] || null;
     const championshipDeadlinePassed = deadlineMs ? Date.now() > deadlineMs : false;
     const showChampionship = championshipDeadlinePassed || viewerUid === userId;
 
@@ -201,6 +210,7 @@ export const loadParticipant = (userId, viewerUid, refresh) =>
 /* ---------- Live ranking (one shared listener) ---------- */
 
 let rankingUnsub = null;
+let rankingWaiters = [];
 
 /** Starts the shared ranking listener (by points descending); idempotent */
 export function watchRanking() {
@@ -208,7 +218,13 @@ export function watchRanking() {
   rankingUnsub = onSnapshot(
     query(collection(db, "ranking"), orderBy("puntiTotali", "desc")),
     (snap) => put("ranking", docs(snap)),
-    error
+    (err) => {
+      // Firestore ends the listener on an error (e.g. permission-denied after
+      // sign-out): forget it so the next watchRanking() starts a fresh one
+      error("[warmup] ranking listener:", err);
+      rankingUnsub = null;
+      rankingWaiters.splice(0).forEach(({ reject }) => reject(err));
+    }
   );
 }
 
@@ -216,14 +232,28 @@ export function watchRanking() {
 export function loadRankingOnce() {
   watchRanking();
   if (cache.has("ranking")) return Promise.resolve(cache.get("ranking"));
-  return new Promise((resolve) => {
-    const off = subscribe("ranking", (v) => { off(); resolve(v); });
+  return new Promise((resolve, reject) => {
+    const waiter = { reject };
+    rankingWaiters.push(waiter);
+    const off = subscribe("ranking", (v) => {
+      off();
+      rankingWaiters = rankingWaiters.filter((w) => w !== waiter);
+      resolve(v);
+    });
   });
 }
 
-/* ---------- Warm-up ---------- */
+/** Drops everything (on sign-out): the next user starts from a clean cache */
+export function resetWarmup() {
+  if (rankingUnsub) rankingUnsub();
+  rankingUnsub = null;
+  rankingWaiters.splice(0).forEach(({ reject }) => reject(new Error("warmup reset")));
+  cache.clear();
+  inflight.clear();
+  warmed.clear();
+}
 
-const warmed = new Map();
+/* ---------- Warm-up ---------- */
 
 /** Races closest to today: the one the Mondiale F1 page opens on */
 const closestRace = (races, now = Date.now()) =>
@@ -248,6 +278,9 @@ export function warmUp(uid) {
       import("../pages/ParticipantDetail"),
       import("../pages/Statistics"),
     ];
+    // Chunks are awaited at most briefly: the charts bundle shouldn't hold the splash
+    chunks.forEach((c) => c.catch(() => {}));
+    const chunksOrTimeout = Promise.race([Promise.all(chunks), new Promise((r) => setTimeout(r, 2500))]);
     const [races] = await Promise.all([
       loadRaces(),
       loadRankingOnce(),
@@ -255,13 +288,14 @@ export function warmUp(uid) {
       loadChampionship(),
       loadDeadlineMs(),
       loadStatistics(),
-      ...chunks,
+      chunksOrTimeout,
     ]);
 
     const now = Date.now();
     const nextRace = races.find((r) => !r.cancelledMain && r.raceUTC.toMillis() > now);
     await Promise.all([
       nextRace ? loadSubmission(nextRace.id, uid) : null,
+      nextRace ? loadRacePhoto(nextRace.id).catch(error) : null,
       loadParticipant(uid, uid),
     ]);
 

@@ -58,23 +58,38 @@ export async function getChampionshipStatistics() {
       getDocs(query(collection(db, "races"), orderBy("raceUTC", "asc"))),
       getDocs(collection(db, "ranking")),
     ]);
+    const toObj = (d) => ({ id: d.id, ...d.data() });
+    return computeChampionshipStatistics(racesSnap.docs.map(toObj), rankingSnap.docs.map(toObj));
+  } catch (err) {
+    error("Error fetching championship statistics:", err);
+    throw err;
+  }
+}
 
+/**
+ * Same as getChampionshipStatistics, from data already in hand (e.g. the warm-up cache).
+ * @param {Array<Object>} allRaces - race docs ({ id, ...data }) by date ascending
+ * @param {Array<Object>} ranking - ranking docs ({ id, ...data })
+ * @returns {Object} { races, playersData, playerNames }
+ */
+export function computeChampionshipStatistics(allRaces, ranking) {
+  {
     const playerNames = {};
     const pointsByPlayer = {};
     const championshipPts = {};
-    rankingSnap.docs.forEach((d) => {
-      playerNames[d.id] = d.data().name;
-      pointsByPlayer[d.id] = d.data().pointsByRace || {};
-      championshipPts[d.id] = d.data().championshipPts || 0;
+    ranking.forEach((d) => {
+      playerNames[d.id] = d.name;
+      pointsByPlayer[d.id] = d.pointsByRace || {};
+      championshipPts[d.id] = d.championshipPts || 0;
     });
     const userIds = Object.keys(playerNames);
 
     // Races that have been calculated for at least one player, in date order
-    const races = racesSnap.docs
-      .filter((d) => !d.data().cancelledMain)
+    const races = allRaces
+      .filter((d) => !d.cancelledMain)
       .filter((d) => userIds.some((uid) => pointsByPlayer[uid][d.id]))
-      .map((d) => {
-        const data = d.data();
+      .map((data) => {
+        const d = data;
         return {
           id: d.id,
           name: data.name,
@@ -133,8 +148,5 @@ export async function getChampionshipStatistics() {
     }
 
     return { races, playersData, playerNames };
-  } catch (err) {
-    error("Error fetching championship statistics:", err);
-    throw err;
   }
 }

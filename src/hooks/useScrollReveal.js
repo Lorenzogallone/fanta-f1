@@ -57,8 +57,15 @@ export function useScrollReveal() {
       });
     };
 
+    const untag = (root) => {
+      if (root.matches?.(".fx-reveal")) io.unobserve(root);
+      root.querySelectorAll?.(".fx-reveal").forEach((n) => io.unobserve(n));
+    };
     const mo = new MutationObserver((muts) => {
-      muts.forEach((m) => m.addedNodes.forEach((n) => n.nodeType === 1 && tag(n)));
+      muts.forEach((m) => {
+        m.addedNodes.forEach((n) => n.nodeType === 1 && tag(n));
+        m.removedNodes.forEach((n) => n.nodeType === 1 && untag(n));
+      });
     });
 
     // Under the splash nothing is tagged: the first page reveals as the splash fades
