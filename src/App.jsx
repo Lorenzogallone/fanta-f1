@@ -29,6 +29,7 @@ import CompleteProfileModal from "./components/CompleteProfileModal";
 import InstallPwaBanner from "./components/InstallPwaBanner";
 import NotificationPromptModal from "./components/NotificationPromptModal";
 import LogoLoader from "./components/LogoLoader";
+import Tour from "./components/Tour";
 import { hideSplash } from "./utils/splash";
 import { useScrollReveal } from "./hooks/useScrollReveal";
 import { useAuth } from "./hooks/useAuth";
@@ -180,6 +181,7 @@ export default function App() {
             <F1DataProvider>
             <Router>
               <Warmup />
+              <Tour />
               <Navigation />
               <ThemedToaster />
               <InstallPwaBanner />

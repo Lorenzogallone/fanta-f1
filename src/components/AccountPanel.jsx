@@ -50,6 +50,17 @@ export default function AccountPanel() {
         <AccountLink to="/profile" title={t("account.profileSettings")} text={t("account.profileSettingsHint")} />
         <AccountLink to="/statistics" title={t("nav.statistics")} text={t("home.statsHint")} />
         {isAdmin && <AccountLink to="/admin" title={t("nav.admin")} text={t("account.adminHint")} />}
+        <button
+          type="button"
+          className="account-row"
+          onClick={() => window.dispatchEvent(new Event("fantaf1:tour-start"))}
+        >
+          <span>
+            <span className="account-row-title">{t("tour.replay")}</span>
+            <span className="account-row-text">{t("tour.replayHint")}</span>
+          </span>
+          <span className="account-row-chevron" aria-hidden="true">›</span>
+        </button>
         <button type="button" className="account-row account-logout" onClick={() => setConfirmLogout(true)}>
           {t("auth.logout")}
         </button>
