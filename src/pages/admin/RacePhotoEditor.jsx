@@ -25,7 +25,7 @@ export default function RacePhotoEditor({ race }) {
   const { t } = useLanguage();
   const fileRef = useRef(null);
   const [override, setOverride] = useState(undefined); // undefined while loading
-  const [draft, setDraft] = useState(null); // { dataUrl, credit, pos } being edited
+  const [draft, setDraft] = useState(null); // { dataUrl, pos } being edited
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
 
@@ -71,7 +71,7 @@ export default function RacePhotoEditor({ race }) {
     setMessage(null);
     try {
       const dataUrl = await compressRacePhoto(file);
-      setDraft({ dataUrl, credit: "", pos: "center" });
+      setDraft({ dataUrl, pos: "center" });
     } catch (err) {
       setMessage({
         ok: false,
@@ -143,16 +143,6 @@ export default function RacePhotoEditor({ race }) {
               ))}
             </div>
           </Form.Group>
-          <Form.Group className="mb-2">
-            <Form.Label className="small mb-1">{t("admin.racePhotoCredit")}</Form.Label>
-            <Form.Control
-              size="sm"
-              value={draft.credit}
-              maxLength={120}
-              placeholder={t("admin.racePhotoCreditPlaceholder")}
-              onChange={(e) => setDraft({ ...draft, credit: e.target.value })}
-            />
-          </Form.Group>
           <div className="d-flex gap-2">
             <Button size="sm" variant="secondary" onClick={() => setDraft(null)} disabled={busy}>
               {t("common.cancel")}
@@ -171,7 +161,7 @@ export default function RacePhotoEditor({ race }) {
             <Button
               size="sm"
               variant="outline-secondary"
-              onClick={() => setDraft({ dataUrl: override.dataUrl, credit: override.credit || "", pos: override.pos || "center" })}
+              onClick={() => setDraft({ dataUrl: override.dataUrl, pos: override.pos || "center" })}
               disabled={busy}
             >
               {t("admin.racePhotoEdit")}

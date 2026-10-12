@@ -159,12 +159,6 @@ function NextRaceCard({ race, submission, now }) {
       >
         {actionLabel}
       </Link>
-
-      {photo?.credit && (
-        <a className="home-hero-credit" href={photo.href || undefined} target="_blank" rel="noopener noreferrer">
-          {t("home.photoCredit", { credit: photo.credit })}
-        </a>
-      )}
     </div>
   );
 }

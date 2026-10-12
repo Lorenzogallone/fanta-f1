@@ -791,11 +791,6 @@ export default function RaceResults() {
                         {race.qualiSprintUTC && <span className="res-pill">Sprint</span>}
                       </div>
                       <h2 className="res-race-name">{race.name}</h2>
-                      {photo?.credit && (
-                        <a className="res-photo-credit" href={photo.href || undefined} target="_blank" rel="noopener noreferrer">
-                          {t("home.photoCredit", { credit: photo.credit })}
-                        </a>
-                      )}
                     </div>
                     <div className="res-rows">
                       {weekendSessions(race).map((s, idx) => (

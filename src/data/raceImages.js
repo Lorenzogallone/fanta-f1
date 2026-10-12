@@ -1,8 +1,8 @@
 /**
  * @file raceImages.js
  * @description Circuit photo for each race (public/races/<key>.webp), shown behind the
- * next-race card. Photos come from Wikimedia Commons; the credit line is required by
- * their Creative Commons licenses, so keep `artist`/`license`/`file` accurate.
+ * next-race card. Photos come from Wikimedia Commons: `file`/`artist`/`license` record
+ * the source of each one (not shown in the app).
  */
 
 /**
@@ -39,7 +39,7 @@ const MATCHERS = [
   [/malesia|malaysia|sepang/, "sepang"],
 ];
 
-/** Photo credits: `file` is the Commons file name, optional `pos` the CSS background-position. */
+/** Photo sources: `file` is the Commons file name; optional `pos` is the CSS background-position. */
 export const RACE_PHOTOS = {
   albert_park: {
     file: "2014 Melbourne Grand Prix (From Eureka Skydeck).jpg",
@@ -186,7 +186,7 @@ export function circuitKey(race) {
 /**
  * Background photo for a race, or null when we have none.
  * @param {Object} race - Race document
- * @returns {{ src: string, pos: string, credit: string, href: string }|null}
+ * @returns {{ src: string, pos: string }|null}
  */
 export function raceImage(race) {
   const key = circuitKey(race);
@@ -195,7 +195,5 @@ export function raceImage(race) {
   return {
     src: `/races/${key}.webp`,
     pos: photo.pos || "center",
-    credit: `${photo.artist} · ${photo.license}`,
-    href: `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(photo.file.replace(/ /g, "_"))}`,
   };
 }
