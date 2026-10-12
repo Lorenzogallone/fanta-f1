@@ -187,7 +187,6 @@ export default function CalendarSyncPanel({ races, onDataChange }) {
     <div className="mb-4">
       <h6 className="mb-2 fw-bold" style={{ color: "var(--text-primary)" }}>{t("f1Sync.title")}</h6>
       <div className="admin-box">
-        <p className="small text-muted mb-2">{t("f1Sync.description")}</p>
         <p className="small mb-2">
           <span className="text-muted">{t("f1Sync.lastRun")}:</span>{" "}
           {status?.lastRunAt ? `${fmtTs(status.lastRunAt)} (${status.source === "manual" ? t("f1Sync.sourceManual") : t("f1Sync.sourceScheduled")})` : "—"}

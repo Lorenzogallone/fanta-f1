@@ -25,6 +25,7 @@ import Select from "react-select";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
 import { error } from "../utils/logger";
+import { useToast } from "../hooks/useToast";
 import "../styles/customSelect.css";
 import LogoLoader from "../components/LogoLoader";
 
@@ -88,6 +89,7 @@ const DriverWithLogo = ({ name }) => {
  */
 function CalculatePointsContent() {
   const { t } = useLanguage();
+  const toast = useToast();
   const { timezone } = useTimezone();
   // Results accept every active driver: a reserve can finish on the podium
   const { activeDrivers, activeTeams, getDriverTeam, getTeamLogo, getDriverLogo } = useF1Data();
@@ -105,6 +107,10 @@ function CalculatePointsContent() {
   const [loadingRace, setLoadingRace] = useState(true);
   const [savingRace,  setSavingRace]  = useState(false);
   const [msgRace,     setMsgRace]     = useState(null);
+  // Quiet one-line status under the race select (results source, race not finished...)
+  const [status,      setStatus]      = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [showChampPreview, setShowChampPreview] = useState(false);
   const [fetchingResults, setFetchingResults] = useState(false);
 
   const [formRace, setFormRace] = useState({
@@ -118,7 +124,7 @@ function CalculatePointsContent() {
   const [rankingMap,setRankingMap] = useState({});
   const [errSubs,   setErrSubs]    = useState(null);
   // Raw setters, wrapped by the auto-fetch effect to drop stale async results
-  const stateSetters = { setFormRace, setMsgRace, setFetchingResults, setSubs, setLoadingSubs, setErrSubs, setOfficial };
+  const stateSetters = { setFormRace, setStatus, setFetchingResults, setSubs, setLoadingSubs, setErrSubs, setOfficial };
 
   // Championship state
   const [formChamp,setFormChamp]   = useState({
@@ -221,7 +227,7 @@ useEffect(() => {
   let cancelled = false;
   const guard = (fn) => (...args) => { if (!cancelled) fn(...args); };
   const setFormRace = guard(stateSetters.setFormRace);
-  const setMsgRace = guard(stateSetters.setMsgRace);
+  const setStatus = guard(stateSetters.setStatus);
   const setFetchingResults = guard(stateSetters.setFetchingResults);
   const setSubs = guard(stateSetters.setSubs);
   const setLoadingSubs = guard(stateSetters.setLoadingSubs);
@@ -230,7 +236,7 @@ useEffect(() => {
 
   (async () => {
     setFetchingResults(true);
-    setMsgRace(null);
+    setStatus(null);
 
     // Read race document from database
     const snap = await getDoc(doc(db, "races", race.id));
@@ -266,7 +272,7 @@ useEffect(() => {
           P1:null, P2:null, P3:null,
           SP1:null, SP2:null, SP3:null
         });
-        setMsgRace({
+        setStatus({
           variant:"info",
           msg: t("calculate.raceNotFinished")
         });
@@ -278,7 +284,7 @@ useEffect(() => {
           const season = raceDate.getFullYear();
           const round = race.round;
 
-          setMsgRace({variant:"info", msg: t("calculate.fetchingFromAPI", { race: race.name }).replace("{race}", race.name)});
+          setStatus({variant:"info", msg: t("calculate.fetchingFromAPI", { race: race.name }).replace("{race}", race.name)});
 
           const apiResults = await fetchRaceResults(season, round, raceDate, race.officialRound, weekendHasSprint);
 
@@ -293,7 +299,7 @@ useEffect(() => {
               SP2: sprint ? toOpt(sprint.SP2) : null,
               SP3: sprint ? toOpt(sprint.SP3) : null,
             });
-            setMsgRace(
+            setStatus(
               !main
                 ? { variant: "info", msg: t("calculate.apiSprintOnly") }
                 : weekendHasSprint && !sprint
@@ -306,7 +312,7 @@ useEffect(() => {
               P1:null, P2:null, P3:null,
               SP1:null, SP2:null, SP3:null
             });
-            setMsgRace({
+            setStatus({
               variant:"warning",
               msg: t("calculate.apiNoResults")
             });
@@ -317,7 +323,7 @@ useEffect(() => {
             P1:null, P2:null, P3:null,
             SP1:null, SP2:null, SP3:null
           });
-          setMsgRace({
+          setStatus({
             variant:"warning",
             msg: t("calculate.apiError")
           });
@@ -357,7 +363,8 @@ useEffect(() => {
       });
       // Save ranking snapshot after calculation
       await saveRankingSnapshot("race", race.id);
-      setMsgRace({variant:"success",msg:res});
+      toast.success(res);
+      setShowPreview(true);
       setFormRace({P1:null,P2:null,P3:null,SP1:null,SP2:null,SP3:null});
       /* refresh preview — update race object so RaceHistoryCard sees officialResults */
       const rDoc = await getDoc(doc(db,"races",race.id));
@@ -405,7 +412,8 @@ useEffect(() => {
       });
       // Save ranking snapshot after championship calculation
       await saveRankingSnapshot("championship", null);
-      setMsgChamp({variant:"success",msg:res});
+      toast.success(res);
+      setShowChampPreview(true);
       setChampRefresh(Date.now());
 
       // Create automatic backup after successful calculation (non-blocking)
@@ -529,6 +537,9 @@ useEffect(() => {
                         ))}
                       </Form.Select>
                     </Form.Group>
+                    {status && (
+                      <div className={`calc-status is-${status.variant}`} role="status">{status.msg}</div>
+                    )}
 
                     {/* main podium */}
                     <div className="calc-section-title">{t("calculate.mainRace")}</div>
@@ -579,7 +590,14 @@ useEffect(() => {
               </Col>
               {/* ---------- PREVIEW ---------- */}
               <Col xs={12} lg={10} ref={previewRef}>
-                {race && <RaceHistoryCard race={race} showPoints={true} reactive={true} />}
+                {race && (
+                  <>
+                    <button type="button" className="calc-preview-toggle mb-3" onClick={() => setShowPreview(v => !v)}>
+                      {showPreview ? t("calculate.hidePreview") : t("calculate.showPreview")}
+                    </button>
+                    {showPreview && <RaceHistoryCard race={race} showPoints={true} reactive={true} />}
+                  </>
+                )}
               </Col>
             </Row>
           </Tab.Pane>
@@ -596,9 +614,7 @@ useEffect(() => {
                   </div>
                   <Card.Body>
                     {!championshipOpen && (
-                      <Alert variant="warning" className="text-center">
-                        {t("calculate.championshipAvailableAfterEnd")}
-                      </Alert>
+                      <div className="calc-status is-warning" role="status">{t("calculate.championshipAvailableAfterEnd")}</div>
                     )}
                     {msgChamp && (
                       <Alert variant={msgChamp.variant} onClose={()=>setMsgChamp(null)} dismissible>
@@ -650,7 +666,10 @@ useEffect(() => {
               </Col>
               {/* ---------- LINEUPS ---------- */}
               <Col xs={12} lg={10}>
-                <ChampionshipSubmissions refresh={champRefresh} showPoints={true} />
+                <button type="button" className="calc-preview-toggle mb-3" onClick={() => setShowChampPreview(v => !v)}>
+                  {showChampPreview ? t("calculate.hidePreview") : t("calculate.showPreview")}
+                </button>
+                {showChampPreview && <ChampionshipSubmissions refresh={champRefresh} showPoints={true} />}
               </Col>
             </Row>
           </Tab.Pane>

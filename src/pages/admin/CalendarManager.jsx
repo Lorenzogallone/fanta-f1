@@ -33,6 +33,7 @@ import "../../styles/racephoto.css";
 import { saveRoundOrder } from "../../services/calendarSyncService";
 import { makeSlug } from "../../../functions/shared/f1Sync.mjs";
 import LogoLoader from "../../components/LogoLoader";
+import Disclosure from "../../components/Disclosure";
 
 /** Seconds of a Timestamp/Date (null if missing), to detect edited fields */
 const toSec = (v) => {
@@ -347,11 +348,10 @@ export default function CalendarManager({ races, loading, onDataChange }) {
 
   return (
     <>
-      {/* ── Sync with the official calendar ── */}
-      <CalendarSyncPanel races={races} onDataChange={onDataChange} />
+      {/* ── Tools (sync with the official calendar, ICS import): folded until needed ── */}
+      <Disclosure title={t("admin.tools")} hint={t("admin.toolsHint")}>
+        <CalendarSyncPanel races={races} onDataChange={onDataChange} />
 
-      {/* ── ICS Import ── */}
-      <div className="mb-4">
         <h6 className="mb-2 fw-bold" style={{ color: "var(--text-primary)" }}>
           {t("admin.importICS")}
         </h6>
@@ -375,7 +375,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
             </Button>
           )}
         </div>
-      </div>
+      </Disclosure>
 
       {/* ── Race List ── */}
       <div className="d-flex justify-content-between align-items-center mb-2">

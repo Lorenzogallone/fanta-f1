@@ -409,3 +409,108 @@
 .admin-page .admin-section .table thead {
   background-color: transparent;
 }
+
+/* ── Folded tool sections (Disclosure) ── */
+.admin-page .fx-disclosure {
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background-color: var(--bg-primary);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .admin-page .fx-disclosure {
+  background-color: var(--bg-secondary);
+}
+
+.admin-page .fx-disclosure-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: var(--text-primary);
+}
+
+.admin-page .fx-disclosure-title {
+  flex: 1 1 auto;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.admin-page .fx-disclosure-hint {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.admin-page .fx-disclosure-chevron {
+  color: var(--text-secondary);
+  line-height: 0;
+}
+
+.admin-page .fx-disclosure-content {
+  padding: 0 1rem 1rem;
+  font-size: 0.9rem;
+}
+
+/* Boxes inside a folded section sit flat */
+.admin-page .fx-disclosure-content .admin-box {
+  border: 0;
+  padding: 0;
+  background: none;
+}
+
+/* Quiet status line (Calcola punti): replaces the load-time alerts */
+.admin-page .calc-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: -0.5rem 0 1rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+.admin-page .calc-status::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-top: 0.3rem;
+  border-radius: 50%;
+  background-color: var(--text-muted);
+}
+
+.admin-page .calc-status.is-success::before { background-color: #198754; }
+.admin-page .calc-status.is-warning::before { background-color: #e8590c; }
+.admin-page .calc-status.is-danger::before { background-color: var(--accent-red); }
+.admin-page .calc-status.is-info::before {
+  background-color: var(--accent-red);
+  animation: fx-heartbeat 1.2s ease-in-out infinite;
+}
+
+/* Lineups preview toggle under the calculation form */
+.admin-page .calc-preview-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
+  background: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.admin-page .calc-preview-toggle:active {
+  transform: scale(0.98);
+}

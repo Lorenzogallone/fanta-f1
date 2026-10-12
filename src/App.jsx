@@ -30,6 +30,7 @@ import InstallPwaBanner from "./components/InstallPwaBanner";
 import NotificationPromptModal from "./components/NotificationPromptModal";
 import LogoLoader from "./components/LogoLoader";
 import { hideSplash } from "./utils/splash";
+import { useScrollReveal } from "./hooks/useScrollReveal";
 import "./styles/theme.css";
 import "./styles/motion.css";
 
@@ -60,6 +61,7 @@ function ThemedToaster() {
   return (
     <Toaster
       toastOptions={{
+        className: "fx-toast",
         style: {
           background: isDark ? '#2d2d2d' : '#ffffff',
           color: isDark ? '#f8f9fa' : '#212529',
@@ -84,26 +86,61 @@ function ThemedToaster() {
   );
 }
 
+/** Bottom tab order: decides which way a page slides in */
+const TAB_ORDER = [
+  ["/", "/leaderboard", "/classifica"],
+  ["/history", "/storico"],
+  ["/lineup", "/schiera", "/formations"],
+  ["/results", "/risultati"],
+  ["/participant", "/partecipante", "/profile", "/profilo"],
+];
+const tabIndex = (pathname) =>
+  TAB_ORDER.findIndex((paths) => paths.some((p) => (p === "/" ? pathname === "/" : pathname.startsWith(p))));
+
 /**
- * Fades the page in on every route change, without remounting it
- * (pages keep their state, e.g. Home on "/" and "/leaderboard")
+ * Animates the page in on every route change, without remounting it
+ * (pages keep their state, e.g. Home on "/" and "/leaderboard").
+ * Between tabs the page slides from the side it sits on; other pages rise in.
  */
 function PageTransition({ children }) {
   const { pathname } = useLocation();
   const ref = useRef(null);
+  const prev = useRef(pathname);
 
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    el.classList.remove("is-entering");
+    const from = tabIndex(prev.current);
+    const to = tabIndex(pathname);
+    const dir =
+      from === -1 || to === -1 || from === to ? "from-below" : to > from ? "from-right" : "from-left";
+    prev.current = pathname;
+
+    el.classList.remove("is-entering", "from-right", "from-left", "from-below");
     void el.offsetWidth; // restart the CSS animation
-    el.classList.add("is-entering");
+    el.classList.add("is-entering", dir);
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, [pathname]);
 
   return <div ref={ref} className="fx-page">{children}</div>;
 }
 
+/** Marks <html data-scrolled> so the top bar turns to glass once content scrolls under it */
+function useScrolledFlag() {
+  useEffect(() => {
+    const onScroll = () => {
+      document.documentElement.setAttribute("data-scrolled", window.scrollY > 8 ? "true" : "false");
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+}
+
 export default function App() {
+  useScrollReveal();
+  useScrolledFlag();
+
   useEffect(() => {
     // Fallback: forcefully hide the splash screen after 3.5 seconds
     // to ensure users are never permanently blocked if a page fails to hide it

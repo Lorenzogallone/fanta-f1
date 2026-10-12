@@ -22,7 +22,6 @@ export default function Navigation() {
   const { user, isAdmin } = useAuth();
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
-  const bgColor = isDark ? "#1a1a1a" : "#ffffff";
 
   // Don't show nav on login page
   if (location.pathname === "/login") return null;
@@ -45,10 +44,7 @@ export default function Navigation() {
   return (
     <Navbar
       className="navbar-modern sticky-top"
-      style={{
-        backgroundColor: bgColor,
-        borderBottom: `2px solid ${accentColor}`,
-      }}
+      style={{ borderBottom: `2px solid ${accentColor}` }}
     >
       <Container fluid className="px-3 px-lg-4 position-relative">
         {/* Logo: centered on mobile, left on desktop */}

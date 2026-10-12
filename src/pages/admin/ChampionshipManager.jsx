@@ -22,6 +22,7 @@ import Select from "react-select";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../hooks/useLanguage";
 import { useTimezone } from "../../hooks/useTimezone";
+import Disclosure from "../../components/Disclosure";
 import { getChampionshipDeadlineAutoMs } from "../../utils/championshipDeadline";
 import { error as logError } from "../../utils/logger";
 import "../../styles/customSelect.css";
@@ -283,8 +284,8 @@ export default function ChampionshipManager({ participants, loading, onDataChang
                 </p>
               )}
 
+              <Disclosure title={t("admin.editDeadline")} className="mb-0">
               <Form onSubmit={(e) => { e.preventDefault(); setShowSaveDeadlineConfirm(true); }}>
-                <Form.Label className="mb-1 small fw-semibold text-muted">{t("admin.editDeadline")}</Form.Label>
                 <div className="d-flex align-items-center gap-2 flex-wrap">
                   <Form.Control
                     type="datetime-local" size="sm"
@@ -307,6 +308,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
                   )}
                 </div>
               </Form>
+              </Disclosure>
             </>
           )}
         </div>
