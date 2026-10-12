@@ -40,7 +40,7 @@ export function useScrollReveal() {
           el.style.setProperty("--fx-i", String(Math.min(i++, 8)));
           el.classList.add("is-in");
           // After the transition the delay is dropped, so taps feel immediate
-          setTimeout(() => el.classList.add("is-done"), 900);
+          setTimeout(() => el.classList.add("is-done"), 1400);
           io.unobserve(el);
         });
       },
