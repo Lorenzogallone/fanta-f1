@@ -234,7 +234,7 @@ export default function RaceDetail() {
                 <span className="race-lineup-label">{l.label}</span>
                 <span className="race-lineup-when">
                   {l.open
-                    ? `${t("raceDetail.deadline")} ${t("raceDetail.startsIn")} ${countdown(l.at - now, t("home.dayUnit"))}`
+                    ? `${t("raceDetail.deadline")} ${countdown(l.at - now, t("home.dayUnit"))}`
                     : t("raceDetail.closed")}
                 </span>
                 <span className="race-lineup-state">
