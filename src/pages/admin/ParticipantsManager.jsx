@@ -6,15 +6,7 @@
 
 import React, { useState } from "react";
 import PropTypes from "prop-types";
-import {
-  Button,
-  Form,
-  Alert,
-  Spinner,
-  Badge,
-  Modal,
-  ListGroup,
-} from "react-bootstrap";
+import { Button, Form, Alert, Badge, Modal, ListGroup } from "react-bootstrap";
 import {
   doc,
   setDoc,
@@ -26,6 +18,7 @@ import { db, auth } from "../../services/firebase";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../hooks/useLanguage";
 import { error } from "../../utils/logger";
+import LogoLoader from "../../components/LogoLoader";
 
 export default function ParticipantsManager({ participants, loading, onDataChange }) {
   const { t } = useLanguage();
@@ -157,7 +150,7 @@ export default function ParticipantsManager({ participants, loading, onDataChang
   };
 
   if (loading) {
-    return <div className="text-center py-5"><Spinner animation="border" /></div>;
+    return <div className="text-center py-5"><LogoLoader /></div>;
   }
 
   return (
@@ -267,7 +260,7 @@ export default function ParticipantsManager({ participants, loading, onDataChang
               {t("common.cancel")}
             </Button>
             <Button variant="danger" size="sm" type="submit" disabled={saving}>
-              {saving ? <Spinner animation="border" size="sm" /> : t("admin.addParticipant")}
+              {saving ? <LogoLoader size="sm" /> : t("admin.addParticipant")}
             </Button>
           </Modal.Footer>
         </Form>
@@ -375,7 +368,7 @@ export default function ParticipantsManager({ participants, loading, onDataChang
               {t("common.cancel")}
             </Button>
             <Button variant="danger" size="sm" type="submit" disabled={saving}>
-              {saving ? <Spinner animation="border" size="sm" /> : t("common.update")}
+              {saving ? <LogoLoader size="sm" /> : t("common.update")}
             </Button>
           </Modal.Footer>
         </Form>

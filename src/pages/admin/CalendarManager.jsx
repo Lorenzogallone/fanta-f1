@@ -9,16 +9,7 @@
 
 import React, { useState, useMemo } from "react";
 import PropTypes from "prop-types";
-import {
-  Button,
-  Form,
-  Alert,
-  Spinner,
-  Badge,
-  Modal,
-  ListGroup,
-  Table,
-} from "react-bootstrap";
+import { Button, Form, Alert, Badge, Modal, ListGroup, Table } from "react-bootstrap";
 import {
   doc,
   updateDoc,
@@ -41,6 +32,7 @@ import { resetRacePhoto } from "../../services/racePhotoService";
 import "../../styles/racephoto.css";
 import { saveRoundOrder } from "../../services/calendarSyncService";
 import { makeSlug } from "../../../functions/shared/f1Sync.mjs";
+import LogoLoader from "../../components/LogoLoader";
 
 /** Seconds of a Timestamp/Date (null if missing), to detect edited fields */
 const toSec = (v) => {
@@ -350,7 +342,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
   };
 
   if (loading && races.length === 0) {
-    return <div className="text-center py-5"><Spinner animation="border" /></div>;
+    return <div className="text-center py-5"><LogoLoader /></div>;
   }
 
   return (
@@ -375,11 +367,11 @@ export default function CalendarManager({ races, loading, onDataChange }) {
             disabled={loadingIcs || importing}
           />
           {loadingIcs && (
-            <div className="text-center py-2"><Spinner animation="border" size="sm" className="me-2" />{t("common.loading")}</div>
+            <div className="text-center py-2"><LogoLoader size="sm" className="me-2" />{t("common.loading")}</div>
           )}
           {parsedRaces.length > 0 && !loadingIcs && (
             <Button variant="danger" className="w-100 mt-2" size="sm" onClick={handleIcsImport} disabled={importing}>
-              {importing ? <><Spinner animation="border" size="sm" className="me-2" />{t("common.loading")}</> : `${t("admin.importICS")} (${parsedRaces.length})`}
+              {importing ? <><LogoLoader size="sm" className="me-2" />{t("common.loading")}</> : `${t("admin.importICS")} (${parsedRaces.length})`}
             </Button>
           )}
         </div>
@@ -492,7 +484,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
           <Modal.Footer>
             <Button variant="secondary" size="sm" onClick={() => setShowAddModal(false)} disabled={addSaving}>{t("common.cancel")}</Button>
             <Button variant="danger" size="sm" type="submit" disabled={addSaving}>
-              {addSaving ? <Spinner animation="border" size="sm" /> : t("admin.addRace")}
+              {addSaving ? <LogoLoader size="sm" /> : t("admin.addRace")}
             </Button>
           </Modal.Footer>
         </Form>
@@ -658,7 +650,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
             <>
               <Button variant="secondary" size="sm" onClick={() => setShowPreview(false)}>{t("common.back")}</Button>
               <Button variant="success" size="sm" onClick={handleConfirmSave} disabled={uploading}>
-                {uploading ? <Spinner animation="border" size="sm" /> : t("common.confirm")}
+                {uploading ? <LogoLoader size="sm" /> : t("common.confirm")}
               </Button>
             </>
           )}
@@ -677,7 +669,7 @@ export default function CalendarManager({ races, loading, onDataChange }) {
           <div className="d-flex gap-2 justify-content-end">
             <Button variant="secondary" size="sm" onClick={() => setShowCancelModal(false)}>{t("common.cancel")}</Button>
             <Button variant={cancelType === "main" ? "danger" : "warning"} size="sm" onClick={confirmCancelRace} disabled={uploading}>
-              {uploading ? <Spinner animation="border" size="sm" /> : t("common.confirm")}
+              {uploading ? <LogoLoader size="sm" /> : t("common.confirm")}
             </Button>
           </div>
         </Modal.Body>

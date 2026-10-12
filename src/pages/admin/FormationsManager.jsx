@@ -6,15 +6,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
-import {
-  Button,
-  Form,
-  Alert,
-  Spinner,
-  Badge,
-  Modal,
-  ListGroup,
-} from "react-bootstrap";
+import { Button, Form, Alert, Badge, Modal, ListGroup } from "react-bootstrap";
 import {
   doc,
   getDoc,
@@ -34,6 +26,7 @@ import { useLanguage } from "../../hooks/useLanguage";
 import { error } from "../../utils/logger";
 import { bilingual } from "../../utils/bilingualMessages";
 import "../../styles/customSelect.css";
+import LogoLoader from "../../components/LogoLoader";
 
 export default function FormationsManager({ participants, races, loading, onDataChange }) {
   const { t } = useLanguage();
@@ -288,7 +281,7 @@ export default function FormationsManager({ participants, races, loading, onData
   };
 
   if (loading) {
-    return <div className="text-center py-5"><Spinner animation="border" /></div>;
+    return <div className="text-center py-5"><LogoLoader /></div>;
   }
 
   const renderDriverSelect = (field, label, required, fieldGroup) => (
@@ -353,7 +346,7 @@ export default function FormationsManager({ participants, races, loading, onData
           </div>
 
           {loadingSubs ? (
-            <div className="text-center py-4"><Spinner animation="border" size="sm" /></div>
+            <div className="text-center py-4"><LogoLoader /></div>
           ) : (
             <ListGroup variant="flush" className="admin-list">
               {participants.map((p) => {
@@ -492,7 +485,7 @@ export default function FormationsManager({ participants, races, loading, onData
               {t("common.cancel")}
             </Button>
             <Button variant="danger" size="sm" onClick={requestSave} disabled={saving}>
-              {saving ? <Spinner animation="border" size="sm" /> : t("common.save")}
+              {saving ? <LogoLoader size="sm" /> : t("common.save")}
             </Button>
           </div>
         </Modal.Footer>
@@ -524,7 +517,7 @@ export default function FormationsManager({ participants, races, loading, onData
               {t("common.cancel")}
             </Button>
             <Button variant="danger" size="sm" onClick={handleDelete} disabled={saving}>
-              {saving ? <Spinner animation="border" size="sm" /> : t("common.delete")}
+              {saving ? <LogoLoader size="sm" /> : t("common.delete")}
             </Button>
           </div>
         </Modal.Body>

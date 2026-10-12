@@ -5,12 +5,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import {
-  Container,
-  Spinner,
-  Alert,
-  Button,
-} from "react-bootstrap";
+import { Container, Alert, Button } from "react-bootstrap";
 import {
   doc,
   getDoc,
@@ -29,6 +24,7 @@ import { getChampionshipDeadlineMs } from "../utils/championshipDeadline";
 import { getChampionshipStatistics } from "../services/statisticsService";
 import PlayerStatsView from "../components/PlayerStatsView";
 import AccountPanel from "../components/AccountPanel";
+import LogoLoader from "../components/LogoLoader";
 
 /**
  * Participant detail page showing complete user profile and statistics
@@ -220,8 +216,7 @@ export default function ParticipantDetail() {
   if (loadingParticipant) {
     return (
       <Container className="py-5 text-center">
-        <Spinner animation="border" />
-        <p className="mt-3">{t("common.loading")}</p>
+        <LogoLoader label={t("common.loading")} />
       </Container>
     );
   }

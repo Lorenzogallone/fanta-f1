@@ -8,7 +8,7 @@
 
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { Alert, Badge, Button, Modal, Spinner, Table } from "react-bootstrap";
+import { Alert, Badge, Button, Modal, Table } from "react-bootstrap";
 import { useLanguage } from "../../hooks/useLanguage";
 import { useTimezone } from "../../hooks/useTimezone";
 import { useF1Data } from "../../hooks/useF1Data";
@@ -21,6 +21,7 @@ import {
 } from "../../services/calendarSyncService";
 import { toDate } from "../../../functions/shared/f1Sync.mjs";
 import { error } from "../../utils/logger";
+import LogoLoader from "../../components/LogoLoader";
 
 const FIELD_LABELS = {
   name: "f1Sync.fieldName",
@@ -158,7 +159,7 @@ export default function CalendarSyncPanel({ races, onDataChange }) {
         <td className="text-nowrap">
           <Button size="sm" variant="outline-success" className="py-0 px-1 me-1" disabled={Boolean(busyKey)}
             onClick={() => doAction(key, collectionName, () => acceptField(collectionName, u.id, u.field, u.to))}>
-            {busy ? <Spinner animation="border" size="sm" /> : t("f1Sync.accept")}
+            {busy ? <LogoLoader size="sm" /> : t("f1Sync.accept")}
           </Button>
           {lockable && (u.locked ? (
             <Button size="sm" variant="outline-secondary" className="py-0 px-1" disabled={Boolean(busyKey)}
@@ -203,7 +204,7 @@ export default function CalendarSyncPanel({ races, onDataChange }) {
 
         <div className="d-flex gap-2 flex-wrap">
           <Button size="sm" variant="outline-primary" onClick={() => runCheck()} disabled={checking || applying}>
-            {checking ? <><Spinner animation="border" size="sm" className="me-1" />{t("common.loading")}</> : t("f1Sync.check")}
+            {checking ? <><LogoLoader size="sm" className="me-1" />{t("common.loading")}</> : t("f1Sync.check")}
           </Button>
           <Button size="sm" variant="danger" onClick={() => setShowConfirm(true)}
             disabled={!preview || checking || applying || applicable === 0}>
@@ -333,7 +334,7 @@ export default function CalendarSyncPanel({ races, onDataChange }) {
         <Modal.Footer>
           <Button variant="secondary" size="sm" onClick={() => setShowConfirm(false)} disabled={applying}>{t("common.cancel")}</Button>
           <Button variant="danger" size="sm" onClick={handleApply} disabled={applying}>
-            {applying ? <Spinner animation="border" size="sm" /> : t("common.confirm")}
+            {applying ? <LogoLoader size="sm" /> : t("common.confirm")}
           </Button>
         </Modal.Footer>
       </Modal>

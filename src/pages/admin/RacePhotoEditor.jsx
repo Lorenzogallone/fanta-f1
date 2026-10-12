@@ -7,7 +7,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
-import { Button, Form, Spinner } from "react-bootstrap";
+import { Button, Form } from "react-bootstrap";
 import { useLanguage } from "../../hooks/useLanguage";
 import { raceImage } from "../../data/raceImages";
 import {
@@ -20,6 +20,7 @@ import {
   saveCustomRacePhoto,
 } from "../../services/racePhotoService";
 import { error } from "../../utils/logger";
+import LogoLoader from "../../components/LogoLoader";
 
 export default function RacePhotoEditor({ race }) {
   const { t } = useLanguage();
@@ -118,7 +119,7 @@ export default function RacePhotoEditor({ race }) {
         style={shown ? { "--hero-img": `url("${shown.src}")`, "--hero-pos": shown.pos } : undefined}
       >
         {override === undefined || busy ? (
-          <Spinner animation="border" size="sm" />
+          <LogoLoader size="sm" />
         ) : (
           <span className="race-photo-preview-name">{race.name}</span>
         )}

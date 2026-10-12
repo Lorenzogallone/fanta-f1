@@ -5,22 +5,12 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import {
-  Container,
-  Row,
-  Col,
-  Card,
-  Form,
-  Button,
-  Alert,
-  Nav,
-  Tab,
-  Spinner,
-} from "react-bootstrap";
+import { Container, Row, Col, Card, Form, Button, Alert, Nav, Tab } from "react-bootstrap";
 import { useAuth } from "../hooks/useAuth";
 import { useLanguage } from "../hooks/useLanguage";
 import { useTheme } from "../contexts/ThemeContext";
 import { hideSplash } from "../utils/splash";
+import LogoLoader from "../components/LogoLoader";
 
 export default function LoginPage() {
   const { user, needsProfile, login, loginWithGoogle, register, resetPassword } = useAuth();
@@ -239,7 +229,7 @@ export default function LoginPage() {
                               className="w-100 mb-3"
                               disabled={loading}
                             >
-                              {loading ? <Spinner animation="border" size="sm" /> : t("auth.sendResetLink")}
+                              {loading ? <LogoLoader size="sm" /> : t("auth.sendResetLink")}
                             </Button>
                           </Form>
                           <div className="text-center mt-2">
@@ -295,7 +285,7 @@ export default function LoginPage() {
                             className="w-100 mb-3"
                             disabled={loading}
                           >
-                            {loading ? <Spinner animation="border" size="sm" /> : t("auth.login")}
+                            {loading ? <LogoLoader size="sm" /> : t("auth.login")}
                           </Button>
                         </Form>
 
@@ -406,7 +396,7 @@ export default function LoginPage() {
                         className="w-100 mb-3"
                         disabled={loading}
                       >
-                        {loading ? <Spinner animation="border" size="sm" /> : t("auth.register")}
+                        {loading ? <LogoLoader size="sm" /> : t("auth.register")}
                       </Button>
                     </Form>
 

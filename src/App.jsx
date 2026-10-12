@@ -3,12 +3,13 @@
  * @description Main application component with routing, authentication, and lazy-loaded pages
  */
 
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
+  useLocation,
 } from "react-router-dom";
 import { Container as BContainer } from "react-bootstrap";
 import { Toaster } from 'react-hot-toast';
@@ -27,8 +28,10 @@ import AdminRoute from "./components/AdminRoute";
 import CompleteProfileModal from "./components/CompleteProfileModal";
 import InstallPwaBanner from "./components/InstallPwaBanner";
 import NotificationPromptModal from "./components/NotificationPromptModal";
+import LogoLoader from "./components/LogoLoader";
 import { hideSplash } from "./utils/splash";
 import "./styles/theme.css";
+import "./styles/motion.css";
 
 // Lazy loading pages for code splitting
 const Home = lazy(() => import("./pages/Home"));
@@ -81,6 +84,25 @@ function ThemedToaster() {
   );
 }
 
+/**
+ * Fades the page in on every route change, without remounting it
+ * (pages keep their state, e.g. Home on "/" and "/leaderboard")
+ */
+function PageTransition({ children }) {
+  const { pathname } = useLocation();
+  const ref = useRef(null);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.classList.remove("is-entering");
+    void el.offsetWidth; // restart the CSS animation
+    el.classList.add("is-entering");
+  }, [pathname]);
+
+  return <div ref={ref} className="fx-page">{children}</div>;
+}
+
 export default function App() {
   useEffect(() => {
     // Fallback: forcefully hide the splash screen after 3.5 seconds
@@ -106,7 +128,8 @@ export default function App() {
               <NotificationPromptModal />
 
               <BContainer className="py-4">
-                <Suspense fallback={null}>
+                <Suspense fallback={<LogoLoader size="lg" className="fx-loader-page" />}>
+                  <PageTransition>
                   <Routes>
                     {/* Public route */}
                     <Route path="/login" element={<LoginPage />} />
@@ -139,6 +162,7 @@ export default function App() {
                     <Route path="/statistiche" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
                     <Route path="/profilo" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                   </Routes>
+                  </PageTransition>
                 </Suspense>
               </BContainer>
 

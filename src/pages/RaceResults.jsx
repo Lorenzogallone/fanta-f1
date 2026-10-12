@@ -6,13 +6,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
-import {
-  Row,
-  Col,
-  Spinner,
-  Form,
-  Button,
-} from "react-bootstrap";
+import { Row, Col, Form, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import {
   collection,
@@ -37,6 +31,7 @@ import { useRacePhoto } from "../hooks/useRacePhoto";
 import "../styles/cards.css";
 import "../styles/results.css";
 import "../styles/racephoto.css";
+import LogoLoader from "../components/LogoLoader";
 
 /**
  * Component to display driver with team logo
@@ -223,8 +218,7 @@ export default function RaceResults() {
     if (!data || data.length === 0) {
       return (
         <div className="text-center py-4">
-          <Spinner animation="border" size="sm" />
-          <p className="mt-3 mb-0 text-muted">{t("common.loading")}</p>
+          <LogoLoader label={t("common.loading")} />
         </div>
       );
     }
@@ -264,8 +258,7 @@ export default function RaceResults() {
     if (!data || data.length === 0) {
       return (
         <div className="text-center py-4">
-          <Spinner animation="border" size="sm" />
-          <p className="mt-3 mb-0 text-muted">{t("common.loading")}</p>
+          <LogoLoader label={t("common.loading")} />
         </div>
       );
     }
@@ -516,8 +509,7 @@ export default function RaceResults() {
   if (loadingRaces) {
     return (
       <div className="py-5 text-center">
-        <Spinner animation="border" />
-        <p className="mt-3">{t("common.loading")}</p>
+        <LogoLoader label={t("common.loading")} />
       </div>
     );
   }
@@ -670,8 +662,7 @@ export default function RaceResults() {
           {/* Loading state - only when no sessions data at all */}
           {loadingSessions && !sessions && (
             <div className="text-center py-4">
-              <Spinner animation="border" size="sm" />
-              <p className="mt-2 text-muted small">{t("common.loading")}</p>
+              <LogoLoader label={t("common.loading")} />
             </div>
           )}
 
@@ -724,8 +715,7 @@ export default function RaceResults() {
       {activeTab === "standings" && (
         loadingStandings ? (
           <div className="text-center py-5">
-            <Spinner animation="border" />
-            <p className="mt-3 text-muted">{t("common.loading")}</p>
+            <LogoLoader label={t("common.loading")} />
           </div>
         ) : (
           <>

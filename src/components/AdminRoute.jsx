@@ -5,8 +5,9 @@
 
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { Spinner } from "react-bootstrap";
+
 import { useAuth } from "../hooks/useAuth";
+import LogoLoader from "./LogoLoader";
 
 export default function AdminRoute({ children }) {
   const { user, isAdmin, loading } = useAuth();
@@ -15,7 +16,7 @@ export default function AdminRoute({ children }) {
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "60vh" }}>
-        <Spinner animation="border" variant="danger" />
+        <LogoLoader />
       </div>
     );
   }

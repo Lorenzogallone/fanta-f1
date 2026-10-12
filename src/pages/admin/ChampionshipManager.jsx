@@ -6,15 +6,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import PropTypes from "prop-types";
-import {
-  Button,
-  Form,
-  Spinner,
-  Badge,
-  Modal,
-  ListGroup,
-  Alert,
-} from "react-bootstrap";
+import { Button, Form, Badge, Modal, ListGroup, Alert } from "react-bootstrap";
 import {
   doc,
   getDoc,
@@ -33,6 +25,7 @@ import { useTimezone } from "../../hooks/useTimezone";
 import { getChampionshipDeadlineAutoMs } from "../../utils/championshipDeadline";
 import { error as logError } from "../../utils/logger";
 import "../../styles/customSelect.css";
+import LogoLoader from "../../components/LogoLoader";
 
 const CONFIG_DOC = doc(db, "config", "championship");
 
@@ -247,7 +240,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
   const editingParticipantName = participants.find((p) => p.id === editingId)?.name;
 
   if (loading) {
-    return <div className="text-center py-5"><Spinner animation="border" /></div>;
+    return <div className="text-center py-5"><LogoLoader /></div>;
   }
 
   return (
@@ -271,7 +264,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
           )}
 
           {loadingDeadline ? (
-            <div className="text-center py-3"><Spinner animation="border" size="sm" /></div>
+            <div className="text-center py-3"><LogoLoader /></div>
           ) : (
             <>
               <div className="d-flex flex-wrap align-items-center gap-2 mb-3" style={{ fontSize: "0.85rem" }}>
@@ -300,7 +293,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
                     style={{ maxWidth: 220 }}
                   />
                   <Button variant="danger" type="submit" disabled={savingDeadline || !deadlineInput} size="sm">
-                    {savingDeadline ? <Spinner animation="border" size="sm" /> : t("common.save")}
+                    {savingDeadline ? <LogoLoader size="sm" /> : t("common.save")}
                   </Button>
                   {deadlineOverride && (
                     <Button
@@ -374,7 +367,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
                       {has && (
                         <Button variant="outline-danger" size="sm" className="py-0 px-2" onClick={() => openDeleteConfirm(p)}
                           disabled={deletingId === p.id} style={{ fontSize: "0.75rem" }}>
-                          {deletingId === p.id ? <Spinner animation="border" size="sm" /> : t("common.delete")}
+                          {deletingId === p.id ? <LogoLoader size="sm" /> : t("common.delete")}
                         </Button>
                       )}
                     </div>
@@ -449,7 +442,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
             {t("common.cancel")}
           </Button>
           <Button variant="danger" size="sm" onClick={requestSaveFormation} disabled={savingEdit}>
-            {savingEdit ? <Spinner animation="border" size="sm" /> : t("common.save")}
+            {savingEdit ? <LogoLoader size="sm" /> : t("common.save")}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -480,7 +473,7 @@ export default function ChampionshipManager({ participants, loading, onDataChang
               {t("common.cancel")}
             </Button>
             <Button variant="danger" size="sm" onClick={handleDelete} disabled={deletingId}>
-              {deletingId ? <Spinner animation="border" size="sm" /> : t("common.delete")}
+              {deletingId ? <LogoLoader size="sm" /> : t("common.delete")}
             </Button>
           </div>
         </Modal.Body>

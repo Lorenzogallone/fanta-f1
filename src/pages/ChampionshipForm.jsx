@@ -4,15 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from "react";
-import {
-  Container,
-  Row,
-  Col,
-  Form,
-  Button,
-  Alert,
-  Spinner,
-} from "react-bootstrap";
+import { Container, Row, Col, Form, Button, Alert } from "react-bootstrap";
 import Select from "react-select";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../services/firebase";
@@ -27,6 +19,7 @@ import { error } from "../utils/logger";
 import "../styles/customSelect.css";
 import "../styles/cards.css";
 import "../styles/lineup.css";
+import LogoLoader from "../components/LogoLoader";
 
 /**
  * Championship formation form component
@@ -236,8 +229,7 @@ export default function ChampionshipForm() {
   if (loadingDeadline)
     return (
       <Container className="py-5 text-center">
-        <Spinner animation="border" variant="danger" />
-        <p className="mt-3">{t("common.loading")}</p>
+        <LogoLoader label={t("common.loading")} />
       </Container>
     );
 

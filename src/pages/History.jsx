@@ -9,14 +9,7 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { useLocation } from "react-router-dom";
-import {
-  Row,
-  Col,
-  Spinner,
-  Alert,
-  Badge,
-  Form,
-} from "react-bootstrap";
+import { Row, Col, Alert, Badge, Form } from "react-bootstrap";
 import {
   collection,
   getDocs,
@@ -37,6 +30,7 @@ import { getChampionshipDeadlineMs } from "../utils/championshipDeadline";
 import { error } from "../utils/logger";
 import "../styles/cards.css";
 import "../styles/results.css";
+import LogoLoader from "../components/LogoLoader";
 
 /**
  * Component to display driver name with team logo
@@ -261,7 +255,7 @@ export default function History() {
   if (loading)
     return (
       <div className="py-5 text-center">
-        <Spinner animation="border" />
+        <LogoLoader />
       </div>
     );
   if (errorState)
@@ -382,8 +376,7 @@ export default function History() {
               {/* Loading state when changing races */}
               {isLoadingRaceData && selectedRace && (
                 <div className="text-center py-5">
-                  <Spinner animation="border" size="sm" />
-                  <p className="mt-2 text-muted small">{t("common.loading")}</p>
+                  <LogoLoader label={t("common.loading")} />
                 </div>
               )}
 

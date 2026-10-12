@@ -13,7 +13,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Spinner } from "react-bootstrap";
+import { Modal, Button } from "react-bootstrap";
 
 const NotificationsActiveIcon = ({ fontSize, style }) => (
   <svg width={fontSize === 'small' ? 20 : 24} height={fontSize === 'small' ? 20 : 24} viewBox="0 0 24 24" fill="currentColor" style={style}>
@@ -33,6 +33,7 @@ import {
   requestNotificationPermission,
   syncFcmToken,
 } from "../services/notificationService";
+import LogoLoader from "./LogoLoader";
 
 const STORAGE_KEY = "fanta-f1-notification-prompt-dismissed";
 
@@ -132,7 +133,7 @@ export default function NotificationPromptModal() {
           className="d-flex align-items-center gap-1"
         >
           {loading ? (
-            <Spinner animation="border" size="sm" style={{ width: 14, height: 14 }} />
+            <LogoLoader size="sm" />
           ) : (
             <NotificationsActiveIcon fontSize="small" />
           )}

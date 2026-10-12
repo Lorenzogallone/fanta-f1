@@ -87,6 +87,21 @@
       pointer-events: none;
     }
 
+    /* On exit the logo grows slightly while fading, as if the app comes through it */
+    #global-splash svg {
+      transition: transform 0.5s cubic-bezier(0.22, 0.8, 0.24, 1);
+    }
+
+    #global-splash:not(.active) svg {
+      transform: scale(1.08);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #global-splash:not(.active) svg {
+        transform: none;
+      }
+    }
+
     /* Logo loop animation */
     .splash-draw {
       stroke-dasharray: 3000;
