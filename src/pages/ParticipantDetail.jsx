@@ -49,7 +49,6 @@ export default function ParticipantDetail() {
   const raceHistory = data?.raceHistory ?? [];
   const totalCompletedRaces = data?.totalCompletedRaces ?? 0;
   const participantPosition = data?.participantPosition ?? null;
-  const championshipDeadlinePassed = data?.championshipDeadlinePassed ?? false;
 
   // Championship position history for the chart
   const positionData = useMemo(() => {

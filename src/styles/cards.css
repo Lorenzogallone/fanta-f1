@@ -221,3 +221,12 @@
 .race-history-card .race-scores-table thead {
   background-color: transparent;
 }
+
+/* Profile page: same surface as the rest of the app */
+.profile-card.card {
+  border-radius: 14px;
+}
+
+.profile-card .card-body {
+  background-color: transparent;
+}

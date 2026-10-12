@@ -4,8 +4,8 @@
  */
 
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth, browserLocalPersistence, setPersistence } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getAuth, browserLocalPersistence, setPersistence, connectAuthEmulator } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 /**
@@ -34,4 +34,10 @@ setPersistence(auth, browserLocalPersistence);
 
 /** Firebase Storage instance for file uploads (avatars) */
 export const storage = getStorage(app);
+
+// Local development against the emulators (see scripts/seed-emulator.mjs)
+if (import.meta.env.VITE_USE_EMULATORS === "true") {
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+}
 
