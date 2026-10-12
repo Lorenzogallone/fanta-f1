@@ -76,10 +76,10 @@ export default function BottomTabBar() {
   const myPage = `/participant/${user.uid}`;
   const tabs = [
     { to: "/", icon: "home", label: t("nav.home"), match: ["/", "/leaderboard", "/classifica"] },
-    { to: "/history", icon: "fanta", label: t("nav.history"), match: ["/history", "/storico"] },
+    { to: "/history", icon: "fanta", label: t("nav.tabHistory"), match: ["/history", "/storico"] },
     // The main action: centered, red and raised above the bar
     { to: "/lineup", icon: "lineup", label: t("nav.formations"), match: ["/lineup", "/schiera", "/formations"], primary: true },
-    { to: "/results", icon: "f1", label: t("nav.raceResults"), match: ["/results", "/risultati"] },
+    { to: "/results", icon: "f1", label: t("nav.tabResults"), match: ["/results", "/risultati"] },
     { to: myPage, icon: "me", label: t("nav.me"), match: [myPage, `/partecipante/${user.uid}`, "/profile", "/profilo"] },
   ];
 

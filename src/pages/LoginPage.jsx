@@ -212,10 +212,12 @@ export default function LoginPage() {
                             {t("auth.resetPasswordDesc")}
                           </p>
                           <Form onSubmit={handleForgotPassword}>
-                            <Form.Group className="mb-3">
+                            <Form.Group className="mb-3" controlId="reset-email">
                               <Form.Label>{t("auth.email")}</Form.Label>
                               <Form.Control
                                 type="email"
+                                inputMode="email"
+                                autoComplete="email"
                                 value={resetEmail}
                                 onChange={(e) => setResetEmail(e.target.value)}
                                 placeholder="email@example.com"
@@ -248,10 +250,12 @@ export default function LoginPage() {
                     ) : (
                       <>
                         <Form onSubmit={handleLogin}>
-                          <Form.Group className="mb-3">
+                          <Form.Group className="mb-3" controlId="login-email">
                             <Form.Label>{t("auth.email")}</Form.Label>
                             <Form.Control
                               type="email"
+                              inputMode="email"
+                              autoComplete="email"
                               value={loginEmail}
                               onChange={(e) => setLoginEmail(e.target.value)}
                               placeholder="email@example.com"
@@ -259,10 +263,11 @@ export default function LoginPage() {
                               autoFocus
                             />
                           </Form.Group>
-                          <Form.Group className="mb-3">
+                          <Form.Group className="mb-3" controlId="login-password">
                             <Form.Label>{t("auth.password")}</Form.Label>
                             <Form.Control
                               type="password"
+                              autoComplete="current-password"
                               value={loginPassword}
                               onChange={(e) => setLoginPassword(e.target.value)}
                               required
@@ -321,10 +326,11 @@ export default function LoginPage() {
                   {/* REGISTER TAB */}
                   <Tab.Pane eventKey="register">
                     <Form onSubmit={handleRegister}>
-                      <Form.Group className="mb-3">
+                      <Form.Group className="mb-3" controlId="reg-nickname">
                         <Form.Label>{t("auth.nickname")} *</Form.Label>
                         <Form.Control
                           type="text"
+                          autoComplete="nickname"
                           value={regNickname}
                           onChange={(e) => setRegNickname(e.target.value)}
                           placeholder={t("auth.nicknamePlaceholder")}
@@ -334,10 +340,11 @@ export default function LoginPage() {
                       </Form.Group>
                       <Row>
                         <Col xs={6}>
-                          <Form.Group className="mb-3">
+                          <Form.Group className="mb-3" controlId="reg-first-name">
                             <Form.Label>{t("auth.firstName")} *</Form.Label>
                             <Form.Control
                               type="text"
+                              autoComplete="given-name"
                               value={regFirstName}
                               onChange={(e) => setRegFirstName(e.target.value)}
                               required
@@ -345,10 +352,11 @@ export default function LoginPage() {
                           </Form.Group>
                         </Col>
                         <Col xs={6}>
-                          <Form.Group className="mb-3">
+                          <Form.Group className="mb-3" controlId="reg-last-name">
                             <Form.Label>{t("auth.lastName")} *</Form.Label>
                             <Form.Control
                               type="text"
+                              autoComplete="family-name"
                               value={regLastName}
                               onChange={(e) => setRegLastName(e.target.value)}
                               required
@@ -356,20 +364,23 @@ export default function LoginPage() {
                           </Form.Group>
                         </Col>
                       </Row>
-                      <Form.Group className="mb-3">
+                      <Form.Group className="mb-3" controlId="reg-email">
                         <Form.Label>{t("auth.email")} *</Form.Label>
                         <Form.Control
                           type="email"
+                          inputMode="email"
+                          autoComplete="email"
                           value={regEmail}
                           onChange={(e) => setRegEmail(e.target.value)}
                           placeholder="email@example.com"
                           required
                         />
                       </Form.Group>
-                      <Form.Group className="mb-3">
+                      <Form.Group className="mb-3" controlId="reg-password">
                         <Form.Label>{t("auth.password")} *</Form.Label>
                         <Form.Control
                           type="password"
+                          autoComplete="new-password"
                           value={regPassword}
                           onChange={(e) => setRegPassword(e.target.value)}
                           required
@@ -377,10 +388,11 @@ export default function LoginPage() {
                         />
                         <Form.Text className="text-muted">{t("auth.passwordHint")}</Form.Text>
                       </Form.Group>
-                      <Form.Group className="mb-3">
+                      <Form.Group className="mb-3" controlId="reg-confirm-password">
                         <Form.Label>{t("auth.confirmPassword")} *</Form.Label>
                         <Form.Control
                           type="password"
+                          autoComplete="new-password"
                           value={regConfirmPassword}
                           onChange={(e) => setRegConfirmPassword(e.target.value)}
                           required

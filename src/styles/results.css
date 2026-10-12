@@ -192,7 +192,12 @@
   white-space: nowrap;
 }
 
+.results-page .res-name > span {
+  min-width: 0;
+}
+
 .results-page .res-fl {
+  flex: none;
   font-size: 0.8rem;
 }
 

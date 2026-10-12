@@ -23,11 +23,11 @@ export const hideSplash = () => {
         // Lets the scroll reveal start once the app is actually visible
         window.dispatchEvent(new Event("fantaf1:splash-hidden"));
 
-        // Wait for the transition (0.5s) before removing from DOM
+        // Wait for the transition (0.7s) before removing from DOM
         setTimeout(() => {
             if (splashEl.parentNode) {
                 splashEl.parentNode.removeChild(splashEl);
             }
-        }, 500);
+        }, 700);
     }
 };

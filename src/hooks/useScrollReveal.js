@@ -40,7 +40,7 @@ export function useScrollReveal() {
           el.style.setProperty("--fx-i", String(Math.min(i++, 8)));
           el.classList.add("is-in");
           // After the transition the delay is dropped, so taps feel immediate
-          setTimeout(() => el.classList.add("is-done"), 900);
+          setTimeout(() => el.classList.add("is-done"), 1400);
           io.unobserve(el);
         });
       },
@@ -57,8 +57,15 @@ export function useScrollReveal() {
       });
     };
 
+    const untag = (root) => {
+      if (root.matches?.(".fx-reveal")) io.unobserve(root);
+      root.querySelectorAll?.(".fx-reveal").forEach((n) => io.unobserve(n));
+    };
     const mo = new MutationObserver((muts) => {
-      muts.forEach((m) => m.addedNodes.forEach((n) => n.nodeType === 1 && tag(n)));
+      muts.forEach((m) => {
+        m.addedNodes.forEach((n) => n.nodeType === 1 && tag(n));
+        m.removedNodes.forEach((n) => n.nodeType === 1 && untag(n));
+      });
     });
 
     // Under the splash nothing is tagged: the first page reveals as the splash fades

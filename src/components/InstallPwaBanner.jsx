@@ -97,9 +97,6 @@ export const InstallPwaBanner = () => {
         <Toast.Header closeButton={true}>
           <GetAppIcon className="text-danger me-2" />
           <strong className="me-auto">{t('pwa.installTitle')}</strong>
-          <small className="text-muted d-flex align-items-center">
-            <span className="me-2 cursor-pointer" onClick={handleDismiss} style={{ cursor: 'pointer' }}>{t('pwa.close')}</span>
-          </small>
         </Toast.Header>
         <Toast.Body className="bg-body">
           {isIOS ? (

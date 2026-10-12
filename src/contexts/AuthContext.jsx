@@ -15,6 +15,7 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs } from "firebase/firestore";
+import { resetWarmup } from "../services/warmup";
 
 const DEFAULT_RANKING = {
   puntiTotali: 0,
@@ -253,6 +254,7 @@ export function AuthProvider({ children }) {
    * Sign out
    */
   const logout = async () => {
+    resetWarmup(); // stop the shared listeners before the rules deny them
     await signOut(auth);
     setUser(null);
     setUserProfile(null);

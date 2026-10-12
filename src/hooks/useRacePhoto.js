@@ -5,7 +5,8 @@
  */
 
 import { useEffect, useState } from "react";
-import { cachedRacePhoto, getRacePhoto, resolveRacePhoto } from "../services/racePhotoService";
+import { cachedRacePhoto, resolveRacePhoto } from "../services/racePhotoService";
+import { loadRacePhoto, peek } from "../services/warmup";
 import { warn } from "../utils/logger";
 
 /**
@@ -14,13 +15,13 @@ import { warn } from "../utils/logger";
  */
 export function useRacePhoto(race) {
   const raceId = race?.id;
-  const [override, setOverride] = useState(() => cachedRacePhoto(raceId));
+  const [override, setOverride] = useState(() => peek(`racePhoto:${raceId}`) ?? cachedRacePhoto(raceId));
 
   useEffect(() => {
     if (!raceId) return undefined;
     let active = true;
-    setOverride(cachedRacePhoto(raceId));
-    getRacePhoto(raceId)
+    setOverride(peek(`racePhoto:${raceId}`) ?? cachedRacePhoto(raceId));
+    loadRacePhoto(raceId)
       .then((o) => { if (active) setOverride(o); })
       .catch((err) => warn("Race photo not loaded:", err));
     return () => { active = false; };

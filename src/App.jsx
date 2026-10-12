@@ -144,8 +144,12 @@ function Warmup() {
 /** Marks <html data-scrolled> so the top bar turns to glass once content scrolls under it */
 function useScrolledFlag() {
   useEffect(() => {
+    let last = null;
     const onScroll = () => {
-      document.documentElement.setAttribute("data-scrolled", window.scrollY > 8 ? "true" : "false");
+      const scrolled = window.scrollY > 8 ? "true" : "false";
+      if (scrolled === last) return; // nothing to write on most scroll events
+      last = scrolled;
+      document.documentElement.setAttribute("data-scrolled", scrolled);
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });

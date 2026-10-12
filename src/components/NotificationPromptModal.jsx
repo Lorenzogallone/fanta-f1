@@ -26,6 +26,7 @@ const NotificationsOffIcon = ({ fontSize, style }) => (
   </svg>
 );
 import { useAuth } from "../hooks/useAuth";
+import { useLanguage } from "../hooks/useLanguage";
 import {
   isPwaInstalled,
   isNotificationSupported,
@@ -39,6 +40,7 @@ const STORAGE_KEY = "fanta-f1-notification-prompt-dismissed";
 
 export default function NotificationPromptModal() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -91,25 +93,25 @@ export default function NotificationPromptModal() {
     <Modal show={show} onHide={handleDismiss} centered size="sm" backdrop="static">
       <Modal.Header className="border-0 pb-0">
         <Modal.Title className="d-flex align-items-center gap-2" style={{ fontSize: "1.1rem" }}>
-          <NotificationsActiveIcon style={{ color: "#dc3545" }} />
-          Notifiche gara
+          <NotificationsActiveIcon style={{ color: "var(--accent-red)" }} />
+          {t("notifications.promptTitle")}
         </Modal.Title>
       </Modal.Header>
 
       <Modal.Body className="pt-2">
         <p className="mb-2" style={{ fontSize: "0.95rem" }}>
-          Vuoi ricevere un promemoria prima di ogni gara?
+          {t("notifications.promptQuestion")}
         </p>
         <ul className="ps-3 mb-3" style={{ fontSize: "0.88rem", color: "var(--bs-secondary-color)" }}>
-          <li><strong>1 ora prima</strong> della partenza</li>
-          <li><strong>5 minuti prima</strong> della partenza</li>
+          <li><strong>{t("notifications.prompt1h")}</strong> {t("notifications.promptBeforeStart")}</li>
+          <li><strong>{t("notifications.prompt5m")}</strong> {t("notifications.promptBeforeStart")}</li>
         </ul>
         <p className="mb-0" style={{ fontSize: "0.82rem", color: "var(--bs-secondary-color)" }}>
-          Potrai sempre cambiare questa impostazione dal menu utente.
+          {t("notifications.promptHint")}
         </p>
         {error && (
           <p className="mt-2 mb-0 text-danger" style={{ fontSize: "0.82rem" }}>
-            Errore: {error}. Riprova dal menu utente.
+            {t("common.error")}: {error}
           </p>
         )}
       </Modal.Body>
@@ -117,17 +119,15 @@ export default function NotificationPromptModal() {
       <Modal.Footer className="border-0 pt-1 gap-2">
         <Button
           variant="outline-secondary"
-          size="sm"
           onClick={handleDismiss}
           disabled={loading}
           className="d-flex align-items-center gap-1"
         >
           <NotificationsOffIcon fontSize="small" />
-          No, grazie
+          {t("notifications.promptNo")}
         </Button>
         <Button
           variant="danger"
-          size="sm"
           onClick={handleEnable}
           disabled={loading}
           className="d-flex align-items-center gap-1"
@@ -137,7 +137,7 @@ export default function NotificationPromptModal() {
           ) : (
             <NotificationsActiveIcon fontSize="small" />
           )}
-          Attiva
+          {t("notifications.promptYes")}
         </Button>
       </Modal.Footer>
     </Modal>

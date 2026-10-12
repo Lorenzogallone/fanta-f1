@@ -13,7 +13,6 @@ import {
   orderBy,
   getDocs,
   doc,
-  onSnapshot,
   getDoc,
   increment,
   deleteField,
@@ -38,17 +37,56 @@ import "../styles/customSelect.css";
 import "../styles/cards.css";
 import "../styles/lineup.css";
 import LogoLoader from "../components/LogoLoader";
-import { peek } from "../services/warmup";
+import { peek, put, subscribe, watchRanking, submissionKey } from "../services/warmup";
+import { useToast } from "../hooks/useToast";
+
+// On touch screens the driver pickers don't open the keyboard (it would cover the list)
+const COARSE_POINTER = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
 
 /**
  * Formation management component for race and sprint submissions
  * @returns {JSX.Element} Formation form with deadline tracking and late submission handling
  */
+/** One driver pick row. Module-level so React keeps the Select mounted across renders. */
+function DriverSelect({ t, label, field, required, clearable, disabled, form, onSelectChange, touched, driverOpts, helpText }) {
+  const value = form[field];
+  const isEmpty = required && !value && touched;
+
+  return (
+    <div className={`lineup-pick${isEmpty ? " is-invalid" : ""}`}>
+      <div className="lineup-pick-row">
+        <span className="lineup-pick-label">
+          {label}
+          {required && <span className="lineup-pick-required">*</span>}
+        </span>
+        <div className="lineup-pick-field">
+          <Select
+            isDisabled={disabled}
+            options={driverOpts}
+            value={value}
+            onChange={(sel) => onSelectChange(sel, field)}
+            placeholder={clearable && !required ? t("formations.optional") : `${t("common.select")} ${label}`}
+            classNamePrefix="react-select"
+            isClearable={clearable}
+            isSearchable={!COARSE_POINTER}
+            menuPlacement="auto"
+            blurInputOnSelect
+            aria-label={`Select driver for ${label}`}
+          />
+        </div>
+      </div>
+      {isEmpty && <div className="lineup-pick-error">{t("formations.required")}</div>}
+      {helpText && <div className="lineup-pick-help">{helpText}</div>}
+    </div>
+  );
+}
+
 export default function FormationApp() {
   const colors = useThemeColors();
   const { t, currentLanguage } = useLanguage();
   const { timezone } = useTimezone();
   const { user } = useAuth();
+  const toast = useToast();
   // Only selectable drivers (reserves can't be picked in formations)
   const { selectableDrivers, getDriverTeam, getTeamLogo, getDriverLogo } = useF1Data();
   const driverOpts = useMemo(
@@ -107,17 +145,18 @@ export default function FormationApp() {
 
     (async () => {
       try {
-        unSub = onSnapshot(
-          query(collection(db, "ranking"), orderBy("puntiTotali", "desc")),
-          (snap) => {
-            const list = snap.docs.map((d) => ({ id: d.id, ...d.data(), jolly: d.data().jolly ?? 0 }));
-            setRanking(list);
-            if (form.userId) {
-              const me = list.find((u) => u.id === form.userId);
-              setUserJolly(me?.jolly ?? 0);
-            }
+        // Live ranking through the shared warm-up listener (no second listener per page)
+        watchRanking();
+        const onRanking = (docsList) => {
+          const list = docsList.map((d) => ({ ...d, jolly: d.jolly ?? 0 }));
+          setRanking(list);
+          if (form.userId) {
+            const me = list.find((u) => u.id === form.userId);
+            setUserJolly(me?.jolly ?? 0);
           }
-        );
+        };
+        unSub = subscribe("ranking", onRanking);
+        if (peek("ranking")) onRanking(peek("ranking"));
 
         const rsnap = await getDocs(
           query(collection(db, "races"), where("raceUTC", ">", Timestamp.now()), orderBy("raceUTC", "asc"))
@@ -263,8 +302,10 @@ export default function FormationApp() {
       return;
     }
 
+    let active = true; // a slower read for a previous race must not fill this one
     (async () => {
       const snap = await getDoc(doc(db, "races", raceId, "submissions", userId));
+      if (!active) return;
       if (!snap.exists()) {
         setIsEditMode(false);
         setExistingJolly2(false);
@@ -291,6 +332,7 @@ export default function FormationApp() {
       }));
       setIsEditMode(true);
     })().catch(error);
+    return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.userId, form.raceId]);
 
@@ -482,6 +524,8 @@ export default function FormationApp() {
       }
 
       await batch.commit();
+      // Home reads the lineup from the warm-up cache: keep it current
+      put(submissionKey(form.raceId, form.userId), { ...(peek(submissionKey(form.raceId, form.userId)) || {}), ...payload });
 
       if (isLate) setUserUsedLateSubmission(true);
       if (mode === "main") {
@@ -506,10 +550,9 @@ export default function FormationApp() {
       setShowLateModal(false);
       setCurrentLateMode(null);
       setTouched(false);
-      // Scroll to bottom so the user can see the updated submissions list
-      setTimeout(() => {
-        window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-      }, 300);
+      setIsEditMode(true); // the next save is an edit
+      // The confirmation is also a toast, visible wherever the page is scrolled
+      toast.success(isLate ? `${t("success.formationSaved")} ${t("formations.latePenalty")}` : t("success.formationSaved"));
     } catch (err) {
       error(err);
       setFlash({ type: "danger", msg: `❌ ${t("common.error")}: ${err.message}` });
@@ -605,6 +648,7 @@ export default function FormationApp() {
 
                       {["P1", "P2", "P3"].map((l) => (
                         <DriverSelect
+                          t={t}
                           key={l}
                           label={l}
                           field={l}
@@ -617,6 +661,7 @@ export default function FormationApp() {
                         />
                       ))}
                       <DriverSelect
+                          t={t}
                         label="Jolly"
                         field="jolly"
                         required
@@ -628,6 +673,7 @@ export default function FormationApp() {
                       />
                       {(userJolly > 0 || existingJolly2) && (
                         <DriverSelect
+                          t={t}
                           label="Jolly 2"
                           field="jolly2"
                           clearable
@@ -654,6 +700,7 @@ export default function FormationApp() {
 
                       {["sprintP1", "sprintP2", "sprintP3", "sprintJolly"].map((f) => (
                         <DriverSelect
+                          t={t}
                           key={f}
                           label={f === "sprintJolly" ? "Jolly SP" : f.replace("sprintP", "SP")}
                           field={f}
@@ -803,34 +850,6 @@ export default function FormationApp() {
     );
   }
 
-  function DriverSelect({ label, field, required, clearable, disabled, form, onSelectChange, touched, driverOpts, helpText }) {
-    const value = form[field];
-    const isEmpty = required && !value && touched;
 
-    return (
-      <div className={`lineup-pick${isEmpty ? " is-invalid" : ""}`}>
-        <div className="lineup-pick-row">
-          <span className="lineup-pick-label">
-            {label}
-            {required && <span className="lineup-pick-required">*</span>}
-          </span>
-          <div className="lineup-pick-field">
-            <Select
-              isDisabled={disabled}
-              options={driverOpts}
-              value={value}
-              onChange={(sel) => onSelectChange(sel, field)}
-              placeholder={clearable && !required ? t("formations.optional") : `${t("common.select")} ${label}`}
-              classNamePrefix="react-select"
-              isClearable={clearable}
-              aria-label={`Select driver for ${label}`}
-            />
-          </div>
-        </div>
-        {isEmpty && <div className="lineup-pick-error">{t("formations.required")}</div>}
-        {helpText && <div className="lineup-pick-help">{helpText}</div>}
-      </div>
-    );
-  }
 
 }

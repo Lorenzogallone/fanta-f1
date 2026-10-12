@@ -129,7 +129,6 @@ export default function History() {
 
   const [errorState, setErrorState] = useState(null);
   const [selectedRaceId, setSelectedRaceId] = useState(null);
-  const [isLoadingRaceData, setIsLoadingRaceData] = useState(false);
   const [activeTab, setActiveTab] = useState("races"); // "races" or "championship"
   const [openChampId, setOpenChampId] = useState(null);
 
@@ -192,14 +191,7 @@ export default function History() {
   const handleRaceChange = (raceId) => {
     if (raceId === selectedRaceId) return; // No change
 
-    setIsLoadingRaceData(true);
     setSelectedRaceId(raceId);
-
-    // Simulate minimum loading time for smooth UX
-    // This ensures the spinner is visible even if data loads instantly from cache
-    setTimeout(() => {
-      setIsLoadingRaceData(false);
-    }, 400);
   };
 
   if (loading)
@@ -323,14 +315,7 @@ export default function History() {
                 </Form.Select>
               </div>
 
-              {/* Loading state when changing races */}
-              {isLoadingRaceData && selectedRace && (
-                <div className="text-center py-5">
-                  <LogoLoader label={t("common.loading")} />
-                </div>
-              )}
-
-              {selectedRace && !isLoadingRaceData && (
+              {selectedRace && (
                 <RaceHistoryCard race={selectedRace} key={selectedRaceId} isLastRace={isLastRaceSelected} currentUserId={user?.uid} collapsible />
               )}
 

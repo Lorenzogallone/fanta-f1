@@ -5,7 +5,7 @@
 
 import React, { useEffect, useMemo } from "react";
 import { Card, Table, Badge } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import UserAvatar from "../components/UserAvatar";
@@ -83,9 +83,10 @@ function buildRows(ranking, raceOrder) {
   return rows;
 }
 
-export default function Leaderboard() {
+function Leaderboard() {
   const { isDark } = useTheme();
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   // Shared live ranking, profiles and calendar (warm-up cache, refreshed in the background)
   const ranking = useWarm("ranking");
@@ -165,12 +166,16 @@ export default function Leaderboard() {
                 const avatarURL = r.photoURL || userProfiles[r.userId]?.photoURL || "";
                 const change = r.posChange;
                 const changeDisplay = change == null ? "" : change > 0 ? `+${change}` : change === 0 ? "=" : `${change}`;
-                const changeColor = change > 0 ? "#198754" : change < 0 ? "#dc3545" : "#6c757d";
+                const changeColor = change > 0 ? "var(--score-positive)" : change < 0 ? "var(--score-negative)" : "var(--text-secondary)";
 
                 return (
-                  <tr key={r.userId} className={isTop3 ? "fw-bold" : ""}>
-                    <td className="text-center px-0" style={{ fontSize: "0.85rem", padding: "6px 2px" }}>{medal}</td>
-                    <td className="px-1" style={{ padding: "6px 2px", overflow: "hidden" }}>
+                  <tr
+                    key={r.userId}
+                    className={`leaderboard-row${isTop3 ? " fw-bold" : ""}`}
+                    onClick={() => navigate(`/participant/${r.userId}`)}
+                  >
+                    <td className="text-center px-0" style={{ fontSize: "0.85rem", padding: "10px 2px" }}>{medal}</td>
+                    <td className="px-1" style={{ padding: "10px 2px", overflow: "hidden" }}>
                       <Link
                         to={`/participant/${r.userId}`}
                         className="d-flex align-items-center gap-1 text-truncate"
@@ -196,14 +201,14 @@ export default function Leaderboard() {
                         <span className="text-truncate">{r.name}</span>
                       </Link>
                     </td>
-                    <td className="text-center px-0 fw-semibold" style={{ fontSize: "0.82rem", padding: "6px 1px" }}>{r.pts}</td>
-                    <td className="text-center px-0 text-muted" style={{ fontSize: "0.72rem", padding: "6px 1px" }}>{gap}</td>
-                    <td className="text-center px-0" style={{ padding: "6px 1px" }}>
-                      <span style={{ fontSize: "0.68rem", color: r.jolly ? "#198754" : "#6c757d", fontWeight: "bold" }}>
+                    <td className="text-center px-0 fw-semibold" style={{ fontSize: "0.82rem", padding: "10px 1px" }}>{r.pts}</td>
+                    <td className="text-center px-0 text-muted" style={{ fontSize: "0.72rem", padding: "10px 1px" }}>{gap}</td>
+                    <td className="text-center px-0" style={{ padding: "10px 1px" }}>
+                      <span style={{ fontSize: "0.68rem", color: r.jolly ? "var(--score-positive)" : "var(--text-secondary)", fontWeight: "bold" }}>
                         {r.jolly}
                       </span>
                     </td>
-                    <td className="text-center px-0" style={{ padding: "6px 1px" }}>
+                    <td className="text-center px-0" style={{ padding: "10px 1px" }}>
                       {changeDisplay && (
                         <span style={{ fontSize: "0.65rem", fontWeight: 700, color: changeColor }}>
                           {change > 0 ? "▲" : change < 0 ? "▼" : "•"}<span style={{ fontSize: "0.6rem" }}>{Math.abs(change) || ""}</span>
@@ -220,3 +225,5 @@ export default function Leaderboard() {
     </Card>
   );
 }
+
+export default React.memo(Leaderboard);

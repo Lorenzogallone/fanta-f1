@@ -28,6 +28,7 @@ import { error } from "../utils/logger";
 import { useToast } from "../hooks/useToast";
 import "../styles/customSelect.css";
 import LogoLoader from "../components/LogoLoader";
+import { loadRaces, loadChampionship, loadStatistics } from "../services/warmup";
 
 const PTS_MAIN = POINTS.MAIN;
 const PTS_SPRINT = POINTS.SPRINT;
@@ -373,6 +374,7 @@ useEffect(() => {
       const updatedRace = { ...race, ...updatedRaceData };
       setRace(updatedRace);
       setRaces(prev => prev.map(r => r.id === race.id ? updatedRace : r));
+      loadRaces(true); loadStatistics(true); // the other pages read these from the warm-up cache
       const sSnap= await getDocs(collection(db,"races",race.id,"submissions"));
       setSubs(sSnap.docs.map(d=>({id:d.id,...d.data()})));
       /* scroll alla lista */
@@ -413,6 +415,7 @@ useEffect(() => {
       // Save ranking snapshot after championship calculation
       await saveRankingSnapshot("championship", null);
       toast.success(res);
+      loadChampionship(true); loadStatistics(true);
       setShowChampPreview(true);
       setChampRefresh(Date.now());
 
