@@ -51,6 +51,32 @@ export const en = {
     me: "Me",
   },
 
+  // Guided tour (shown once)
+  tour: {
+    title: "Quick guide",
+    badge: "What's new",
+    skip: "Skip",
+    start: "Start",
+    next: "Next",
+    finish: "Done",
+    replay: "Replay the guide",
+    replayHint: "The 30-second tour of the app",
+    introTitle: "FantaF1 has a new look",
+    introText: "A refreshed, faster interface with a few new things. Here's where everything is, in a few steps.",
+    nextRaceTitle: "The next race",
+    nextRaceText: "Countdown to the deadline, your lineup status and the button to submit. Tap the card for the full weekend: every session's time, results and the circuit.",
+    lineupTitle: "Lineup",
+    lineupText: "The centre button: race and sprint lineups, jokers and, at the end of the season, your championship picks.",
+    fantaTitle: "Fanta results",
+    fantaText: "Race by race: everyone's lineups and the points scored, plus the championship results.",
+    f1Title: "F1 championship",
+    f1Text: "Sessions with times and gaps, driver and constructor standings, the calendar in your timezone.",
+    meTitle: "Me",
+    meText: "Your page: points, trend, statistics, profile and settings (theme, language, notifications).",
+    doneTitle: "Enjoy the season!",
+    doneText: "You can replay this guide any time from Me › Settings.",
+  },
+
   // Race weekend page
   raceDetail: {
     details: "Weekend details",
