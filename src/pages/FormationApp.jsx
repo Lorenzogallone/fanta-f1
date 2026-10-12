@@ -533,25 +533,13 @@ export default function FormationApp() {
         setExistingJolly2(Boolean(form.jolly2));
       }
 
-      setFlash({
-        type: "success",
-        msg: isLate
-          ? `✓ ${t("success.formationSaved")} ${t("formations.latePenalty")}`
-          : mode === "main"
-          ? isEditMode
-            ? `✓ ${t("success.formationUpdated")}`
-            : `✓ ${t("success.formationSaved")}`
-          : isEditMode
-          ? `✓ ${t("success.formationUpdated")}`
-          : `✓ ${t("success.formationSaved")}`,
-      });
       setRefreshKey(Date.now());
       setSavingMode(null);
       setShowLateModal(false);
       setCurrentLateMode(null);
       setTouched(false);
       setIsEditMode(true); // the next save is an edit
-      // The confirmation is also a toast, visible wherever the page is scrolled
+      // The confirmation is a toast: visible wherever the page is scrolled
       toast.success(isLate ? `${t("success.formationSaved")} ${t("formations.latePenalty")}` : t("success.formationSaved"));
     } catch (err) {
       error(err);

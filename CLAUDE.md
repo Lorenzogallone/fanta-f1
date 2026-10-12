@@ -5,6 +5,7 @@ Fantasy F1 web app (React 19 + Vite PWA, react-bootstrap, Firebase 12: Auth/Fire
 ## Commands
 - `npm run dev` / `npm run build` / `npm run lint` (no test suite yet)
 - `cd functions && npm ci` - Cloud Functions (Node 22, CommonJS, push notifications)
+- Local run without production: `firebase emulators:start --only auth,firestore --project demo-fanta`, seed with `scripts/seed-emulator.mjs` (emulator hosts in env), then `VITE_USE_EMULATORS=true` in `.env.local` (see `.env.example`); test accounts p1..p8@test.it / password123, p1 is admin
 - Deploy: automatic via GitHub Actions on push to `main`. Don't deploy by hand.
 
 ## Layout

@@ -17,6 +17,7 @@ import f1DataResolver from "../services/f1DataResolver";
 import f1DataManual from "../data/f1-data.json";
 import { seedDrivers, seedTeams } from "../data/f1Seed";
 import { warn } from "../utils/logger";
+import { useWarm } from "../hooks/useWarm";
 
 const byName = (a, b) => a.name.localeCompare(b.name);
 
@@ -31,6 +32,8 @@ export function F1DataProvider({ children }) {
     source: "seed",
   }));
   const [loading, setLoading] = useState(true);
+  // Jolpica standings (prefetched by the warm-up): the pick lists follow them
+  const standings = useWarm("standings");
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -67,9 +70,18 @@ export function F1DataProvider({ children }) {
     const driverByName = new Map(data.drivers.map((d) => [d.name, d]));
     const teamByName = new Map(data.teams.map((t) => [t.name, t]));
 
-    // Drivers grouped by team (team name, then driver name), as in the selects so far
+    // Drivers grouped by team. Teams follow the constructors' championship and
+    // drivers within a team the drivers' championship, so the usual picks come
+    // first; without standings (start of season, offline) teams go alphabetically.
     const teamName = (d) => teamById.get(d.teamId)?.name || "~";
-    const byTeam = (a, b) => teamName(a).localeCompare(teamName(b)) || byName(a, b);
+    const teamRank = new Map((standings?.constructors || []).map((s, i) => [s.constructor, i]));
+    const driverRank = new Map((standings?.drivers || []).map((s, i) => [s.driver, i]));
+    const rankOf = (map, key) => (map.has(key) ? map.get(key) : 999);
+    const byTeam = (a, b) =>
+      rankOf(teamRank, teamName(a)) - rankOf(teamRank, teamName(b)) ||
+      teamName(a).localeCompare(teamName(b)) ||
+      rankOf(driverRank, a.name) - rankOf(driverRank, b.name) ||
+      byName(a, b);
 
     const getDriverTeam = (driverName) => {
       const driver = driverByName.get(driverName);
@@ -95,7 +107,7 @@ export function F1DataProvider({ children }) {
       loading,
       reload,
     };
-  }, [data, loading, reload]);
+  }, [data, loading, reload, standings]);
 
   return <F1DataContext.Provider value={value}>{children}</F1DataContext.Provider>;
 }

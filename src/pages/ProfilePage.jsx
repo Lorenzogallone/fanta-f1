@@ -36,8 +36,6 @@ export default function ProfilePage() {
   const debounceRef = useRef(null);
 
   const accentColor = isDark ? "#ff4d5a" : "#dc3545";
-  const bgCard = isDark ? "var(--bg-secondary)" : "#ffffff";
-  const bgHeader = isDark ? "var(--bg-tertiary)" : "#ffffff";
   const textColor = isDark ? "#e9ecef" : "#212529";
   const mutedColor = isDark ? "#aaa" : "#6c757d";
 
@@ -185,21 +183,11 @@ export default function ProfilePage() {
   };
 
   return (
-    <Container className="py-4" style={{ maxWidth: 600 }}>
-      <Card
-        className="shadow"
-        style={{ borderColor: accentColor, backgroundColor: bgCard }}
-      >
-        <Card.Header
-          style={{
-            backgroundColor: bgHeader,
-            borderBottom: `2px solid ${accentColor}`,
-          }}
-        >
-          <h4 className="mb-0" style={{ color: accentColor }}>
-            {t("profile.title")}
-          </h4>
-        </Card.Header>
+    <Container className="fx py-2" style={{ maxWidth: 600 }}>
+      <Card className="fx-card profile-card">
+        <div className="fx-card-header">
+          <h2 className="fx-card-title">{t("profile.title")}</h2>
+        </div>
 
         <Card.Body>
           {/* Avatar Section */}
@@ -231,7 +219,7 @@ export default function ProfilePage() {
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: "0.9rem",
-                  border: `2px solid ${bgCard}`,
+                  border: "2px solid var(--bg-primary)",
                 }}
               >
                 📷
@@ -290,9 +278,7 @@ export default function ProfilePage() {
 
           {/* Personal Info Form */}
           <Form onSubmit={handleSave}>
-            <h6 className="fw-bold mb-3" style={{ color: accentColor }}>
-              {t("profile.personalInfo")}
-            </h6>
+            <div className="fx-eyebrow mb-3">{t("profile.personalInfo")}</div>
 
             <Form.Group className="mb-3">
               <Form.Label style={{ color: textColor, fontSize: "0.85rem" }}>
@@ -392,10 +378,8 @@ export default function ProfilePage() {
           </Form>
 
           {/* Preferences Section */}
-          <hr style={{ borderColor: isDark ? "#404040" : "#dee2e6" }} />
-          <h6 className="fw-bold mb-3" style={{ color: accentColor }}>
-            {t("profile.preferences")}
-          </h6>
+          <hr style={{ borderColor: "var(--border-color)" }} />
+          <div className="fx-eyebrow mb-3">{t("profile.preferences")}</div>
 
           {/* Theme */}
           <div className="d-flex align-items-center justify-content-between mb-3">

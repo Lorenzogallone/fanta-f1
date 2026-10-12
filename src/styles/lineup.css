@@ -154,28 +154,10 @@
   box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.2);
 }
 
-/* Save buttons stay reachable above the tab bar while the long form scrolls */
 .lineup-page .lineup-actions {
-  position: sticky;
-  bottom: calc(52px + max(6px, calc(env(safe-area-inset-bottom) - 16px)) + 0.5rem);
-  z-index: 2;
   display: flex;
   gap: 0.5rem;
-  margin: 1.1rem -0.5rem 0;
-  padding: 0.5rem;
-  border-radius: 14px;
-  background-color: var(--glass-bg-strong);
-  -webkit-backdrop-filter: blur(16px) saturate(1.6);
-  backdrop-filter: blur(16px) saturate(1.6);
-}
-
-@media (min-width: 992px) {
-  .lineup-page .lineup-actions {
-    position: static;
-    margin: 1.1rem 0 0;
-    padding: 0;
-    background: none;
-  }
+  margin-top: 1.1rem;
 }
 
 .lineup-page .lineup-btn {
