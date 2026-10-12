@@ -279,3 +279,20 @@
 .leaderboard-card .table thead {
   background-color: transparent;
 }
+
+/* The hero opens the race weekend page */
+.home-page .home-hero.is-link {
+  cursor: pointer;
+}
+
+.home-page .home-hero-more {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+.home-page .home-hero.has-photo .home-hero-more {
+  color: rgba(255, 255, 255, 0.78);
+}

@@ -7,7 +7,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 import { Row, Col, Badge } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Leaderboard from "./Leaderboard";
 import { useLanguage } from "../hooks/useLanguage";
 import { useAuth } from "../hooks/useAuth";
@@ -83,6 +83,7 @@ function NextRaceCard({ race, submission, now }) {
   const { timezone } = useTimezone();
   const locale = currentLanguage === "en" ? "en-GB" : "it-IT";
   const photo = useRacePhoto(race);
+  const navigate = useNavigate();
 
   if (!race) {
     return (
@@ -125,12 +126,18 @@ function NextRaceCard({ race, submission, now }) {
 
   return (
     <div
-      className={`fx-card home-hero${photo ? " has-photo" : ""}`}
+      className={`fx-card home-hero is-link${photo ? " has-photo" : ""}`}
       style={photo ? { "--hero-img": `url("${photo.src}")`, "--hero-pos": photo.pos } : undefined}
+      role="link"
+      tabIndex={0}
+      aria-label={`${race.name}: ${t("raceDetail.details")}`}
+      onClick={() => navigate(`/race/${race.id}`)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/race/${race.id}`); } }}
     >
       <div className="d-flex align-items-center gap-2">
         <span className="fx-eyebrow">{t("home.nextRace")} · R{race.round}</span>
         {hasSprint && <Badge bg="danger" className="home-sprint-badge">Sprint</Badge>}
+        <span className="home-hero-more">{t("raceDetail.details")} ›</span>
       </div>
       <h2 className="home-hero-title">{race.name}</h2>
       <div className="home-hero-date">{raceDate}</div>
@@ -154,6 +161,7 @@ function NextRaceCard({ race, submission, now }) {
       <Link
         to="/lineup"
         className={`btn w-100 mt-3 home-hero-action ${anyOpen && !allDone ? "btn-danger" : "btn-outline-danger"}`}
+        onClick={(e) => e.stopPropagation()}
       >
         {actionLabel}
       </Link>

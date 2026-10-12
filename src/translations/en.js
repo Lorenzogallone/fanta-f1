@@ -51,6 +51,38 @@ export const en = {
     me: "Me",
   },
 
+  // Race weekend page
+  raceDetail: {
+    details: "Weekend details",
+    schedule: "Weekend schedule",
+    fp1: "Practice 1",
+    fp2: "Practice 2",
+    fp3: "Practice 3",
+    sprintQualifying: "Sprint Qualifying",
+    sprint: "Sprint",
+    qualifying: "Qualifying",
+    race: "Race",
+    done: "Finished",
+    live: "Live",
+    startsIn: "in",
+    circuit: "Circuit",
+    length: "Length",
+    laps: "Laps",
+    distance: "Distance",
+    lastWinner: "{{year}} winner",
+    pole: "Pole",
+    podium: "Podium",
+    allResults: "All results",
+    yourLineups: "Your lineups",
+    deadline: "Closes",
+    closed: "Closed",
+    submitted: "Submitted",
+    toSubmit: "To submit",
+    missed: "Not submitted",
+    notFound: "Race not found",
+    timesIn: "Times in",
+  },
+
   // Home
   home: {
     title: "Fanta F1",

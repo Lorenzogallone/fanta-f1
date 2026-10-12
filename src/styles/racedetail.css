@@ -1,0 +1,364 @@
+/* Race weekend page */
+.race-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.race-page .race-top {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.race-page .race-back {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+[data-theme="dark"] .race-page .race-back {
+  background-color: var(--bg-tertiary);
+}
+
+/* ---- Hero ---- */
+.race-page .race-hero {
+  padding: 1.1rem 1.1rem 1rem;
+}
+
+.race-page .race-hero-place {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.race-page .race-flag {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.race-page .race-sprint-badge {
+  margin-left: auto;
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+}
+
+.race-page .race-hero-title {
+  margin: 0.35rem 0 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.race-page .race-hero-sub {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.race-page .race-hero-date {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+/* With the circuit photo: same treatment as the Home hero */
+.race-page .race-hero.has-photo {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  border: 0;
+  color: #fff;
+  background-color: rgb(16, 16, 18);
+}
+
+.race-page .race-hero.has-photo::before,
+.race-page .race-hero.has-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.race-page .race-hero.has-photo::before {
+  background-image: var(--hero-img);
+  background-size: cover;
+  background-position: var(--hero-pos, center);
+  background-repeat: no-repeat;
+}
+
+.race-page .race-hero.has-photo::after {
+  background: linear-gradient(180deg, rgba(16, 16, 18, 0.25) 0%, rgba(16, 16, 18, 0.05) 30%, rgba(16, 16, 18, 0.75) 70%, rgba(16, 16, 18, 0.95) 100%);
+}
+
+.race-page .race-hero.has-photo .race-hero-place,
+.race-page .race-hero.has-photo .race-hero-sub,
+.race-page .race-hero.has-photo .race-hero-date {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.race-page .race-hero.has-photo .race-hero-title {
+  color: #fff;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45);
+}
+
+/* ---- Cards ---- */
+.race-page .race-card {
+  padding: 0.9rem 1rem 1rem;
+}
+
+.race-page .race-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.race-page .race-card-hint {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.race-page .race-card-link {
+  display: block;
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--accent-red);
+}
+
+/* ---- Sessions ---- */
+.race-page .race-sessions,
+.race-page .race-lineups,
+.race-page .race-podium {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.race-page .race-session {
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.race-page .race-session:first-child {
+  border-top: 0;
+}
+
+.race-page .race-session-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.race-page .race-session-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.race-page .race-session-day {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.race-page .race-session-time {
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.race-page .race-session-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 5.6rem;
+  justify-content: flex-end;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+.race-page .race-session.is-done .race-session-name,
+.race-page .race-session.is-done .race-session-time {
+  color: var(--text-secondary);
+}
+
+.race-page .race-session.is-done .race-session-state {
+  color: var(--text-muted);
+}
+
+.race-page .race-session.is-live .race-session-state {
+  color: var(--accent-red);
+}
+
+.race-page .race-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--accent-red);
+  animation: fx-heartbeat 1.2s ease-in-out infinite;
+}
+
+/* The next session to come stands out a little */
+.race-page .race-session.is-upcoming .race-session-state {
+  color: var(--text-primary);
+}
+
+/* Podium under a finished session */
+.race-page .race-podium {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 10px;
+  background-color: var(--bg-secondary);
+  font-size: 0.85rem;
+}
+
+[data-theme="dark"] .race-page .race-podium {
+  background-color: var(--bg-tertiary);
+}
+
+.race-page .race-podium li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.race-page .race-podium-pos {
+  flex: none;
+  width: 1.1rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.race-page .race-podium li:first-child .race-podium-pos {
+  color: var(--accent-red);
+}
+
+.race-page .race-podium-time {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.race-page .race-driver {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.race-page .race-driver img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+/* ---- Lineups ---- */
+.race-page .race-lineup {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "dot label state" "dot when state";
+  column-gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+
+.race-page .race-lineup:first-child {
+  border-top: 0;
+}
+
+.race-page .race-lineup-dot {
+  grid-area: dot;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--text-muted);
+}
+
+.race-page .race-lineup-label { grid-area: label; font-weight: 600; color: var(--text-primary); }
+.race-page .race-lineup-when { grid-area: when; font-size: 0.75rem; color: var(--text-secondary); }
+.race-page .race-lineup-state { grid-area: state; font-weight: 600; color: var(--text-secondary); }
+
+.race-page .race-lineup.is-done .race-lineup-dot { background-color: var(--score-positive); }
+.race-page .race-lineup.is-done .race-lineup-state { color: var(--score-positive); }
+.race-page .race-lineup.is-todo .race-lineup-dot { background-color: #f59f00; }
+.race-page .race-lineup.is-todo .race-lineup-state { color: #e8590c; }
+.race-page .race-lineup.is-missed .race-lineup-dot { background-color: var(--score-negative); }
+
+/* ---- Circuit facts ---- */
+.race-page .race-facts {
+  margin: 0;
+}
+
+.race-page .race-facts > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+
+.race-page .race-facts > div:first-child {
+  border-top: 0;
+}
+
+.race-page .race-facts dt {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.race-page .race-facts dd {
+  margin: 0;
+  min-width: 0;
+  text-align: right;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.race-page .race-fact-sub {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.race-page .race-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+}

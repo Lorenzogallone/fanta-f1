@@ -49,6 +49,7 @@ const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const Statistics = lazy(() => import("./pages/Statistics"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
+const RaceDetail = lazy(() => import("./pages/RaceDetail"));
 
 
 /**
@@ -201,6 +202,7 @@ export default function App() {
                     <Route path="/results" element={<ProtectedRoute><RaceResults /></ProtectedRoute>} />
                     <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
                     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+                    <Route path="/race/:raceId" element={<ProtectedRoute><RaceDetail /></ProtectedRoute>} />
 
                     {/* Admin-only routes */}
                     <Route path="/calculate" element={<AdminRoute><Navigate to="/admin" replace /></AdminRoute>} />
