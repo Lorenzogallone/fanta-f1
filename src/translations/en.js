@@ -314,6 +314,8 @@ export const en = {
 
   // Admin Panel
   admin: {
+    tools: "Tools",
+    toolsHint: "Jolpica sync · ICS import",
     title: "Administration Panel",
     login: "Admin Login",
     password: "Password",
@@ -492,6 +494,8 @@ export const en = {
 
   // Calculate Points
   calculate: {
+    showPreview: "Show lineups and points",
+    hidePreview: "Hide lineups",
     title: "Calculate Points",
     selectRace: "Select Race",
     fetchResults: "Fetch Results",
@@ -512,18 +516,18 @@ export const en = {
     locked: "LOCKED",
     errorLoadingRaces: "Error loading races.",
     errorLoadingSubmissions: "Unable to load submissions.",
-    fetchingFromAPI: "🔄 Loading results from API for {race}...",
+    fetchingFromAPI: "Loading results from API for {race}...",
     raceNotFinished: "The race has not finished yet. Results will be available once the race is over.",
-    apiResultsLoaded: "✅ Results loaded. Please review and confirm.",
-    apiNoResults: "⚠️ Results not yet available for this race. Enter manually.",
+    apiResultsLoaded: "Results loaded. Please review and confirm.",
+    apiNoResults: "Results not yet available for this race. Enter manually.",
     apiSprintOnly: "Only the Sprint results are available: race results will follow after the race.",
     apiMainOnly: "Race results loaded, but Sprint results are not available: enter them manually.",
-    apiError: "⚠️ Unable to load results from API. Enter manually.",
+    apiError: "Unable to load results from API. Enter manually.",
     resultsSaved: "Results saved. Calculating…",
     calculatingPoints: "Calculating points…",
     pleaseWait: "Please wait",
     saveError: "Error saving or calculating.",
-    championshipAvailableAfterEnd: "⚠️ Calculation available only after championship ends.",
+    championshipAvailableAfterEnd: "Calculation available only after championship ends.",
     mainRace: "Main Race",
     sprint: "Sprint",
     drivers: "Drivers",

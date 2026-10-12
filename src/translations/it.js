@@ -314,6 +314,8 @@ export const it = {
 
   // Admin Panel
   admin: {
+    tools: "Strumenti",
+    toolsHint: "Sync Jolpica · Import ICS",
     title: "Pannello Amministrazione",
     login: "Accesso Admin",
     password: "Password",
@@ -492,6 +494,8 @@ export const it = {
 
   // Calculate Points
   calculate: {
+    showPreview: "Mostra schieramenti e punti",
+    hidePreview: "Nascondi schieramenti",
     title: "Calcola Punteggi",
     selectRace: "Seleziona Gara",
     fetchResults: "Recupera Risultati",
@@ -512,18 +516,18 @@ export const it = {
     locked: "BLOCCATA",
     errorLoadingRaces: "Errore nel caricamento delle gare.",
     errorLoadingSubmissions: "Impossibile caricare submissions.",
-    fetchingFromAPI: "🔄 Caricamento risultati da API per {race}...",
+    fetchingFromAPI: "Caricamento risultati da API per {race}...",
     raceNotFinished: "La gara non è ancora terminata. I risultati saranno disponibili dopo la fine della gara.",
-    apiResultsLoaded: "✅ Risultati caricati. Controlla e conferma.",
-    apiNoResults: "⚠️ Risultati non ancora disponibili per questa gara. Inserisci manualmente.",
+    apiResultsLoaded: "Risultati caricati. Controlla e conferma.",
+    apiNoResults: "Risultati non ancora disponibili per questa gara. Inserisci manualmente.",
     apiSprintOnly: "Disponibili solo i risultati Sprint: quelli della gara arriveranno dopo la fine della gara.",
     apiMainOnly: "Risultati gara caricati, ma quelli Sprint non sono disponibili: inseriscili a mano.",
-    apiError: "⚠️ Impossibile caricare risultati da API. Inserisci manualmente.",
+    apiError: "Impossibile caricare risultati da API. Inserisci manualmente.",
     resultsSaved: "Risultati salvati. Calcolo in corso…",
     calculatingPoints: "Calcolo punti in corso…",
     pleaseWait: "Attendere prego",
     saveError: "Errore nel salvataggio o calcolo.",
-    championshipAvailableAfterEnd: "⚠️ Calcolo disponibile solo a campionato concluso.",
+    championshipAvailableAfterEnd: "Calcolo disponibile solo a campionato concluso.",
     mainRace: "Gara Principale",
     sprint: "Sprint",
     drivers: "Piloti",

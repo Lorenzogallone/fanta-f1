@@ -142,7 +142,6 @@ export default function DriversManager() {
 
   return (
     <>
-      <p className="small text-muted">{t("driversAdmin.description")}</p>
       {!editable && <Alert variant="warning" className="py-2 small">{t("driversAdmin.notMigrated")}</Alert>}
       {message && !editing && (
         <Alert variant={message.type} dismissible onClose={() => setMessage(null)} className="py-2">{message.text}</Alert>
