@@ -16,23 +16,14 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import {
-  collection,
-  query,
-  orderBy,
-  getDocs,
-  doc,
-  getDoc,
-  where,
-  Timestamp,
-} from "firebase/firestore";
-import { getChampionshipStatistics } from "../services/statisticsService";
+import { doc, getDoc, collection, getDocs, query, where, orderBy, Timestamp } from "firebase/firestore";
 import { db } from "../services/firebase";
+import { useWarm } from "../hooks/useWarm";
+import { watchRanking, loadStatistics, loadDeadlineMs } from "../services/warmup";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { useAuth } from "../hooks/useAuth";
 import { error as logError } from "../utils/logger";
-import { getChampionshipDeadlineMs } from "../utils/championshipDeadline";
 import PlayerStatsView from "../components/PlayerStatsView";
 import "../styles/statistics.css";
 import "../styles/cards.css";
@@ -49,11 +40,21 @@ const SERIES_DARK = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#00
  * @returns {JSX.Element} Statistics page with charts and ranking table
  */
 export default function Statistics() {
-  const [loadingRanking, setLoadingRanking] = useState(true);
-  const [loadingStatistics, setLoadingStatistics] = useState(true);
+  // Ranking, statistics and deadline from the warm-up cache, refreshed in the background
+  const ranking = useWarm("ranking");
+  const statistics = useWarm("statistics") ?? null;
+  const deadlineMs = useWarm("championshipDeadlineMs");
+  const loadingRanking = ranking == null;
+  const loadingStatistics = statistics == null;
   const [error, setError] = useState(null);
-  const [statistics, setStatistics] = useState(null);
-  const [currentRanking, setCurrentRanking] = useState([]);
+  const currentRanking = useMemo(() => {
+    let currentPos = 1;
+    return (ranking || []).map((d, index, arr) => {
+      const points = d.puntiTotali || 0;
+      if (index > 0 && points < (arr[index - 1].puntiTotali || 0)) currentPos = index + 1;
+      return { userId: d.id, name: d.name, points, position: currentPos };
+    });
+  }, [ranking]);
   const [playersFilter, setPlayersFilter] = useState("5"); // "5", "10", "all"
   const [racesFilter, setRacesFilter] = useState("all"); // "5", "10", "all"
 
@@ -63,7 +64,7 @@ export default function Statistics() {
   const [playerStats, setPlayerStats] = useState(null);
   const [loadingPlayerStats, setLoadingPlayerStats] = useState(false);
   const [loadingRaceHistory, setLoadingRaceHistory] = useState(false);
-  const [championshipDeadlinePassed, setChampionshipDeadlinePassed] = useState(false);
+  const championshipDeadlinePassed = deadlineMs ? Date.now() > deadlineMs : false;
 
   // Cache: evita ri-fetch gare e dati giocatori già caricati
   const racesCache = useRef(null); // { docs, totalCompleted } — caricato una volta sola
@@ -119,61 +120,12 @@ export default function Statistics() {
   }, [statistics, racesFilter, topPlayers, t]);
 
   useEffect(() => {
-    // Load ranking and statistics in parallel for faster initial render
-    const loadRanking = async () => {
-      try {
-        const rankingSnap = await getDocs(
-          query(collection(db, "ranking"), orderBy("puntiTotali", "desc"))
-        );
-
-        let currentPos = 1;
-        const ranking = rankingSnap.docs.map((doc, index) => {
-          const points = doc.data().puntiTotali || 0;
-          if (index > 0 && points < (rankingSnap.docs[index - 1].data().puntiTotali || 0)) {
-            currentPos = index + 1;
-          }
-          return {
-            userId: doc.id,
-            name: doc.data().name,
-            points,
-            position: currentPos,
-          };
-        });
-
-        setCurrentRanking(ranking);
-        setLoadingRanking(false); // Show ranking immediately
-      } catch (err) {
-        logError("Error loading ranking:", err);
-        setError(t("statistics.errorLoading"));
-        setLoadingRanking(false);
-      }
-    };
-
-    const loadStatistics = async () => {
-      try {
-        const data = await getChampionshipStatistics();
-        setStatistics(data);
-        setLoadingStatistics(false); // Show charts when ready
-      } catch (err) {
-        logError("Error loading statistics:", err);
-        // Don't set error here - ranking might still be visible
-        setLoadingStatistics(false);
-      }
-    };
-
-    const loadDeadline = async () => {
-      try {
-        const ms = await getChampionshipDeadlineMs();
-        setChampionshipDeadlinePassed(ms ? Date.now() > ms : false);
-      } catch {
-        // Non-critical
-      }
-    };
-
-    // Execute all in parallel
-    loadRanking();
-    loadStatistics();
-    loadDeadline();
+    watchRanking();
+    loadStatistics(true).catch((err) => {
+      logError("Error loading statistics:", err);
+      setError(t("statistics.errorLoading"));
+    });
+    loadDeadlineMs(true).catch(() => {});
   }, [t]);
 
   // Load individual player statistics when selected

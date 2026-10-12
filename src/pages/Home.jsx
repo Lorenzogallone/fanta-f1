@@ -8,16 +8,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 import { Row, Col, Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import {
-  collection, query, orderBy, getDocs, onSnapshot, doc, getDoc,
-} from "firebase/firestore";
-import { db } from "../services/firebase";
 import Leaderboard from "./Leaderboard";
 import { useLanguage } from "../hooks/useLanguage";
 import { useAuth } from "../hooks/useAuth";
 import { useTimezone } from "../hooks/useTimezone";
 import { error } from "../utils/logger";
 import { useRacePhoto } from "../hooks/useRacePhoto";
+import { useWarm } from "../hooks/useWarm";
+import { loadRaces, watchRanking, loadSubmission, submissionKey } from "../services/warmup";
 import "../styles/cards.css";
 import "../styles/home.css";
 import "../styles/racephoto.css";
@@ -250,26 +248,19 @@ MySummary.propTypes = {
  * Home page
  * @returns {JSX.Element} Home page
  */
+const EMPTY = [];
+
 export default function Home() {
   const { t } = useLanguage();
   const { user, isAdmin } = useAuth();
   const now = useNow();
 
-  const [races, setRaces] = useState([]);
-  const [ranking, setRanking] = useState([]);
-  const [submission, setSubmission] = useState(null);
-
-  // Season calendar (small collection, read once)
+  // Calendar and live ranking from the warm-up cache (there at first render, refreshed in the background)
+  const races = useWarm("races") || EMPTY;
+  const ranking = useWarm("ranking") || EMPTY;
   useEffect(() => {
-    getDocs(query(collection(db, "races"), orderBy("raceUTC", "asc")))
-      .then((snap) => setRaces(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
-      .catch(error);
-  }, []);
-
-  // Live ranking, same query as the leaderboard
-  useEffect(() => {
-    const q = query(collection(db, "ranking"), orderBy("puntiTotali", "desc"));
-    return onSnapshot(q, (snap) => setRanking(snap.docs.map((d) => ({ id: d.id, ...d.data() }))), error);
+    loadRaces(true).catch(error);
+    watchRanking();
   }, []);
 
   const nextRace = useMemo(
@@ -288,13 +279,10 @@ export default function Home() {
 
   // The user's lineup for the next race
   const nextRaceId = nextRace?.id;
+  const submission = useWarm(nextRaceId && user?.uid ? submissionKey(nextRaceId, user.uid) : "") ?? null;
   useEffect(() => {
     if (!nextRaceId || !user?.uid) return;
-    let cancelled = false;
-    getDoc(doc(db, "races", nextRaceId, "submissions", user.uid))
-      .then((snap) => { if (!cancelled) setSubmission(snap.exists() ? snap.data() : null); })
-      .catch(error);
-    return () => { cancelled = true; };
+    loadSubmission(nextRaceId, user.uid, true).catch(error);
   }, [nextRaceId, user?.uid]);
 
   // Position with ties (competition ranking), as in the leaderboard

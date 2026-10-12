@@ -31,6 +31,8 @@ import NotificationPromptModal from "./components/NotificationPromptModal";
 import LogoLoader from "./components/LogoLoader";
 import { hideSplash } from "./utils/splash";
 import { useScrollReveal } from "./hooks/useScrollReveal";
+import { useAuth } from "./hooks/useAuth";
+import { warmUp } from "./services/warmup";
 import "./styles/theme.css";
 import "./styles/motion.css";
 
@@ -125,6 +127,20 @@ function PageTransition({ children }) {
   return <div ref={ref} className="fx-page">{children}</div>;
 }
 
+/**
+ * Keeps the splash up until the signed-in user's data is loaded for every main
+ * section (services/warmup.js), then lets the app in with no loaders to show.
+ * The login page hides the splash by itself.
+ */
+function Warmup() {
+  const { user, loading } = useAuth();
+  useEffect(() => {
+    if (loading || !user) return;
+    warmUp(user.uid).finally(hideSplash);
+  }, [user, loading]);
+  return null;
+}
+
 /** Marks <html data-scrolled> so the top bar turns to glass once content scrolls under it */
 function useScrolledFlag() {
   useEffect(() => {
@@ -142,11 +158,11 @@ export default function App() {
   useScrolledFlag();
 
   useEffect(() => {
-    // Fallback: forcefully hide the splash screen after 3.5 seconds
-    // to ensure users are never permanently blocked if a page fails to hide it
+    // Fallback: forcefully hide the splash screen after 10 seconds
+    // to ensure users are never permanently blocked if the warm-up hangs
     const fallbackTimer = setTimeout(() => {
       hideSplash();
-    }, 3500);
+    }, 10000);
 
     return () => clearTimeout(fallbackTimer);
   }, []);
@@ -158,6 +174,7 @@ export default function App() {
           <AuthProvider>
             <F1DataProvider>
             <Router>
+              <Warmup />
               <Navigation />
               <ThemedToaster />
               <InstallPwaBanner />
