@@ -7,7 +7,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import PropTypes from "prop-types";
 import { Row, Col, Form, Button } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Timestamp } from "firebase/firestore";
 import { fetchLastRaceSessions } from "../services/f1SessionsFetcher";
 import { peek, subscribe, loadRaces, loadSessions, loadStandings, sessionsKey } from "../services/warmup";
@@ -690,7 +690,10 @@ export default function RaceResults() {
             <div className="fx-card res-card">
               <div className="res-card-head">
                 <div className="fx-eyebrow">R{sessions.round} · {sessions.date}</div>
-                <h2 className="res-race-name">{sessions.raceName}</h2>
+                <Link to={`/race/${selectedRaceId}`} className="res-race-link" aria-label={`${sessions.raceName}: ${t("raceDetail.details")}`}>
+                  <h2 className="res-race-name">{sessions.raceName}</h2>
+                  <span className="res-race-more">{t("raceDetail.details")} ›</span>
+                </Link>
               </div>
 
               {sessions.noData ? (
@@ -788,16 +791,19 @@ export default function RaceResults() {
 
                 return (
                   <div className="fx-card res-card res-next">
-                    <div
-                      className={`res-card-head${photo ? " has-photo" : ""}`}
+                    <Link
+                      to={`/race/${race.id}`}
+                      className={`res-card-head is-link${photo ? " has-photo" : ""}`}
                       style={photo ? { "--hero-img": `url("${photo.src}")`, "--hero-pos": photo.pos } : undefined}
+                      aria-label={`${race.name}: ${t("raceDetail.details")}`}
                     >
                       <div className="d-flex align-items-center gap-2">
                         <span className="fx-eyebrow">{t("raceResults.nextRace")} · R{race.round} · {countdownText}</span>
                         {race.qualiSprintUTC && <span className="res-pill">Sprint</span>}
+                        <span className="res-race-more ms-auto">{t("raceDetail.details")} ›</span>
                       </div>
                       <h2 className="res-race-name">{race.name}</h2>
-                    </div>
+                    </Link>
                     <div className="res-rows">
                       {weekendSessions(race).map((s, idx) => (
                         <div key={idx} className={`res-row${s.isRace ? " is-strong" : ""}`}>
@@ -822,7 +828,7 @@ export default function RaceResults() {
                       const q = formatToUserTz(race.qualiUTC);
                       const r = formatToUserTz(race.raceUTC);
                       return (
-                        <div key={race.id} className="res-list-row">
+                        <Link key={race.id} to={`/race/${race.id}`} className="res-list-row">
                           <span className="res-round">R{race.round}</span>
                           <span className="res-list-main">
                             <span className="res-list-name">
@@ -840,7 +846,8 @@ export default function RaceResults() {
                               <span className="res-time">{r.time}</span>
                             </span>
                           )}
-                        </div>
+                          <span className="res-list-chevron" aria-hidden="true">›</span>
+                        </Link>
                       );
                     })}
                   </div>
@@ -864,7 +871,7 @@ export default function RaceResults() {
                       {[...scheduleData.past].reverse().map((race) => {
                         const r = formatToUserTz(race.raceUTC);
                         return (
-                          <div key={race.id} className="res-list-row">
+                          <Link key={race.id} to={`/race/${race.id}`} className="res-list-row">
                             <span className="res-round">R{race.round}</span>
                             <span className="res-list-main">
                               <span className="res-list-name">
@@ -873,7 +880,8 @@ export default function RaceResults() {
                               </span>
                             </span>
                             {r && <span className="res-list-date"><span>{r.dayOfWeek} {r.dateStr}</span></span>}
-                          </div>
+                            <span className="res-list-chevron" aria-hidden="true">›</span>
+                          </Link>
                         );
                       })}
                     </div>

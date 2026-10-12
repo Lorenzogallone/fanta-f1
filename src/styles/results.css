@@ -419,3 +419,51 @@
     align-items: stretch;
   }
 }
+
+/* Rows and headers that open the race weekend page */
+.results-page a.res-list-row,
+.results-page a.res-card-head,
+.results-page .res-race-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.results-page a.res-list-row:hover,
+.results-page .res-race-link:hover {
+  color: inherit;
+}
+
+.results-page a.res-list-row:active {
+  background-color: var(--bg-secondary);
+}
+
+.results-page .res-list-chevron {
+  flex: none;
+  margin-left: -0.25rem;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.results-page .res-race-link {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.results-page .res-race-more {
+  flex: none;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+.results-page .res-card-head.has-photo .res-race-more {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.results-page a.res-card-head.is-link {
+  display: block;
+}
