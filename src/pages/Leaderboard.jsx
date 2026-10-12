@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Card, Table, Spinner, Badge } from "react-bootstrap";
+import { Card, Table, Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { collection, query, orderBy, onSnapshot, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
@@ -14,6 +14,7 @@ import { hideSplash } from "../utils/splash";
 import UserAvatar from "../components/UserAvatar";
 import "../styles/cards.css";
 import "../styles/home.css";
+import LogoLoader from "../components/LogoLoader";
 
 const medals = ["🥇", "🥈", "🥉"];
 
@@ -144,8 +145,7 @@ export default function Leaderboard() {
       <Card.Body className="p-0" style={{ overflowX: "auto" }}>
         {loading ? (
           <div className="py-5 text-center">
-            <Spinner animation="border" />
-            <p className="mt-3">{t("common.loading")}</p>
+            <LogoLoader label={t("common.loading")} />
           </div>
         ) : (
           <Table

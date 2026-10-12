@@ -4,9 +4,7 @@
  */
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import {
-  Card, Table, Spinner, Alert, Badge,
-} from "react-bootstrap";
+import { Card, Table, Alert, Badge } from "react-bootstrap";
 import {
   collection, query, orderBy, getDocs,
 } from "firebase/firestore";
@@ -15,6 +13,7 @@ import { useF1Data } from "../hooks/useF1Data";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { error as logError } from "../utils/logger";
+import LogoLoader from "./LogoLoader";
 
 /**
  * Displays driver name with team logo or dash if not provided.
@@ -93,7 +92,7 @@ function SubmissionsList({ raceId, hasSprint, refresh }) {
     return (
       <Card className="mt-4 shadow">
         <Card.Body className="text-center">
-          <Spinner animation="border" />
+          <LogoLoader />
         </Card.Body>
       </Card>
     );

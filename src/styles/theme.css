@@ -329,11 +329,6 @@ body {
   filter: invert(1) grayscale(100%) brightness(200%);
 }
 
-/* Spinner */
-[data-theme="dark"] .spinner-border {
-  color: var(--accent-red);
-}
-
 /* React-Select Dark Mode */
 [data-theme="dark"] .react-select__control {
   background-color: var(--bg-tertiary) !important;

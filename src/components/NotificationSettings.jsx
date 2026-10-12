@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Form, Spinner } from "react-bootstrap";
+import { Form } from "react-bootstrap";
 
 const NotificationsActiveIcon = ({ fontSize, style }) => (
   <svg width={fontSize === 'small' ? 20 : 24} height={fontSize === 'small' ? 20 : 24} viewBox="0 0 24 24" fill="currentColor" style={style}>
@@ -28,6 +28,7 @@ import {
   disableNotifications,
   getNotificationPermission,
 } from "../services/notificationService";
+import LogoLoader from "./LogoLoader";
 
 /**
  * Inline notification settings for the user dropdown menu.
@@ -136,7 +137,7 @@ export default function NotificationSettings({ style = {} }) {
           {t("notifications.title")}
         </span>
         {loading ? (
-          <Spinner animation="border" size="sm" style={{ width: 16, height: 16 }} />
+          <LogoLoader size="sm" />
         ) : (
           <Form.Check
             type="switch"

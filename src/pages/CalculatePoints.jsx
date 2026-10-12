@@ -5,9 +5,7 @@
  */
 
 import React, { useEffect, useState, useRef, useMemo } from "react";
-import {
-  Card, Form, Button, Alert, Spinner, Row, Col, Badge, Tab
-} from "react-bootstrap";
+import { Card, Form, Button, Alert, Row, Col, Badge, Tab } from "react-bootstrap";
 import {
   collection, query, orderBy, getDocs,
   doc, getDoc, Timestamp
@@ -28,6 +26,7 @@ import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
 import { error } from "../utils/logger";
 import "../styles/customSelect.css";
+import LogoLoader from "../components/LogoLoader";
 
 const PTS_MAIN = POINTS.MAIN;
 const PTS_SPRINT = POINTS.SPRINT;
@@ -452,7 +451,7 @@ useEffect(() => {
 
   /* ---------------- RENDER --------------------------- */
   if(loadingRace)
-    return(<div className="py-5 text-center"><Spinner animation="border"/></div>);
+    return(<div className="py-5 text-center"><LogoLoader /></div>);
 
   return (
     <div className="calc-page">
@@ -466,33 +465,7 @@ useEffect(() => {
           alignItems: "center", justifyContent: "center",
           color: "#fff",
         }}>
-          <svg viewBox="0 0 500 250" width="220" xmlns="http://www.w3.org/2000/svg" fill="none" style={{ marginBottom: 24 }}>
-            <style>{`
-              .calc-splash-draw {
-                stroke-dasharray: 3000;
-                stroke-dashoffset: 3000;
-                fill-opacity: 0;
-                stroke: #ff4d5a;
-                fill: #ff4d5a;
-                animation: calcLogoLoop 2.4s ease-in-out infinite;
-              }
-              @keyframes calcLogoLoop {
-                0% { stroke-dashoffset: 3000; fill-opacity: 0; }
-                55% { stroke-dashoffset: 0; fill-opacity: 1; }
-                78% { stroke-dashoffset: 0; fill-opacity: 1; }
-                100% { stroke-dashoffset: 3000; fill-opacity: 0; }
-              }
-            `}</style>
-            <text className="calc-splash-draw" x="250" y="95" textAnchor="middle"
-              fontFamily="'Arial Black', 'Helvetica Neue', Arial, sans-serif" fontWeight="900" fontStyle="italic"
-              fontSize="90" strokeWidth="2" paintOrder="stroke">Fanta</text>
-            <path className="calc-splash-draw" strokeWidth="2" strokeLinejoin="round"
-              d="M 50 190 L 100 140 Q 130 110 160 110 L 375 110 L 347 138 L 160 138 Q 137 138 115 160 L 85 190 Z" />
-            <path className="calc-splash-draw" strokeWidth="2" strokeLinejoin="round"
-              d="M 100 190 L 115 175 Q 137 153 160 153 L 305 153 L 277 181 L 170 181 Q 144 181 135 190 Z" />
-            <path className="calc-splash-draw" strokeWidth="2" strokeLinejoin="round"
-              d="M 400 110 L 440 110 L 360 190 L 320 190 Z" />
-          </svg>
+          <LogoLoader size="lg" style={{ color: "#ff4d5a", marginBottom: 24 }} />
           <h5 className="mb-1">{t("calculate.calculatingPoints")}</h5>
           <small className="text-muted">{t("calculate.pleaseWait")}</small>
         </div>

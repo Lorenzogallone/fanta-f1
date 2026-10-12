@@ -6,16 +6,7 @@
 
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import {
-  Button,
-  Form,
-  Alert,
-  Spinner,
-  Badge,
-  Modal,
-  ListGroup,
-  Table,
-} from "react-bootstrap";
+import { Button, Form, Alert, Badge, Modal, ListGroup, Table } from "react-bootstrap";
 import {
   collection,
   getDocs,
@@ -33,6 +24,7 @@ import {
   restoreFromBackup,
   downloadBackupAsJSON,
 } from "../../services/backupService";
+import LogoLoader from "../../components/LogoLoader";
 
 export default function DatabaseReset({ participants, races, onDataChange }) {
   const { t } = useLanguage();
@@ -162,7 +154,7 @@ export default function DatabaseReset({ participants, races, onDataChange }) {
         <div className="admin-box">
           <p className="small text-muted mb-3">{t("admin.backupDescription")}</p>
           <Button variant="danger" size="sm" className="w-100" onClick={handleCreateBackup} disabled={backingUp}>
-            {backingUp ? <><Spinner animation="border" size="sm" className="me-2" />{t("admin.creatingBackup")}</> : t("admin.createManualBackup")}
+            {backingUp ? <><LogoLoader size="sm" className="me-2" />{t("admin.creatingBackup")}</> : t("admin.createManualBackup")}
           </Button>
         </div>
       </div>
@@ -177,12 +169,12 @@ export default function DatabaseReset({ participants, races, onDataChange }) {
             </Badge>
           </h6>
           <Button size="sm" variant="outline-secondary" onClick={loadBackups} disabled={loadingBackups}>
-            {loadingBackups ? <Spinner animation="border" size="sm" /> : t("admin.refresh")}
+            {loadingBackups ? <LogoLoader size="sm" /> : t("admin.refresh")}
           </Button>
         </div>
 
         {loadingBackups ? (
-          <div className="text-center py-4"><Spinner animation="border" size="sm" /></div>
+          <div className="text-center py-4"><LogoLoader /></div>
         ) : backups.length === 0 ? (
           <div className="admin-empty">
             {t("admin.noBackupsAvailable")}
@@ -253,7 +245,7 @@ export default function DatabaseReset({ participants, races, onDataChange }) {
             {t("common.cancel")}
           </Button>
           <Button variant="danger" size="sm" onClick={handleReset} disabled={resetting || confirmText !== "RESET"}>
-            {resetting ? <Spinner animation="border" size="sm" /> : t("common.confirm")}
+            {resetting ? <LogoLoader size="sm" /> : t("common.confirm")}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -305,7 +297,7 @@ export default function DatabaseReset({ participants, races, onDataChange }) {
             {t("common.cancel")}
           </Button>
           <Button variant="warning" size="sm" onClick={handleRestore} disabled={restoring || confirmText !== "RESTORE"}>
-            {restoring ? <><Spinner animation="border" size="sm" className="me-2" />{t("admin.restoring")}</> : t("admin.restoreBackup")}
+            {restoring ? <><LogoLoader size="sm" className="me-2" />{t("admin.restoring")}</> : t("admin.restoreBackup")}
           </Button>
         </Modal.Footer>
       </Modal>

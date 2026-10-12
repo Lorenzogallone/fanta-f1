@@ -5,12 +5,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Row,
-  Col,
-  Spinner,
-  Alert,
-} from "react-bootstrap";
+import { Row, Col, Alert } from "react-bootstrap";
 import {
   LineChart,
   Line,
@@ -42,6 +37,7 @@ import PlayerStatsView from "../components/PlayerStatsView";
 import "../styles/statistics.css";
 import "../styles/cards.css";
 import "../styles/stats.css";
+import LogoLoader from "../components/LogoLoader";
 
 // Categorical palette validated for color-blind separation (dataviz skill),
 // one set per theme. Players after the 8th are drawn in grey.
@@ -294,7 +290,6 @@ export default function Statistics() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPlayerId, championshipDeadlinePassed, user?.uid]);
 
-  const accentColor = isDark ? "#ff4d5a" : "#dc3545";
   const textColor = isDark ? "#adb5bd" : "#6c757d";
   const gridColor = isDark ? "#3a3a3a" : "#e9ecef";
   const palette = isDark ? SERIES_DARK : SERIES_LIGHT;
@@ -306,8 +301,7 @@ export default function Statistics() {
   if (loadingRanking && currentRanking.length === 0) {
     return (
       <div className="py-5 text-center">
-        <Spinner animation="border" />
-        <p className="mt-3">{t("statistics.loading")}</p>
+        <LogoLoader label={t("statistics.loading")} />
       </div>
     );
   }
@@ -463,7 +457,7 @@ export default function Statistics() {
 
             {loadingStatistics ? (
               <div className="fx-card stats-empty">
-                <Spinner animation="border" size="sm" className="me-2" />
+                <LogoLoader size="sm" className="me-2" />
                 {t("statistics.loadingCharts") || "Loading charts..."}
               </div>
             ) : statistics && statistics.races && statistics.races.length > 0 ? (
@@ -531,7 +525,7 @@ export default function Statistics() {
 
           {loadingPlayerStats && (
             <div className="text-center py-4">
-              <Spinner animation="border" size="sm" style={{ color: accentColor }} />
+              <LogoLoader />
             </div>
           )}
 

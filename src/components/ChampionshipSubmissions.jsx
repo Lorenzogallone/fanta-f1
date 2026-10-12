@@ -4,13 +4,14 @@
  */
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { Card, Table, Spinner, Alert, Image } from "react-bootstrap";
+import { Card, Table, Alert, Image } from "react-bootstrap";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useF1Data } from "../hooks/useF1Data";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { error as logError } from "../utils/logger";
+import LogoLoader from "./LogoLoader";
 
 /**
  * Shows all submitted championship lineups with top 3 drivers and constructors.
@@ -64,7 +65,7 @@ export default function ChampionshipSubmissions({ refresh, currentUserId = null,
     return (
       <Card className="mt-4 shadow">
         <Card.Body className="text-center">
-          <Spinner animation="border" />
+          <LogoLoader />
         </Card.Body>
       </Card>
     );

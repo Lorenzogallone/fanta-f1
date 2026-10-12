@@ -4,9 +4,10 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Modal, Form, Button, Alert, Spinner } from "react-bootstrap";
+import { Modal, Form, Button, Alert } from "react-bootstrap";
 import { useAuth } from "../hooks/useAuth";
 import { useLanguage } from "../hooks/useLanguage";
+import LogoLoader from "./LogoLoader";
 
 export default function CompleteProfileModal() {
   const { needsProfile, completeProfile, logout, user } = useAuth();
@@ -99,7 +100,7 @@ export default function CompleteProfileModal() {
             />
           </Form.Group>
           <Button variant="danger" type="submit" className="w-100" disabled={loading}>
-            {loading ? <Spinner animation="border" size="sm" /> : t("auth.saveProfile")}
+            {loading ? <LogoLoader size="sm" /> : t("auth.saveProfile")}
           </Button>
         </Form>
       </Modal.Body>

@@ -3,16 +3,7 @@
  * @description User profile management page with avatar upload, personal info editing, and preferences.
  */
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import {
-  Container,
-  Card,
-  Form,
-  Button,
-  Spinner,
-  Alert,
-  Row,
-  Col,
-} from "react-bootstrap";
+import { Container, Card, Form, Button, Alert, Row, Col } from "react-bootstrap";
 import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
@@ -21,6 +12,7 @@ import { useTimezone, TIMEZONE_OPTIONS } from "../hooks/useTimezone";
 import { uploadProfileImage, removeProfileImage, updateProfile } from "../services/profileService";
 import UserAvatar from "../components/UserAvatar";
 import NotificationSettings from "../components/NotificationSettings";
+import LogoLoader from "../components/LogoLoader";
 
 export default function ProfilePage() {
   const { user, userProfile, checkNicknameAvailable, updateUserProfile } = useAuth();
@@ -264,7 +256,7 @@ export default function ProfilePage() {
                     disabled={uploadingImage}
                   >
                     {uploadingImage ? (
-                      <Spinner animation="border" size="sm" />
+                      <LogoLoader size="sm" />
                     ) : (
                       t("common.save")
                     )}
@@ -287,7 +279,7 @@ export default function ProfilePage() {
                   disabled={uploadingImage}
                 >
                   {uploadingImage ? (
-                    <Spinner animation="border" size="sm" />
+                    <LogoLoader size="sm" />
                   ) : (
                     t("profile.removePhoto")
                   )}
@@ -316,14 +308,14 @@ export default function ProfilePage() {
                   style={{ borderColor: accentColor }}
                 />
                 {nicknameChecking && (
-                  <Spinner
-                    animation="border"
+                  <LogoLoader
                     size="sm"
                     style={{
                       position: "absolute",
                       right: 12,
                       top: "50%",
                       transform: "translateY(-50%)",
+                      color: "var(--text-secondary)",
                     }}
                   />
                 )}
@@ -390,7 +382,7 @@ export default function ProfilePage() {
             >
               {saving ? (
                 <>
-                  <Spinner animation="border" size="sm" className="me-2" />
+                  <LogoLoader size="sm" className="me-2" />
                   {t("profile.savingProfile")}
                 </>
               ) : (

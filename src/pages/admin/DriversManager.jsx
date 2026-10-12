@@ -7,13 +7,14 @@
  */
 
 import React, { useState } from "react";
-import { Alert, Badge, Button, Form, ListGroup, Modal, Spinner } from "react-bootstrap";
+import { Alert, Badge, Button, Form, ListGroup, Modal } from "react-bootstrap";
 import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp } from "firebase/firestore";
 import { db } from "../../services/firebase";
 import { useLanguage } from "../../hooks/useLanguage";
 import { useF1Data } from "../../hooks/useF1Data";
 import { makeSlug } from "../../../functions/shared/f1Sync.mjs";
 import { error } from "../../utils/logger";
+import LogoLoader from "../../components/LogoLoader";
 
 /** "a, b , c" → ["a", "b", "c"] */
 const parseAliases = (text) => [...new Set(text.split(",").map((s) => s.trim()).filter(Boolean))];
@@ -126,7 +127,7 @@ export default function DriversManager() {
   };
 
   if (loading && drivers.length === 0) {
-    return <div className="text-center py-5"><Spinner animation="border" /></div>;
+    return <div className="text-center py-5"><LogoLoader /></div>;
   }
 
   const switchCell = (collectionName, item, field) => (
@@ -299,7 +300,7 @@ export default function DriversManager() {
         <Modal.Footer>
           <Button variant="secondary" size="sm" onClick={() => setEditing(null)} disabled={saving}>{t("common.cancel")}</Button>
           <Button variant="danger" size="sm" onClick={handleSave} disabled={saving}>
-            {saving ? <Spinner animation="border" size="sm" /> : t("common.save")}
+            {saving ? <LogoLoader size="sm" /> : t("common.save")}
           </Button>
         </Modal.Footer>
       </Modal>

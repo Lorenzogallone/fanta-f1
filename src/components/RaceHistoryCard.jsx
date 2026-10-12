@@ -5,15 +5,7 @@
  */
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import {
-  Card,
-  Table,
-  Spinner,
-  Badge,
-  Alert,
-  Row,
-  Col,
-} from "react-bootstrap";
+import { Card, Table, Badge, Alert, Row, Col } from "react-bootstrap";
 import { collection, getDocs, onSnapshot } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { POINTS } from "../constants/racing";
@@ -23,6 +15,7 @@ import { useLanguage } from "../hooks/useLanguage";
 import { useTimezone } from "../hooks/useTimezone";
 import { error } from "../utils/logger";
 import "../styles/cards.css";
+import LogoLoader from "./LogoLoader";
 
 /**
  * Formats driver name to first initial + surname
@@ -466,7 +459,7 @@ function RaceHistoryCard({
         {/* Lineups and scores section */}
         {loadingSub ? (
           <div className="text-center py-3">
-            <Spinner animation="border" />
+            <LogoLoader />
           </div>
         ) : errorSub ? (
           <Alert variant="danger">{errorSub}</Alert>

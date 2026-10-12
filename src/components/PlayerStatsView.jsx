@@ -6,7 +6,7 @@
 
 import React, { useState } from "react";
 import PropTypes from "prop-types";
-import { Row, Col, Badge, Spinner } from "react-bootstrap";
+import { Row, Col, Badge } from "react-bootstrap";
 import {
   LineChart,
   Line,
@@ -29,6 +29,7 @@ import UserAvatar from "./UserAvatar";
 import "../styles/cards.css";
 import "../styles/player.css";
 import "../styles/statistics.css";
+import LogoLoader from "./LogoLoader";
 
 /**
  * Displays driver name with team logo
@@ -642,7 +643,7 @@ function PlayerStatsView({
             <ChampionshipPicks playerData={playerData} />
           ) : loadingHistory ? (
             <div className="fx-card player-empty">
-              <Spinner animation="border" size="sm" className="me-2" />
+              <LogoLoader size="sm" className="me-2" />
               {t("participantDetail.loadingHistory")}
             </div>
           ) : tab === "races" ? (
@@ -651,7 +652,7 @@ function PlayerStatsView({
             <TrendCharts raceHistory={raceHistory} pointsByRace={pointsByRace} positionData={positionData} />
           ) : (
             <div className="fx-card player-empty">
-              <Spinner animation="border" size="sm" className="me-2" />
+              <LogoLoader size="sm" className="me-2" />
               {t("common.loading")}
             </div>
           )}

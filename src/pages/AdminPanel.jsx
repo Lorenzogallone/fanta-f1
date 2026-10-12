@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Spinner } from "react-bootstrap";
+
 import { useSearchParams } from "react-router-dom";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
@@ -20,6 +20,7 @@ import DriversManager from "./admin/DriversManager";
 import DatabaseReset from "./admin/DatabaseReset";
 import "../styles/cards.css";
 import "../styles/admin.css";
+import LogoLoader from "../components/LogoLoader";
 
 const SECTIONS = ["calculate", "participants", "formations", "championship", "calendar", "drivers", "database"];
 
@@ -117,7 +118,7 @@ export default function AdminPanel() {
       {activeTab === "calculate" ? (
         <CalculatePoints />
       ) : loadingShared && !sharedParticipants.length ? (
-        <div className="text-center py-5"><Spinner animation="border" /></div>
+        <div className="text-center py-5"><LogoLoader /></div>
       ) : (
         <div className="admin-section">
           {activeTab === "participants" && (

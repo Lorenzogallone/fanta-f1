@@ -5,17 +5,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from "react";
-import {
-  Container,
-  Row,
-  Col,
-  Form,
-  Button,
-  Spinner,
-  Alert,
-  Table,
-  Modal,
-} from "react-bootstrap";
+import { Container, Row, Col, Form, Button, Alert, Table, Modal } from "react-bootstrap";
 import {
   collection,
   query,
@@ -47,6 +37,7 @@ import { bilingual, bilingualWithSuffix } from "../utils/bilingualMessages";
 import "../styles/customSelect.css";
 import "../styles/cards.css";
 import "../styles/lineup.css";
+import LogoLoader from "../components/LogoLoader";
 
 /**
  * Formation management component for race and sprint submissions
@@ -777,8 +768,7 @@ export default function FormationApp() {
   function SpinnerScreen() {
     return (
       <Container className="py-5 text-center">
-        <Spinner animation="border" />
-        <p className="mt-3">{t("common.loading")}</p>
+        <LogoLoader label={t("common.loading")} />
       </Container>
     );
   }
