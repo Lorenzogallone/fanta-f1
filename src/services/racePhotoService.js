@@ -2,7 +2,7 @@
  * @file racePhotoService.js
  * @description Admin overrides of the circuit photo shown behind the next race card.
  * One doc per race in racePhotos/{raceId}:
- *   { mode: "custom", dataUrl, credit, pos, updatedAt }  → uploaded photo
+ *   { mode: "custom", dataUrl, pos, updatedAt }  → uploaded photo
  *   { mode: "none", updatedAt }                          → no photo for this race
  * No doc → the bundled default photo (src/data/raceImages.js).
  * The image is stored inline (compressed WebP/JPEG data URL, well under the 1 MB doc
@@ -48,12 +48,12 @@ export const cachedRacePhoto = (raceId) => (raceId ? readCache(raceId) : undefin
 /**
  * Loads the admin override for a race.
  * @param {string} raceId - Race id
- * @returns {Promise<Object|null>} { mode, dataUrl?, credit?, pos? } or null
+ * @returns {Promise<Object|null>} { mode, dataUrl?, pos? } or null
  */
 export async function getRacePhoto(raceId) {
   const snap = await getDoc(doc(db, "racePhotos", raceId));
   const data = snap.exists() ? snap.data() : null;
-  const override = data && { mode: data.mode, dataUrl: data.dataUrl, credit: data.credit, pos: data.pos };
+  const override = data && { mode: data.mode, dataUrl: data.dataUrl, pos: data.pos };
   writeCache(raceId, override);
   return override;
 }
@@ -62,7 +62,7 @@ export async function getRacePhoto(raceId) {
  * Photo to show for a race, combining the override with the default photo.
  * @param {Object} race - Race document
  * @param {Object|null} override - Result of getRacePhoto
- * @returns {{ src: string, pos: string, credit: string, href: string|null }|null}
+ * @returns {{ src: string, pos: string }|null}
  */
 export function resolveRacePhoto(race, override) {
   if (override?.mode === "none") return null;
@@ -70,8 +70,6 @@ export function resolveRacePhoto(race, override) {
     return {
       src: override.dataUrl,
       pos: override.pos || "center",
-      credit: override.credit || "",
-      href: null,
     };
   }
   return raceImage(race);
@@ -80,10 +78,10 @@ export function resolveRacePhoto(race, override) {
 /**
  * Saves an uploaded photo for a race.
  * @param {string} raceId - Race id
- * @param {{ dataUrl: string, credit: string, pos: string }} photo - Compressed image and info
+ * @param {{ dataUrl: string, pos: string }} photo - Compressed image and framing
  */
-export async function saveCustomRacePhoto(raceId, { dataUrl, credit, pos }) {
-  const data = { mode: "custom", dataUrl, credit: credit.trim(), pos };
+export async function saveCustomRacePhoto(raceId, { dataUrl, pos }) {
+  const data = { mode: "custom", dataUrl, pos };
   await setDoc(doc(db, "racePhotos", raceId), { ...data, updatedAt: serverTimestamp() });
   writeCache(raceId, data);
 }
